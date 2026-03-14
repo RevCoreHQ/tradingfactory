@@ -68,10 +68,10 @@ export function getBiasTextClass(direction: BiasDirection): string {
 }
 
 export function getBiasDirection(bias: number): BiasDirection {
-  if (bias <= -60) return "strong_bearish";
-  if (bias <= -20) return "bearish";
-  if (bias >= 60) return "strong_bullish";
-  if (bias >= 20) return "bullish";
+  if (bias <= -45) return "strong_bearish";
+  if (bias <= -10) return "bearish";
+  if (bias >= 45) return "strong_bullish";
+  if (bias >= 10) return "bullish";
   return "neutral";
 }
 

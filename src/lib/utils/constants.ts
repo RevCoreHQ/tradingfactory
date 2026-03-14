@@ -203,12 +203,12 @@ export const REFRESH_INTERVALS = {
 } as const;
 
 export const BIAS_THRESHOLDS = {
-  STRONG_BEARISH: -60,
-  BEARISH: -20,
-  NEUTRAL_LOW: -20,
-  NEUTRAL_HIGH: 20,
-  BULLISH: 20,
-  STRONG_BULLISH: 60,
+  STRONG_BEARISH: -45,
+  BEARISH: -10,
+  NEUTRAL_LOW: -10,
+  NEUTRAL_HIGH: 10,
+  BULLISH: 10,
+  STRONG_BULLISH: 45,
 } as const;
 
 export const MAJOR_CURRENCIES = ["USD", "EUR", "GBP", "JPY", "AUD", "NZD", "CAD", "CHF"] as const;

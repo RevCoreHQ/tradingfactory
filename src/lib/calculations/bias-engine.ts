@@ -538,9 +538,9 @@ export function calculateOverallBias(
     100
   );
 
-  // Amplify small signals when data is sparse — prevents everything clustering at neutral
-  if (Math.abs(overallBias) > 0 && Math.abs(overallBias) < 20) {
-    overallBias = overallBias * 1.8;
+  // Amplify signals when data is sparse — prevents clustering at neutral
+  if (isTechnicalDefault || isFundamentalDefault) {
+    overallBias = overallBias * 2.2;
     overallBias = clamp(overallBias, -100, 100);
   }
 
