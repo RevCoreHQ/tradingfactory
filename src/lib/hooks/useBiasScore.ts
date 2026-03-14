@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef } from "react";
 import { useMarketStore } from "@/lib/store/market-store";
 import { useMarketNews, useFearGreed, useBondYields, useCentralBanks } from "./useMarketData";
 import { useTechnicalData } from "./useTechnicalData";
-import { calculateFundamentalScore, calculateTechnicalScore, calculateOverallBias } from "@/lib/calculations/bias-engine";
+import { useLLMAnalysis } from "./useLLMAnalysis";
+import { calculateFundamentalScore, calculateTechnicalScore, calculateOverallBias, applyLLMAnalysis } from "@/lib/calculations/bias-engine";
 
 const DEFAULT_FEAR_GREED = { value: 50, label: "Neutral", timestamp: 0, previousClose: 50, previousWeek: 50, previousMonth: 50 };
 const DEFAULT_DXY = { value: 0, change: 0, changePercent: 0, history: [] as { value: number }[] };
@@ -28,6 +29,7 @@ export function useBiasScore() {
   const { data: bondData } = useBondYields();
   const { data: bankData } = useCentralBanks();
   const { indicators, candles } = useTechnicalData();
+  const { llmAnalysis } = useLLMAnalysis();
 
   const biasResult = useMemo(() => {
     const news = newsData?.items || [];
@@ -53,14 +55,16 @@ export function useBiasScore() {
       ? calculateTechnicalScore(indicators, currentPrice)
       : DEFAULT_TECHNICAL_SCORE;
 
-    return calculateOverallBias(fundamentalScore, technicalScore, biasTimeframe, instrument.id);
-  }, [newsData, fearGreedData, bondData, bankData, indicators, candles, instrument.id, biasTimeframe]);
+    const ruleBasedResult = calculateOverallBias(fundamentalScore, technicalScore, biasTimeframe, instrument.id);
+
+    // Enhance with LLM analysis (returns unmodified result if llmAnalysis is null)
+    return applyLLMAnalysis(ruleBasedResult, llmAnalysis);
+  }, [newsData, fearGreedData, bondData, bankData, indicators, candles, instrument.id, biasTimeframe, llmAnalysis]);
 
   // Use a ref to avoid setBiasResult triggering re-renders that cause infinite loops
   const prevBiasRef = useRef<string>("");
   useEffect(() => {
     if (!biasResult) return;
-    // Only update store if the bias value actually changed
     const key = `${instrument.id}:${biasResult.overallBias.toFixed(2)}:${biasResult.direction}`;
     if (key !== prevBiasRef.current) {
       prevBiasRef.current = key;

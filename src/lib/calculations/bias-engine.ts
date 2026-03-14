@@ -584,6 +584,51 @@ export function calculateOverallBias(
   };
 }
 
+// ==================== LLM INTEGRATION ====================
+
+export function applyLLMAnalysis(
+  baseResult: BiasResult,
+  llmResult: { biasAdjustment: number; confidence: number; signals: BiasSignal[]; summary: string } | null,
+): BiasResult {
+  if (!llmResult) return baseResult;
+
+  const confidenceScale = llmResult.confidence / 100;
+  const effectiveAdjustment = llmResult.biasAdjustment * confidenceScale;
+
+  const newOverallBias = clamp(
+    baseResult.overallBias + effectiveAdjustment,
+    -100,
+    100
+  );
+
+  const newDirection = getBiasDirection(newOverallBias);
+
+  const agreement = Math.sign(baseResult.overallBias) === Math.sign(newOverallBias) ? 1.1 : 0.8;
+  const newConfidence = clamp(baseResult.confidence * agreement, 10, 100);
+
+  const mergedSignals: BiasSignal[] = [...baseResult.signals];
+
+  if (llmResult.summary) {
+    mergedSignals.unshift({
+      source: "AI Analysis",
+      signal: llmResult.biasAdjustment > 5 ? "bullish" : llmResult.biasAdjustment < -5 ? "bearish" : "neutral",
+      strength: llmResult.confidence,
+      description: llmResult.summary,
+    });
+  }
+
+  mergedSignals.push(...llmResult.signals);
+
+  return {
+    ...baseResult,
+    overallBias: newOverallBias,
+    direction: newDirection,
+    confidence: newConfidence,
+    signals: mergedSignals,
+    timestamp: Date.now(),
+  };
+}
+
 // ==================== HELPERS ====================
 
 function getInstrumentCurrencies(instrument: string): { base: string[]; quote: string[] } {

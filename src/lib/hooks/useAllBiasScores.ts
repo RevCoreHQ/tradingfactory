@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef } from "react";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import { useMarketStore } from "@/lib/store/market-store";
 import { useMarketNews, useFearGreed, useBondYields, useCentralBanks } from "./useMarketData";
-import { calculateFundamentalScore, calculateOverallBias } from "@/lib/calculations/bias-engine";
+import { useLLMBatchAnalysis } from "./useLLMAnalysis";
+import { calculateFundamentalScore, calculateOverallBias, applyLLMAnalysis } from "@/lib/calculations/bias-engine";
 
 const DEFAULT_FEAR_GREED = { value: 50, label: "Neutral", timestamp: 0, previousClose: 50, previousWeek: 50, previousMonth: 50 };
 const DEFAULT_DXY = { value: 0, change: 0, changePercent: 0, history: [] as { value: number }[] };
@@ -27,7 +28,7 @@ export function useAllBiasScores() {
   const { data: bondData } = useBondYields();
   const { data: bankData } = useCentralBanks();
 
-  const allResults = useMemo(() => {
+  const ruleBasedResults = useMemo(() => {
     const news = newsData?.items || [];
     const fearGreed = fearGreedData?.current || DEFAULT_FEAR_GREED;
     const yields = bondData?.yields || [];
@@ -67,6 +68,31 @@ export function useAllBiasScores() {
     return { intraday: intradayResults, intraweek: intraweekResults };
   }, [newsData, fearGreedData, bondData, bankData]);
 
+  // Fetch LLM batch analysis using current timeframe results
+  const currentTimeframeResults = biasTimeframe === "intraday" ? ruleBasedResults.intraday : ruleBasedResults.intraweek;
+  const { batchResults } = useLLMBatchAnalysis(currentTimeframeResults);
+
+  // Enhance results with LLM analysis
+  const allResults = useMemo(() => {
+    if (!batchResults) return ruleBasedResults;
+
+    const enhanced = {
+      intraday: { ...ruleBasedResults.intraday },
+      intraweek: { ...ruleBasedResults.intraweek },
+    };
+
+    for (const [instrumentId, llmResult] of Object.entries(batchResults)) {
+      if (enhanced.intraday[instrumentId]) {
+        enhanced.intraday[instrumentId] = applyLLMAnalysis(enhanced.intraday[instrumentId], llmResult);
+      }
+      if (enhanced.intraweek[instrumentId]) {
+        enhanced.intraweek[instrumentId] = applyLLMAnalysis(enhanced.intraweek[instrumentId], llmResult);
+      }
+    }
+
+    return enhanced;
+  }, [ruleBasedResults, batchResults]);
+
   // Store all results, using ref to prevent infinite loops
   const prevHashRef = useRef("");
   useEffect(() => {
@@ -82,7 +108,6 @@ export function useAllBiasScores() {
       prevHashRef.current = hash;
       setAllBiasResults("intraday", allResults.intraday);
       setAllBiasResults("intraweek", allResults.intraweek);
-      // Backward compat: store current timeframe results in biasResults
       const currentResults = biasTimeframe === "intraday" ? allResults.intraday : allResults.intraweek;
       for (const [id, result] of Object.entries(currentResults)) {
         setBiasResult(id, result);
