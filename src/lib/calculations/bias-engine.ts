@@ -243,19 +243,22 @@ export function calculateFundamentalScore(
   const hasNews = news.length > 0;
   const hasBanks = banks.length > 0;
   const hasBonds = bondYields.length > 0;
-  const hasFearGreed = fearGreed.value !== 50;
 
   let newsW = 0.25, econW = 0.25, bankW = 0.20, sentW = 0.15, interW = 0.15;
 
   if (!hasNews && !hasBanks && !hasBonds) {
-    if (hasFearGreed) {
-      // Only Fear & Greed available - give it majority weight
-      sentW = 0.60;
-      newsW = 0.10;
-      econW = 0.10;
-      bankW = 0.10;
-      interW = 0.10;
-    }
+    // Only Fear & Greed (free API) is available — give it dominant weight
+    sentW = 0.80;
+    newsW = 0.05;
+    econW = 0.05;
+    bankW = 0.05;
+    interW = 0.05;
+  } else if (!hasNews && !hasBanks) {
+    sentW = 0.50;
+    econW = 0.15;
+    bankW = 0.05;
+    newsW = 0.10;
+    interW = 0.20;
   }
 
   const total =
@@ -506,27 +509,40 @@ export function calculateOverallBias(
   timeframe: "intraday" | "intraweek",
   instrument: string
 ): BiasResult {
-  // Intraday: weight technical higher (60/40)
-  // Intraweek: weight fundamental higher (55/45)
-  // When fundamental data is mostly unavailable, lean more on technicals
   const isFundamentalDefault = Math.abs(fundamentalScore.total - 50) < 2;
+  const isTechnicalDefault = Math.abs(technicalScore.total - 50) < 2;
   let techWeight = timeframe === "intraday" ? 0.60 : 0.45;
   let fundWeight = timeframe === "intraday" ? 0.40 : 0.55;
 
-  if (isFundamentalDefault && Math.abs(technicalScore.total - 50) > 2) {
+  if (isFundamentalDefault && !isTechnicalDefault) {
+    // No fundamental signal — lean on technicals
     techWeight = 0.85;
     fundWeight = 0.15;
+  } else if (isTechnicalDefault && !isFundamentalDefault) {
+    // No technical signal — lean on fundamentals
+    fundWeight = 0.90;
+    techWeight = 0.10;
+  } else if (isTechnicalDefault && isFundamentalDefault) {
+    // Both default — equal weight, but amplify any small signal
+    fundWeight = 0.50;
+    techWeight = 0.50;
   }
 
-  // Map 0-100 scores to -100 to +100
+  // Map 0-100 scores to -100 to +100, with amplification when one side is default
   const fundamentalBias = (fundamentalScore.total - 50) * 2;
   const technicalBias = (technicalScore.total - 50) * 2;
 
-  const overallBias = clamp(
+  let overallBias = clamp(
     fundamentalBias * fundWeight + technicalBias * techWeight,
     -100,
     100
   );
+
+  // Amplify small signals when data is sparse — prevents everything clustering at neutral
+  if (Math.abs(overallBias) > 0 && Math.abs(overallBias) < 20) {
+    overallBias = overallBias * 1.8;
+    overallBias = clamp(overallBias, -100, 100);
+  }
 
   const direction = getBiasDirection(overallBias);
 

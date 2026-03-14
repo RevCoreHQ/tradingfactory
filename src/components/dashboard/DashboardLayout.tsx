@@ -16,7 +16,6 @@ import { CurrencyStrength } from "@/components/fundamentals/CurrencyStrength";
 import { IntermarketCorrelation } from "@/components/fundamentals/IntermarketCorrelation";
 import { RedNewsWeek } from "@/components/fundamentals/RedNewsWeek";
 import { TechnicalOverview } from "@/components/technicals/TechnicalOverview";
-
 import { MarketHours } from "@/components/common/MarketHours";
 import { GlassCard } from "@/components/common/GlassCard";
 import { useMarketStore } from "@/lib/store/market-store";
@@ -58,91 +57,115 @@ export function DashboardLayout() {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="max-w-[1800px] mx-auto px-3 py-4 space-y-4">
-        {/* Daily Briefing */}
-        <DailyBriefing />
+      <main className="max-w-[1800px] mx-auto px-3 py-4 space-y-6">
+        {/* ============================================= */}
+        {/* MARKET OVERVIEW — Homepage Dashboard          */}
+        {/* ============================================= */}
+        <section className="space-y-4">
+          <h2 className="text-lg font-bold tracking-tight text-foreground">
+            Market Overview
+          </h2>
 
-        {/* Red News for the Week */}
-        <RedNewsWeek />
-
-        {/* Market Hours */}
-        <MarketHours />
-
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          {/* Left Column - Bias */}
-          <div className="lg:col-span-3 space-y-4">
-            {/* Hero Bias Gauge */}
-            <GlassCard
-              glow={bias.direction.includes("bullish") ? "bullish" : bias.direction.includes("bearish") ? "bearish" : "neutral"}
-              delay={0}
-            >
-              <div className="flex flex-col items-center py-4">
-                <h3 className="text-xs font-semibold text-muted-foreground mb-4 uppercase tracking-widest">
-                  Overall Bias — {instrument.symbol}
-                </h3>
-                <BiasGauge
-                  bias={bias.overallBias}
-                  confidence={bias.confidence}
-                  direction={bias.direction}
-                  size="lg"
-                />
-              </div>
-            </GlassCard>
-
-            {/* Instrument Grid */}
-            <InstrumentBias />
-
-            {/* Top Pairs by Conviction */}
-            <TopPairs />
+          {/* Market Hours + Fear & Greed */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div className="lg:col-span-8">
+              <MarketHours />
+            </div>
+            <div className="lg:col-span-4">
+              <FearGreedGauge />
+            </div>
           </div>
 
-          {/* Center Column - Technicals */}
-          <div className="lg:col-span-5 space-y-4">
-            <TechnicalOverview />
+          {/* Top Pairs + Red News */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div className="lg:col-span-5">
+              <TopPairs />
+            </div>
+            <div className="lg:col-span-7">
+              <RedNewsWeek />
+            </div>
+          </div>
+        </section>
+
+        {/* ============================================= */}
+        {/* INSTRUMENT ANALYSIS — Selected Instrument     */}
+        {/* ============================================= */}
+        <section className="space-y-4">
+          <h2 className="text-lg font-bold tracking-tight text-foreground">
+            Instrument Analysis — {instrument.symbol}
+          </h2>
+
+          {/* Daily Briefing */}
+          <DailyBriefing />
+
+          {/* Main Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            {/* Left Column - Bias */}
+            <div className="lg:col-span-3 space-y-4">
+              {/* Hero Bias Gauge */}
+              <GlassCard
+                glow={bias.direction.includes("bullish") ? "bullish" : bias.direction.includes("bearish") ? "bearish" : "neutral"}
+                delay={0}
+              >
+                <div className="flex flex-col items-center py-4">
+                  <h3 className="text-xs font-semibold text-muted-foreground mb-4 uppercase tracking-widest">
+                    Overall Bias — {instrument.symbol}
+                  </h3>
+                  <BiasGauge
+                    bias={bias.overallBias}
+                    confidence={bias.confidence}
+                    direction={bias.direction}
+                    size="lg"
+                  />
+                </div>
+              </GlassCard>
+
+              {/* Instrument Grid */}
+              <InstrumentBias />
+            </div>
+
+            {/* Center Column - Technicals */}
+            <div className="lg:col-span-5 space-y-4">
+              <TechnicalOverview />
+              <IntermarketCorrelation />
+            </div>
+
+            {/* Right Column - News */}
+            <div className="lg:col-span-4 space-y-4">
+              <NewsFeed />
+            </div>
           </div>
 
-          {/* Right Column - News */}
-          <div className="lg:col-span-4 space-y-4">
-            <NewsFeed />
+          {/* Second Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div className="lg:col-span-4">
+              <EconomicCalendar />
+            </div>
+            <div className="lg:col-span-4">
+              <BondYields />
+            </div>
+            <div className="lg:col-span-4">
+              <CentralBankTracker />
+            </div>
           </div>
-        </div>
 
-        {/* Second Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <div className="lg:col-span-3">
-            <FearGreedGauge />
+          {/* Third Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div className="lg:col-span-6">
+              <CurrencyStrength />
+            </div>
+            <div className="lg:col-span-6">
+              <BiasBreakdown
+                fundamentalScore={bias.fundamentalScore}
+                technicalScore={bias.technicalScore}
+                signals={bias.signals}
+              />
+            </div>
           </div>
-          <div className="lg:col-span-5">
-            <EconomicCalendar />
-          </div>
-          <div className="lg:col-span-4">
-            <BondYields />
-          </div>
-        </div>
 
-        {/* Third Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <div className="lg:col-span-3">
-            <CurrencyStrength />
-          </div>
-          <div className="lg:col-span-5">
-            <IntermarketCorrelation />
-          </div>
-          <div className="lg:col-span-4">
-            <CentralBankTracker />
-          </div>
-        </div>
-
-        {/* Bias Breakdown */}
-        <BiasBreakdown
-          fundamentalScore={bias.fundamentalScore}
-          technicalScore={bias.technicalScore}
-          signals={bias.signals}
-        />
-
-        {/* Bias History */}
-        <BiasHistory instrumentId={instrument.id} />
+          {/* Bias History */}
+          <BiasHistory instrumentId={instrument.id} />
+        </section>
       </main>
     </div>
   );
