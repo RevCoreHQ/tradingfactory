@@ -1,4 +1,4 @@
-export type InstrumentCategory = "forex" | "crypto" | "index";
+export type InstrumentCategory = "forex" | "crypto" | "index" | "commodity";
 
 export interface Instrument {
   id: string;

@@ -20,6 +20,7 @@ const DEFAULT_TECHNICAL_SCORE = {
 export function useAllBiasScores() {
   const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
   const setBiasResult = useMarketStore((s) => s.setBiasResult);
+  const setAllBiasResults = useMarketStore((s) => s.setAllBiasResults);
 
   const { data: newsData } = useMarketNews();
   const { data: fearGreedData } = useFearGreed();
@@ -33,7 +34,8 @@ export function useAllBiasScores() {
     const dxy = bondData?.dxy || DEFAULT_DXY;
     const banks = bankData?.banks || [];
 
-    const results: Record<string, ReturnType<typeof calculateOverallBias>> = {};
+    const intradayResults: Record<string, ReturnType<typeof calculateOverallBias>> = {};
+    const intraweekResults: Record<string, ReturnType<typeof calculateOverallBias>> = {};
 
     for (const inst of INSTRUMENTS) {
       const fundamentalScore = calculateFundamentalScore(
@@ -48,30 +50,45 @@ export function useAllBiasScores() {
         inst.id
       );
 
-      results[inst.id] = calculateOverallBias(
+      intradayResults[inst.id] = calculateOverallBias(
         fundamentalScore,
         DEFAULT_TECHNICAL_SCORE,
-        biasTimeframe,
+        "intraday",
+        inst.id
+      );
+      intraweekResults[inst.id] = calculateOverallBias(
+        fundamentalScore,
+        DEFAULT_TECHNICAL_SCORE,
+        "intraweek",
         inst.id
       );
     }
 
-    return results;
-  }, [newsData, fearGreedData, bondData, bankData, biasTimeframe]);
+    return { intraday: intradayResults, intraweek: intraweekResults };
+  }, [newsData, fearGreedData, bondData, bankData]);
 
   // Store all results, using ref to prevent infinite loops
   const prevHashRef = useRef("");
   useEffect(() => {
-    const hash = Object.values(allResults)
+    const intradayHash = Object.values(allResults.intraday)
       .map((r) => `${r.instrument}:${r.overallBias.toFixed(1)}`)
       .join("|");
+    const intraweekHash = Object.values(allResults.intraweek)
+      .map((r) => `${r.instrument}:${r.overallBias.toFixed(1)}`)
+      .join("|");
+    const hash = `${intradayHash}||${intraweekHash}`;
+
     if (hash !== prevHashRef.current) {
       prevHashRef.current = hash;
-      for (const [id, result] of Object.entries(allResults)) {
+      setAllBiasResults("intraday", allResults.intraday);
+      setAllBiasResults("intraweek", allResults.intraweek);
+      // Backward compat: store current timeframe results in biasResults
+      const currentResults = biasTimeframe === "intraday" ? allResults.intraday : allResults.intraweek;
+      for (const [id, result] of Object.entries(currentResults)) {
         setBiasResult(id, result);
       }
     }
-  }, [allResults, setBiasResult]);
+  }, [allResults, setBiasResult, setAllBiasResults, biasTimeframe]);
 
   return allResults;
 }

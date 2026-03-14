@@ -6,9 +6,14 @@ import { useRates } from "@/lib/hooks/useMarketData";
 import { cn } from "@/lib/utils";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { getChangeClass } from "@/lib/utils/formatters";
-import { Activity } from "lucide-react";
+import { Activity, ArrowLeft, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
-export function Header() {
+interface HeaderProps {
+  mode?: "overview" | "analysis";
+}
+
+export function Header({ mode = "analysis" }: HeaderProps) {
   const selectedInstrument = useMarketStore((s) => s.selectedInstrument);
   const setSelectedInstrument = useMarketStore((s) => s.setSelectedInstrument);
   const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
@@ -19,63 +24,87 @@ export function Header() {
   return (
     <header className="glass-card border-x-0 border-t-0 rounded-none px-4 py-3 sticky top-0 z-50">
       <div className="max-w-[1800px] mx-auto flex items-center justify-between gap-4">
-        {/* Logo */}
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-neutral-accent to-neutral-accent/50 flex items-center justify-center">
-            <Activity className="h-4 w-4 text-white" />
-          </div>
-          <div className="hidden sm:block">
-            <h1 className="text-sm font-bold tracking-tight text-foreground">Trading Factory</h1>
-            <p className="text-[10px] text-muted-foreground -mt-0.5">Professional Analysis</p>
-          </div>
+        {/* Logo + Nav */}
+        <div className="flex items-center gap-3 shrink-0">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-neutral-accent to-neutral-accent/50 flex items-center justify-center">
+              <Activity className="h-4 w-4 text-white" />
+            </div>
+            <div className="hidden sm:block">
+              <h1 className="text-sm font-bold tracking-tight text-foreground">Trading Factory</h1>
+              <p className="text-[10px] text-muted-foreground -mt-0.5">Professional Analysis</p>
+            </div>
+          </Link>
+
+          {mode === "analysis" && (
+            <Link
+              href="/"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all"
+            >
+              <ArrowLeft className="h-3 w-3" />
+              Overview
+            </Link>
+          )}
+
+          {mode === "overview" && (
+            <Link
+              href="/instrument"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all"
+            >
+              Analysis
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          )}
         </div>
 
-        {/* Instrument Tabs */}
-        <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
-          {(["forex", "crypto", "index"] as const).map((category, catIdx) => {
-            const instruments = INSTRUMENTS.filter((i) => i.category === category);
-            return (
-              <div key={category} className="flex items-center gap-1">
-                {catIdx > 0 && (
-                  <div className="w-px h-5 bg-white/10 mx-1 shrink-0" />
-                )}
-                {instruments.map((inst) => {
-                  const isActive = selectedInstrument.id === inst.id;
-                  const quote = quotes[inst.id];
+        {/* Instrument Tabs — only on analysis page */}
+        {mode === "analysis" && (
+          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
+            {(["forex", "commodity", "crypto", "index"] as const).map((category, catIdx) => {
+              const instruments = INSTRUMENTS.filter((i) => i.category === category);
+              return (
+                <div key={category} className="flex items-center gap-1">
+                  {catIdx > 0 && (
+                    <div className="w-px h-5 bg-white/10 mx-1 shrink-0" />
+                  )}
+                  {instruments.map((inst) => {
+                    const isActive = selectedInstrument.id === inst.id;
+                    const quote = quotes[inst.id];
 
-                  return (
-                    <button
-                      key={inst.id}
-                      onClick={() => setSelectedInstrument(inst)}
-                      className={cn(
-                        "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap cursor-pointer",
-                        isActive
-                          ? "bg-white/10 text-foreground"
-                          : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-                      )}
-                    >
-                      <span className="font-semibold">{inst.symbol}</span>
-                      {quote && quote.mid > 0 && (
-                        <span className="font-mono text-[10px]">
-                          <AnimatedNumber
-                            value={quote.mid}
-                            format={(n) => n.toFixed(Math.min(inst.decimalPlaces, 4))}
-                            className="text-[10px]"
-                          />
-                          {quote.changePercent !== 0 && (
-                            <span className={cn("ml-1", getChangeClass(quote.changePercent))}>
-                              {quote.changePercent > 0 ? "+" : ""}{quote.changePercent.toFixed(2)}%
-                            </span>
-                          )}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
+                    return (
+                      <button
+                        key={inst.id}
+                        onClick={() => setSelectedInstrument(inst)}
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap cursor-pointer",
+                          isActive
+                            ? "bg-white/10 text-foreground"
+                            : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                        )}
+                      >
+                        <span className="font-semibold">{inst.symbol}</span>
+                        {quote && quote.mid > 0 && (
+                          <span className="font-mono text-[10px]">
+                            <AnimatedNumber
+                              value={quote.mid}
+                              format={(n) => n.toFixed(Math.min(inst.decimalPlaces, 4))}
+                              className="text-[10px]"
+                            />
+                            {quote.changePercent !== 0 && (
+                              <span className={cn("ml-1", getChangeClass(quote.changePercent))}>
+                                {quote.changePercent > 0 ? "+" : ""}{quote.changePercent.toFixed(2)}%
+                              </span>
+                            )}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Right section */}
         <div className="flex items-center gap-2 shrink-0">

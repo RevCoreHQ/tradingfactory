@@ -1,21 +1,26 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import { useMarketStore } from "@/lib/store/market-store";
 import { GlassCard } from "@/components/common/GlassCard";
-import { StatusBadge } from "@/components/common/StatusBadge";
-import { getBiasLabel, getBiasColor } from "@/lib/utils/formatters";
+import { getBiasColor } from "@/lib/utils/formatters";
 import { cn } from "@/lib/utils";
 import { TrendingUp } from "lucide-react";
 
 export function TopPairs() {
-  const biasResults = useMarketStore((s) => s.biasResults);
+  const [topPairsTimeframe, setTopPairsTimeframe] = useState<"intraday" | "intraweek">("intraday");
+  const allBiasResults = useMarketStore((s) => s.allBiasResults);
   const setSelectedInstrument = useMarketStore((s) => s.setSelectedInstrument);
+  const router = useRouter();
+
+  const currentResults = allBiasResults[topPairsTimeframe];
 
   // Sort instruments by absolute bias value (highest conviction first)
   const ranked = INSTRUMENTS
     .map((inst) => {
-      const bias = biasResults[inst.id];
+      const bias = currentResults[inst.id];
       return {
         instrument: inst,
         bias: bias?.overallBias || 0,
@@ -34,6 +39,26 @@ export function TopPairs() {
           <TrendingUp className="h-3.5 w-3.5 text-neutral-accent" />
         </div>
         <h3 className="text-sm font-semibold">Top Pairs by Conviction</h3>
+        <div className="flex items-center gap-0.5 bg-white/5 rounded-lg p-0.5 ml-auto">
+          <button
+            onClick={() => setTopPairsTimeframe("intraday")}
+            className={cn(
+              "px-2.5 py-1 rounded-md text-[10px] font-medium transition-all",
+              topPairsTimeframe === "intraday" ? "bg-white/10 text-foreground" : "text-muted-foreground"
+            )}
+          >
+            Day
+          </button>
+          <button
+            onClick={() => setTopPairsTimeframe("intraweek")}
+            className={cn(
+              "px-2.5 py-1 rounded-md text-[10px] font-medium transition-all",
+              topPairsTimeframe === "intraweek" ? "bg-white/10 text-foreground" : "text-muted-foreground"
+            )}
+          >
+            Week
+          </button>
+        </div>
       </div>
 
       {!hasAnyBias ? (
@@ -50,7 +75,10 @@ export function TopPairs() {
             return (
               <button
                 key={item.instrument.id}
-                onClick={() => setSelectedInstrument(item.instrument)}
+                onClick={() => {
+                  setSelectedInstrument(item.instrument);
+                  router.push("/instrument");
+                }}
                 className="flex items-center gap-2 w-full text-left rounded-lg px-2 py-1.5 hover:bg-white/5 transition-colors cursor-pointer"
               >
                 <span className="text-[10px] text-muted-foreground/50 w-4 font-mono">{idx + 1}</span>

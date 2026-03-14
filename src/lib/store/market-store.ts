@@ -10,12 +10,17 @@ interface MarketStore {
   selectedTimeframe: string;
   biasTimeframe: "intraday" | "intraweek";
   biasResults: Record<string, BiasResult>;
+  allBiasResults: {
+    intraday: Record<string, BiasResult>;
+    intraweek: Record<string, BiasResult>;
+  };
   activeTab: string;
 
   setSelectedInstrument: (instrument: Instrument) => void;
   setSelectedTimeframe: (timeframe: string) => void;
   setBiasTimeframe: (timeframe: "intraday" | "intraweek") => void;
   setBiasResult: (instrumentId: string, result: BiasResult) => void;
+  setAllBiasResults: (timeframe: "intraday" | "intraweek", results: Record<string, BiasResult>) => void;
   setActiveTab: (tab: string) => void;
 }
 
@@ -24,6 +29,7 @@ export const useMarketStore = create<MarketStore>((set) => ({
   selectedTimeframe: "1h",
   biasTimeframe: "intraday",
   biasResults: {},
+  allBiasResults: { intraday: {}, intraweek: {} },
   activeTab: "overview",
 
   setSelectedInstrument: (instrument) => set({ selectedInstrument: instrument }),
@@ -32,6 +38,13 @@ export const useMarketStore = create<MarketStore>((set) => ({
   setBiasResult: (instrumentId, result) =>
     set((state) => ({
       biasResults: { ...state.biasResults, [instrumentId]: result },
+    })),
+  setAllBiasResults: (timeframe, results) =>
+    set((state) => ({
+      allBiasResults: {
+        ...state.allBiasResults,
+        [timeframe]: results,
+      },
     })),
   setActiveTab: (tab) => set({ activeTab: tab }),
 }));

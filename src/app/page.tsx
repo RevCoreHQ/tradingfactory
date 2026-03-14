@@ -1,9 +1,5 @@
-import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { MarketOverview } from "@/components/dashboard/MarketOverview";
 
 export default function Home() {
-  return (
-    <main className="min-h-screen bg-background">
-      <DashboardLayout />
-    </main>
-  );
+  return <MarketOverview />;
 }

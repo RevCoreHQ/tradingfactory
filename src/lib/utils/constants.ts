@@ -79,6 +79,18 @@ export const INSTRUMENTS: Instrument[] = [
     pipSize: 0.0001,
     decimalPlaces: 5,
   },
+  // Commodities
+  {
+    id: "XAU_USD",
+    symbol: "XAU/USD",
+    displayName: "Gold",
+    category: "commodity",
+    alphavantageSymbol: "XAU",
+    alphavantageToSymbol: "USD",
+    finnhubSymbol: "OANDA:XAU_USD",
+    pipSize: 0.01,
+    decimalPlaces: 2,
+  },
   // Crypto
   {
     id: "BTC_USD",

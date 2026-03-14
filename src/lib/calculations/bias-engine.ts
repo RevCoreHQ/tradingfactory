@@ -105,12 +105,18 @@ function scoreCentralBankPolicy(
   }
 
   // For crypto and indices, central bank policy is about monetary conditions
-  if (["BTC_USD", "ETH_USD", "US100", "US30", "SPX500", "US2000"].includes(instrument)) {
+  if (["BTC_USD", "ETH_USD", "US100", "US30", "SPX500", "US2000", "XAU_USD"].includes(instrument)) {
     const fed = banks.find((b) => b.currency === "USD");
     if (fed) {
-      // Dovish Fed = bullish for risk assets
-      if (fed.policyStance === "dovish" || fed.rateDirection === "cutting") score = 65;
-      else if (fed.policyStance === "hawkish" || fed.rateDirection === "hiking") score = 35;
+      if (instrument === "XAU_USD") {
+        // Dovish Fed = bullish for gold (lower rates reduce opportunity cost)
+        if (fed.policyStance === "dovish" || fed.rateDirection === "cutting") score = 70;
+        else if (fed.policyStance === "hawkish" || fed.rateDirection === "hiking") score = 30;
+      } else {
+        // Dovish Fed = bullish for risk assets
+        if (fed.policyStance === "dovish" || fed.rateDirection === "cutting") score = 65;
+        else if (fed.policyStance === "hawkish" || fed.rateDirection === "hiking") score = 35;
+      }
     }
   }
 
@@ -127,7 +133,10 @@ function scoreMarketSentiment(
   const inst = INSTRUMENTS.find((i) => i.id === instrument);
   const category = inst?.category || "forex";
 
-  if (category === "crypto" || category === "index") {
+  if (category === "commodity") {
+    // Gold: fear = safe-haven demand = bullish
+    score = 100 - fgValue;
+  } else if (category === "crypto" || category === "index") {
     // Risk assets: greed = bullish
     score = fgValue;
   } else if (instrument.startsWith("USD_")) {
@@ -181,6 +190,16 @@ function scoreIntermarketCorrelation(
       else if (isUsdXxx) score -= 15;
       else if (category === "crypto") score += 10;
       else if (category === "index") score += 5;
+    }
+
+    if (category === "commodity") {
+      // Gold inversely correlated with USD strength
+      if (dxy.change > 0) score -= 15;
+      else if (dxy.change < 0) score += 15;
+      // Rising yields bearish for gold (opportunity cost)
+      const y10 = bondYields.find((y) => y.maturity === "10Y");
+      if (y10 && y10.change > 0) score -= 8;
+      else if (y10 && y10.change < 0) score += 8;
     }
 
     signals.push({
@@ -582,6 +601,7 @@ function getInstrumentCurrencies(instrument: string): { base: string[]; quote: s
     US30: { base: [], quote: ["USD"] },
     SPX500: { base: [], quote: ["USD"] },
     US2000: { base: [], quote: ["USD"] },
+    XAU_USD: { base: ["XAU"], quote: ["USD"] },
   };
   return map[instrument] || { base: [], quote: [] };
 }
