@@ -16,7 +16,7 @@ import { CurrencyStrength } from "@/components/fundamentals/CurrencyStrength";
 import { IntermarketCorrelation } from "@/components/fundamentals/IntermarketCorrelation";
 import { RedNewsWeek } from "@/components/fundamentals/RedNewsWeek";
 import { TechnicalOverview } from "@/components/technicals/TechnicalOverview";
-import { PriceChart } from "@/components/technicals/PriceChart";
+
 import { MarketHours } from "@/components/common/MarketHours";
 import { GlassCard } from "@/components/common/GlassCard";
 import { useMarketStore } from "@/lib/store/market-store";
@@ -97,9 +97,8 @@ export function DashboardLayout() {
             <TopPairs />
           </div>
 
-          {/* Center Column - Charts & Technicals */}
+          {/* Center Column - Technicals */}
           <div className="lg:col-span-5 space-y-4">
-            <PriceChart />
             <TechnicalOverview />
           </div>
 
