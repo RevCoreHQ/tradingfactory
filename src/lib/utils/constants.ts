@@ -1,0 +1,136 @@
+import type { Instrument, SessionInfo } from "@/lib/types/market";
+
+export const INSTRUMENTS: Instrument[] = [
+  {
+    id: "EUR_USD",
+    symbol: "EUR/USD",
+    displayName: "Euro / US Dollar",
+    category: "forex",
+    alphavantageSymbol: "EUR",
+    alphavantageToSymbol: "USD",
+    finnhubSymbol: "OANDA:EUR_USD",
+    pipSize: 0.0001,
+    decimalPlaces: 5,
+  },
+  {
+    id: "GBP_USD",
+    symbol: "GBP/USD",
+    displayName: "British Pound / US Dollar",
+    category: "forex",
+    alphavantageSymbol: "GBP",
+    alphavantageToSymbol: "USD",
+    finnhubSymbol: "OANDA:GBP_USD",
+    pipSize: 0.0001,
+    decimalPlaces: 5,
+  },
+  {
+    id: "USD_JPY",
+    symbol: "USD/JPY",
+    displayName: "US Dollar / Japanese Yen",
+    category: "forex",
+    alphavantageSymbol: "USD",
+    alphavantageToSymbol: "JPY",
+    finnhubSymbol: "OANDA:USD_JPY",
+    pipSize: 0.01,
+    decimalPlaces: 3,
+  },
+  {
+    id: "BTC_USD",
+    symbol: "BTC/USD",
+    displayName: "Bitcoin",
+    category: "crypto",
+    alphavantageSymbol: "BTC",
+    alphavantageToSymbol: "USD",
+    coingeckoId: "bitcoin",
+    pipSize: 0.01,
+    decimalPlaces: 2,
+  },
+  {
+    id: "US100",
+    symbol: "US100",
+    displayName: "Nasdaq 100",
+    category: "index",
+    alphavantageSymbol: "NDX",
+    finnhubSymbol: "FOREXCOM:NSXUSD",
+    pipSize: 0.1,
+    decimalPlaces: 1,
+  },
+  {
+    id: "US30",
+    symbol: "US30",
+    displayName: "Dow Jones 30",
+    category: "index",
+    alphavantageSymbol: "DJI",
+    finnhubSymbol: "FOREXCOM:DJI",
+    pipSize: 1,
+    decimalPlaces: 0,
+  },
+];
+
+export const TRADING_SESSIONS: Record<string, SessionInfo> = {
+  sydney: {
+    name: "Sydney",
+    city: "Sydney",
+    openHourUTC: 21,
+    closeHourUTC: 6,
+    timezone: "Australia/Sydney",
+    color: "#8B5CF6",
+  },
+  tokyo: {
+    name: "Tokyo",
+    city: "Tokyo",
+    openHourUTC: 0,
+    closeHourUTC: 9,
+    timezone: "Asia/Tokyo",
+    color: "#F59E0B",
+  },
+  london: {
+    name: "London",
+    city: "London",
+    openHourUTC: 7,
+    closeHourUTC: 16,
+    timezone: "Europe/London",
+    color: "#3B82F6",
+  },
+  newyork: {
+    name: "New York",
+    city: "New York",
+    openHourUTC: 12,
+    closeHourUTC: 21,
+    timezone: "America/New_York",
+    color: "#EF4444",
+  },
+};
+
+export const FRED_SERIES = {
+  FED_FUNDS_RATE: "FEDFUNDS",
+  TREASURY_2Y: "DGS2",
+  TREASURY_10Y: "DGS10",
+  TREASURY_30Y: "DGS30",
+  DXY: "DTWEXBGS",
+  CPI: "CPIAUCSL",
+  GDP: "GDP",
+  UNEMPLOYMENT: "UNRATE",
+  FED_FUNDS_TARGET_UPPER: "DFEDTARU",
+} as const;
+
+export const REFRESH_INTERVALS = {
+  PRICES: 30_000,
+  NEWS: 300_000,
+  ECONOMIC_CALENDAR: 900_000,
+  FEAR_GREED: 300_000,
+  BOND_YIELDS: 300_000,
+  BIAS_RECALCULATION: 60_000,
+  INDICATORS: 60_000,
+} as const;
+
+export const BIAS_THRESHOLDS = {
+  STRONG_BEARISH: -60,
+  BEARISH: -20,
+  NEUTRAL_LOW: -20,
+  NEUTRAL_HIGH: 20,
+  BULLISH: 20,
+  STRONG_BULLISH: 60,
+} as const;
+
+export const MAJOR_CURRENCIES = ["USD", "EUR", "GBP", "JPY", "AUD", "NZD", "CAD", "CHF"] as const;
