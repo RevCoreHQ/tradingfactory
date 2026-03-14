@@ -1,10 +1,21 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useMarketStore } from "@/lib/store/market-store";
 import { useMarketNews, useFearGreed, useBondYields, useCentralBanks } from "./useMarketData";
 import { useTechnicalData } from "./useTechnicalData";
 import { calculateFundamentalScore, calculateTechnicalScore, calculateOverallBias } from "@/lib/calculations/bias-engine";
+
+const DEFAULT_FEAR_GREED = { value: 50, label: "Neutral", timestamp: 0, previousClose: 50, previousWeek: 50, previousMonth: 50 };
+const DEFAULT_DXY = { value: 0, change: 0, changePercent: 0, history: [] as { value: number }[] };
+const DEFAULT_TECHNICAL_SCORE = {
+  total: 50,
+  trendDirection: 50,
+  momentum: 50,
+  volatility: 50,
+  volumeAnalysis: 50,
+  supportResistance: 50,
+};
 
 export function useBiasScore() {
   const instrument = useMarketStore((s) => s.selectedInstrument);
@@ -20,9 +31,9 @@ export function useBiasScore() {
 
   const biasResult = useMemo(() => {
     const news = newsData?.items || [];
-    const fearGreed = fearGreedData?.current || { value: 50, label: "Neutral", timestamp: 0, previousClose: 50, previousWeek: 50, previousMonth: 50 };
+    const fearGreed = fearGreedData?.current || DEFAULT_FEAR_GREED;
     const yields = bondData?.yields || [];
-    const dxy = bondData?.dxy || { value: 0, change: 0, changePercent: 0, history: [] };
+    const dxy = bondData?.dxy || DEFAULT_DXY;
     const banks = bankData?.banks || [];
 
     const fundamentalScore = calculateFundamentalScore(
@@ -40,20 +51,19 @@ export function useBiasScore() {
     const currentPrice = candles.length > 0 ? candles[candles.length - 1].close : 0;
     const technicalScore = indicators
       ? calculateTechnicalScore(indicators, currentPrice)
-      : {
-          total: 50,
-          trendDirection: 50,
-          momentum: 50,
-          volatility: 50,
-          volumeAnalysis: 50,
-          supportResistance: 50,
-        };
+      : DEFAULT_TECHNICAL_SCORE;
 
     return calculateOverallBias(fundamentalScore, technicalScore, biasTimeframe, instrument.id);
   }, [newsData, fearGreedData, bondData, bankData, indicators, candles, instrument.id, biasTimeframe]);
 
+  // Use a ref to avoid setBiasResult triggering re-renders that cause infinite loops
+  const prevBiasRef = useRef<string>("");
   useEffect(() => {
-    if (biasResult) {
+    if (!biasResult) return;
+    // Only update store if the bias value actually changed
+    const key = `${instrument.id}:${biasResult.overallBias.toFixed(2)}:${biasResult.direction}`;
+    if (key !== prevBiasRef.current) {
+      prevBiasRef.current = key;
       setBiasResult(instrument.id, biasResult);
     }
   }, [biasResult, instrument.id, setBiasResult]);

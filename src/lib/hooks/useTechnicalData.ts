@@ -10,6 +10,8 @@ import { REFRESH_INTERVALS } from "@/lib/utils/constants";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
+const EMPTY_CANDLES: OHLCV[] = [];
+
 export function useTechnicalData() {
   const instrument = useMarketStore((s) => s.selectedInstrument);
   const timeframe = useMarketStore((s) => s.selectedTimeframe);
@@ -23,7 +25,8 @@ export function useTechnicalData() {
     revalidateOnFocus: false,
   });
 
-  const candles = data?.candles || [];
+  // Use stable reference for empty array to prevent infinite re-render loops
+  const candles = data?.candles ?? EMPTY_CANDLES;
 
   const indicators: TechnicalSummary | null = useMemo(() => {
     if (candles.length < 20) return null;
