@@ -3,6 +3,7 @@ import type { TechnicalSummary } from "@/lib/types/indicators";
 import type { NewsItem, FearGreedData, BondYield, CentralBankRate } from "@/lib/types/market";
 import { getBiasDirection } from "@/lib/utils/formatters";
 import { clamp } from "@/lib/utils/formatters";
+import { INSTRUMENTS } from "@/lib/utils/constants";
 
 // ==================== FUNDAMENTAL SCORING ====================
 
@@ -104,7 +105,7 @@ function scoreCentralBankPolicy(
   }
 
   // For crypto and indices, central bank policy is about monetary conditions
-  if (instrument === "BTC_USD" || instrument === "US100" || instrument === "US30") {
+  if (["BTC_USD", "ETH_USD", "US100", "US30", "SPX500", "US2000"].includes(instrument)) {
     const fed = banks.find((b) => b.currency === "USD");
     if (fed) {
       // Dovish Fed = bullish for risk assets
@@ -123,25 +124,18 @@ function scoreMarketSentiment(
   const fgValue = fearGreed.value;
   let score = 50;
 
-  // For crypto: direct mapping
-  if (instrument === "BTC_USD") {
+  const inst = INSTRUMENTS.find((i) => i.id === instrument);
+  const category = inst?.category || "forex";
+
+  if (category === "crypto" || category === "index") {
+    // Risk assets: greed = bullish
     score = fgValue;
-  }
-  // For risk assets (indices): greed = bullish, fear = bearish
-  else if (instrument === "US100" || instrument === "US30") {
+  } else if (instrument.startsWith("USD_")) {
+    // USD is base: fear = USD strength = bullish
+    score = 100 - fgValue;
+  } else {
+    // XXX/USD pairs: greed = risk-on = bullish
     score = fgValue;
-  }
-  // For USD pairs: fear = risk-off = USD bullish
-  else if (instrument.startsWith("USD")) {
-    score = 100 - fgValue; // Inverse: fear is bullish for USD
-  }
-  // For pairs like EUR/USD, GBP/USD: greed = risk-on = bullish
-  else if (instrument.endsWith("USD")) {
-    score = fgValue;
-  }
-  // JPY is safe haven: fear = bullish for JPY = bearish for USD/JPY
-  if (instrument === "USD_JPY") {
-    score = fgValue; // Greed = risk-on = bullish USD/JPY
   }
 
   const label = fearGreed.label;
@@ -165,28 +159,33 @@ function scoreIntermarketCorrelation(
   let score = 50;
   const signals: BiasSignal[] = [];
 
+  const inst = INSTRUMENTS.find((i) => i.id === instrument);
+  const category = inst?.category || "forex";
+  const isXxxUsd = category === "forex" && !instrument.startsWith("USD_");
+  const isUsdXxx = category === "forex" && instrument.startsWith("USD_");
+
   // DXY correlation
   if (dxy.value > 0) {
     // DXY rising = USD strengthening
     if (dxy.change > 0) {
-      // Bearish for EUR/USD, GBP/USD (sell base against USD)
-      if (instrument === "EUR_USD" || instrument === "GBP_USD") score -= 15;
-      // Bullish for USD/JPY (buy USD)
-      else if (instrument === "USD_JPY") score += 15;
-      // Bearish for gold/BTC (denominated in USD)
-      else if (instrument === "BTC_USD") score -= 10;
+      // Bearish for XXX/USD forex pairs (sell base against USD)
+      if (isXxxUsd) score -= 15;
+      // Bullish for USD/XXX forex pairs (buy USD)
+      else if (isUsdXxx) score += 15;
+      // Bearish for crypto (denominated in USD)
+      else if (category === "crypto") score -= 10;
       // Mixed for indices
-      else if (instrument === "US100" || instrument === "US30") score -= 5;
+      else if (category === "index") score -= 5;
     } else if (dxy.change < 0) {
-      if (instrument === "EUR_USD" || instrument === "GBP_USD") score += 15;
-      else if (instrument === "USD_JPY") score -= 15;
-      else if (instrument === "BTC_USD") score += 10;
-      else if (instrument === "US100" || instrument === "US30") score += 5;
+      if (isXxxUsd) score += 15;
+      else if (isUsdXxx) score -= 15;
+      else if (category === "crypto") score += 10;
+      else if (category === "index") score += 5;
     }
 
     signals.push({
       source: "DXY",
-      signal: dxy.change > 0 ? (instrument.endsWith("USD") && !instrument.startsWith("USD") ? "bearish" : "bullish") : (instrument.endsWith("USD") && !instrument.startsWith("USD") ? "bullish" : "bearish"),
+      signal: dxy.change > 0 ? (isXxxUsd ? "bearish" : "bullish") : (isXxxUsd ? "bullish" : "bearish"),
       strength: Math.min(80, Math.abs(dxy.change) * 50),
       description: `Dollar Index at ${dxy.value.toFixed(2)}, ${dxy.change > 0 ? "strengthening" : "weakening"} (${dxy.change > 0 ? "+" : ""}${dxy.change.toFixed(2)})`,
     });
@@ -202,8 +201,8 @@ function scoreIntermarketCorrelation(
 
     if (isInverted) {
       // Inverted yield curve = recession signal
-      if (instrument === "US100" || instrument === "US30") score -= 10;
-      if (instrument === "BTC_USD") score -= 5;
+      if (category === "index") score -= 10;
+      if (category === "crypto") score -= 5;
 
       signals.push({
         source: "Yield Curve",
@@ -215,8 +214,8 @@ function scoreIntermarketCorrelation(
 
     // Rising yields generally USD bullish
     if (y10.change > 0) {
-      if (instrument === "EUR_USD" || instrument === "GBP_USD") score -= 5;
-      else if (instrument === "USD_JPY") score += 5;
+      if (isXxxUsd) score -= 5;
+      else if (isUsdXxx) score += 5;
     }
   }
 
@@ -240,12 +239,31 @@ export function calculateFundamentalScore(
   const ms = scoreMarketSentiment(fearGreed, instrument);
   const ic = scoreIntermarketCorrelation(dxy, bondYields, instrument);
 
+  // Redistribute weights when data sources are unavailable
+  const hasNews = news.length > 0;
+  const hasBanks = banks.length > 0;
+  const hasBonds = bondYields.length > 0;
+  const hasFearGreed = fearGreed.value !== 50;
+
+  let newsW = 0.25, econW = 0.25, bankW = 0.20, sentW = 0.15, interW = 0.15;
+
+  if (!hasNews && !hasBanks && !hasBonds) {
+    if (hasFearGreed) {
+      // Only Fear & Greed available - give it majority weight
+      sentW = 0.60;
+      newsW = 0.10;
+      econW = 0.10;
+      bankW = 0.10;
+      interW = 0.10;
+    }
+  }
+
   const total =
-    ns.score * 0.25 +
-    ed.score * 0.25 +
-    cb.score * 0.20 +
-    ms.score * 0.15 +
-    ic.score * 0.15;
+    ns.score * newsW +
+    ed.score * econW +
+    cb.score * bankW +
+    ms.score * sentW +
+    ic.score * interW;
 
   return {
     total: clamp(total, 0, 100),
@@ -490,8 +508,15 @@ export function calculateOverallBias(
 ): BiasResult {
   // Intraday: weight technical higher (60/40)
   // Intraweek: weight fundamental higher (55/45)
-  const techWeight = timeframe === "intraday" ? 0.60 : 0.45;
-  const fundWeight = timeframe === "intraday" ? 0.40 : 0.55;
+  // When fundamental data is mostly unavailable, lean more on technicals
+  const isFundamentalDefault = Math.abs(fundamentalScore.total - 50) < 2;
+  let techWeight = timeframe === "intraday" ? 0.60 : 0.45;
+  let fundWeight = timeframe === "intraday" ? 0.40 : 0.55;
+
+  if (isFundamentalDefault && Math.abs(technicalScore.total - 50) > 2) {
+    techWeight = 0.85;
+    fundWeight = 0.15;
+  }
 
   // Map 0-100 scores to -100 to +100
   const fundamentalBias = (fundamentalScore.total - 50) * 2;
@@ -530,10 +555,17 @@ function getInstrumentCurrencies(instrument: string): { base: string[]; quote: s
   const map: Record<string, { base: string[]; quote: string[] }> = {
     EUR_USD: { base: ["EUR"], quote: ["USD"] },
     GBP_USD: { base: ["GBP"], quote: ["USD"] },
+    AUD_USD: { base: ["AUD"], quote: ["USD"] },
+    NZD_USD: { base: ["NZD"], quote: ["USD"] },
     USD_JPY: { base: ["USD"], quote: ["JPY"] },
+    USD_CAD: { base: ["USD"], quote: ["CAD"] },
+    USD_CHF: { base: ["USD"], quote: ["CHF"] },
     BTC_USD: { base: [], quote: ["USD"] },
+    ETH_USD: { base: [], quote: ["USD"] },
     US100: { base: [], quote: ["USD"] },
     US30: { base: [], quote: ["USD"] },
+    SPX500: { base: [], quote: ["USD"] },
+    US2000: { base: [], quote: ["USD"] },
   };
   return map[instrument] || { base: [], quote: [] };
 }

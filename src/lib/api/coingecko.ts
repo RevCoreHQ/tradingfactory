@@ -17,17 +17,15 @@ async function cgFetch<T>(endpoint: string, params: Record<string, string> = {})
   return res.json();
 }
 
-export async function fetchBitcoinPrice(): Promise<PriceQuote> {
-  const data = await cgFetch<{
-    bitcoin: {
+export async function fetchCryptoPrice(coingeckoId: string, instrumentId: string): Promise<PriceQuote> {
+  const data = await cgFetch<Record<string, {
       usd: number;
       usd_24h_change: number;
       usd_24h_high: number;
       usd_24h_low: number;
       last_updated_at: number;
-    };
-  }>("/simple/price", {
-    ids: "bitcoin",
+    }>>("/simple/price", {
+    ids: coingeckoId,
     vs_currencies: "usd",
     include_24hr_change: "true",
     include_24hr_high: "true",
@@ -35,22 +33,22 @@ export async function fetchBitcoinPrice(): Promise<PriceQuote> {
     include_last_updated_at: "true",
   });
 
-  const btc = data.bitcoin;
+  const coin = data[coingeckoId];
   return {
-    instrument: "BTC_USD",
-    bid: btc.usd,
-    ask: btc.usd,
-    mid: btc.usd,
-    timestamp: btc.last_updated_at * 1000,
-    change: (btc.usd * btc.usd_24h_change) / 100,
-    changePercent: btc.usd_24h_change,
-    high24h: btc.usd_24h_high || btc.usd,
-    low24h: btc.usd_24h_low || btc.usd,
+    instrument: instrumentId,
+    bid: coin.usd,
+    ask: coin.usd,
+    mid: coin.usd,
+    timestamp: coin.last_updated_at * 1000,
+    change: (coin.usd * coin.usd_24h_change) / 100,
+    changePercent: coin.usd_24h_change,
+    high24h: coin.usd_24h_high || coin.usd,
+    low24h: coin.usd_24h_low || coin.usd,
   };
 }
 
-export async function fetchBitcoinOHLC(days: number = 30): Promise<OHLCV[]> {
-  const data = await cgFetch<number[][]>(`/coins/bitcoin/ohlc`, {
+export async function fetchCryptoOHLC(coingeckoId: string, days: number = 30): Promise<OHLCV[]> {
+  const data = await cgFetch<number[][]>(`/coins/${coingeckoId}/ohlc`, {
     vs_currency: "usd",
     days: String(days),
   });
@@ -65,7 +63,7 @@ export async function fetchBitcoinOHLC(days: number = 30): Promise<OHLCV[]> {
   }));
 }
 
-export async function fetchBitcoinMarketData(): Promise<{
+export async function fetchCryptoMarketData(coingeckoId: string): Promise<{
   marketCap: number;
   volume24h: number;
   dominance: number;
@@ -81,16 +79,22 @@ export async function fetchBitcoinMarketData(): Promise<{
       price_change_percentage_7d: number;
       price_change_percentage_30d: number;
     };
-  }>("/coins/bitcoin", { localization: "false", tickers: "false", community_data: "false", developer_data: "false" });
+  }>(`/coins/${coingeckoId}`, { localization: "false", tickers: "false", community_data: "false", developer_data: "false" });
+
+  const dominanceKeyMap: Record<string, string> = {
+    bitcoin: "btc",
+    ethereum: "eth",
+  };
+  const dominanceKey = dominanceKeyMap[coingeckoId] || coingeckoId.slice(0, 3);
 
   const global = await cgFetch<{
-    data: { market_cap_percentage: { btc: number } };
+    data: { market_cap_percentage: Record<string, number> };
   }>("/global");
 
   return {
     marketCap: data.market_data.market_cap.usd,
     volume24h: data.market_data.total_volume.usd,
-    dominance: global.data.market_cap_percentage.btc,
+    dominance: global.data.market_cap_percentage[dominanceKey] || 0,
     circulatingSupply: data.market_data.circulating_supply,
     priceChange7d: data.market_data.price_change_percentage_7d,
     priceChange30d: data.market_data.price_change_percentage_30d,

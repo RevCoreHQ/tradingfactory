@@ -6,6 +6,7 @@ import { BiasGauge } from "@/components/bias/BiasGauge";
 import { BiasBreakdown } from "@/components/bias/BiasBreakdown";
 import { BiasHistory } from "@/components/bias/BiasHistory";
 import { InstrumentBias } from "@/components/bias/InstrumentBias";
+import { TopPairs } from "@/components/bias/TopPairs";
 import { NewsFeed } from "@/components/fundamentals/NewsFeed";
 import { EconomicCalendar } from "@/components/fundamentals/EconomicCalendar";
 import { FearGreedGauge } from "@/components/fundamentals/FearGreedGauge";
@@ -13,18 +14,23 @@ import { BondYields } from "@/components/fundamentals/BondYields";
 import { CentralBankTracker } from "@/components/fundamentals/CentralBankTracker";
 import { CurrencyStrength } from "@/components/fundamentals/CurrencyStrength";
 import { IntermarketCorrelation } from "@/components/fundamentals/IntermarketCorrelation";
+import { RedNewsWeek } from "@/components/fundamentals/RedNewsWeek";
 import { TechnicalOverview } from "@/components/technicals/TechnicalOverview";
 import { PriceChart } from "@/components/technicals/PriceChart";
-import { SessionClock } from "@/components/common/SessionClock";
+import { MarketHours } from "@/components/common/MarketHours";
 import { GlassCard } from "@/components/common/GlassCard";
 import { useMarketStore } from "@/lib/store/market-store";
 import { useBiasScore } from "@/lib/hooks/useBiasScore";
+import { useAllBiasScores } from "@/lib/hooks/useAllBiasScores";
 import { saveBiasToHistory } from "@/components/bias/BiasHistory";
 import { useEffect } from "react";
 
 export function DashboardLayout() {
   const instrument = useMarketStore((s) => s.selectedInstrument);
   const { biasResult } = useBiasScore();
+
+  // Compute bias for all instruments
+  useAllBiasScores();
 
   // Save bias to history once per day
   useEffect(() => {
@@ -56,6 +62,12 @@ export function DashboardLayout() {
         {/* Daily Briefing */}
         <DailyBriefing />
 
+        {/* Red News for the Week */}
+        <RedNewsWeek />
+
+        {/* Market Hours */}
+        <MarketHours />
+
         {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Left Column - Bias */}
@@ -80,6 +92,9 @@ export function DashboardLayout() {
 
             {/* Instrument Grid */}
             <InstrumentBias />
+
+            {/* Top Pairs by Conviction */}
+            <TopPairs />
           </div>
 
           {/* Center Column - Charts & Technicals */}
@@ -129,11 +144,6 @@ export function DashboardLayout() {
 
         {/* Bias History */}
         <BiasHistory instrumentId={instrument.id} />
-
-        {/* Session Clock */}
-        <GlassCard delay={0.5}>
-          <SessionClock />
-        </GlassCard>
       </main>
     </div>
   );

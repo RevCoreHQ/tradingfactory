@@ -1,6 +1,7 @@
 import type { Instrument, SessionInfo } from "@/lib/types/market";
 
 export const INSTRUMENTS: Instrument[] = [
+  // Forex
   {
     id: "EUR_USD",
     symbol: "EUR/USD",
@@ -24,6 +25,28 @@ export const INSTRUMENTS: Instrument[] = [
     decimalPlaces: 5,
   },
   {
+    id: "AUD_USD",
+    symbol: "AUD/USD",
+    displayName: "Australian Dollar / US Dollar",
+    category: "forex",
+    alphavantageSymbol: "AUD",
+    alphavantageToSymbol: "USD",
+    finnhubSymbol: "OANDA:AUD_USD",
+    pipSize: 0.0001,
+    decimalPlaces: 5,
+  },
+  {
+    id: "NZD_USD",
+    symbol: "NZD/USD",
+    displayName: "New Zealand Dollar / US Dollar",
+    category: "forex",
+    alphavantageSymbol: "NZD",
+    alphavantageToSymbol: "USD",
+    finnhubSymbol: "OANDA:NZD_USD",
+    pipSize: 0.0001,
+    decimalPlaces: 5,
+  },
+  {
     id: "USD_JPY",
     symbol: "USD/JPY",
     displayName: "US Dollar / Japanese Yen",
@@ -35,6 +58,29 @@ export const INSTRUMENTS: Instrument[] = [
     decimalPlaces: 3,
   },
   {
+    id: "USD_CAD",
+    symbol: "USD/CAD",
+    displayName: "US Dollar / Canadian Dollar",
+    category: "forex",
+    alphavantageSymbol: "USD",
+    alphavantageToSymbol: "CAD",
+    finnhubSymbol: "OANDA:USD_CAD",
+    pipSize: 0.0001,
+    decimalPlaces: 5,
+  },
+  {
+    id: "USD_CHF",
+    symbol: "USD/CHF",
+    displayName: "US Dollar / Swiss Franc",
+    category: "forex",
+    alphavantageSymbol: "USD",
+    alphavantageToSymbol: "CHF",
+    finnhubSymbol: "OANDA:USD_CHF",
+    pipSize: 0.0001,
+    decimalPlaces: 5,
+  },
+  // Crypto
+  {
     id: "BTC_USD",
     symbol: "BTC/USD",
     displayName: "Bitcoin",
@@ -45,6 +91,18 @@ export const INSTRUMENTS: Instrument[] = [
     pipSize: 0.01,
     decimalPlaces: 2,
   },
+  {
+    id: "ETH_USD",
+    symbol: "ETH/USD",
+    displayName: "Ethereum",
+    category: "crypto",
+    alphavantageSymbol: "ETH",
+    alphavantageToSymbol: "USD",
+    coingeckoId: "ethereum",
+    pipSize: 0.01,
+    decimalPlaces: 2,
+  },
+  // Indices
   {
     id: "US100",
     symbol: "US100",
@@ -64,6 +122,26 @@ export const INSTRUMENTS: Instrument[] = [
     finnhubSymbol: "FOREXCOM:DJI",
     pipSize: 1,
     decimalPlaces: 0,
+  },
+  {
+    id: "SPX500",
+    symbol: "SPX500",
+    displayName: "S&P 500",
+    category: "index",
+    alphavantageSymbol: "SPX",
+    finnhubSymbol: "FOREXCOM:SPXUSD",
+    pipSize: 0.1,
+    decimalPlaces: 1,
+  },
+  {
+    id: "US2000",
+    symbol: "US2000",
+    displayName: "Russell 2000",
+    category: "index",
+    alphavantageSymbol: "RUT",
+    finnhubSymbol: "FOREXCOM:RUTUSD",
+    pipSize: 0.1,
+    decimalPlaces: 1,
   },
 ];
 

@@ -8,6 +8,7 @@ import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { formatPercent, getBiasDirection } from "@/lib/utils/formatters";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function InstrumentBias() {
   const selectedInstrument = useMarketStore((s) => s.selectedInstrument);
@@ -17,7 +18,8 @@ export function InstrumentBias() {
   const quotes = ratesData?.quotes || {};
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+    <ScrollArea className="max-h-[600px]">
+    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
       {INSTRUMENTS.map((inst, idx) => {
         const isActive = selectedInstrument.id === inst.id;
         const bias = biasResults[inst.id];
@@ -69,5 +71,6 @@ export function InstrumentBias() {
         );
       })}
     </div>
+    </ScrollArea>
   );
 }

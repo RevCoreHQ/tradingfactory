@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchForexRates } from "@/lib/api/finnhub";
-import { fetchBitcoinPrice } from "@/lib/api/coingecko";
+import { fetchCryptoPrice } from "@/lib/api/coingecko";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import type { PriceQuote } from "@/lib/types/market";
 
@@ -30,14 +30,6 @@ export async function GET(req: NextRequest) {
         }
 
         if (mid > 0) {
-          // For EUR/USD and GBP/USD, we need to invert since Finnhub returns USD-based
-          if ((inst.id === "EUR_USD" || inst.id === "GBP_USD") && rates[from]) {
-            mid = 1 / rates[from];
-          }
-          if (inst.id === "USD_JPY" && rates["JPY"]) {
-            mid = rates["JPY"];
-          }
-
           quotes[inst.id] = {
             instrument: inst.id,
             bid: mid - inst.pipSize,
@@ -53,12 +45,15 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Fetch BTC
-    if (requestedIds.includes("BTC_USD")) {
+    // Fetch crypto prices
+    const cryptoInstruments = INSTRUMENTS.filter(
+      (i) => i.category === "crypto" && requestedIds.includes(i.id)
+    );
+    for (const inst of cryptoInstruments) {
       try {
-        quotes["BTC_USD"] = await fetchBitcoinPrice();
+        quotes[inst.id] = await fetchCryptoPrice(inst.coingeckoId || "bitcoin", inst.id);
       } catch {
-        // Silent fail for BTC
+        // Silent fail
       }
     }
 

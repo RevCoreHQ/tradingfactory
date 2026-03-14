@@ -32,37 +32,47 @@ export function Header() {
 
         {/* Instrument Tabs */}
         <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
-          {INSTRUMENTS.map((inst) => {
-            const isActive = selectedInstrument.id === inst.id;
-            const quote = quotes[inst.id];
-
+          {(["forex", "crypto", "index"] as const).map((category, catIdx) => {
+            const instruments = INSTRUMENTS.filter((i) => i.category === category);
             return (
-              <button
-                key={inst.id}
-                onClick={() => setSelectedInstrument(inst)}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap cursor-pointer",
-                  isActive
-                    ? "bg-white/10 text-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+              <div key={category} className="flex items-center gap-1">
+                {catIdx > 0 && (
+                  <div className="w-px h-5 bg-white/10 mx-1 shrink-0" />
                 )}
-              >
-                <span className="font-semibold">{inst.symbol}</span>
-                {quote && quote.mid > 0 && (
-                  <span className="font-mono text-[10px]">
-                    <AnimatedNumber
-                      value={quote.mid}
-                      format={(n) => n.toFixed(Math.min(inst.decimalPlaces, 4))}
-                      className="text-[10px]"
-                    />
-                    {quote.changePercent !== 0 && (
-                      <span className={cn("ml-1", getChangeClass(quote.changePercent))}>
-                        {quote.changePercent > 0 ? "+" : ""}{quote.changePercent.toFixed(2)}%
-                      </span>
-                    )}
-                  </span>
-                )}
-              </button>
+                {instruments.map((inst) => {
+                  const isActive = selectedInstrument.id === inst.id;
+                  const quote = quotes[inst.id];
+
+                  return (
+                    <button
+                      key={inst.id}
+                      onClick={() => setSelectedInstrument(inst)}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap cursor-pointer",
+                        isActive
+                          ? "bg-white/10 text-foreground"
+                          : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                      )}
+                    >
+                      <span className="font-semibold">{inst.symbol}</span>
+                      {quote && quote.mid > 0 && (
+                        <span className="font-mono text-[10px]">
+                          <AnimatedNumber
+                            value={quote.mid}
+                            format={(n) => n.toFixed(Math.min(inst.decimalPlaces, 4))}
+                            className="text-[10px]"
+                          />
+                          {quote.changePercent !== 0 && (
+                            <span className={cn("ml-1", getChangeClass(quote.changePercent))}>
+                              {quote.changePercent > 0 ? "+" : ""}{quote.changePercent.toFixed(2)}%
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             );
           })}
         </div>

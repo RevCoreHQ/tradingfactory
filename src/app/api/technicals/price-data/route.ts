@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchForexCandles } from "@/lib/api/finnhub";
-import { fetchBitcoinOHLC } from "@/lib/api/coingecko";
+import { fetchCryptoOHLC } from "@/lib/api/coingecko";
 import { fetchForexDaily, fetchForexIntraday } from "@/lib/api/alpha-vantage";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import type { OHLCV } from "@/lib/types/market";
@@ -34,7 +34,8 @@ export async function GET(req: NextRequest) {
 
     if (instrument.category === "crypto") {
       const days = timeframe === "1d" || timeframe === "1w" ? 365 : timeframe === "4h" ? 90 : 30;
-      candles = await fetchBitcoinOHLC(days);
+      const coingeckoId = instrument.coingeckoId || "bitcoin";
+      candles = await fetchCryptoOHLC(coingeckoId, days);
     } else if (instrument.category === "forex") {
       // Try Finnhub first, fallback to Alpha Vantage
       try {
