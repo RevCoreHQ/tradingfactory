@@ -2,11 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import { useMarketStore } from "@/lib/store/market-store";
 import { getBiasColor, getBiasLabel } from "@/lib/utils/formatters";
 import { cn } from "@/lib/utils";
-import { ChevronDown, ChevronUp, TrendingUp, TrendingDown, ArrowRight, Shield, Zap, AlertTriangle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ChevronDown, ChevronUp, TrendingUp, TrendingDown, ArrowRight, Shield, Zap, AlertTriangle, Activity, Brain, BarChart3, Crosshair } from "lucide-react";
 import type { BiasDirection, BiasResult, RiskSizing } from "@/lib/types/bias";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
 
@@ -59,79 +65,217 @@ interface RankedItem {
   llmRisk: "low" | "medium" | "high" | undefined;
 }
 
-function TradeSetupExpanded({ item }: { item: RankedItem }) {
-  const { biasResult, instrument } = item;
-  const setup = biasResult.tradeSetup;
-  if (!setup) return null;
+const stagger = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.05, delayChildren: 0.1 } },
+} as const;
+const fadeUp = {
+  hidden: { opacity: 0, y: 8 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: "easeOut" as const } },
+};
 
-  const dec = instrument.decimalPlaces;
-  const isBullish = biasResult.direction.includes("bullish");
+function RiskLabel({ risk }: { risk: string }) {
+  const cfg = {
+    low: { cls: "bg-bullish/15 text-bullish", label: "Low Risk" },
+    medium: { cls: "bg-amber-500/15 text-amber-500", label: "Medium Risk" },
+    high: { cls: "bg-bearish/15 text-bearish", label: "High Risk" },
+  }[risk] || { cls: "bg-[var(--surface-2)] text-muted-foreground", label: risk };
 
   return (
-    <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <div className="bg-[var(--surface-2)] rounded-lg px-3 py-2">
-          <div className="text-[9px] text-muted-foreground/60 uppercase tracking-wider">Entry Zone</div>
-          <div className="text-[11px] font-mono text-foreground">
-            {formatPriceValue(setup.entryZone[0], dec)} – {formatPriceValue(setup.entryZone[1], dec)}
-          </div>
-        </div>
-        <div className="bg-[var(--surface-2)] rounded-lg px-3 py-2">
-          <div className="text-[9px] text-muted-foreground/60 uppercase tracking-wider">Stop Loss</div>
-          <div className="text-[11px] font-mono text-bearish">
-            {formatPriceValue(setup.stopLoss, dec)}
-          </div>
-        </div>
-        <div className="bg-[var(--surface-2)] rounded-lg px-3 py-2">
-          <div className="text-[9px] text-muted-foreground/60 uppercase tracking-wider">Projected Move</div>
-          <div className="text-[11px] font-mono" style={{ color: getBiasColor(biasResult.direction) }}>
-            {isBullish ? "+" : "-"}{setup.projectedMove.pips}p ({setup.projectedMove.percent}%)
-          </div>
-        </div>
-        <div className="bg-[var(--surface-2)] rounded-lg px-3 py-2">
-          <div className="text-[9px] text-muted-foreground/60 uppercase tracking-wider mb-0.5">Position Size</div>
-          <RiskBadge sizing={setup.riskSizing} />
-        </div>
-      </div>
+    <span className={cn("text-[9px] font-bold uppercase px-1.5 py-0.5 rounded", cfg.cls)}>
+      {cfg.label}
+    </span>
+  );
+}
 
-      <div className="flex items-center gap-1.5 flex-wrap">
-        {setup.takeProfit.map((tp, i) => (
-          <div key={i} className="flex items-center gap-1 bg-[var(--surface-2)] rounded px-2 py-1">
-            <span className="text-[9px] font-bold text-bullish/70">TP{i + 1}</span>
-            <span className="text-[10px] font-mono text-foreground/80">{formatPriceValue(tp, dec)}</span>
-            <span className="text-[9px] font-mono text-muted-foreground/50">({setup.riskReward[i]}R)</span>
-          </div>
-        ))}
-      </div>
+function CardDetailModal({ item, onClose, onNavigate }: {
+  item: RankedItem;
+  onClose: () => void;
+  onNavigate: () => void;
+}) {
+  const { biasResult, instrument } = item;
+  const setup = biasResult.tradeSetup;
+  const dec = instrument.decimalPlaces;
+  const color = getBiasColor(biasResult.direction);
+  const isBullish = biasResult.overallBias > 0;
 
-      <div className="flex flex-col sm:flex-row gap-2">
-        {item.llmSummary && (
-          <div className="flex-1 text-[10px] text-muted-foreground/70 leading-snug">
-            <span className="text-[9px] font-bold text-neutral-accent mr-1">AI:</span>
-            {item.llmSummary}
-          </div>
-        )}
-        {item.llmCatalysts && item.llmCatalysts.length > 0 && (
-          <div className="flex-shrink-0 space-y-0.5">
-            <div className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-wider">Catalysts</div>
-            {item.llmCatalysts.map((c, i) => (
-              <div key={i} className="text-[10px] text-muted-foreground/60 truncate max-w-[200px]">
-                {c}
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        className="sm:max-w-lg bg-[var(--surface-1)] border-border p-0 overflow-hidden"
+        showCloseButton={true}
+      >
+        <DialogTitle className="sr-only">{instrument.symbol} Details</DialogTitle>
+        <motion.div
+          variants={stagger}
+          initial="hidden"
+          animate="show"
+          className="p-5 space-y-4 max-h-[80vh] overflow-y-auto"
+        >
+          {/* Header */}
+          <motion.div variants={fadeUp} className="flex items-center gap-3">
+            <div
+              className="w-1 h-10 rounded-full shrink-0"
+              style={{ backgroundColor: color }}
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-base font-bold">{instrument.symbol}</span>
+                <DirectionBadge direction={biasResult.direction} />
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+              <span className="text-[10px] text-muted-foreground/50">{instrument.category}</span>
+            </div>
+            <div className="text-right">
+              <span className="text-3xl font-mono font-bold tabular" style={{ color }}>
+                {isBullish ? "+" : ""}{Math.round(biasResult.overallBias)}
+              </span>
+            </div>
+          </motion.div>
 
-      {item.llmKeyLevels && item.llmKeyLevels.support > 0 && (
-        <div className="flex items-center justify-between text-[9px] text-muted-foreground/40">
-          <span className="font-mono">
-            S: {formatPriceValue(item.llmKeyLevels.support, dec)} | R: {formatPriceValue(item.llmKeyLevels.resistance, dec)}
-          </span>
-          <span className="truncate max-w-[300px]">{setup.riskReason}</span>
-        </div>
-      )}
-    </div>
+          {/* Score breakdown */}
+          <motion.div variants={fadeUp} className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1 px-2 py-1 rounded bg-[var(--surface-2)]">
+              <BarChart3 className="h-3 w-3 text-muted-foreground/50" />
+              <span className="text-[10px] font-mono text-muted-foreground">F:{Math.round(biasResult.fundamentalScore.total)}</span>
+            </div>
+            <div className="flex items-center gap-1 px-2 py-1 rounded bg-[var(--surface-2)]">
+              <Activity className="h-3 w-3 text-muted-foreground/50" />
+              <span className="text-[10px] font-mono text-muted-foreground">T:{Math.round(biasResult.technicalScore.total)}</span>
+            </div>
+            {biasResult.aiBias !== 0 && (
+              <div className="flex items-center gap-1 px-2 py-1 rounded bg-neutral-accent/10">
+                <Brain className="h-3 w-3 text-neutral-accent/60" />
+                <span className="text-[10px] font-mono text-neutral-accent">
+                  AI:{biasResult.aiBias > 0 ? "+" : ""}{Math.round(biasResult.aiBias)}
+                </span>
+              </div>
+            )}
+            <div className="ml-auto flex items-center gap-2">
+              <span className="text-[9px] text-muted-foreground/40">
+                Conf: {Math.round(biasResult.confidence)}%
+              </span>
+              {biasResult.signalAgreement !== undefined && (
+                <span className="text-[9px] text-muted-foreground/40">
+                  Agree: {Math.round(biasResult.signalAgreement * 100)}%
+                </span>
+              )}
+            </div>
+          </motion.div>
+
+          {/* Trade Setup */}
+          {setup && (
+            <>
+              <motion.div variants={fadeUp}>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Crosshair className="h-3.5 w-3.5 text-neutral-accent" />
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Trade Setup</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="bg-[var(--surface-2)] rounded-lg px-3 py-2">
+                    <div className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Entry Zone</div>
+                    <div className="text-[11px] font-mono text-foreground mt-0.5">
+                      {formatPriceValue(setup.entryZone[0], dec)} – {formatPriceValue(setup.entryZone[1], dec)}
+                    </div>
+                  </div>
+                  <div className="bg-[var(--surface-2)] rounded-lg px-3 py-2">
+                    <div className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Stop Loss</div>
+                    <div className="text-[11px] font-mono text-bearish mt-0.5">
+                      {formatPriceValue(setup.stopLoss, dec)}
+                    </div>
+                  </div>
+                  <div className="bg-[var(--surface-2)] rounded-lg px-3 py-2">
+                    <div className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Projected Move</div>
+                    <div className="text-[11px] font-mono mt-0.5" style={{ color }}>
+                      {isBullish ? "+" : "-"}{setup.projectedMove.pips}p ({setup.projectedMove.percent}%)
+                    </div>
+                  </div>
+                  <div className="bg-[var(--surface-2)] rounded-lg px-3 py-2">
+                    <div className="text-[9px] text-muted-foreground/50 uppercase tracking-wider mb-0.5">Position Size</div>
+                    <RiskBadge sizing={setup.riskSizing} />
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Take Profit Targets */}
+              <motion.div variants={fadeUp} className="flex items-center gap-1.5 flex-wrap">
+                {setup.takeProfit.map((tp, i) => (
+                  <div key={i} className="flex items-center gap-1.5 bg-[var(--surface-2)] rounded-lg px-2.5 py-1.5">
+                    <span className="text-[9px] font-bold text-bullish/70">TP{i + 1}</span>
+                    <span className="text-[11px] font-mono text-foreground/80">{formatPriceValue(tp, dec)}</span>
+                    <span className="text-[9px] font-mono text-muted-foreground/40">({setup.riskReward[i]}R)</span>
+                  </div>
+                ))}
+                {biasResult.adr && (
+                  <div className="flex items-center gap-1 ml-auto text-[9px] text-muted-foreground/40 font-mono">
+                    ADR: {biasResult.adr.pips}p ({biasResult.adr.percent}%)
+                  </div>
+                )}
+              </motion.div>
+
+              {/* Risk Reason */}
+              {setup.riskReason && (
+                <motion.div variants={fadeUp} className="text-[10px] text-muted-foreground/50 leading-snug border-l-2 border-border/50 pl-3">
+                  {setup.riskReason}
+                </motion.div>
+              )}
+            </>
+          )}
+
+          {/* AI Summary */}
+          {item.llmSummary && (
+            <motion.div variants={fadeUp} className="space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <Brain className="h-3.5 w-3.5 text-neutral-accent" />
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">AI Analysis</span>
+                {item.llmRisk && <RiskLabel risk={item.llmRisk} />}
+              </div>
+              <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
+                {item.llmSummary}
+              </p>
+            </motion.div>
+          )}
+
+          {/* Catalysts */}
+          {item.llmCatalysts && item.llmCatalysts.length > 0 && (
+            <motion.div variants={fadeUp} className="space-y-1.5">
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Catalysts</span>
+              <div className="flex flex-wrap gap-1.5">
+                {item.llmCatalysts.map((c, i) => (
+                  <span key={i} className="text-[10px] px-2 py-1 rounded bg-[var(--surface-2)] text-muted-foreground/60">
+                    {c}
+                  </span>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Key Levels */}
+          {item.llmKeyLevels && item.llmKeyLevels.support > 0 && (
+            <motion.div variants={fadeUp} className="flex items-center gap-4 text-[10px] font-mono">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] font-bold text-bullish/60">S</span>
+                <span className="text-foreground/70">{formatPriceValue(item.llmKeyLevels.support, dec)}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] font-bold text-bearish/60">R</span>
+                <span className="text-foreground/70">{formatPriceValue(item.llmKeyLevels.resistance, dec)}</span>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Navigation button */}
+          <motion.div variants={fadeUp}>
+            <button
+              onClick={onNavigate}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-neutral-accent/10 text-neutral-accent text-xs font-semibold hover:bg-neutral-accent/20 transition-colors"
+            >
+              Open Full Analysis
+              <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+          </motion.div>
+        </motion.div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -214,6 +358,7 @@ function ConvictionCard({ item, rank, onNavigate }: {
 
 export function TopPairs() {
   const [expanded, setExpanded] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<RankedItem | null>(null);
   const allBiasResults = useMarketStore((s) => s.allBiasResults);
   const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
   const batchLLMResults = useMarketStore((s) => s.batchLLMResults);
@@ -281,10 +426,7 @@ export function TopPairs() {
                 key={item.instrument.id}
                 item={item}
                 rank={idx + 1}
-                onNavigate={() => {
-                  setSelectedInstrument(item.instrument);
-                  router.push("/instrument");
-                }}
+                onNavigate={() => setSelectedItem(item)}
               />
             ))}
           </div>
@@ -302,6 +444,19 @@ export function TopPairs() {
             <>Show all {ranked.length} <ChevronDown className="h-3 w-3" /></>
           )}
         </button>
+      )}
+
+      {/* Card Detail Modal */}
+      {selectedItem && (
+        <CardDetailModal
+          item={selectedItem}
+          onClose={() => setSelectedItem(null)}
+          onNavigate={() => {
+            setSelectedInstrument(selectedItem.instrument);
+            setSelectedItem(null);
+            router.push("/instrument");
+          }}
+        />
       )}
     </div>
   );
