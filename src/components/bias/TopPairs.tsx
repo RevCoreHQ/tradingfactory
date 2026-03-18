@@ -70,25 +70,25 @@ function TradeSetupExpanded({ item }: { item: RankedItem }) {
   return (
     <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <div className="bg-[var(--surface-2)] rounded px-2 py-1.5">
+        <div className="bg-[var(--surface-2)] rounded-lg px-3 py-2">
           <div className="text-[9px] text-muted-foreground/60 uppercase tracking-wider">Entry Zone</div>
           <div className="text-[11px] font-mono text-foreground">
             {formatPriceValue(setup.entryZone[0], dec)} – {formatPriceValue(setup.entryZone[1], dec)}
           </div>
         </div>
-        <div className="bg-[var(--surface-2)] rounded px-2 py-1.5">
+        <div className="bg-[var(--surface-2)] rounded-lg px-3 py-2">
           <div className="text-[9px] text-muted-foreground/60 uppercase tracking-wider">Stop Loss</div>
           <div className="text-[11px] font-mono text-bearish">
             {formatPriceValue(setup.stopLoss, dec)}
           </div>
         </div>
-        <div className="bg-[var(--surface-2)] rounded px-2 py-1.5">
+        <div className="bg-[var(--surface-2)] rounded-lg px-3 py-2">
           <div className="text-[9px] text-muted-foreground/60 uppercase tracking-wider">Projected Move</div>
           <div className="text-[11px] font-mono" style={{ color: getBiasColor(biasResult.direction) }}>
             {isBullish ? "+" : "-"}{setup.projectedMove.pips}p ({setup.projectedMove.percent}%)
           </div>
         </div>
-        <div className="bg-[var(--surface-2)] rounded px-2 py-1.5">
+        <div className="bg-[var(--surface-2)] rounded-lg px-3 py-2">
           <div className="text-[9px] text-muted-foreground/60 uppercase tracking-wider mb-0.5">Position Size</div>
           <RiskBadge sizing={setup.riskSizing} />
         </div>
@@ -153,7 +153,7 @@ function ConvictionCard({ item, rank, isExpanded, onToggle, onNavigate }: {
     <button
       onClick={hasSetup ? onToggle : onNavigate}
       className={cn(
-        "relative flex flex-col p-3 rounded-lg transition-all cursor-pointer text-left w-full",
+        "relative flex flex-col p-3 rounded-lg transition-all cursor-pointer text-left w-full min-h-[140px]",
         "bg-[var(--surface-1)] border border-border hover:border-border-bright",
         isTopPick && "ring-1 ring-[var(--border-bright)]",
         isExpanded && "border-border-bright"
@@ -163,7 +163,7 @@ function ConvictionCard({ item, rank, isExpanded, onToggle, onNavigate }: {
       {/* Top: Rank + Symbol + Direction */}
       <div className="flex items-center gap-2 mb-2">
         <span className="text-[10px] text-muted-foreground/40 font-mono">{rank}</span>
-        <span className={cn("font-bold", isTopPick ? "text-sm" : "text-xs")}>
+        <span className={cn("font-bold truncate", isTopPick ? "text-sm" : "text-xs")}>
           {instrument.symbol}
         </span>
         <DirectionBadge direction={biasResult.direction} />
@@ -172,7 +172,7 @@ function ConvictionCard({ item, rank, isExpanded, onToggle, onNavigate }: {
       {/* Center: Large conviction score */}
       <div className="flex items-center justify-center my-1">
         <span
-          className={cn("font-mono font-bold tabular", isTopPick ? "text-3xl" : "text-2xl")}
+          className={cn("font-mono font-bold tabular", isTopPick ? "text-2xl" : "text-xl")}
           style={{ color }}
         >
           {isBullish ? "+" : ""}{Math.round(biasResult.overallBias)}
@@ -180,27 +180,27 @@ function ConvictionCard({ item, rank, isExpanded, onToggle, onNavigate }: {
       </div>
 
       {/* Score pills */}
-      <div className="flex items-center gap-1 justify-center my-2">
-        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[var(--surface-2)] text-muted-foreground">
+      <div className="flex items-center gap-1 justify-center my-1.5 flex-wrap">
+        <span className="text-[8px] font-mono px-1 py-0.5 rounded bg-[var(--surface-2)] text-muted-foreground">
           F:{Math.round(biasResult.fundamentalScore.total)}
         </span>
-        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[var(--surface-2)] text-muted-foreground">
+        <span className="text-[8px] font-mono px-1 py-0.5 rounded bg-[var(--surface-2)] text-muted-foreground">
           T:{Math.round(biasResult.technicalScore.total)}
         </span>
         {biasResult.aiBias !== 0 && (
-          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-neutral-accent/10 text-neutral-accent">
+          <span className="text-[8px] font-mono px-1 py-0.5 rounded bg-neutral-accent/10 text-neutral-accent">
             AI:{biasResult.aiBias > 0 ? "+" : ""}{Math.round(biasResult.aiBias)}
           </span>
         )}
       </div>
 
-      {/* Bottom: ADR + Risk + Projected */}
-      <div className="flex items-center justify-between text-[10px] text-muted-foreground/60 mt-auto pt-1 border-t border-border/30">
-        <div className="flex items-center gap-2">
-          {adr && <span className="font-mono">{adr.pips}p ADR</span>}
+      {/* Bottom: ADR + Risk */}
+      <div className="flex items-center justify-between text-[9px] text-muted-foreground/60 mt-auto pt-1.5 border-t border-border/30">
+        <div className="flex items-center gap-1.5">
+          {adr && <span className="font-mono">{adr.pips}p</span>}
           {biasResult.tradeSetup && (
             <span className="font-mono flex items-center gap-0.5" style={{ color }}>
-              {isBullish ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+              {isBullish ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
               {biasResult.tradeSetup.projectedMove.pips}p
             </span>
           )}
@@ -221,21 +221,16 @@ function ConvictionCard({ item, rank, isExpanded, onToggle, onNavigate }: {
   );
 }
 
-function ConvictionList({
-  timeframeKey,
-  label,
-}: {
-  timeframeKey: "intraday" | "intraweek";
-  label: string;
-}) {
+export function TopPairs() {
   const [expanded, setExpanded] = useState(false);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const allBiasResults = useMarketStore((s) => s.allBiasResults);
+  const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
   const batchLLMResults = useMarketStore((s) => s.batchLLMResults);
   const setSelectedInstrument = useMarketStore((s) => s.setSelectedInstrument);
   const router = useRouter();
 
-  const currentResults = allBiasResults[timeframeKey];
+  const currentResults = allBiasResults[biasTimeframe];
 
   const ranked: RankedItem[] = INSTRUMENTS
     .map((inst) => {
@@ -261,25 +256,37 @@ function ConvictionList({
   const hasAnyBias = ranked.some((r) => Math.abs(r.biasResult.overallBias) > 2);
   const displayCount = expanded ? ranked.length : 5;
   const displayed = ranked.slice(0, displayCount);
-
   const expandedItem = displayed.find((item) => item.instrument.id === expandedCard);
 
   return (
-    <div className="flex-1 min-w-0">
-      <div className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground mb-3">
-        {label}
+    <div className="relative section-card p-5">
+      <GlowingEffect
+        spread={40}
+        glow={true}
+        disabled={false}
+        proximity={64}
+        inactiveZone={0.01}
+        borderWidth={2}
+      />
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-[10px] font-mono text-muted-foreground/40">
+          {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+        </span>
+        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+          {biasTimeframe === "intraday" ? "Intraday" : "Intraweek"}
+        </span>
       </div>
 
       {!hasAnyBias ? (
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="h-36 shimmer rounded-lg" />
           ))}
         </div>
       ) : (
         <>
-          {/* Card grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+          {/* Card grid — full width, single timeframe */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {displayed.map((item, idx) => (
               <ConvictionCard
                 key={item.instrument.id}
@@ -333,32 +340,6 @@ function ConvictionList({
           )}
         </button>
       )}
-    </div>
-  );
-}
-
-export function TopPairs() {
-  return (
-    <div className="relative section-card p-5">
-      <GlowingEffect
-        spread={40}
-        glow={true}
-        disabled={false}
-        proximity={64}
-        inactiveZone={0.01}
-        borderWidth={2}
-      />
-      <div className="flex items-center justify-between mb-5">
-        <span className="text-[10px] font-mono text-muted-foreground/40">
-          {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
-        </span>
-      </div>
-
-      <div className="flex flex-col lg:flex-row lg:gap-8 gap-6">
-        <ConvictionList timeframeKey="intraday" label="Intraday" />
-        <div className="hidden lg:block w-px bg-border/50 self-stretch" />
-        <ConvictionList timeframeKey="intraweek" label="Intraweek" />
-      </div>
     </div>
   );
 }

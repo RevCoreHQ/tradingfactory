@@ -6,7 +6,7 @@ import { useRates } from "@/lib/hooks/useMarketData";
 import { cn } from "@/lib/utils";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { getChangeClass } from "@/lib/utils/formatters";
-import { ArrowLeft, ArrowRight, LayoutDashboard } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
@@ -27,14 +27,9 @@ export function Header({ mode = "analysis" }: HeaderProps) {
       <div className="max-w-[1400px] mx-auto flex items-center justify-between gap-4">
         {/* Logo + Nav */}
         <div className="flex items-center gap-4 shrink-0">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg gradient-strip-blue flex items-center justify-center">
-              <LayoutDashboard className="h-3.5 w-3.5 text-white" />
-            </div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-sm font-bold tracking-tight text-foreground">Trading</span>
-              <span className="text-sm font-light tracking-tight text-muted-foreground">Factory</span>
-            </div>
+          <Link href="/" className="flex items-baseline gap-1.5">
+            <span className="text-sm font-bold tracking-tight text-foreground">Trading</span>
+            <span className="text-sm font-light tracking-tight text-muted-foreground">Factory</span>
           </Link>
 
           <div className="h-5 w-px bg-border/50 hidden sm:block" />

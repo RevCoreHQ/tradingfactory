@@ -210,7 +210,7 @@ async function callGemini(
       generationConfig: {
         responseMimeType: "application/json",
         temperature: 0.3,
-        maxOutputTokens: 512,
+        maxOutputTokens: 1024,
       },
     }),
   });
@@ -248,7 +248,7 @@ async function callOpenAI(
       ],
       response_format: { type: "json_object" },
       temperature: 0.3,
-      max_tokens: 512,
+      max_tokens: 1024,
     }),
   });
 
@@ -280,7 +280,7 @@ async function callAnthropic(
     },
     body: JSON.stringify({
       model: "claude-sonnet-4-6",
-      max_tokens: 512,
+      max_tokens: 1024,
       temperature: 0.3,
       system: systemPrompt,
       messages: [

@@ -55,7 +55,7 @@ export async function fetchEconomicCalendar(from: string, to: string): Promise<E
       event: string;
       date: string;
       time: string;
-      impact: string;
+      impact: string | number;
       forecast?: number;
       prev?: number;
       actual?: number;
@@ -70,7 +70,12 @@ export async function fetchEconomicCalendar(from: string, to: string): Promise<E
     event: item.event,
     date: item.date,
     time: item.time || "00:00",
-    impact: (String(item.impact) === "3" ? "high" : String(item.impact) === "2" ? "medium" : "low") as "low" | "medium" | "high",
+    impact: (() => {
+      const v = String(item.impact).toLowerCase();
+      if (v === "high" || v === "3") return "high" as const;
+      if (v === "medium" || v === "2") return "medium" as const;
+      return "low" as const;
+    })(),
     forecast: item.forecast,
     previous: item.prev,
     actual: item.actual,

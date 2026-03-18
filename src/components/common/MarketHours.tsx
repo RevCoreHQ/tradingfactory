@@ -43,25 +43,27 @@ export function MarketHoursStrip() {
   });
 
   return (
-    <div className="border-b border-border bg-[var(--surface-0)] px-4 py-1.5">
-      <div className="max-w-[1800px] mx-auto flex items-center gap-4 overflow-x-auto scrollbar-none">
-        <span className="text-[10px] font-mono text-muted-foreground shrink-0">
+    <div className="border-b border-border/50 bg-[var(--surface-0)] px-6 py-2">
+      <div className="max-w-[1400px] mx-auto flex items-center justify-center gap-6 overflow-x-auto scrollbar-none">
+        <span className="text-[10px] font-mono text-muted-foreground/60 shrink-0">
           {now.toUTCString().slice(17, 25)} UTC
         </span>
-        <div className="w-px h-3 bg-border shrink-0" />
         {sessions.map((session) => (
-          <div key={session.key} className="flex items-center gap-1.5 shrink-0">
+          <div key={session.key} className="flex items-center gap-2 shrink-0">
             <span
-              className={cn("h-1.5 w-1.5 rounded-full shrink-0", session.active && "pulse-dot")}
-              style={{ backgroundColor: session.color, opacity: session.active ? 1 : 0.25 }}
+              className={cn("h-2 w-2 rounded-full shrink-0", session.active && "pulse-dot")}
+              style={{ backgroundColor: session.color, opacity: session.active ? 1 : 0.2 }}
             />
             <span className={cn(
-              "text-[10px]",
-              session.active ? "text-foreground font-medium" : "text-muted-foreground"
+              "text-[11px]",
+              session.active ? "text-foreground font-medium" : "text-muted-foreground/60"
             )}>
               {session.name}
             </span>
-            <span className="text-[10px] font-mono text-muted-foreground/60">
+            <span className={cn(
+              "text-[10px] font-mono",
+              session.active ? "text-foreground/70" : "text-muted-foreground/40"
+            )}>
               {session.active ? session.timeLeft : `in ${session.timeLeft}`}
             </span>
           </div>
