@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import useSWR from "swr";
 import { useMarketStore } from "@/lib/store/market-store";
 import { useMarketNews, useFearGreed, useBondYields, useCentralBanks } from "./useMarketData";
@@ -140,9 +140,23 @@ export function useLLMAnalysis() {
     indicators, candles, storedBias,
   ) : null;
 
+  // Stable SWR key — use instrument ID only, store body in ref to avoid
+  // infinite re-render loops from requestBody changing every render
+  const bodyRef = useRef(requestBody);
+  bodyRef.current = requestBody;
+
   const { data, error, isLoading } = useSWR<{ analysis: LLMAnalysisResult | null }>(
-    requestBody ? ["/api/analysis/llm", requestBody] : null,
-    postFetcher,
+    hasData ? `llm-single-${instrument.id}` : null,
+    async () => {
+      const body = bodyRef.current;
+      if (!body) return { analysis: null };
+      const res = await fetch("/api/analysis/llm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      return res.json();
+    },
     {
       refreshInterval: REFRESH_INTERVALS.LLM_ANALYSIS,
       revalidateOnFocus: false,

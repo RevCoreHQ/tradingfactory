@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useDeepAnalysis, useDeepAnalysisLLM } from "@/lib/hooks/useDeepAnalysis";
 import { useBiasScore } from "@/lib/hooks/useBiasScore";
 import { useMarketStore } from "@/lib/store/market-store";
@@ -284,8 +285,12 @@ function TradeIdeaCard({ idea, decimals }: { idea: AITradeIdea; decimals: number
   );
 }
 
-function AITradeIdeas({ deepAnalysis }: { deepAnalysis: NonNullable<ReturnType<typeof useDeepAnalysis>["deepAnalysis"]> }) {
-  const { tradeIdeas, isLoading, generate, isRequested } = useDeepAnalysisLLM(deepAnalysis);
+function AITradeIdeas({ deepAnalysis, indicators, biasResult }: {
+  deepAnalysis: NonNullable<ReturnType<typeof useDeepAnalysis>["deepAnalysis"]>;
+  indicators: import("@/lib/types/indicators").TechnicalSummary | null;
+  biasResult: import("@/lib/types/bias").BiasResult | null;
+}) {
+  const { tradeIdeas, isLoading, generate, isRequested } = useDeepAnalysisLLM(deepAnalysis, indicators, biasResult);
   const instrument = useMarketStore((s) => s.selectedInstrument);
 
   return (
@@ -355,7 +360,7 @@ function AITradeIdeas({ deepAnalysis }: { deepAnalysis: NonNullable<ReturnType<t
 }
 
 export function DeepAnalysis() {
-  const { deepAnalysis, isLoading } = useDeepAnalysis();
+  const { deepAnalysis, indicators, isLoading } = useDeepAnalysis();
   const { biasResult } = useBiasScore();
   const instrument = useMarketStore((s) => s.selectedInstrument);
 
@@ -371,11 +376,11 @@ export function DeepAnalysis() {
     );
   }
 
-  const tradeSetup = biasResult?.tradeSetup ? {
+  const tradeSetup = useMemo(() => biasResult?.tradeSetup ? {
     entryZone: biasResult.tradeSetup.entryZone as [number, number],
     stopLoss: biasResult.tradeSetup.stopLoss,
     takeProfit: biasResult.tradeSetup.takeProfit,
-  } : null;
+  } : null, [biasResult?.tradeSetup]);
 
   return (
     <div className="space-y-4">
@@ -406,7 +411,7 @@ export function DeepAnalysis() {
           />
 
           {/* AI Trade Ideas */}
-          <AITradeIdeas deepAnalysis={deepAnalysis} />
+          <AITradeIdeas deepAnalysis={deepAnalysis} indicators={indicators} biasResult={biasResult} />
         </>
       )}
     </div>

@@ -1,14 +1,14 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useRef } from "react";
 import useSWR from "swr";
 import { useTechnicalData } from "./useTechnicalData";
-import { useBiasScore } from "./useBiasScore";
 import { useMarketStore } from "@/lib/store/market-store";
-import { useMarketNews, useFearGreed, useBondYields, useCentralBanks } from "./useMarketData";
 import { detectSupplyDemandZones } from "@/lib/calculations/supply-demand-zones";
 import { calculateConfluenceLevels } from "@/lib/calculations/confluence-levels";
 import type { DeepAnalysisResult, DeepAnalysisLLMResult } from "@/lib/types/deep-analysis";
+import type { TechnicalSummary } from "@/lib/types/indicators";
+import type { BiasResult } from "@/lib/types/bias";
 
 /**
  * Client-side deep analysis — S/D zones + confluence levels.
@@ -16,6 +16,7 @@ import type { DeepAnalysisResult, DeepAnalysisLLMResult } from "@/lib/types/deep
  */
 export function useDeepAnalysis(): {
   deepAnalysis: DeepAnalysisResult | null;
+  indicators: TechnicalSummary | null;
   isLoading: boolean;
 } {
   const { candles, indicators, isLoading } = useTechnicalData();
@@ -44,65 +45,57 @@ export function useDeepAnalysis(): {
     };
   }, [candles, indicators]);
 
-  return { deepAnalysis, isLoading };
+  return { deepAnalysis, indicators, isLoading };
 }
 
 /**
  * AI trade ideas — optional LLM call triggered by user.
+ * Accepts pre-computed data to avoid duplicating hook calls.
  */
-export function useDeepAnalysisLLM(deepAnalysis: DeepAnalysisResult | null) {
+export function useDeepAnalysisLLM(
+  deepAnalysis: DeepAnalysisResult | null,
+  indicators: TechnicalSummary | null,
+  biasResult: BiasResult | null,
+) {
   const [shouldFetch, setShouldFetch] = useState(false);
   const instrument = useMarketStore((s) => s.selectedInstrument);
-  const { biasResult } = useBiasScore();
-  const { indicators } = useTechnicalData();
-  const { data: newsData } = useMarketNews();
-  const { data: fearGreedData } = useFearGreed();
-  const { data: bondData } = useBondYields();
-  const { data: bankData } = useCentralBanks();
 
-  const requestBody = shouldFetch && deepAnalysis && indicators ? {
-    instrument: instrument.id,
-    symbol: instrument.symbol,
-    category: instrument.category,
-    currentPrice: indicators.currentPrice,
-    supplyZones: deepAnalysis.supplyZones.slice(0, 5),
-    demandZones: deepAnalysis.demandZones.slice(0, 5),
-    confluenceLevels: deepAnalysis.confluenceLevels,
-    trend: indicators.trend,
-    rsi: indicators.rsi,
-    macd: indicators.macd,
-    bollingerBands: indicators.bollingerBands,
-    bias: biasResult ? {
-      overall: biasResult.overallBias,
-      direction: biasResult.direction,
-      confidence: biasResult.confidence,
-    } : null,
-    fearGreed: fearGreedData?.current ? {
-      value: fearGreedData.current.value,
-      label: fearGreedData.current.label,
-    } : null,
-    dxy: bondData?.dxy ? {
-      value: bondData.dxy.value,
-      change: bondData.dxy.change,
-    } : null,
-    news: (newsData?.items || []).slice(0, 3).map((n: { headline: string; sentimentLabel: string }) => ({
-      headline: n.headline,
-      sentiment: n.sentimentLabel,
-    })),
-    centralBanks: (bankData?.banks || []).slice(0, 3).map((b: { bank: string; currentRate: number; policyStance: string }) => ({
-      bank: b.bank,
-      rate: b.currentRate,
-      stance: b.policyStance,
-    })),
-  } : null;
+  // Build request body only when user triggers generation
+  const requestBody = useMemo(() => {
+    if (!shouldFetch || !deepAnalysis || !indicators) return null;
+    return {
+      instrument: instrument.id,
+      symbol: instrument.symbol,
+      category: instrument.category,
+      currentPrice: indicators.currentPrice,
+      supplyZones: deepAnalysis.supplyZones.slice(0, 5),
+      demandZones: deepAnalysis.demandZones.slice(0, 5),
+      confluenceLevels: deepAnalysis.confluenceLevels,
+      trend: indicators.trend,
+      rsi: indicators.rsi,
+      macd: indicators.macd,
+      bollingerBands: indicators.bollingerBands,
+      bias: biasResult ? {
+        overall: biasResult.overallBias,
+        direction: biasResult.direction,
+        confidence: biasResult.confidence,
+      } : null,
+    };
+  }, [shouldFetch, deepAnalysis, indicators, biasResult, instrument]);
+
+  // Stable SWR key + ref for body to prevent re-render loops
+  const bodyRef = useRef(requestBody);
+  bodyRef.current = requestBody;
 
   const { data, error, isLoading } = useSWR<{ analysis: DeepAnalysisLLMResult | null }>(
-    requestBody ? ["deep-analysis-llm", instrument.id] : null,
+    shouldFetch && requestBody ? `deep-analysis-${instrument.id}` : null,
     async () => {
+      const body = bodyRef.current;
+      if (!body) return { analysis: null };
       const res = await fetch("/api/analysis/deep-analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify(body),
       });
       return res.json();
     },
