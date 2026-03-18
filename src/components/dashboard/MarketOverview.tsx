@@ -10,13 +10,24 @@ import { BondYields } from "@/components/fundamentals/BondYields";
 import { CurrencyStrength } from "@/components/fundamentals/CurrencyStrength";
 import { MarketHoursStrip } from "@/components/common/MarketHours";
 import { MarketContext } from "./MarketContext";
+import { FallingPattern } from "@/components/ui/falling-pattern";
 import { useAllBiasScores } from "@/lib/hooks/useAllBiasScores";
 
 export function MarketOverview() {
   useAllBiasScores();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="relative min-h-screen bg-background">
+      {/* Animated falling pattern background */}
+      <div className="fixed inset-0 z-0">
+        <FallingPattern
+          className="h-full [mask-image:radial-gradient(ellipse_at_center,transparent,var(--background))]"
+          color="oklch(0.6 0.15 260)"
+          duration={150}
+        />
+      </div>
+
+      <div className="relative z-10">
       <Header mode="overview" />
       <MarketHoursStrip />
 
@@ -53,6 +64,7 @@ export function MarketOverview() {
         {/* Row 5: Currency Strength */}
         <CurrencyStrength />
       </main>
+      </div>
     </div>
   );
 }
