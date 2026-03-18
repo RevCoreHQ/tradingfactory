@@ -15,7 +15,9 @@ function parseXmlEvents(xml: string): EconomicEvent[] {
 
     const get = (tag: string): string => {
       const m = block.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
-      return m ? m[1].trim() : "";
+      if (!m) return "";
+      // Strip CDATA wrapper: <![CDATA[value]]> → value
+      return m[1].trim().replace(/^<!\[CDATA\[/, "").replace(/\]\]>$/, "").trim();
     };
 
     const title = get("title");

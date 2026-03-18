@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import useSWR from "swr";
 import { useMarketStore } from "@/lib/store/market-store";
 import { useMarketNews, useFearGreed, useBondYields, useCentralBanks } from "./useMarketData";
@@ -172,7 +172,8 @@ export function useLLMBatchAnalysis(allBiasResults: Record<string, BiasResult>) 
   // Skip API call if we have a valid cached batch
   const hasCached = typeof window !== "undefined" ? !!getCachedBatch() : false;
 
-  const requestBody = hasData && !hasCached ? {
+  // Build request body (changes as data updates)
+  const requestBody = hasData ? {
     instruments: INSTRUMENTS.map(inst => buildLLMRequest(
       inst.id, inst.category,
       newsData, fearGreedData, bondData, bankData,
@@ -181,9 +182,32 @@ export function useLLMBatchAnalysis(allBiasResults: Record<string, BiasResult>) 
     )),
   } : null;
 
+  // Keep latest body in a ref so the fetcher always uses current data
+  // without changing the SWR key (which would reset data/loading state)
+  const bodyRef = useRef(requestBody);
+  bodyRef.current = requestBody;
+
+  // Track whether batch has been attempted (success or failure)
+  const attemptedRef = useRef(false);
+
+  // Stable SWR key — only null when cache exists or data not ready
+  const shouldFetch = hasData && !hasCached;
+
   const { data, error, isLoading } = useSWR<{ batch: { results: Record<string, LLMAnalysisResult> } | null }>(
-    requestBody ? ["/api/analysis/llm-batch", requestBody] : null,
-    delayedPostFetcher,
+    shouldFetch ? "llm-batch" : null,
+    async () => {
+      // Wait 15s to avoid colliding with market summary on Anthropic rate limit
+      await new Promise((r) => setTimeout(r, 15_000));
+      const body = bodyRef.current;
+      if (!body) return { batch: null };
+      const res = await fetch("/api/analysis/llm-batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      attemptedRef.current = true;
+      return res.json();
+    },
     {
       refreshInterval: BATCH_CACHE_TTL_MS,
       revalidateOnFocus: false,
@@ -206,7 +230,7 @@ export function useLLMBatchAnalysis(allBiasResults: Record<string, BiasResult>) 
   return {
     batchResults,
     isLoading: !batchResults && isLoading,
-    isReady: !!batchResults || (!!data && !isLoading),
+    isReady: !!batchResults || attemptedRef.current || (!!data && !isLoading) || !!error,
     error,
   };
 }
