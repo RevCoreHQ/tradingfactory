@@ -663,3 +663,157 @@ export async function generateMarketSummary(
   summaryCache.set(cacheKey, { data: result, expiry: Date.now() + SUMMARY_TTL_MS });
   return result;
 }
+
+// ---------------------------------------------------------------------------
+// Deep Analysis — AI Trade Ideas from S/D zones + confluence
+// ---------------------------------------------------------------------------
+
+import type { DeepAnalysisLLMResult, AITradeIdea } from "@/lib/types/deep-analysis";
+
+const DEEP_ANALYSIS_SYSTEM_PROMPT = `You are an elite price action and order flow analyst at a prop trading desk. Given supply/demand zones, confluence levels, and technical context, provide specific actionable trade ideas.
+
+Rules:
+- Provide 2-3 specific trade ideas, each with:
+  - direction: "long" or "short"
+  - entry: exact price level
+  - stopLoss: exact price level (beyond the nearest S/D zone)
+  - takeProfit: exact price level (target the next significant zone/level)
+  - riskReward: calculated R:R ratio (minimum 1.5)
+  - rationale: 1-2 sentences explaining the trade thesis
+  - confluenceFactors: list of supporting levels/zones at the entry
+  - confidence: 0-100
+  - timeframe: "scalp", "intraday", or "swing"
+- Identify which supply/demand zones are most significant and why (significantZones).
+- List 2-3 key levels to watch for confirmation before entering (keyLevelsToWatch).
+- Provide a brief summary of the overall price structure.
+- Respond with valid JSON only.`;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildDeepAnalysisPrompt(req: any): string {
+  let prompt = `Analyze ${req.symbol} (${req.category}) and provide trade ideas based on the following data.
+
+Current Price: ${req.currentPrice}
+
+--- Supply/Demand Zones ---
+Supply Zones (resistance/selling pressure):
+${(req.supplyZones || []).map((z: { priceHigh: number; priceLow: number; strength: number; freshness: string; impulseMagnitude: number }) =>
+  `  ${z.priceLow.toFixed(req.currentPrice > 100 ? 2 : 5)} – ${z.priceHigh.toFixed(req.currentPrice > 100 ? 2 : 5)} (strength: ${z.strength}, ${z.freshness}, ${z.impulseMagnitude.toFixed(1)}x ATR)`
+).join("\n") || "  None detected"}
+
+Demand Zones (support/buying pressure):
+${(req.demandZones || []).map((z: { priceHigh: number; priceLow: number; strength: number; freshness: string; impulseMagnitude: number }) =>
+  `  ${z.priceLow.toFixed(req.currentPrice > 100 ? 2 : 5)} – ${z.priceHigh.toFixed(req.currentPrice > 100 ? 2 : 5)} (strength: ${z.strength}, ${z.freshness}, ${z.impulseMagnitude.toFixed(1)}x ATR)`
+).join("\n") || "  None detected"}
+
+--- Confluence Levels ---
+${(req.confluenceLevels || []).map((l: { price: number; score: number; type: string; sources: { name: string }[] }) =>
+  `  ${l.price.toFixed(req.currentPrice > 100 ? 2 : 5)} (${l.type}, score: ${l.score}) — ${l.sources.map((s: { name: string }) => s.name).join(", ")}`
+).join("\n") || "  None detected"}
+`;
+
+  if (req.trend) {
+    prompt += `
+--- Trend ---
+Direction: ${req.trend.direction} | Pattern: ${req.trend.pattern} | Strength: ${req.trend.strength}
+`;
+  }
+
+  if (req.rsi) {
+    prompt += `RSI: ${req.rsi.value.toFixed(1)} (${req.rsi.signal})
+`;
+  }
+
+  if (req.macd) {
+    prompt += `MACD Histogram: ${req.macd.histogram.toFixed(4)} | Crossover: ${req.macd.crossover || "none"}
+`;
+  }
+
+  if (req.bias) {
+    prompt += `
+--- Bias ---
+Overall: ${req.bias.overall} | Direction: ${req.bias.direction} | Confidence: ${req.bias.confidence}%
+`;
+  }
+
+  if (req.fearGreed) {
+    prompt += `Fear & Greed: ${req.fearGreed.value} (${req.fearGreed.label})
+`;
+  }
+
+  if (req.news && req.news.length > 0) {
+    prompt += `
+--- Recent News ---
+${req.news.map((n: { headline: string; sentiment: string }) => `  [${n.sentiment}] ${n.headline}`).join("\n")}
+`;
+  }
+
+  prompt += `
+Respond with JSON:
+{
+  "tradeIdeas": [
+    {
+      "direction": "long" | "short",
+      "entry": <price>,
+      "stopLoss": <price>,
+      "takeProfit": <price>,
+      "riskReward": <number>,
+      "rationale": "<1-2 sentences>",
+      "confluenceFactors": ["<factor 1>", "<factor 2>"],
+      "confidence": <0-100>,
+      "timeframe": "scalp" | "intraday" | "swing"
+    }
+  ],
+  "significantZones": ["<zone description>"],
+  "keyLevelsToWatch": ["<level to watch>"],
+  "summary": "<brief price structure summary>"
+}`;
+
+  return prompt;
+}
+
+function parseDeepAnalysisResult(raw: string): DeepAnalysisLLMResult | null {
+  try {
+    const cleaned = stripCodeFences(raw);
+    const parsed = JSON.parse(cleaned);
+
+    const tradeIdeas: AITradeIdea[] = (parsed.tradeIdeas || []).map(
+      (t: Record<string, unknown>) => ({
+        direction: t.direction === "short" ? "short" : "long",
+        entry: Number(t.entry) || 0,
+        stopLoss: Number(t.stopLoss) || 0,
+        takeProfit: Number(t.takeProfit) || 0,
+        riskReward: clamp(Number(t.riskReward) || 0, 0, 20),
+        rationale: String(t.rationale ?? ""),
+        confluenceFactors: Array.isArray(t.confluenceFactors)
+          ? (t.confluenceFactors as string[]).map(String).slice(0, 5)
+          : [],
+        confidence: clamp(Number(t.confidence) || 50, 0, 100),
+        timeframe: String(t.timeframe ?? "intraday"),
+      })
+    );
+
+    return {
+      tradeIdeas,
+      significantZones: Array.isArray(parsed.significantZones)
+        ? parsed.significantZones.map(String).slice(0, 5)
+        : [],
+      keyLevelsToWatch: Array.isArray(parsed.keyLevelsToWatch)
+        ? parsed.keyLevelsToWatch.map(String).slice(0, 5)
+        : [],
+      summary: String(parsed.summary ?? ""),
+    };
+  } catch (err) {
+    console.error("Failed to parse deep analysis response:", err);
+    return null;
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function analyzeDeepAnalysis(req: any): Promise<DeepAnalysisLLMResult | null> {
+  const userPrompt = buildDeepAnalysisPrompt(req);
+  // Use Sonnet for quality — this is single-instrument deep analysis
+  const response = await callLLM(DEEP_ANALYSIS_SYSTEM_PROMPT, userPrompt, 1536);
+  if (!response) return null;
+
+  return parseDeepAnalysisResult(response.text);
+}

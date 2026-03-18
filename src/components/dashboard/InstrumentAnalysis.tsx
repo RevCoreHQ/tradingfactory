@@ -13,15 +13,18 @@ import { CentralBankTracker } from "@/components/fundamentals/CentralBankTracker
 import { CurrencyStrength } from "@/components/fundamentals/CurrencyStrength";
 import { IntermarketCorrelation } from "@/components/fundamentals/IntermarketCorrelation";
 import { TechnicalOverview } from "@/components/technicals/TechnicalOverview";
+import { DeepAnalysis } from "@/components/technicals/DeepAnalysis";
 import { TradeSetupCard } from "./TradeSetupCard";
 import { GlassCard } from "@/components/common/GlassCard";
 import { useMarketStore } from "@/lib/store/market-store";
 import { useBiasScore } from "@/lib/hooks/useBiasScore";
 import { useAllBiasScores } from "@/lib/hooks/useAllBiasScores";
 import { saveBiasToHistory } from "@/components/bias/BiasHistory";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 
 export function InstrumentAnalysis() {
+  const [activeTab, setActiveTab] = useState<"technical" | "deep">("deep");
   const instrument = useMarketStore((s) => s.selectedInstrument);
   const { biasResult } = useBiasScore();
 
@@ -84,10 +87,41 @@ export function InstrumentAnalysis() {
             <InstrumentBias />
           </div>
 
-          {/* Center Column - Technicals */}
+          {/* Center Column - Technicals / Deep Analysis */}
           <div className="lg:col-span-5 space-y-4">
-            <TechnicalOverview />
-            <IntermarketCorrelation />
+            <div className="flex gap-1 mb-1">
+              <button
+                onClick={() => setActiveTab("deep")}
+                className={cn(
+                  "px-3 py-1 rounded-lg text-[11px] font-semibold transition-colors",
+                  activeTab === "deep"
+                    ? "bg-neutral-accent/15 text-neutral-accent"
+                    : "text-muted-foreground hover:text-foreground hover:bg-[var(--surface-2)]"
+                )}
+              >
+                Deep Analysis
+              </button>
+              <button
+                onClick={() => setActiveTab("technical")}
+                className={cn(
+                  "px-3 py-1 rounded-lg text-[11px] font-semibold transition-colors",
+                  activeTab === "technical"
+                    ? "bg-neutral-accent/15 text-neutral-accent"
+                    : "text-muted-foreground hover:text-foreground hover:bg-[var(--surface-2)]"
+                )}
+              >
+                Technical
+              </button>
+            </div>
+
+            {activeTab === "deep" ? (
+              <DeepAnalysis />
+            ) : (
+              <>
+                <TechnicalOverview />
+                <IntermarketCorrelation />
+              </>
+            )}
           </div>
 
           {/* Right Column - News */}
