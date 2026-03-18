@@ -54,9 +54,9 @@ const postFetcher = async ([url, body]: [string, unknown]) => {
   return res.json();
 };
 
-// Delayed fetcher — avoids simultaneous Anthropic calls that hit rate limits
+// Delayed fetcher — short delay to let market summary start first
 const delayedPostFetcher = async ([url, body]: [string, unknown]) => {
-  await new Promise((r) => setTimeout(r, 15_000)); // wait 15s for market summary to finish
+  await new Promise((r) => setTimeout(r, 3_000));
   return postFetcher([url, body]);
 };
 
@@ -210,8 +210,8 @@ export function useLLMBatchAnalysis(allBiasResults: Record<string, BiasResult>) 
   const { data, error, isLoading } = useSWR<{ batch: { results: Record<string, LLMAnalysisResult> } | null }>(
     shouldFetch ? "llm-batch" : null,
     async () => {
-      // Wait 15s to avoid colliding with market summary on Anthropic rate limit
-      await new Promise((r) => setTimeout(r, 15_000));
+      // Short delay to let market summary start first
+      await new Promise((r) => setTimeout(r, 3_000));
       const body = bodyRef.current;
       if (!body) return { batch: null };
       const res = await fetch("/api/analysis/llm-batch", {

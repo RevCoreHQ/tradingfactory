@@ -149,14 +149,14 @@ export function useAllBiasScores() {
       prevHashRef.current = hash;
       setAllBiasResults("intraday", allResults.intraday);
       setAllBiasResults("intraweek", allResults.intraweek);
-      setBatchLLMResults(batchResults);
       const currentResults = biasTimeframe === "intraday" ? allResults.intraday : allResults.intraweek;
       for (const [id, result] of Object.entries(currentResults)) {
         setBiasResult(id, result);
       }
     }
-    // Always update LLM ready state regardless of hash — otherwise shimmer
-    // stays forever when batch fails (null results don't change the hash)
+    // Always update batch LLM state regardless of hash — batch results can
+    // arrive without changing the bias hash (e.g. small adjustments rounded away)
+    setBatchLLMResults(batchResults);
     if (llmReady) setBatchLLMReady(true);
   }, [allResults, batchResults, llmReady, setBiasResult, setAllBiasResults, setBatchLLMResults, setBatchLLMReady, biasTimeframe]);
 
