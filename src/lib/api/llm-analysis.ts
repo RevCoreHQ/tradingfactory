@@ -527,9 +527,9 @@ export async function analyzeBatchInstruments(
   }
 
   const userPrompt = buildBatchPrompt(req);
-  // Keep within Anthropic's 8k output tokens/min rate limit
-  // 13 instruments × ~100 tokens each ≈ 1300 actual output tokens
-  const maxTokens = Math.min(4096, Math.max(1536, req.instruments.length * 150));
+  // Each instrument needs ~200 tokens (signals, summary, catalysts, key levels, etc.)
+  // Plus ~100 tokens for the outer JSON wrapper
+  const maxTokens = Math.min(8192, req.instruments.length * 250 + 100);
   // Use Haiku for batch — 10x faster and cheaper than Sonnet, plenty capable for bias adjustments
   const response = await callLLM(BATCH_SYSTEM_PROMPT, userPrompt, maxTokens, "claude-haiku-4-5-20251001");
   if (!response) return null;
