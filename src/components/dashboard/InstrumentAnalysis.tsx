@@ -13,6 +13,7 @@ import { BondYields } from "@/components/fundamentals/BondYields";
 import { CentralBankTracker } from "@/components/fundamentals/CentralBankTracker";
 import { CurrencyStrength } from "@/components/fundamentals/CurrencyStrength";
 import { IntermarketCorrelation } from "@/components/fundamentals/IntermarketCorrelation";
+import { COTPositioning } from "@/components/fundamentals/COTPositioning";
 import { TechnicalOverview } from "@/components/technicals/TechnicalOverview";
 import { DeepAnalysis } from "@/components/technicals/DeepAnalysis";
 import { TradeSetupCard } from "./TradeSetupCard";
@@ -25,11 +26,13 @@ import { BiasAccuracyCard } from "@/components/bias/BiasAccuracy";
 import { SessionCard } from "@/components/common/SessionIndicator";
 import { QuickTradeLog } from "@/components/journal/QuickTradeLog";
 import { MTFConfluence } from "@/components/technicals/MTFConfluence";
+import { useRealtimePrices } from "@/lib/hooks/useRealtimePrices";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Target, BarChart3, AlertTriangle, Globe, History } from "lucide-react";
 
 export function InstrumentAnalysis() {
+  useRealtimePrices();
   const [activeTab, setActiveTab] = useState<"technical" | "deep">("deep");
   const instrument = useMarketStore((s) => s.selectedInstrument);
   const { biasResult } = useBiasScore();
@@ -189,24 +192,32 @@ export function InstrumentAnalysis() {
           </div>
         </section>
 
-        {/* ── Section 4: Macro Data ── */}
+        {/* ── Section 4: Macro & Positioning ── */}
         <section>
           <SectionHeader
             step={4}
-            title="Macro Data"
-            subtitle="Yields, calendar, and cross-market data"
+            title="Macro & Positioning"
+            subtitle="Institutional positioning, yields, calendar, and cross-market data"
             icon={<Globe className="h-3.5 w-3.5" />}
             accentColor="amber"
           />
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div className="lg:col-span-4">
+              <COTPositioning />
+            </div>
             <div className="lg:col-span-4">
               <EconomicCalendar />
             </div>
             <div className="lg:col-span-4">
               <BondYields />
             </div>
-            <div className="lg:col-span-4">
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mt-4">
+            <div className="lg:col-span-6">
               <CentralBankTracker />
+            </div>
+            <div className="lg:col-span-6">
+              <IntermarketCorrelation />
             </div>
           </div>
         </section>

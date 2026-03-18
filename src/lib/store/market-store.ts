@@ -13,6 +13,11 @@ export interface ADRStoreData {
   percent: number;
 }
 
+export interface RealtimeQuote {
+  price: number;
+  timestamp: number;
+}
+
 interface MarketStore {
   selectedInstrument: Instrument;
   selectedTimeframe: string;
@@ -29,6 +34,8 @@ interface MarketStore {
   journalOpen: boolean;
   alerts: SmartAlert[];
   alertConfig: AlertConfig;
+  realtimeQuotes: Record<string, RealtimeQuote>;
+  wsConnected: boolean;
 
   setSelectedInstrument: (instrument: Instrument) => void;
   setSelectedTimeframe: (timeframe: string) => void;
@@ -44,6 +51,8 @@ interface MarketStore {
   dismissAlert: (id: string) => void;
   clearAlerts: () => void;
   setAlertConfig: (config: Partial<AlertConfig>) => void;
+  updateRealtimePrice: (instrumentId: string, price: number, timestamp: number) => void;
+  setWsConnected: (connected: boolean) => void;
 }
 
 export const useMarketStore = create<MarketStore>((set) => ({
@@ -59,6 +68,8 @@ export const useMarketStore = create<MarketStore>((set) => ({
   journalOpen: false,
   alerts: [],
   alertConfig: DEFAULT_ALERT_CONFIG,
+  realtimeQuotes: {},
+  wsConnected: false,
 
   setSelectedInstrument: (instrument) => set({ selectedInstrument: instrument }),
   setSelectedTimeframe: (timeframe) => set({ selectedTimeframe: timeframe }),
@@ -92,4 +103,12 @@ export const useMarketStore = create<MarketStore>((set) => ({
     set((state) => ({
       alertConfig: { ...state.alertConfig, ...partial },
     })),
+  updateRealtimePrice: (instrumentId, price, timestamp) =>
+    set((state) => ({
+      realtimeQuotes: {
+        ...state.realtimeQuotes,
+        [instrumentId]: { price, timestamp },
+      },
+    })),
+  setWsConnected: (connected) => set({ wsConnected: connected }),
 }));

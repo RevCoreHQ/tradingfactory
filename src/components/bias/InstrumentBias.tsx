@@ -14,6 +14,7 @@ export function InstrumentBias() {
   const selectedInstrument = useMarketStore((s) => s.selectedInstrument);
   const setSelectedInstrument = useMarketStore((s) => s.setSelectedInstrument);
   const biasResults = useMarketStore((s) => s.biasResults);
+  const realtimeQuotes = useMarketStore((s) => s.realtimeQuotes);
   const { data: ratesData } = useRates();
   const quotes = ratesData?.quotes || {};
 
@@ -24,6 +25,8 @@ export function InstrumentBias() {
         const isActive = selectedInstrument.id === inst.id;
         const bias = biasResults[inst.id];
         const quote = quotes[inst.id];
+        const wsQuote = realtimeQuotes[inst.id];
+        const displayPrice = wsQuote?.price || quote?.mid || 0;
         const biasValue = bias?.overallBias || 0;
         const direction = bias?.direction || "neutral";
         const confidence = bias?.confidence || 0;
@@ -42,9 +45,9 @@ export function InstrumentBias() {
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold text-foreground">{inst.symbol}</span>
-              {quote && quote.mid > 0 && (
+              {displayPrice > 0 && (
                 <AnimatedNumber
-                  value={quote.mid}
+                  value={displayPrice}
                   format={(n) => n.toFixed(inst.decimalPlaces)}
                   className="text-xs"
                 />

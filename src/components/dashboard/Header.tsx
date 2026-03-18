@@ -22,6 +22,8 @@ export function Header({ mode = "analysis" }: HeaderProps) {
   const setBiasTimeframe = useMarketStore((s) => s.setBiasTimeframe);
   const journalOpen = useMarketStore((s) => s.journalOpen);
   const setJournalOpen = useMarketStore((s) => s.setJournalOpen);
+  const wsConnected = useMarketStore((s) => s.wsConnected);
+  const realtimeQuotes = useMarketStore((s) => s.realtimeQuotes);
   const { data: ratesData } = useRates();
   const quotes = ratesData?.quotes || {};
 
@@ -72,6 +74,9 @@ export function Header({ mode = "analysis" }: HeaderProps) {
                     const isActive = selectedInstrument.id === inst.id;
                     const quote = quotes[inst.id];
 
+                    const wsQuote = realtimeQuotes[inst.id];
+                    const displayPrice = wsQuote?.price || quote?.mid || 0;
+
                     return (
                       <button
                         key={inst.id}
@@ -84,14 +89,14 @@ export function Header({ mode = "analysis" }: HeaderProps) {
                         )}
                       >
                         <span className="font-semibold">{inst.symbol}</span>
-                        {quote && quote.mid > 0 && (
+                        {displayPrice > 0 && (
                           <span className="font-mono text-[10px]">
                             <AnimatedNumber
-                              value={quote.mid}
+                              value={displayPrice}
                               format={(n) => n.toFixed(Math.min(inst.decimalPlaces, 4))}
                               className="text-[10px]"
                             />
-                            {quote.changePercent !== 0 && (
+                            {quote && quote.changePercent !== 0 && (
                               <span className={cn("ml-1", getChangeClass(quote.changePercent))}>
                                 {quote.changePercent > 0 ? "+" : ""}{quote.changePercent.toFixed(2)}%
                               </span>
@@ -148,10 +153,23 @@ export function Header({ mode = "analysis" }: HeaderProps) {
 
           <ThemeToggle />
 
-          {/* Live indicator */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-bullish/8 border border-bullish/15">
-            <span className="h-1.5 w-1.5 rounded-full bg-bullish pulse-dot" />
-            <span className="text-[10px] text-bullish font-medium hidden md:inline">Live</span>
+          {/* Live indicator — shows WebSocket status */}
+          <div className={cn(
+            "flex items-center gap-1.5 px-2.5 py-1 rounded-lg border",
+            wsConnected
+              ? "bg-bullish/8 border-bullish/15"
+              : "bg-amber-500/8 border-amber-500/15"
+          )}>
+            <span className={cn(
+              "h-1.5 w-1.5 rounded-full pulse-dot",
+              wsConnected ? "bg-bullish" : "bg-amber-500"
+            )} />
+            <span className={cn(
+              "text-[10px] font-medium hidden md:inline",
+              wsConnected ? "text-bullish" : "text-amber-500"
+            )}>
+              {wsConnected ? "Live" : "Polling"}
+            </span>
           </div>
         </div>
       </div>

@@ -69,3 +69,13 @@ export function useSentiment(instrument?: string) {
     revalidateOnFocus: false,
   });
 }
+
+export function useCOTData() {
+  return useSWR<{
+    positions: import("@/lib/types/cot").COTPosition[];
+    lastUpdated: string;
+  }>("/api/fundamentals/cot", fetcher, {
+    refreshInterval: 3600_000, // 1 hour — COT data updates weekly
+    revalidateOnFocus: false,
+  });
+}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { fetchForexCandles, fetchForexCandleData } from "@/lib/api/finnhub";
 import { fetchCryptoOHLC } from "@/lib/api/coingecko";
 import { fetchForexDaily, fetchForexIntraday } from "@/lib/api/alpha-vantage";
+import { fetchTwelveDataCandles, TWELVE_DATA_INTERVALS } from "@/lib/api/twelve-data";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import type { OHLCV } from "@/lib/types/market";
 
@@ -68,7 +69,17 @@ export async function GET(req: NextRequest) {
         candles = [];
       }
 
-      // Fall back to Alpha Vantage if Finnhub returned empty
+      // Fallback 2: Twelve Data (800 calls/day, 8/min)
+      if (candles.length === 0) {
+        try {
+          const tdInterval = TWELVE_DATA_INTERVALS[timeframe] || "1h";
+          candles = await fetchTwelveDataCandles(instrument.symbol, tdInterval);
+        } catch {
+          candles = [];
+        }
+      }
+
+      // Fallback 3: Alpha Vantage (5 calls/min)
       if (candles.length === 0) {
         try {
           if (timeframe === "1d" || timeframe === "1w") {
