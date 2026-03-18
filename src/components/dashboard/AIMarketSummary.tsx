@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useMarketSummary } from "@/lib/hooks/useMarketSummary";
 import { cn } from "@/lib/utils";
-import { Sparkles, AlertTriangle, TrendingUp, Zap } from "lucide-react";
+import { Sparkles, AlertTriangle, Zap, ChevronDown } from "lucide-react";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
 
 function OutlookBadge({ outlook }: { outlook: "bullish" | "bearish" | "neutral" }) {
@@ -17,6 +19,85 @@ function OutlookBadge({ outlook }: { outlook: "bullish" | "bearish" | "neutral" 
     >
       {outlook}
     </span>
+  );
+}
+
+function SectorCard({ sector }: { sector: { sector: string; outlook: "bullish" | "bearish" | "neutral"; keyAssets: string[] } }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <button
+      onClick={() => setExpanded(!expanded)}
+      className={cn(
+        "bg-[var(--surface-2)] rounded-lg p-3 border border-border/30 text-left w-full transition-colors",
+        "hover:border-border-bright cursor-pointer"
+      )}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[11px] font-semibold capitalize text-foreground">
+          {sector.sector}
+        </span>
+        <div className="flex items-center gap-1.5">
+          <OutlookBadge outlook={sector.outlook} />
+          <motion.div
+            animate={{ rotate: expanded ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ChevronDown className="h-3 w-3 text-muted-foreground/30" />
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Collapsed: show first asset truncated */}
+      {!expanded && sector.keyAssets.length > 0 && (
+        <p className="text-[10px] text-muted-foreground leading-snug truncate">
+          {sector.keyAssets[0]}
+        </p>
+      )}
+
+      {/* Expanded: show all assets with animation */}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="overflow-hidden"
+          >
+            <div className="space-y-1.5 pt-1">
+              {sector.keyAssets.map((asset, i) => (
+                <motion.p
+                  key={i}
+                  initial={{ opacity: 0, x: -4 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05, duration: 0.2 }}
+                  className="text-[10px] text-muted-foreground leading-snug"
+                >
+                  <span className="text-muted-foreground/30 mr-1.5">•</span>
+                  {asset}
+                </motion.p>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </button>
+  );
+}
+
+function SectorBreakdown({ sectors }: { sectors: { sector: string; outlook: "bullish" | "bearish" | "neutral"; keyAssets: string[] }[] }) {
+  return (
+    <div className="mt-5 pt-4 border-t border-border/50">
+      <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">
+        Sector Breakdown
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {sectors.map((sector) => (
+          <SectorCard key={sector.sector} sector={sector} />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -135,30 +216,7 @@ export function AIMarketSummary() {
 
       {/* Sector Outlook */}
       {summary.sectorOutlook && summary.sectorOutlook.length > 0 && (
-        <div className="mt-5 pt-4 border-t border-border/50">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">
-            Sector Breakdown
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {summary.sectorOutlook.map((sector) => (
-              <div key={sector.sector} className="bg-[var(--surface-2)] rounded-lg p-3 border border-border/30">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-semibold capitalize text-foreground">
-                    {sector.sector}
-                  </span>
-                  <OutlookBadge outlook={sector.outlook} />
-                </div>
-                <div className="space-y-1">
-                  {sector.keyAssets.map((asset, i) => (
-                    <p key={i} className="text-[10px] text-muted-foreground leading-snug truncate">
-                      {asset}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <SectorBreakdown sectors={summary.sectorOutlook} />
       )}
     </div>
   );
