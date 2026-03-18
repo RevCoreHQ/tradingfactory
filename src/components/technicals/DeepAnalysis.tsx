@@ -285,7 +285,7 @@ function TradeIdeaCard({ idea, decimals }: { idea: AITradeIdea; decimals: number
 }
 
 function AITradeIdeas({ deepAnalysis, indicators, biasResult }: {
-  deepAnalysis: NonNullable<ReturnType<typeof useDeepAnalysis>["deepAnalysis"]>;
+  deepAnalysis: ReturnType<typeof useDeepAnalysis>["deepAnalysis"];
   indicators: import("@/lib/types/indicators").TechnicalSummary | null;
   biasResult: import("@/lib/types/bias").BiasResult | null;
 }) {
@@ -351,7 +351,7 @@ function AITradeIdeas({ deepAnalysis, indicators, biasResult }: {
         </div>
       ) : (
         <p className="text-xs text-muted-foreground/50 text-center py-6">
-          AI analysis unavailable — check API keys
+          AI analysis unavailable
         </p>
       )}
     </div>
@@ -401,11 +401,11 @@ export function DeepAnalysis() {
             currentPrice={deepAnalysis.currentPrice}
             decimals={instrument.decimalPlaces}
           />
-
-          {/* AI Trade Ideas */}
-          <AITradeIdeas deepAnalysis={deepAnalysis} indicators={indicators} biasResult={biasResult} />
         </>
       )}
+
+      {/* AI Trade Ideas — always rendered, works with or without zone data */}
+      <AITradeIdeas deepAnalysis={deepAnalysis} indicators={indicators} biasResult={biasResult} />
     </div>
   );
 }

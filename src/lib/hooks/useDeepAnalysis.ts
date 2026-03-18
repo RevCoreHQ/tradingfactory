@@ -22,7 +22,7 @@ export function useDeepAnalysis(): {
   const { candles, indicators, isLoading } = useTechnicalData();
 
   const deepAnalysis = useMemo(() => {
-    if (!indicators || candles.length < 50) return null;
+    if (!indicators || candles.length < 20) return null;
 
     const { supplyZones, demandZones } = detectSupplyDemandZones(
       candles,
@@ -61,16 +61,17 @@ export function useDeepAnalysisLLM(
   const instrument = useMarketStore((s) => s.selectedInstrument);
 
   // Build request body only when user triggers generation
+  // Only requires indicators — deepAnalysis (zones/confluence) is optional
   const requestBody = useMemo(() => {
-    if (!shouldFetch || !deepAnalysis || !indicators) return null;
+    if (!shouldFetch || !indicators) return null;
     return {
       instrument: instrument.id,
       symbol: instrument.symbol,
       category: instrument.category,
       currentPrice: indicators.currentPrice,
-      supplyZones: deepAnalysis.supplyZones.slice(0, 5),
-      demandZones: deepAnalysis.demandZones.slice(0, 5),
-      confluenceLevels: deepAnalysis.confluenceLevels,
+      supplyZones: deepAnalysis?.supplyZones.slice(0, 5) ?? [],
+      demandZones: deepAnalysis?.demandZones.slice(0, 5) ?? [],
+      confluenceLevels: deepAnalysis?.confluenceLevels ?? [],
       trend: indicators.trend,
       rsi: indicators.rsi,
       macd: indicators.macd,
