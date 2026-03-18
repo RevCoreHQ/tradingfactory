@@ -7,46 +7,44 @@ export async function GET() {
     anthropic: !!process.env.ANTHROPIC_API_KEY,
     gemini: !!process.env.GEMINI_API_KEY,
     finnhub: !!process.env.FINNHUB_API_KEY,
+    fmp: !!process.env.FMP_API_KEY,
   };
 
   const keyLengths = {
     anthropic: process.env.ANTHROPIC_API_KEY?.length ?? 0,
     gemini: process.env.GEMINI_API_KEY?.length ?? 0,
     finnhub: process.env.FINNHUB_API_KEY?.length ?? 0,
+    fmp: process.env.FMP_API_KEY?.length ?? 0,
   };
 
-  // Test each configured provider with a real API call
   const tests: Record<string, string> = {};
 
-  // Test Finnhub (economic calendar)
-  if (process.env.FINNHUB_API_KEY) {
+  // Test FMP (economic calendar — free tier)
+  if (process.env.FMP_API_KEY) {
     try {
       const now = new Date();
       const from = now.toISOString().split("T")[0];
       const to = new Date(now.getTime() + 7 * 86400000).toISOString().split("T")[0];
       const res = await fetch(
-        `https://finnhub.io/api/v1/calendar/economic?from=${from}&to=${to}&token=${process.env.FINNHUB_API_KEY}`
+        `https://financialmodelingprep.com/api/v3/economic_calendar?from=${from}&to=${to}&apikey=${process.env.FMP_API_KEY}`
       );
       if (res.ok) {
         const data = await res.json();
-        const count = data.economicCalendar?.length ?? 0;
-        const highImpact = (data.economicCalendar || []).filter(
-          (e: { impact: string | number }) => {
-            const v = String(e.impact).toLowerCase();
-            return v === "high" || v === "3";
-          }
-        ).length;
-        tests.finnhub = `ok (${count} events, ${highImpact} high-impact)`;
+        const count = Array.isArray(data) ? data.length : 0;
+        const highImpact = Array.isArray(data)
+          ? data.filter((e: { impact: string }) => e.impact?.toLowerCase() === "high").length
+          : 0;
+        tests.fmp = `ok (${count} events, ${highImpact} high-impact)`;
       } else {
         const body = await res.text().catch(() => "");
-        tests.finnhub = `error ${res.status}: ${body.slice(0, 200)}`;
+        tests.fmp = `error ${res.status}: ${body.slice(0, 200)}`;
       }
     } catch (e) {
-      tests.finnhub = `exception: ${e instanceof Error ? e.message : String(e)}`;
+      tests.fmp = `exception: ${e instanceof Error ? e.message : String(e)}`;
     }
   }
 
-  // Test Anthropic (skip live call to avoid wasting rate limit)
+  // Test Anthropic (skip live call to preserve rate limit)
   if (process.env.ANTHROPIC_API_KEY) {
     tests.anthropic = "key configured (skipping live test to preserve rate limit)";
   }
