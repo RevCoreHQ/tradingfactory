@@ -1,67 +1,98 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import type { EconomicEvent } from "@/lib/types/market";
 
-// Uses Financial Modeling Prep (FMP) — free tier includes economic calendar
-// Sign up at https://financialmodelingprep.com/ for a free API key
+// Uses the Forex Factory calendar XML feed — no API key needed
+const FF_CALENDAR_URL = "https://nfs.faireconomy.media/ff_calendar_thisweek.xml";
 
-export async function GET(req: NextRequest) {
-  try {
-    const apiKey = process.env.FMP_API_KEY;
-    if (!apiKey) {
-      console.warn("FMP_API_KEY not configured — economic calendar unavailable");
-      return NextResponse.json({ events: [] }, { status: 200 });
+function parseXmlEvents(xml: string): EconomicEvent[] {
+  const events: EconomicEvent[] = [];
+  // Simple XML parser for the FF calendar format
+  const eventMatches = xml.match(/<event>([\s\S]*?)<\/event>/g);
+  if (!eventMatches) return events;
+
+  for (let i = 0; i < eventMatches.length; i++) {
+    const block = eventMatches[i];
+
+    const get = (tag: string): string => {
+      const m = block.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
+      return m ? m[1].trim() : "";
+    };
+
+    const title = get("title");
+    const country = get("country");
+    const rawDate = get("date"); // "01-10-2024" (MM-DD-YYYY)
+    const rawTime = get("time"); // "8:30am" or "All Day" or "Tentative"
+    const rawImpact = get("impact").toLowerCase();
+    const forecast = get("forecast");
+    const previous = get("previous");
+
+    // Normalize date from MM-DD-YYYY to YYYY-MM-DD
+    let isoDate = "";
+    if (rawDate) {
+      const parts = rawDate.split("-");
+      if (parts.length === 3) {
+        isoDate = `${parts[2]}-${parts[0].padStart(2, "0")}-${parts[1].padStart(2, "0")}`;
+      }
     }
 
-    const now = new Date();
-    const from = req.nextUrl.searchParams.get("from") || now.toISOString().split("T")[0];
-    const futureDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-    const to = req.nextUrl.searchParams.get("to") || futureDate.toISOString().split("T")[0];
+    // Normalize time
+    let time24 = "";
+    if (rawTime && rawTime !== "All Day" && rawTime !== "Tentative") {
+      const match = rawTime.match(/(\d{1,2}):(\d{2})(am|pm)/i);
+      if (match) {
+        let h = parseInt(match[1]);
+        const m = match[2];
+        const ampm = match[3].toLowerCase();
+        if (ampm === "pm" && h !== 12) h += 12;
+        if (ampm === "am" && h === 12) h = 0;
+        time24 = `${String(h).padStart(2, "0")}:${m}`;
+      }
+    }
 
-    const url = `https://financialmodelingprep.com/api/v3/economic_calendar?from=${from}&to=${to}&apikey=${apiKey}`;
-    const res = await fetch(url, { next: { revalidate: 900 } });
+    const impact: "low" | "medium" | "high" =
+      rawImpact === "high" ? "high" : rawImpact === "medium" ? "medium" : "low";
+
+    // Parse numeric values from forecast/previous (e.g. "180K" -> 180, "3.5%" -> 3.5)
+    const parseNum = (s: string): number | undefined => {
+      if (!s) return undefined;
+      const cleaned = s.replace(/[%KMB]/gi, "").trim();
+      const n = parseFloat(cleaned);
+      return isNaN(n) ? undefined : n;
+    };
+
+    events.push({
+      id: `ff-${i}-${isoDate}`,
+      country,
+      event: title,
+      date: isoDate,
+      time: time24,
+      impact,
+      forecast: parseNum(forecast),
+      previous: parseNum(previous),
+      actual: undefined,
+      currency: country, // FF uses currency code as country (USD, EUR, etc.)
+    });
+  }
+
+  return events;
+}
+
+export async function GET() {
+  try {
+    const res = await fetch(FF_CALENDAR_URL, {
+      next: { revalidate: 900 },
+      headers: {
+        "User-Agent": "TradingFactory/1.0",
+      },
+    });
 
     if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      console.error(`FMP economic calendar error: ${res.status} ${body.slice(0, 200)}`);
+      console.error(`FF calendar error: ${res.status} ${res.statusText}`);
       return NextResponse.json({ events: [] }, { status: 200 });
     }
 
-    const data: Array<{
-      event: string;
-      date: string;
-      country: string;
-      currency: string;
-      previous: number | null;
-      estimate: number | null;
-      actual: number | null;
-      change: number | null;
-      impact: string;
-      unit?: string;
-    }> = await res.json();
-
-    const events: EconomicEvent[] = (data || []).map((item, i) => {
-      // FMP impact: "Low", "Medium", "High"
-      const impact = item.impact?.toLowerCase();
-      const normalizedImpact: "low" | "medium" | "high" =
-        impact === "high" ? "high" : impact === "medium" ? "medium" : "low";
-
-      // Extract date and time from the date string (format: "2024-01-15 08:30:00")
-      const [datePart, timePart] = (item.date || "").split(" ");
-
-      return {
-        id: `fmp-${i}-${datePart}`,
-        country: item.country || "",
-        event: item.event || "",
-        date: datePart || "",
-        time: timePart ? timePart.slice(0, 5) : "",
-        impact: normalizedImpact,
-        forecast: item.estimate ?? undefined,
-        previous: item.previous ?? undefined,
-        actual: item.actual ?? undefined,
-        currency: item.currency || "",
-        unit: item.unit,
-      };
-    });
+    const xml = await res.text();
+    const events = parseXmlEvents(xml);
 
     return NextResponse.json(
       { events },
