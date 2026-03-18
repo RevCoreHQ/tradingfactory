@@ -10,7 +10,7 @@ import { RedNewsWeek } from "@/components/fundamentals/RedNewsWeek";
 import { BondYields } from "@/components/fundamentals/BondYields";
 import { CurrencyBias } from "@/components/fundamentals/CurrencyBias";
 import { MarketHoursStrip } from "@/components/common/MarketHours";
-import NeuralBackground from "@/components/ui/flow-field-background";
+import { EtheralShadow } from "@/components/ui/etheral-shadow";
 import { useAllBiasScores } from "@/lib/hooks/useAllBiasScores";
 import { Activity, Sparkles, Target, AlertTriangle, BarChart3 } from "lucide-react";
 
@@ -19,13 +19,13 @@ export function MarketOverview() {
 
   return (
     <div className="relative min-h-screen bg-background">
-      {/* Neural flow field background */}
-      <div className="fixed inset-0 z-0 opacity-40">
-        <NeuralBackground
-          color="#818cf8"
-          trailOpacity={0.12}
-          particleCount={400}
-          speed={0.6}
+      {/* Ethereal shadow background */}
+      <div className="fixed inset-0 z-0 opacity-30">
+        <EtheralShadow
+          color="rgba(99, 102, 241, 0.8)"
+          animation={{ scale: 80, speed: 60 }}
+          noise={{ opacity: 0.3, scale: 1 }}
+          sizing="fill"
         />
       </div>
 
