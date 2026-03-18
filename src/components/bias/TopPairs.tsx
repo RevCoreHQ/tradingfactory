@@ -135,11 +135,9 @@ function TradeSetupExpanded({ item }: { item: RankedItem }) {
   );
 }
 
-function ConvictionCard({ item, rank, isExpanded, onToggle, onNavigate }: {
+function ConvictionCard({ item, rank, onNavigate }: {
   item: RankedItem;
   rank: number;
-  isExpanded: boolean;
-  onToggle: () => void;
   onNavigate: () => void;
 }) {
   const { biasResult, instrument } = item;
@@ -147,16 +145,14 @@ function ConvictionCard({ item, rank, isExpanded, onToggle, onNavigate }: {
   const isBullish = biasResult.overallBias > 0;
   const isTopPick = rank === 1;
   const adr = biasResult.adr;
-  const hasSetup = !!biasResult.tradeSetup;
 
   return (
     <button
-      onClick={hasSetup ? onToggle : onNavigate}
+      onClick={onNavigate}
       className={cn(
         "relative flex flex-col p-3 rounded-lg transition-all cursor-pointer text-left w-full min-h-[140px]",
-        "bg-[var(--surface-1)] border border-border hover:border-border-bright",
-        isTopPick && "ring-1 ring-[var(--border-bright)]",
-        isExpanded && "border-border-bright"
+        "bg-[var(--surface-1)] border border-border hover:border-border-bright group",
+        isTopPick && "ring-1 ring-[var(--border-bright)]"
       )}
       style={{ borderLeftWidth: "3px", borderLeftColor: color }}
     >
@@ -210,20 +206,14 @@ function ConvictionCard({ item, rank, isExpanded, onToggle, onNavigate }: {
         )}
       </div>
 
-      {/* Expand indicator */}
-      {hasSetup && (
-        <ChevronDown className={cn(
-          "absolute top-2 right-2 h-3 w-3 text-muted-foreground/20 transition-transform",
-          isExpanded && "rotate-180"
-        )} />
-      )}
+      {/* Navigate indicator */}
+      <ArrowRight className="absolute top-2 right-2 h-3 w-3 text-muted-foreground/20 group-hover:text-muted-foreground/60 transition-colors" />
     </button>
   );
 }
 
 export function TopPairs() {
   const [expanded, setExpanded] = useState(false);
-  const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const allBiasResults = useMarketStore((s) => s.allBiasResults);
   const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
   const batchLLMResults = useMarketStore((s) => s.batchLLMResults);
@@ -256,7 +246,6 @@ export function TopPairs() {
   const hasAnyBias = ranked.some((r) => Math.abs(r.biasResult.overallBias) > 2);
   const displayCount = expanded ? ranked.length : 5;
   const displayed = ranked.slice(0, displayCount);
-  const expandedItem = displayed.find((item) => item.instrument.id === expandedCard);
 
   return (
     <div className="relative section-card p-5">
@@ -292,10 +281,6 @@ export function TopPairs() {
                 key={item.instrument.id}
                 item={item}
                 rank={idx + 1}
-                isExpanded={expandedCard === item.instrument.id}
-                onToggle={() => setExpandedCard(
-                  expandedCard === item.instrument.id ? null : item.instrument.id
-                )}
                 onNavigate={() => {
                   setSelectedInstrument(item.instrument);
                   router.push("/instrument");
@@ -303,28 +288,6 @@ export function TopPairs() {
               />
             ))}
           </div>
-
-          {/* Expanded trade setup panel below grid */}
-          {expandedItem && expandedItem.biasResult.tradeSetup && (
-            <div className="mt-3 bg-[var(--surface-1)] border border-border-bright rounded-lg p-4">
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold">{expandedItem.instrument.symbol}</span>
-                  <DirectionBadge direction={expandedItem.biasResult.direction} />
-                </div>
-                <button
-                  onClick={() => {
-                    setSelectedInstrument(expandedItem.instrument);
-                    router.push("/instrument");
-                  }}
-                  className="flex items-center gap-1 text-[10px] text-muted-foreground/50 hover:text-foreground transition-colors"
-                >
-                  Full analysis <ArrowRight className="h-2.5 w-2.5" />
-                </button>
-              </div>
-              <TradeSetupExpanded item={expandedItem} />
-            </div>
-          )}
         </>
       )}
 

@@ -264,7 +264,8 @@ async function callAnthropic(
   key: string,
   systemPrompt: string,
   userPrompt: string,
-  maxTokens: number
+  maxTokens: number,
+  model: string = "claude-sonnet-4-6"
 ): Promise<string> {
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -274,7 +275,7 @@ async function callAnthropic(
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-6",
+      model,
       max_tokens: maxTokens,
       temperature: 0.3,
       system: systemPrompt,
@@ -301,7 +302,8 @@ async function callAnthropic(
 async function callLLM(
   systemPrompt: string,
   userPrompt: string,
-  maxTokens: number = 1024
+  maxTokens: number = 1024,
+  anthropicModel: string = "claude-sonnet-4-6"
 ): Promise<{ text: string; provider: LLMProvider } | null> {
   const providers = getAvailableProviders();
   if (providers.length === 0) {
@@ -326,7 +328,7 @@ async function callLLM(
       if (provider === "gemini") {
         text = await callGemini(key, systemPrompt, userPrompt, maxTokens);
       } else if (provider === "anthropic") {
-        text = await callAnthropic(key, systemPrompt, userPrompt, maxTokens);
+        text = await callAnthropic(key, systemPrompt, userPrompt, maxTokens, anthropicModel);
       } else {
         text = await callOpenAI(key, systemPrompt, userPrompt, maxTokens);
       }
@@ -528,7 +530,8 @@ export async function analyzeBatchInstruments(
   // Keep within Anthropic's 8k output tokens/min rate limit
   // 13 instruments × ~100 tokens each ≈ 1300 actual output tokens
   const maxTokens = Math.min(4096, Math.max(1536, req.instruments.length * 150));
-  const response = await callLLM(BATCH_SYSTEM_PROMPT, userPrompt, maxTokens);
+  // Use Haiku for batch — 10x faster and cheaper than Sonnet, plenty capable for bias adjustments
+  const response = await callLLM(BATCH_SYSTEM_PROMPT, userPrompt, maxTokens, "claude-haiku-4-5-20251001");
   if (!response) return null;
 
   const result = parseBatchResult(response.text, response.provider);

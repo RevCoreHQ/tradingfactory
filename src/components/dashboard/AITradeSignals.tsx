@@ -1,16 +1,19 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useMarketStore } from "@/lib/store/market-store";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import { getBiasColor, getBiasLabel } from "@/lib/utils/formatters";
 import { cn } from "@/lib/utils";
-import { Sparkles, Zap } from "lucide-react";
+import { ArrowRight, Zap } from "lucide-react";
 
 export function AITradeSignals() {
+  const router = useRouter();
   const batchLLMResults = useMarketStore((s) => s.batchLLMResults);
   const batchLLMReady = useMarketStore((s) => s.batchLLMReady);
   const allBiasResults = useMarketStore((s) => s.allBiasResults);
   const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
+  const setSelectedInstrument = useMarketStore((s) => s.setSelectedInstrument);
   const currentResults = allBiasResults[biasTimeframe];
 
   if (!batchLLMResults) {
@@ -70,10 +73,14 @@ export function AITradeSignals() {
           const adj = llm.biasAdjustment;
 
           return (
-            <div
+            <button
               key={instrument.id}
+              onClick={() => {
+                setSelectedInstrument(instrument);
+                router.push("/instrument");
+              }}
               className={cn(
-                "rounded-lg p-3 bg-[var(--surface-2)] border border-border/30 transition-colors",
+                "rounded-lg p-3 bg-[var(--surface-2)] border border-border/30 transition-colors cursor-pointer text-left w-full group hover:border-border-bright",
                 adj > 0 ? "accent-bullish" : adj < 0 ? "accent-bearish" : "accent-neutral"
               )}
             >
@@ -85,8 +92,9 @@ export function AITradeSignals() {
                 >
                   {getBiasLabel(bias.direction)}
                 </span>
-                <span className="text-[10px] font-mono text-muted-foreground ml-auto">
+                <span className="text-[10px] font-mono text-muted-foreground ml-auto flex items-center gap-1">
                   AI: {adj > 0 ? "+" : ""}{adj.toFixed(0)}
+                  <ArrowRight className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </span>
               </div>
 
@@ -116,7 +124,7 @@ export function AITradeSignals() {
                   ))}
                 </div>
               )}
-            </div>
+            </button>
           );
         })}
       </div>
