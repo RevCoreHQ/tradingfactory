@@ -74,13 +74,12 @@ export function calculateTradeSetup(
   // --- Stop Loss ---
   const slMultiplier = timeframe === "intraday" ? 0.75 : 1.5;
   const slDistance = atr * slMultiplier;
-  const stopLoss = isBullish
-    ? currentPrice - slDistance
-    : isBearish
+  const stopLoss = isBearish
     ? currentPrice + slDistance
-    : currentPrice - slDistance; // default to long SL
+    : currentPrice - slDistance;
 
   // --- Take Profit Levels ---
+  // TPs calculated from current price in the direction of the trade
   const tpMultipliers = [1.0, 2.0, 3.0];
   const direction = isBearish ? -1 : 1;
 
@@ -94,11 +93,12 @@ export function calculateTradeSetup(
   ) as [number, number, number];
 
   // --- Entry Zone ---
-  const entrySpread = atr * 0.15;
-  const entryZone: [number, number] = [
-    currentPrice - entrySpread,
-    currentPrice + entrySpread,
-  ];
+  // Bullish: look to buy on a pullback (zone below current price)
+  // Bearish: look to sell on a bounce (zone above current price)
+  const entrySpread = atr * 0.25;
+  const entryZone: [number, number] = isBearish
+    ? [currentPrice, currentPrice + entrySpread]
+    : [currentPrice - entrySpread, currentPrice];
 
   // --- Risk Sizing ---
   const { sizing, reason } = calculateRiskSizing(biasResult, adr);
