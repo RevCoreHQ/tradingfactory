@@ -215,6 +215,8 @@ async function callGemini(
   });
 
   if (!response.ok) {
+    const errBody = await response.text().catch(() => "");
+    console.error(`Gemini error body: ${errBody}`);
     throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
   }
 
@@ -250,6 +252,8 @@ async function callOpenAI(
   });
 
   if (!response.ok) {
+    const errBody = await response.text().catch(() => "");
+    console.error(`OpenAI error body: ${errBody}`);
     throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
   }
 
@@ -274,7 +278,7 @@ async function callAnthropic(
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-6",
       max_tokens: 2048,
       temperature: 0.3,
       system: systemPrompt,
@@ -285,6 +289,8 @@ async function callAnthropic(
   });
 
   if (!response.ok) {
+    const errBody = await response.text().catch(() => "");
+    console.error(`Anthropic error body: ${errBody}`);
     throw new Error(`Anthropic API error: ${response.status} ${response.statusText}`);
   }
 
@@ -316,6 +322,7 @@ async function callLLM(
     }
 
     try {
+      console.log(`[LLM] Trying provider: ${provider}`);
       let text: string;
       if (provider === "gemini") {
         text = await callGemini(key, systemPrompt, userPrompt);
@@ -324,9 +331,10 @@ async function callLLM(
       } else {
         text = await callOpenAI(key, systemPrompt, userPrompt);
       }
+      console.log(`[LLM] Success with provider: ${provider}`);
       return { text, provider };
     } catch (err) {
-      console.error(`LLM call failed for ${provider}:`, err);
+      console.error(`[LLM] Failed for ${provider}:`, err);
     }
   }
 
