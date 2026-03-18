@@ -525,8 +525,9 @@ export async function analyzeBatchInstruments(
   }
 
   const userPrompt = buildBatchPrompt(req);
-  // 13 instruments × ~120 tokens each = ~1600 tokens minimum
-  const maxTokens = Math.max(2048, req.instruments.length * 200);
+  // Keep within Anthropic's 8k output tokens/min rate limit
+  // 13 instruments × ~100 tokens each ≈ 1300 actual output tokens
+  const maxTokens = Math.min(4096, Math.max(1536, req.instruments.length * 150));
   const response = await callLLM(BATCH_SYSTEM_PROMPT, userPrompt, maxTokens);
   if (!response) return null;
 
@@ -650,7 +651,7 @@ export async function generateMarketSummary(
   }
 
   const userPrompt = buildMarketSummaryPrompt(req);
-  const response = await callLLM(MARKET_SUMMARY_SYSTEM_PROMPT, userPrompt, 2048);
+  const response = await callLLM(MARKET_SUMMARY_SYSTEM_PROMPT, userPrompt, 1024);
   if (!response) return null;
 
   const result = parseMarketSummary(response.text, response.provider);
