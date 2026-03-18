@@ -29,6 +29,7 @@ export function TradeSetupCard() {
   const { biasResult } = useBiasScore();
 
   if (!biasResult?.tradeSetup) {
+    const hasBias = biasResult && Math.abs(biasResult.overallBias) > 2;
     return (
       <div className="panel rounded-lg p-4">
         <div className="flex items-center gap-2 mb-3">
@@ -37,11 +38,17 @@ export function TradeSetupCard() {
             Trade Setup
           </h3>
         </div>
-        <div className="space-y-2">
-          <div className="h-4 w-1/3 shimmer rounded" />
-          <div className="h-3 w-2/3 shimmer rounded" />
-          <div className="h-3 w-1/2 shimmer rounded" />
-        </div>
+        {hasBias ? (
+          <p className="text-[11px] text-muted-foreground/60 py-4 text-center">
+            Waiting for price data to calculate entry levels...
+          </p>
+        ) : (
+          <div className="space-y-2">
+            <div className="h-4 w-1/3 shimmer rounded" />
+            <div className="h-3 w-2/3 shimmer rounded" />
+            <div className="h-3 w-1/2 shimmer rounded" />
+          </div>
+        )}
       </div>
     );
   }

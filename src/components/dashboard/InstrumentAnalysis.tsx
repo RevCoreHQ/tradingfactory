@@ -108,6 +108,7 @@ export function InstrumentAnalysis() {
                 fundamentalScore={bias.fundamentalScore}
                 technicalScore={bias.technicalScore}
                 signals={bias.signals}
+                compact
               />
             </div>
           </div>

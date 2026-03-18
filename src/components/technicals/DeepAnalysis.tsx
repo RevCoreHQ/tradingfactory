@@ -291,6 +291,7 @@ function AITradeIdeas({ deepAnalysis, indicators, biasResult }: {
 }) {
   const { tradeIdeas, isLoading, generate, isRequested } = useDeepAnalysisLLM(deepAnalysis, indicators, biasResult);
   const instrument = useMarketStore((s) => s.selectedInstrument);
+  const hasIndicators = !!indicators;
 
   return (
     <div className="section-card p-4">
@@ -303,17 +304,26 @@ function AITradeIdeas({ deepAnalysis, indicators, biasResult }: {
         {!isRequested && (
           <button
             onClick={generate}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-accent/15 text-neutral-accent text-[10px] font-semibold hover:bg-neutral-accent/25 transition-colors"
+            disabled={!hasIndicators}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-semibold transition-colors",
+              hasIndicators
+                ? "bg-neutral-accent/15 text-neutral-accent hover:bg-neutral-accent/25"
+                : "bg-[var(--surface-2)] text-muted-foreground/40 cursor-not-allowed"
+            )}
           >
             <Sparkles className="h-3 w-3" />
-            Generate Ideas
+            {hasIndicators ? "Generate Ideas" : "Waiting for data..."}
           </button>
         )}
       </div>
 
       {!isRequested ? (
         <p className="text-xs text-muted-foreground/50 text-center py-6">
-          Click "Generate Ideas" to get AI-powered trade setups based on detected zones and levels
+          {hasIndicators
+            ? "Click \"Generate Ideas\" to get AI-powered trade setups based on detected zones and levels"
+            : "Price data loading — AI trade ideas will be available once chart data loads"
+          }
         </p>
       ) : isLoading ? (
         <div className="space-y-3">
@@ -351,7 +361,7 @@ function AITradeIdeas({ deepAnalysis, indicators, biasResult }: {
         </div>
       ) : (
         <p className="text-xs text-muted-foreground/50 text-center py-6">
-          AI analysis unavailable
+          {!hasIndicators ? "Waiting for price data..." : "AI analysis unavailable — try again"}
         </p>
       )}
     </div>

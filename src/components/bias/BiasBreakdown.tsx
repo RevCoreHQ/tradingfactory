@@ -9,6 +9,7 @@ interface BiasBreakdownProps {
   fundamentalScore: FundamentalScore;
   technicalScore: TechnicalScore;
   signals: BiasSignal[];
+  compact?: boolean;
 }
 
 function ScoreBar({ label, value, weight }: { label: string; value: number; weight: number }) {
@@ -34,7 +35,72 @@ function ScoreBar({ label, value, weight }: { label: string; value: number; weig
   );
 }
 
-export function BiasBreakdown({ fundamentalScore, technicalScore, signals }: BiasBreakdownProps) {
+export function BiasBreakdown({ fundamentalScore, technicalScore, signals, compact }: BiasBreakdownProps) {
+  if (compact) {
+    return (
+      <div className="space-y-3">
+        {/* Compact score summary */}
+        <GlassCard delay={0.1}>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Scores</h3>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex-1 text-center">
+                <div className="text-[9px] text-muted-foreground/60 uppercase">Fund</div>
+                <AnimatedNumber
+                  value={fundamentalScore.total}
+                  format={(n) => n.toFixed(0)}
+                  colorize
+                  className="text-base font-bold"
+                />
+              </div>
+              <div className="w-px h-6 bg-border/30" />
+              <div className="flex-1 text-center">
+                <div className="text-[9px] text-muted-foreground/60 uppercase">Tech</div>
+                <AnimatedNumber
+                  value={technicalScore.total}
+                  format={(n) => n.toFixed(0)}
+                  colorize
+                  className="text-base font-bold"
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <ScoreBar label="Trend" value={technicalScore.trendDirection} weight={0.30} />
+              <ScoreBar label="Momentum" value={technicalScore.momentum} weight={0.30} />
+              <ScoreBar label="News" value={fundamentalScore.newsSentiment} weight={0.25} />
+              <ScoreBar label="Central Bank" value={fundamentalScore.centralBankPolicy} weight={0.20} />
+            </div>
+          </div>
+        </GlassCard>
+
+        {/* Compact signals */}
+        {signals.length > 0 && (
+          <GlassCard delay={0.2}>
+            <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Key Signals</h3>
+            <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
+              {signals.slice(0, 6).map((signal, i) => (
+                <div key={i} className="flex items-start gap-1.5 text-[10px]">
+                  <span
+                    className={cn(
+                      "mt-1 h-1.5 w-1.5 rounded-full shrink-0",
+                      signal.signal === "bullish" ? "bg-bullish" : signal.signal === "bearish" ? "bg-bearish" : "bg-neutral-accent"
+                    )}
+                  />
+                  <div className="min-w-0">
+                    <span className="font-semibold text-foreground">{signal.source}</span>
+                    <span className="text-muted-foreground/70"> — {signal.description}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </GlassCard>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* Fundamental Score */}
