@@ -12,7 +12,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ChevronDown, ChevronUp, TrendingUp, TrendingDown, ArrowRight, Shield, Zap, AlertTriangle, Activity, Brain, BarChart3, Crosshair } from "lucide-react";
+import { ChevronDown, ChevronUp, TrendingUp, TrendingDown, ArrowRight, Shield, Zap, AlertTriangle, Activity, Brain, BarChart3 } from "lucide-react";
 import type { BiasDirection, BiasResult, RiskSizing } from "@/lib/types/bias";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
 
@@ -94,7 +94,6 @@ function CardDetailModal({ item, onClose, onNavigate }: {
   onNavigate: () => void;
 }) {
   const { biasResult, instrument } = item;
-  const setup = biasResult.tradeSetup;
   const dec = instrument.decimalPlaces;
   const color = getBiasColor(biasResult.direction);
   const isBullish = biasResult.overallBias > 0;
@@ -161,65 +160,6 @@ function CardDetailModal({ item, onClose, onNavigate }: {
               )}
             </div>
           </motion.div>
-
-          {/* Trade Setup */}
-          {setup && (
-            <>
-              <motion.div variants={fadeUp}>
-                <div className="flex items-center gap-1.5 mb-2">
-                  <Crosshair className="h-3.5 w-3.5 text-neutral-accent" />
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Trade Setup</span>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  <div className="bg-[var(--surface-2)] rounded-lg px-3 py-2">
-                    <div className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Entry Zone</div>
-                    <div className="text-[11px] font-mono text-foreground mt-0.5">
-                      {formatPriceValue(setup.entryZone[0], dec)} – {formatPriceValue(setup.entryZone[1], dec)}
-                    </div>
-                  </div>
-                  <div className="bg-[var(--surface-2)] rounded-lg px-3 py-2">
-                    <div className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Stop Loss</div>
-                    <div className="text-[11px] font-mono text-bearish mt-0.5">
-                      {formatPriceValue(setup.stopLoss, dec)}
-                    </div>
-                  </div>
-                  <div className="bg-[var(--surface-2)] rounded-lg px-3 py-2">
-                    <div className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Projected Move</div>
-                    <div className="text-[11px] font-mono mt-0.5" style={{ color }}>
-                      {isBullish ? "+" : "-"}{setup.projectedMove.pips}p ({setup.projectedMove.percent}%)
-                    </div>
-                  </div>
-                  <div className="bg-[var(--surface-2)] rounded-lg px-3 py-2">
-                    <div className="text-[9px] text-muted-foreground/50 uppercase tracking-wider mb-0.5">Position Size</div>
-                    <RiskBadge sizing={setup.riskSizing} />
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Take Profit Targets */}
-              <motion.div variants={fadeUp} className="flex items-center gap-1.5 flex-wrap">
-                {setup.takeProfit.map((tp, i) => (
-                  <div key={i} className="flex items-center gap-1.5 bg-[var(--surface-2)] rounded-lg px-2.5 py-1.5">
-                    <span className="text-[9px] font-bold text-bullish/70">TP{i + 1}</span>
-                    <span className="text-[11px] font-mono text-foreground/80">{formatPriceValue(tp, dec)}</span>
-                    <span className="text-[9px] font-mono text-muted-foreground/40">({setup.riskReward[i]}R)</span>
-                  </div>
-                ))}
-                {biasResult.adr && (
-                  <div className="flex items-center gap-1 ml-auto text-[9px] text-muted-foreground/40 font-mono">
-                    ADR: {biasResult.adr.pips}p ({biasResult.adr.percent}%)
-                  </div>
-                )}
-              </motion.div>
-
-              {/* Risk Reason */}
-              {setup.riskReason && (
-                <motion.div variants={fadeUp} className="text-[10px] text-muted-foreground/50 leading-snug border-l-2 border-border/50 pl-3">
-                  {setup.riskReason}
-                </motion.div>
-              )}
-            </>
-          )}
 
           {/* AI Summary */}
           {item.llmSummary && (

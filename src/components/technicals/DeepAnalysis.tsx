@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import { useDeepAnalysis, useDeepAnalysisLLM } from "@/lib/hooks/useDeepAnalysis";
 import { useBiasScore } from "@/lib/hooks/useBiasScore";
 import { useMarketStore } from "@/lib/store/market-store";
@@ -376,12 +375,6 @@ export function DeepAnalysis() {
     );
   }
 
-  const tradeSetup = useMemo(() => biasResult?.tradeSetup ? {
-    entryZone: biasResult.tradeSetup.entryZone as [number, number],
-    stopLoss: biasResult.tradeSetup.stopLoss,
-    takeProfit: biasResult.tradeSetup.takeProfit,
-  } : null, [biasResult?.tradeSetup]);
-
   return (
     <div className="space-y-4">
       {/* Enhanced chart with overlays */}
@@ -389,7 +382,6 @@ export function DeepAnalysis() {
         supplyZones={deepAnalysis?.supplyZones}
         demandZones={deepAnalysis?.demandZones}
         confluenceLevels={deepAnalysis?.confluenceLevels}
-        tradeSetup={tradeSetup}
         showOverlays={true}
         heightClass="h-[350px] lg:h-[420px]"
       />
