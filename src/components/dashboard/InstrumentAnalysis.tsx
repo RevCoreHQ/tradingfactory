@@ -18,7 +18,6 @@ import { TradeSetupCard } from "./TradeSetupCard";
 import { GlassCard } from "@/components/common/GlassCard";
 import { useMarketStore } from "@/lib/store/market-store";
 import { useBiasScore } from "@/lib/hooks/useBiasScore";
-import { useAllBiasScores } from "@/lib/hooks/useAllBiasScores";
 import { saveBiasToHistory } from "@/components/bias/BiasHistory";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -27,8 +26,6 @@ export function InstrumentAnalysis() {
   const [activeTab, setActiveTab] = useState<"technical" | "deep">("deep");
   const instrument = useMarketStore((s) => s.selectedInstrument);
   const { biasResult } = useBiasScore();
-
-  useAllBiasScores();
 
   useEffect(() => {
     if (biasResult) {

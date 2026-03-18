@@ -23,7 +23,9 @@ export function useBiasScore() {
   const instrument = useMarketStore((s) => s.selectedInstrument);
   const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
   const setBiasResult = useMarketStore((s) => s.setBiasResult);
-  const storedBias = useMarketStore((s) => s.biasResults[instrument.id]);
+  // Read storedBias non-reactively to avoid re-render cascades
+  // (useAllBiasScores on the homepage writes to biasResults for all instruments)
+  const storedBiasRef = useRef(useMarketStore.getState().biasResults[instrument.id]);
   const adrData = useMarketStore((s) => s.adrData);
 
   const { data: newsData } = useMarketNews();
@@ -94,5 +96,5 @@ export function useBiasScore() {
     }
   }, [biasResult, instrument.id, setBiasResult]);
 
-  return { biasResult: biasResult || storedBias, isCalculating: !biasResult };
+  return { biasResult: biasResult || storedBiasRef.current, isCalculating: !biasResult };
 }

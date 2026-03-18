@@ -36,13 +36,9 @@ export async function GET(req: NextRequest) {
       const days = timeframe === "1d" || timeframe === "1w" ? 365 : timeframe === "4h" ? 90 : 30;
       const coingeckoId = instrument.coingeckoId || "bitcoin";
       candles = await fetchCryptoOHLC(coingeckoId, days);
-    } else if (instrument.category === "forex") {
-      // Try Finnhub first, fallback to Alpha Vantage
+    } else if (instrument.category === "forex" || instrument.category === "commodity") {
+      // Finnhub free tier returns empty for OANDA forex symbols — go straight to Alpha Vantage
       try {
-        const resolution = RESOLUTION_MAP[timeframe] || "60";
-        candles = await fetchForexCandles(instrument.finnhubSymbol || "", resolution, from, now);
-      } catch {
-        // Fallback to Alpha Vantage
         if (timeframe === "1d" || timeframe === "1w") {
           candles = await fetchForexDaily(
             instrument.alphavantageSymbol,
@@ -55,6 +51,8 @@ export async function GET(req: NextRequest) {
             timeframe === "1h" ? "60min" : "15min"
           );
         }
+      } catch {
+        candles = [];
       }
     } else {
       // Index - try Finnhub
