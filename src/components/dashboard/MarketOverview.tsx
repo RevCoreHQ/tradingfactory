@@ -19,12 +19,12 @@ export function MarketOverview() {
 
   return (
     <div className="relative min-h-screen bg-background">
-      {/* Ethereal shadow background */}
-      <div className="fixed inset-0 z-0 opacity-30">
+      {/* Ethereal shadow background — dark mode only */}
+      <div className="fixed inset-0 z-0 hidden dark:block">
         <EtheralShadow
-          color="rgba(99, 102, 241, 0.8)"
-          animation={{ scale: 80, speed: 60 }}
-          noise={{ opacity: 0.3, scale: 1 }}
+          color="rgba(30, 27, 55, 1)"
+          animation={{ scale: 60, speed: 40 }}
+          noise={{ opacity: 0.6, scale: 1.2 }}
           sizing="fill"
         />
       </div>

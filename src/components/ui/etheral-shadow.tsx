@@ -51,6 +51,8 @@ export function EtheralShadow({
     className
 }: EtheralShadowProps) {
     const id = useInstanceId();
+    const noiseId = `${id}-noise`;
+    const gradientId = `${id}-gradient`;
     const animationEnabled = animation && animation.scale > 0;
     const feColorMatrixRef = useRef<SVGFEColorMatrixElement>(null);
     const hueRotateMotionValue = useMotionValue(180);
@@ -95,80 +97,105 @@ export function EtheralShadow({
                 position: "relative",
                 width: "100%",
                 height: "100%",
+                backgroundColor: "#0a0a14",
                 ...style
             }}
         >
+            {/* SVG filter + inline mask (no external URLs) */}
+            <svg style={{ position: "absolute", width: 0, height: 0 }}>
+                <defs>
+                    {animationEnabled && (
+                        <filter id={id}>
+                            <feTurbulence
+                                result="undulation"
+                                numOctaves="3"
+                                baseFrequency={`${mapRange(animation.scale, 0, 100, 0.002, 0.001)},${mapRange(animation.scale, 0, 100, 0.006, 0.003)}`}
+                                seed="0"
+                                type="turbulence"
+                            />
+                            <feColorMatrix
+                                ref={feColorMatrixRef}
+                                in="undulation"
+                                type="hueRotate"
+                                values="180"
+                            />
+                            <feColorMatrix
+                                in="dist"
+                                result="circulation"
+                                type="matrix"
+                                values="4 0 0 0 1  4 0 0 0 1  4 0 0 0 1  1 0 0 0 0"
+                            />
+                            <feDisplacementMap
+                                in="SourceGraphic"
+                                in2="circulation"
+                                scale={displacementScale}
+                                result="dist"
+                            />
+                            <feDisplacementMap
+                                in="dist"
+                                in2="undulation"
+                                scale={displacementScale}
+                                result="output"
+                            />
+                        </filter>
+                    )}
+                    {/* Inline noise filter */}
+                    <filter id={noiseId}>
+                        <feTurbulence
+                            type="fractalNoise"
+                            baseFrequency="0.65"
+                            numOctaves="3"
+                            stitchTiles="stitch"
+                        />
+                    </filter>
+                    {/* Radial gradient mask so edges fade to dark */}
+                    <radialGradient id={gradientId} cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stopColor="white" stopOpacity="1" />
+                        <stop offset="70%" stopColor="white" stopOpacity="0.6" />
+                        <stop offset="100%" stopColor="white" stopOpacity="0" />
+                    </radialGradient>
+                </defs>
+            </svg>
+
+            {/* Main shadow layer */}
             <div
                 style={{
                     position: "absolute",
-                    inset: -displacementScale,
-                    filter: animationEnabled ? `url(#${id}) blur(4px)` : "none"
+                    inset: animationEnabled ? -displacementScale : 0,
+                    filter: animationEnabled ? `url(#${id}) blur(6px)` : "none"
                 }}
             >
-                {animationEnabled && (
-                    <svg style={{ position: "absolute" }}>
-                        <defs>
-                            <filter id={id}>
-                                <feTurbulence
-                                    result="undulation"
-                                    numOctaves="2"
-                                    baseFrequency={`${mapRange(animation.scale, 0, 100, 0.001, 0.0005)},${mapRange(animation.scale, 0, 100, 0.004, 0.002)}`}
-                                    seed="0"
-                                    type="turbulence"
-                                />
-                                <feColorMatrix
-                                    ref={feColorMatrixRef}
-                                    in="undulation"
-                                    type="hueRotate"
-                                    values="180"
-                                />
-                                <feColorMatrix
-                                    in="dist"
-                                    result="circulation"
-                                    type="matrix"
-                                    values="4 0 0 0 1  4 0 0 0 1  4 0 0 0 1  1 0 0 0 0"
-                                />
-                                <feDisplacementMap
-                                    in="SourceGraphic"
-                                    in2="circulation"
-                                    scale={displacementScale}
-                                    result="dist"
-                                />
-                                <feDisplacementMap
-                                    in="dist"
-                                    in2="undulation"
-                                    scale={displacementScale}
-                                    result="output"
-                                />
-                            </filter>
-                        </defs>
-                    </svg>
-                )}
                 <div
                     style={{
-                        backgroundColor: color,
-                        maskImage: `url('https://framerusercontent.com/images/ceBGguIpUU8luwByxuQz79t7To.png')`,
-                        maskSize: sizing === "stretch" ? "100% 100%" : "cover",
-                        maskRepeat: "no-repeat",
-                        maskPosition: "center",
                         width: "100%",
-                        height: "100%"
+                        height: "100%",
+                        background: `radial-gradient(ellipse at 30% 40%, ${color} 0%, rgba(15, 12, 30, 0.8) 40%, rgba(8, 6, 18, 0.4) 70%, transparent 100%),
+                                     radial-gradient(ellipse at 70% 60%, rgba(60, 40, 100, 0.6) 0%, rgba(20, 15, 40, 0.3) 50%, transparent 100%)`,
                     }}
                 />
             </div>
 
+            {/* Noise texture overlay */}
             {noise && noise.opacity > 0 && (
                 <div
                     style={{
                         position: "absolute",
                         inset: 0,
-                        backgroundImage: `url("https://framerusercontent.com/images/g0QcWrxr87K0ufOxIUFBakwYA8.png")`,
-                        backgroundSize: noise.scale * 200,
-                        backgroundRepeat: "repeat",
-                        opacity: noise.opacity / 2
+                        opacity: noise.opacity * 0.4,
+                        filter: `url(#${noiseId})`,
+                        mixBlendMode: "soft-light",
                     }}
                 />
             )}
+
+            {/* Vignette — darkens edges */}
+            <div
+                style={{
+                    position: "absolute",
+                    inset: 0,
+                    background: "radial-gradient(ellipse at center, transparent 30%, rgba(5, 3, 12, 0.8) 100%)",
+                }}
+            />
         </div>
     );
 }
