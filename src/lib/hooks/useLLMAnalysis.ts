@@ -17,6 +17,12 @@ const postFetcher = async ([url, body]: [string, unknown]) => {
   return res.json();
 };
 
+// Delayed fetcher — avoids simultaneous Anthropic calls that hit rate limits
+const delayedPostFetcher = async ([url, body]: [string, unknown]) => {
+  await new Promise((r) => setTimeout(r, 15_000)); // wait 15s for market summary to finish
+  return postFetcher([url, body]);
+};
+
 function buildLLMRequest(
   instrumentId: string,
   category: string,
@@ -125,7 +131,7 @@ export function useLLMBatchAnalysis(allBiasResults: Record<string, BiasResult>) 
 
   const { data, error, isLoading } = useSWR<{ batch: { results: Record<string, LLMAnalysisResult> } | null }>(
     hasData ? ["/api/analysis/llm-batch", requestBody] : null,
-    postFetcher,
+    delayedPostFetcher,
     {
       refreshInterval: REFRESH_INTERVALS.LLM_BATCH_ANALYSIS,
       revalidateOnFocus: false,
