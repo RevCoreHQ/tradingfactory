@@ -60,12 +60,34 @@ export interface BiasResult {
   signalAgreement: number;       // 0-1, how much signals agree on direction
 }
 
+export interface BiasOutcome {
+  actualDirection: "up" | "down";
+  priceAtPrediction: number;
+  priceAfter: number;
+  wasCorrect: boolean;
+  measuredAt: number;
+}
+
 export interface BiasHistoryEntry {
   timestamp: number;
   bias: number;
   direction: BiasDirection;
   fundamentalScore: number;
   technicalScore: number;
+  priceAtPrediction?: number;
+  outcome24h?: BiasOutcome;
+  outcome1w?: BiasOutcome;
+}
+
+export interface AccuracyStats {
+  total: number;
+  correct24h: number;
+  correct1w: number;
+  winRate24h: number;
+  winRate1w: number;
+  currentStreak: number;
+  bestStreak: number;
+  byInstrument: Record<string, { total: number; correct24h: number; correct1w: number }>;
 }
 
 export const FUNDAMENTAL_WEIGHTS = {

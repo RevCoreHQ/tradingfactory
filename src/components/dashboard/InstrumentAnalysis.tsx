@@ -18,7 +18,10 @@ import { TradeSetupCard } from "./TradeSetupCard";
 import { GlassCard } from "@/components/common/GlassCard";
 import { useMarketStore } from "@/lib/store/market-store";
 import { useBiasScore } from "@/lib/hooks/useBiasScore";
+import { useTechnicalData } from "@/lib/hooks/useTechnicalData";
 import { saveBiasToHistory } from "@/components/bias/BiasHistory";
+import { BiasAccuracyCard } from "@/components/bias/BiasAccuracy";
+import { SessionCard } from "@/components/common/SessionIndicator";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -26,18 +29,21 @@ export function InstrumentAnalysis() {
   const [activeTab, setActiveTab] = useState<"technical" | "deep">("deep");
   const instrument = useMarketStore((s) => s.selectedInstrument);
   const { biasResult } = useBiasScore();
+  const { candles } = useTechnicalData();
+  const currentPrice = candles.length > 0 ? candles[candles.length - 1].close : 0;
 
   useEffect(() => {
-    if (biasResult) {
+    if (biasResult && currentPrice > 0) {
       saveBiasToHistory(
         instrument.id,
         biasResult.overallBias,
         biasResult.direction,
         biasResult.fundamentalScore.total,
-        biasResult.technicalScore.total
+        biasResult.technicalScore.total,
+        currentPrice
       );
     }
-  }, [biasResult, instrument.id]);
+  }, [biasResult, instrument.id, currentPrice]);
 
   const bias = biasResult || {
     overallBias: 0,
@@ -81,6 +87,7 @@ export function InstrumentAnalysis() {
             </GlassCard>
 
             <TradeSetupCard />
+            <SessionCard instrumentId={instrument.id} />
             <InstrumentBias />
           </div>
 
@@ -155,6 +162,7 @@ export function InstrumentAnalysis() {
         </div>
 
         <BiasHistory instrumentId={instrument.id} />
+        <BiasAccuracyCard instrumentId={instrument.id} />
       </main>
     </div>
   );

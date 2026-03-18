@@ -2,25 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { TRADING_SESSIONS } from "@/lib/utils/constants";
+import { isSessionActive, getTimeUntil } from "@/lib/calculations/session-scoring";
 import { GlassCard } from "./GlassCard";
 import { cn } from "@/lib/utils";
-
-function isSessionActive(session: { openHourUTC: number; closeHourUTC: number }, hourUTC: number): boolean {
-  if (session.openHourUTC < session.closeHourUTC) {
-    return hourUTC >= session.openHourUTC && hourUTC < session.closeHourUTC;
-  }
-  return hourUTC >= session.openHourUTC || hourUTC < session.closeHourUTC;
-}
-
-function getTimeUntil(targetHourUTC: number, nowHourUTC: number, nowMinUTC: number): string {
-  let hoursUntil = targetHourUTC - nowHourUTC;
-  if (hoursUntil < 0) hoursUntil += 24;
-  const minsUntil = hoursUntil * 60 - nowMinUTC;
-  const h = Math.floor(minsUntil / 60);
-  const m = minsUntil % 60;
-  if (h === 0) return `${m}m`;
-  return `${h}h ${m}m`;
-}
 
 /** Compact market hours strip for the overview page */
 export function MarketHoursStrip() {

@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ChevronDown, ChevronUp, TrendingUp, TrendingDown, ArrowRight, Shield, Zap, AlertTriangle, Activity, Brain, BarChart3 } from "lucide-react";
+import { SessionBadge } from "@/components/common/SessionIndicator";
 import type { BiasDirection, BiasResult, RiskSizing } from "@/lib/types/bias";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
 
@@ -274,7 +275,7 @@ function ConvictionCard({ item, rank, onNavigate }: {
         )}
       </div>
 
-      {/* Bottom: ADR + Risk */}
+      {/* Bottom: ADR + Session + Risk */}
       <div className="flex items-center justify-between text-[9px] text-muted-foreground/60 mt-auto pt-1.5 border-t border-border/30">
         <div className="flex items-center gap-1.5">
           {adr && <span className="font-mono">{adr.pips}p</span>}
@@ -284,6 +285,7 @@ function ConvictionCard({ item, rank, onNavigate }: {
               {biasResult.tradeSetup.projectedMove.pips}p
             </span>
           )}
+          <SessionBadge instrumentId={instrument.id} />
         </div>
         {biasResult.tradeSetup && (
           <RiskBadge sizing={biasResult.tradeSetup.riskSizing} />

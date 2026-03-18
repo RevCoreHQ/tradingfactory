@@ -8,7 +8,7 @@ import { format } from "date-fns";
 
 const STORAGE_KEY = "trading-factory-bias-history";
 
-export function saveBiasToHistory(instrumentId: string, bias: number, direction: string, fundScore: number, techScore: number) {
+export function saveBiasToHistory(instrumentId: string, bias: number, direction: string, fundScore: number, techScore: number, priceAtPrediction?: number) {
   if (typeof window === "undefined") return;
   const key = `${STORAGE_KEY}-${instrumentId}`;
   const existing: BiasHistoryEntry[] = JSON.parse(localStorage.getItem(key) || "[]");
@@ -23,6 +23,7 @@ export function saveBiasToHistory(instrumentId: string, bias: number, direction:
       direction: direction as BiasHistoryEntry["direction"],
       fundamentalScore: fundScore,
       technicalScore: techScore,
+      priceAtPrediction: priceAtPrediction || 0,
     });
 
     // Keep max 90 days

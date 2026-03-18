@@ -12,6 +12,7 @@ import { CurrencyBias } from "@/components/fundamentals/CurrencyBias";
 import { MarketHoursStrip } from "@/components/common/MarketHours";
 import { EtheralShadow } from "@/components/ui/etheral-shadow";
 import { useAllBiasScores } from "@/lib/hooks/useAllBiasScores";
+import { BiasAccuracySummary } from "@/components/bias/BiasAccuracy";
 import { Activity, Sparkles, Target, AlertTriangle, BarChart3 } from "lucide-react";
 
 export function MarketOverview() {
@@ -44,6 +45,7 @@ export function MarketOverview() {
               accentColor="blue"
             />
             <MarketPulse />
+            <BiasAccuracySummary />
           </section>
 
           {/* Section 2: AI Intelligence */}
