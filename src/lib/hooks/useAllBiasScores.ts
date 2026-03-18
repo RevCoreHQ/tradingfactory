@@ -22,6 +22,7 @@ export function useAllBiasScores() {
   const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
   const setBiasResult = useMarketStore((s) => s.setBiasResult);
   const setAllBiasResults = useMarketStore((s) => s.setAllBiasResults);
+  const setBatchLLMResults = useMarketStore((s) => s.setBatchLLMResults);
 
   const { data: newsData } = useMarketNews();
   const { data: fearGreedData } = useFearGreed();
@@ -108,12 +109,13 @@ export function useAllBiasScores() {
       prevHashRef.current = hash;
       setAllBiasResults("intraday", allResults.intraday);
       setAllBiasResults("intraweek", allResults.intraweek);
+      setBatchLLMResults(batchResults);
       const currentResults = biasTimeframe === "intraday" ? allResults.intraday : allResults.intraweek;
       for (const [id, result] of Object.entries(currentResults)) {
         setBiasResult(id, result);
       }
     }
-  }, [allResults, setBiasResult, setAllBiasResults, biasTimeframe]);
+  }, [allResults, batchResults, setBiasResult, setAllBiasResults, setBatchLLMResults, biasTimeframe]);
 
   return allResults;
 }

@@ -37,6 +37,7 @@ function ConvictionList({
 }) {
   const [expanded, setExpanded] = useState(false);
   const allBiasResults = useMarketStore((s) => s.allBiasResults);
+  const batchLLMResults = useMarketStore((s) => s.batchLLMResults);
   const setSelectedInstrument = useMarketStore((s) => s.setSelectedInstrument);
   const router = useRouter();
 
@@ -45,6 +46,7 @@ function ConvictionList({
   const ranked = INSTRUMENTS
     .map((inst) => {
       const bias = currentResults[inst.id];
+      const llm = batchLLMResults?.[inst.id];
       return {
         instrument: inst,
         bias: bias?.overallBias || 0,
@@ -52,6 +54,7 @@ function ConvictionList({
         confidence: bias?.confidence || 0,
         fundamentalTotal: bias?.fundamentalScore?.total || 50,
         technicalTotal: bias?.technicalScore?.total || 50,
+        llmSummary: llm?.summary || null,
       };
     })
     .sort((a, b) => Math.abs(b.bias) - Math.abs(a.bias));
@@ -86,11 +89,12 @@ function ConvictionList({
                   router.push("/instrument");
                 }}
                 className={cn(
-                  "flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-lg transition-colors cursor-pointer group",
-                  isTopPick ? "bg-surface-2" : "hover:bg-surface-2"
+                  "flex flex-col w-full text-left px-3 py-2.5 rounded-lg transition-colors cursor-pointer group",
+                  isTopPick ? "bg-[var(--surface-2)]" : "hover:bg-[var(--surface-2)]"
                 )}
                 style={isTopPick ? { borderLeft: `3px solid ${color}` } : undefined}
               >
+                <div className="flex items-center gap-3 w-full">
                 {/* Rank */}
                 <span className="text-[11px] text-muted-foreground/40 w-4 font-mono tabular">
                   {idx + 1}
@@ -125,6 +129,13 @@ function ConvictionList({
                 >
                   {isBullish ? "+" : ""}{Math.round(item.bias)}
                 </span>
+                </div>
+                {/* AI insight for top 3 */}
+                {item.llmSummary && idx < 3 && (
+                  <p className="text-[10px] text-muted-foreground/50 truncate mt-1 pl-7 max-w-[400px]">
+                    AI: {item.llmSummary}
+                  </p>
+                )}
               </button>
             );
           })}

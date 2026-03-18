@@ -26,9 +26,9 @@ export function Header({ mode = "analysis" }: HeaderProps) {
       <div className="max-w-[1800px] mx-auto flex items-center justify-between gap-4">
         {/* Logo + Nav */}
         <div className="flex items-center gap-3 shrink-0">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-sm font-bold tracking-tight text-foreground">TF</span>
-            <span className="hidden sm:block text-xs text-muted-foreground">Trading Factory</span>
+          <Link href="/" className="flex items-center gap-1.5">
+            <span className="text-sm font-bold uppercase tracking-wide text-foreground">Trading</span>
+            <span className="text-sm font-light uppercase tracking-wide text-muted-foreground">Factory</span>
           </Link>
 
           {mode === "analysis" && (

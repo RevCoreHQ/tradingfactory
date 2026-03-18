@@ -5,6 +5,8 @@ import type {
   LLMBatchResult,
   LLMAnalysisRequest,
   LLMBatchRequest,
+  MarketSummaryRequest,
+  MarketSummaryResult,
 } from "@/lib/types/llm";
 import { checkRateLimit } from "./rate-limiter";
 
@@ -448,5 +450,105 @@ export async function analyzeBatchInstruments(
     expiry: Date.now() + BATCH_TTL_MS,
   });
 
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// Market Summary
+// ---------------------------------------------------------------------------
+
+const MARKET_SUMMARY_SYSTEM_PROMPT = `You are a senior macro strategist. Provide a concise market overview based on the data provided.
+
+Rules:
+- Write 2-4 sentences for the overview summarizing the current macro regime and key drivers.
+- List 2-3 key risks traders should watch.
+- List 2-3 opportunities the data suggests.
+- Provide an overall market outlook: bullish, bearish, or neutral.
+- Be specific — reference actual data values (DXY level, fear/greed reading, yield curve state).
+- Respond with valid JSON only.`;
+
+function buildMarketSummaryPrompt(req: MarketSummaryRequest): string {
+  const yieldCurveSpread =
+    req.bondYields.length >= 2
+      ? (() => {
+          const sorted = [...req.bondYields].sort(
+            (a, b) => parseFloat(a.maturity) - parseFloat(b.maturity)
+          );
+          return (sorted[sorted.length - 1].yield - sorted[0].yield).toFixed(3);
+        })()
+      : "N/A";
+
+  return `Provide a macro market summary based on the following data.
+
+--- Current Market Data ---
+Fear & Greed Index: ${req.fearGreed.value} (${req.fearGreed.label})
+DXY (US Dollar Index): ${req.dxy.value} (Change: ${req.dxy.change >= 0 ? "+" : ""}${req.dxy.change.toFixed(2)})
+
+Bond Yields:
+${req.bondYields.map((b) => `  ${b.maturity}: ${b.yield.toFixed(3)}% (${b.change >= 0 ? "+" : ""}${b.change.toFixed(3)})`).join("\n")}
+Yield Curve Spread (long - short): ${yieldCurveSpread}
+
+Central Bank Stances:
+${req.centralBanks.map((cb) => `  ${cb.bank}: Rate ${cb.rate}%, Direction: ${cb.direction}, Stance: ${cb.stance}`).join("\n")}
+
+Top News Headlines:
+${req.newsHeadlines.map((n) => `  - [${n.sentiment}, score: ${n.score}] ${n.headline}`).join("\n")}
+
+Respond with JSON:
+{
+  "overview": "<2-4 sentence macro summary>",
+  "risks": ["<risk 1>", "<risk 2>"],
+  "opportunities": ["<opportunity 1>", "<opportunity 2>"],
+  "outlook": "bullish" | "bearish" | "neutral"
+}`;
+}
+
+const summaryCache = new Map<string, CacheEntry<MarketSummaryResult>>();
+const SUMMARY_TTL_MS = 10 * 60 * 1000;
+
+function getSummaryCacheKey(req: MarketSummaryRequest): string {
+  return `${Math.round(req.dxy.value)}:${req.fearGreed.value}`;
+}
+
+function parseMarketSummary(
+  raw: string,
+  provider: LLMProvider
+): MarketSummaryResult | null {
+  try {
+    const cleaned = stripCodeFences(raw);
+    const parsed = JSON.parse(cleaned);
+    const outlook = parsed.outlook;
+    return {
+      overview: String(parsed.overview ?? ""),
+      risks: Array.isArray(parsed.risks) ? parsed.risks.map(String).slice(0, 5) : [],
+      opportunities: Array.isArray(parsed.opportunities) ? parsed.opportunities.map(String).slice(0, 5) : [],
+      outlook: outlook === "bullish" || outlook === "bearish" || outlook === "neutral" ? outlook : "neutral",
+      timestamp: Date.now(),
+      provider,
+    };
+  } catch (err) {
+    console.error("Failed to parse market summary:", err);
+    return null;
+  }
+}
+
+export async function generateMarketSummary(
+  req: MarketSummaryRequest
+): Promise<MarketSummaryResult | null> {
+  cleanCache(summaryCache);
+  const cacheKey = getSummaryCacheKey(req);
+  const cached = summaryCache.get(cacheKey);
+  if (cached && Date.now() < cached.expiry) {
+    return cached.data;
+  }
+
+  const userPrompt = buildMarketSummaryPrompt(req);
+  const response = await callLLM(MARKET_SUMMARY_SYSTEM_PROMPT, userPrompt);
+  if (!response) return null;
+
+  const result = parseMarketSummary(response.text, response.provider);
+  if (!result) return null;
+
+  summaryCache.set(cacheKey, { data: result, expiry: Date.now() + SUMMARY_TTL_MS });
   return result;
 }

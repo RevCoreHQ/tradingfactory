@@ -2,8 +2,12 @@
 
 import { Header } from "./Header";
 import { TopPairs } from "@/components/bias/TopPairs";
+import { AIMarketSummary } from "./AIMarketSummary";
+import { AITradeSignals } from "./AITradeSignals";
 import { RedNewsWeek } from "@/components/fundamentals/RedNewsWeek";
 import { FearGreedGauge } from "@/components/fundamentals/FearGreedGauge";
+import { BondYields } from "@/components/fundamentals/BondYields";
+import { CurrencyStrength } from "@/components/fundamentals/CurrencyStrength";
 import { MarketHoursStrip } from "@/components/common/MarketHours";
 import { MarketContext } from "./MarketContext";
 import { useAllBiasScores } from "@/lib/hooks/useAllBiasScores";
@@ -17,10 +21,13 @@ export function MarketOverview() {
       <MarketHoursStrip />
 
       <main className="max-w-[1800px] mx-auto px-4 py-4 space-y-4">
-        {/* Hero: Conviction Board */}
+        {/* Row 1: Conviction Board */}
         <TopPairs />
 
-        {/* Supporting Context */}
+        {/* Row 2: AI Market Summary */}
+        <AIMarketSummary />
+
+        {/* Row 3: Supporting Context */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           <div className="lg:col-span-3">
             <FearGreedGauge />
@@ -32,6 +39,19 @@ export function MarketOverview() {
             <MarketContext />
           </div>
         </div>
+
+        {/* Row 4: AI Trade Signals + Bond Yields */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div className="lg:col-span-8">
+            <AITradeSignals />
+          </div>
+          <div className="lg:col-span-4">
+            <BondYields />
+          </div>
+        </div>
+
+        {/* Row 5: Currency Strength */}
+        <CurrencyStrength />
       </main>
     </div>
   );

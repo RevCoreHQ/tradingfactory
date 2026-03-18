@@ -50,3 +50,20 @@ export interface LLMAnalysisRequest {
 export interface LLMBatchRequest {
   instruments: Omit<LLMAnalysisRequest, "technicals">[];
 }
+
+export interface MarketSummaryRequest {
+  fearGreed: { value: number; label: string };
+  dxy: { value: number; change: number };
+  bondYields: { maturity: string; yield: number; change: number }[];
+  centralBanks: { bank: string; rate: number; direction: string; stance: string }[];
+  newsHeadlines: { headline: string; sentiment: string; score: number }[];
+}
+
+export interface MarketSummaryResult {
+  overview: string;
+  risks: string[];
+  opportunities: string[];
+  outlook: "bullish" | "bearish" | "neutral";
+  timestamp: number;
+  provider: LLMProvider;
+}
