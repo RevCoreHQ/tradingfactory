@@ -16,12 +16,12 @@ import { checkRateLimit } from "./rate-limiter";
 
 function getAvailableProviders(): { provider: LLMProvider; key: string }[] {
   const providers: { provider: LLMProvider; key: string }[] = [];
-  // Claude first — best for structured financial analysis
-  if (process.env.ANTHROPIC_API_KEY) {
-    providers.push({ provider: "anthropic", key: process.env.ANTHROPIC_API_KEY });
-  }
+  // Gemini first — fastest, native JSON mode, most reliable for batch
   if (process.env.GEMINI_API_KEY) {
     providers.push({ provider: "gemini", key: process.env.GEMINI_API_KEY });
+  }
+  if (process.env.ANTHROPIC_API_KEY) {
+    providers.push({ provider: "anthropic", key: process.env.ANTHROPIC_API_KEY });
   }
   if (process.env.OPENAI_API_KEY) {
     providers.push({ provider: "openai", key: process.env.OPENAI_API_KEY });
@@ -33,7 +33,7 @@ function getAvailableProviders(): { provider: LLMProvider; key: string }[] {
 // System prompt
 // ---------------------------------------------------------------------------
 
-const SYSTEM_PROMPT = `You are an elite quantitative market analyst at a prop trading desk. Your role is to evaluate financial instruments and provide actionable trading intelligence that modifies an existing rule-based scoring system.
+const SINGLE_SYSTEM_PROMPT = `You are an elite quantitative market analyst at a prop trading desk. Your role is to evaluate financial instruments and provide actionable trading intelligence that modifies an existing rule-based scoring system.
 
 Rules:
 - Return a biasAdjustment value between -50 and +50.
@@ -49,6 +49,19 @@ Rules:
 - Include riskAssessment: "low", "medium", or "high" — how risky is this trade setup?
 - Include catalysts: 1-3 upcoming events or factors that could trigger the move.
 - Respond with valid JSON only. Do not include any markdown formatting or explanation outside the JSON.`;
+
+const BATCH_SYSTEM_PROMPT = `You are an elite quantitative market analyst. Evaluate multiple instruments and provide bias adjustments for each. Be concise — keep each instrument's analysis compact.
+
+Rules per instrument:
+- biasAdjustment: number -50 to +50 (positive = more bullish than rules, negative = more bearish)
+- confidence: 0-100
+- signals: exactly 2 signals per instrument (keep descriptions under 15 words)
+- summary: one short sentence
+- keyLevels: { support, resistance } — key price levels
+- projectedMovePercent: 0.1-5.0
+- riskAssessment: "low" | "medium" | "high"
+- catalysts: 1-2 short items
+- Respond with valid JSON only.`;
 
 // ---------------------------------------------------------------------------
 // Prompt construction — single instrument
@@ -162,30 +175,11 @@ ${inst.instrument} (${inst.category}):
   }
 
   prompt += `
-Respond with JSON matching this exact structure:
-{
-  "results": {
-    "<instrumentId>": {
-      "biasAdjustment": <number between -50 and 50>,
-      "confidence": <number between 0 and 100>,
-      "signals": [
-        {
-          "source": "<signal source name>",
-          "signal": "bullish" | "bearish" | "neutral",
-          "strength": <number between 0 and 100>,
-          "description": "<brief reasoning>"
-        }
-      ],
-      "summary": "<one sentence summary>",
-      "keyLevels": { "support": <price number>, "resistance": <price number> },
-      "projectedMovePercent": <number 0.1 to 5.0>,
-      "riskAssessment": "low" | "medium" | "high",
-      "catalysts": ["<catalyst 1>", "<catalyst 2>"]
-    }
-  }
-}
+Respond with JSON. Use the exact instrument names as keys. Keep signals to 2 per instrument with short descriptions.
+{"results":{"<instrumentId>":{"biasAdjustment":<-50 to 50>,"confidence":<0-100>,"signals":[{"source":"<name>","signal":"bullish"|"bearish"|"neutral","strength":<0-100>,"description":"<brief>"}],"summary":"<one sentence>","keyLevels":{"support":<price>,"resistance":<price>},"projectedMovePercent":<0.1-5.0>,"riskAssessment":"low"|"medium"|"high","catalysts":["<catalyst>"]}}}
 
-Use the exact instrument names as keys (e.g. "${req.instruments.map((i) => i.instrument).join('", "')}").`;
+Keys: ${req.instruments.map((i) => `"${i.instrument}"`).join(", ")}`;
+
 
   return prompt;
 }
@@ -197,7 +191,8 @@ Use the exact instrument names as keys (e.g. "${req.instruments.map((i) => i.ins
 async function callGemini(
   key: string,
   systemPrompt: string,
-  userPrompt: string
+  userPrompt: string,
+  maxTokens: number
 ): Promise<string> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
 
@@ -210,7 +205,7 @@ async function callGemini(
       generationConfig: {
         responseMimeType: "application/json",
         temperature: 0.3,
-        maxOutputTokens: 1024,
+        maxOutputTokens: maxTokens,
       },
     }),
   });
@@ -232,7 +227,8 @@ async function callGemini(
 async function callOpenAI(
   key: string,
   systemPrompt: string,
-  userPrompt: string
+  userPrompt: string,
+  maxTokens: number
 ): Promise<string> {
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -248,7 +244,7 @@ async function callOpenAI(
       ],
       response_format: { type: "json_object" },
       temperature: 0.3,
-      max_tokens: 1024,
+      max_tokens: maxTokens,
     }),
   });
 
@@ -269,18 +265,19 @@ async function callOpenAI(
 async function callAnthropic(
   key: string,
   systemPrompt: string,
-  userPrompt: string
+  userPrompt: string,
+  maxTokens: number
 ): Promise<string> {
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "x-api-key": key,
-      "anthropic-version": "2023-06-01",
+      "anthropic-version": "2024-10-22",
     },
     body: JSON.stringify({
       model: "claude-sonnet-4-6",
-      max_tokens: 1024,
+      max_tokens: maxTokens,
       temperature: 0.3,
       system: systemPrompt,
       messages: [
@@ -305,13 +302,16 @@ async function callAnthropic(
 
 async function callLLM(
   systemPrompt: string,
-  userPrompt: string
+  userPrompt: string,
+  maxTokens: number = 1024
 ): Promise<{ text: string; provider: LLMProvider } | null> {
   const providers = getAvailableProviders();
   if (providers.length === 0) {
     console.warn("No LLM API keys configured (GEMINI_API_KEY, ANTHROPIC_API_KEY, or OPENAI_API_KEY)");
     return null;
   }
+
+  console.log(`[LLM] Available providers: ${providers.map((p) => p.provider).join(", ")} | maxTokens: ${maxTokens}`);
 
   for (const { provider, key } of providers) {
     const rateCheck = checkRateLimit(provider);
@@ -326,13 +326,13 @@ async function callLLM(
       console.log(`[LLM] Trying provider: ${provider}`);
       let text: string;
       if (provider === "gemini") {
-        text = await callGemini(key, systemPrompt, userPrompt);
+        text = await callGemini(key, systemPrompt, userPrompt, maxTokens);
       } else if (provider === "anthropic") {
-        text = await callAnthropic(key, systemPrompt, userPrompt);
+        text = await callAnthropic(key, systemPrompt, userPrompt, maxTokens);
       } else {
-        text = await callOpenAI(key, systemPrompt, userPrompt);
+        text = await callOpenAI(key, systemPrompt, userPrompt, maxTokens);
       }
-      console.log(`[LLM] Success with provider: ${provider}`);
+      console.log(`[LLM] Success with provider: ${provider} (response length: ${text.length} chars)`);
       return { text, provider };
     } catch (err) {
       console.error(`[LLM] Failed for ${provider}:`, err);
@@ -498,7 +498,7 @@ export async function analyzeSingleInstrument(
   }
 
   const userPrompt = buildSinglePrompt(req);
-  const response = await callLLM(SYSTEM_PROMPT, userPrompt);
+  const response = await callLLM(SINGLE_SYSTEM_PROMPT, userPrompt);
   if (!response) return null;
 
   const result = parseSingleResult(response.text);
@@ -527,7 +527,9 @@ export async function analyzeBatchInstruments(
   }
 
   const userPrompt = buildBatchPrompt(req);
-  const response = await callLLM(SYSTEM_PROMPT, userPrompt);
+  // 13 instruments × ~120 tokens each = ~1600 tokens minimum
+  const maxTokens = Math.max(2048, req.instruments.length * 200);
+  const response = await callLLM(BATCH_SYSTEM_PROMPT, userPrompt, maxTokens);
   if (!response) return null;
 
   const result = parseBatchResult(response.text, response.provider);
@@ -650,7 +652,7 @@ export async function generateMarketSummary(
   }
 
   const userPrompt = buildMarketSummaryPrompt(req);
-  const response = await callLLM(MARKET_SUMMARY_SYSTEM_PROMPT, userPrompt);
+  const response = await callLLM(MARKET_SUMMARY_SYSTEM_PROMPT, userPrompt, 2048);
   if (!response) return null;
 
   const result = parseMarketSummary(response.text, response.provider);

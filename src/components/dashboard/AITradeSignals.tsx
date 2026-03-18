@@ -24,7 +24,7 @@ export function AITradeSignals() {
         </div>
         {batchLLMReady ? (
           <p className="text-xs text-muted-foreground/60 text-center py-8">
-            AI analysis unavailable — configure an API key
+            AI analysis unavailable — check API keys in Vercel settings
           </p>
         ) : (
           <div className="space-y-3">

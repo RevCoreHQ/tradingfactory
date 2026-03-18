@@ -50,7 +50,7 @@ export function AIMarketSummary() {
           </div>
           <h3 className="text-xs font-semibold text-foreground">AI Market Summary</h3>
           <span className="text-[10px] text-muted-foreground/50 ml-auto">
-            AI analysis unavailable — configure API key
+            AI analysis unavailable — check API keys in Vercel settings
           </span>
         </div>
       </div>
