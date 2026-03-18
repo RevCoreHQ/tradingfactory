@@ -6,9 +6,10 @@ import { useRates } from "@/lib/hooks/useMarketData";
 import { cn } from "@/lib/utils";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { getChangeClass } from "@/lib/utils/formatters";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen } from "lucide-react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { AlertsBell } from "@/components/alerts/AlertsPanel";
 
 interface HeaderProps {
   mode?: "overview" | "analysis";
@@ -19,6 +20,8 @@ export function Header({ mode = "analysis" }: HeaderProps) {
   const setSelectedInstrument = useMarketStore((s) => s.setSelectedInstrument);
   const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
   const setBiasTimeframe = useMarketStore((s) => s.setBiasTimeframe);
+  const journalOpen = useMarketStore((s) => s.journalOpen);
+  const setJournalOpen = useMarketStore((s) => s.setJournalOpen);
   const { data: ratesData } = useRates();
   const quotes = ratesData?.quotes || {};
 
@@ -127,6 +130,21 @@ export function Header({ mode = "analysis" }: HeaderProps) {
               Intraweek
             </button>
           </div>
+
+          <button
+            onClick={() => setJournalOpen(!journalOpen)}
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition-colors",
+              journalOpen
+                ? "bg-neutral-accent/15 text-neutral-accent"
+                : "text-muted-foreground hover:text-foreground hover:bg-[var(--surface-2)]"
+            )}
+          >
+            <BookOpen className="h-3.5 w-3.5" />
+            <span className="hidden md:inline">Journal</span>
+          </button>
+
+          <AlertsBell />
 
           <ThemeToggle />
 

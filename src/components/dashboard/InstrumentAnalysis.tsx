@@ -22,6 +22,8 @@ import { useTechnicalData } from "@/lib/hooks/useTechnicalData";
 import { saveBiasToHistory } from "@/components/bias/BiasHistory";
 import { BiasAccuracyCard } from "@/components/bias/BiasAccuracy";
 import { SessionCard } from "@/components/common/SessionIndicator";
+import { QuickTradeLog } from "@/components/journal/QuickTradeLog";
+import { MTFConfluence } from "@/components/technicals/MTFConfluence";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -87,7 +89,11 @@ export function InstrumentAnalysis() {
             </GlassCard>
 
             <TradeSetupCard />
+            <div className="flex items-center gap-2">
+              <QuickTradeLog instrumentId={instrument.id} biasResult={biasResult} currentPrice={currentPrice} />
+            </div>
             <SessionCard instrumentId={instrument.id} />
+            <MTFConfluence />
             <InstrumentBias />
           </div>
 

@@ -13,10 +13,17 @@ import { MarketHoursStrip } from "@/components/common/MarketHours";
 import { EtheralShadow } from "@/components/ui/etheral-shadow";
 import { useAllBiasScores } from "@/lib/hooks/useAllBiasScores";
 import { BiasAccuracySummary } from "@/components/bias/BiasAccuracy";
-import { Activity, Sparkles, Target, AlertTriangle, BarChart3 } from "lucide-react";
+import { RiskCorrelation } from "@/components/bias/RiskCorrelation";
+import { TradeJournal } from "@/components/journal/TradeJournal";
+import { useMarketStore } from "@/lib/store/market-store";
+import { useSmartAlerts } from "@/lib/hooks/useSmartAlerts";
+import { Activity, Sparkles, Target, AlertTriangle, BarChart3, Shield } from "lucide-react";
 
 export function MarketOverview() {
   useAllBiasScores();
+  useSmartAlerts();
+  const journalOpen = useMarketStore((s) => s.journalOpen);
+  const setJournalOpen = useMarketStore((s) => s.setJournalOpen);
 
   return (
     <div className="relative min-h-screen bg-background">
@@ -109,8 +116,22 @@ export function MarketOverview() {
               </div>
             </div>
           </section>
+
+          {/* Section 6: Portfolio Risk */}
+          <section>
+            <SectionHeader
+              step={6}
+              title="Portfolio Risk"
+              subtitle="Currency exposure and correlation warnings"
+              icon={<Shield className="h-3.5 w-3.5" />}
+              accentColor="red"
+            />
+            <RiskCorrelation />
+          </section>
         </main>
       </div>
+
+      {journalOpen && <TradeJournal onClose={() => setJournalOpen(false)} />}
     </div>
   );
 }

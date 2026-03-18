@@ -4,6 +4,8 @@ import { create } from "zustand";
 import type { Instrument } from "@/lib/types/market";
 import type { BiasResult } from "@/lib/types/bias";
 import type { LLMAnalysisResult } from "@/lib/types/llm";
+import type { SmartAlert, AlertConfig } from "@/lib/types/alerts";
+import { DEFAULT_ALERT_CONFIG } from "@/lib/types/alerts";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 
 export interface ADRStoreData {
@@ -24,6 +26,9 @@ interface MarketStore {
   batchLLMReady: boolean;
   adrData: Record<string, ADRStoreData> | null;
   activeTab: string;
+  journalOpen: boolean;
+  alerts: SmartAlert[];
+  alertConfig: AlertConfig;
 
   setSelectedInstrument: (instrument: Instrument) => void;
   setSelectedTimeframe: (timeframe: string) => void;
@@ -34,6 +39,11 @@ interface MarketStore {
   setBatchLLMReady: (ready: boolean) => void;
   setADRData: (data: Record<string, ADRStoreData> | null) => void;
   setActiveTab: (tab: string) => void;
+  setJournalOpen: (open: boolean) => void;
+  addAlerts: (alerts: SmartAlert[]) => void;
+  dismissAlert: (id: string) => void;
+  clearAlerts: () => void;
+  setAlertConfig: (config: Partial<AlertConfig>) => void;
 }
 
 export const useMarketStore = create<MarketStore>((set) => ({
@@ -46,6 +56,9 @@ export const useMarketStore = create<MarketStore>((set) => ({
   batchLLMReady: false,
   adrData: null,
   activeTab: "overview",
+  journalOpen: false,
+  alerts: [],
+  alertConfig: DEFAULT_ALERT_CONFIG,
 
   setSelectedInstrument: (instrument) => set({ selectedInstrument: instrument }),
   setSelectedTimeframe: (timeframe) => set({ selectedTimeframe: timeframe }),
@@ -65,4 +78,18 @@ export const useMarketStore = create<MarketStore>((set) => ({
   setBatchLLMReady: (ready) => set({ batchLLMReady: ready }),
   setADRData: (data) => set({ adrData: data }),
   setActiveTab: (tab) => set({ activeTab: tab }),
+  setJournalOpen: (open) => set({ journalOpen: open }),
+  addAlerts: (newAlerts) =>
+    set((state) => ({
+      alerts: [...state.alerts, ...newAlerts].slice(-50),
+    })),
+  dismissAlert: (id) =>
+    set((state) => ({
+      alerts: state.alerts.map((a) => (a.id === id ? { ...a, dismissed: true } : a)),
+    })),
+  clearAlerts: () => set({ alerts: [] }),
+  setAlertConfig: (partial) =>
+    set((state) => ({
+      alertConfig: { ...state.alertConfig, ...partial },
+    })),
 }));
