@@ -49,7 +49,7 @@ export function AIMarketSummary() {
           <h3 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
             AI Market Summary
           </h3>
-          <span className="text-[10px] text-muted-foreground/50 ml-auto">Requires Gemini API key</span>
+          <span className="text-[10px] text-muted-foreground/50 ml-auto">AI analysis unavailable — configure API key</span>
         </div>
       </div>
     );
@@ -130,6 +130,34 @@ export function AIMarketSummary() {
           )}
         </div>
       </div>
+
+      {/* Sector Outlook */}
+      {summary.sectorOutlook && summary.sectorOutlook.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-border/50">
+          <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
+            Sector Breakdown
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+            {summary.sectorOutlook.map((sector) => (
+              <div key={sector.sector} className="bg-[var(--surface-2)] rounded-lg p-2.5">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[11px] font-medium capitalize text-foreground">
+                    {sector.sector}
+                  </span>
+                  <OutlookBadge outlook={sector.outlook} />
+                </div>
+                <div className="space-y-0.5">
+                  {sector.keyAssets.map((asset, i) => (
+                    <p key={i} className="text-[10px] text-muted-foreground leading-snug truncate">
+                      {asset}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

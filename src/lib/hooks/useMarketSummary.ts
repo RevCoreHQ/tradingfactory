@@ -2,7 +2,8 @@
 
 import useSWR from "swr";
 import { useFearGreed, useBondYields, useCentralBanks } from "./useMarketData";
-import { REFRESH_INTERVALS } from "@/lib/utils/constants";
+import { useMarketStore } from "@/lib/store/market-store";
+import { REFRESH_INTERVALS, INSTRUMENTS } from "@/lib/utils/constants";
 import type { MarketSummaryResult } from "@/lib/types/llm";
 
 const postFetcher = async ([url, body]: [string, unknown]) => {
@@ -29,8 +30,21 @@ export function useMarketSummary() {
   const { data: bondData } = useBondYields();
   const { data: bankData } = useCentralBanks();
   const { data: newsData } = useGeneralNews();
+  const allBiasResults = useMarketStore((s) => s.allBiasResults);
+  const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
+  const currentResults = allBiasResults[biasTimeframe];
 
   const hasData = !!fearGreedData;
+
+  const instrumentBiases = Object.entries(currentResults).map(([id, result]) => {
+    const inst = INSTRUMENTS.find((i) => i.id === id);
+    return {
+      symbol: inst?.symbol || id,
+      category: inst?.category || "unknown",
+      direction: result.direction,
+      bias: Math.round(result.overallBias),
+    };
+  });
 
   const requestBody = hasData
     ? {
@@ -58,6 +72,7 @@ export function useMarketSummary() {
           sentiment: n.sentimentLabel,
           score: n.sentimentScore,
         })),
+        instrumentBiases: instrumentBiases.length > 0 ? instrumentBiases : undefined,
       }
     : null;
 

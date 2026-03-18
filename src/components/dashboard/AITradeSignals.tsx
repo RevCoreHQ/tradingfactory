@@ -9,6 +9,7 @@ import { GlowingEffect } from "@/components/ui/glowing-effect";
 
 export function AITradeSignals() {
   const batchLLMResults = useMarketStore((s) => s.batchLLMResults);
+  const batchLLMReady = useMarketStore((s) => s.batchLLMReady);
   const allBiasResults = useMarketStore((s) => s.allBiasResults);
   const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
   const currentResults = allBiasResults[biasTimeframe];
@@ -22,15 +23,21 @@ export function AITradeSignals() {
             AI Trade Signals
           </h3>
         </div>
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="space-y-2">
-              <div className="h-4 w-1/3 shimmer rounded" />
-              <div className="h-3 w-full shimmer rounded" />
-              <div className="h-2 w-2/3 shimmer rounded" />
-            </div>
-          ))}
-        </div>
+        {batchLLMReady ? (
+          <p className="text-xs text-muted-foreground/60 text-center py-8">
+            AI analysis unavailable — configure an API key (Anthropic, Gemini, or OpenAI)
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="space-y-2">
+                <div className="h-4 w-1/3 shimmer rounded" />
+                <div className="h-3 w-full shimmer rounded" />
+                <div className="h-2 w-2/3 shimmer rounded" />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   }

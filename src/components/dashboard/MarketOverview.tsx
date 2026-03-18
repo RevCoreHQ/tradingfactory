@@ -7,7 +7,7 @@ import { AITradeSignals } from "./AITradeSignals";
 import { RedNewsWeek } from "@/components/fundamentals/RedNewsWeek";
 import { FearGreedGauge } from "@/components/fundamentals/FearGreedGauge";
 import { BondYields } from "@/components/fundamentals/BondYields";
-import { CurrencyStrength } from "@/components/fundamentals/CurrencyStrength";
+import { CurrencyBias } from "@/components/fundamentals/CurrencyBias";
 import { MarketHoursStrip } from "@/components/common/MarketHours";
 import { MarketContext } from "./MarketContext";
 import { FallingPattern } from "@/components/ui/falling-pattern";
@@ -61,8 +61,8 @@ export function MarketOverview() {
           </div>
         </div>
 
-        {/* Row 5: Currency Strength */}
-        <CurrencyStrength />
+        {/* Row 5: Currency Bias Index */}
+        <CurrencyBias />
       </main>
       </div>
     </div>

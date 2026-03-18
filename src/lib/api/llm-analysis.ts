@@ -553,7 +553,8 @@ Rules:
 - List 2-3 key risks traders should watch.
 - List 2-3 opportunities the data suggests.
 - Provide an overall market outlook: bullish, bearish, or neutral.
-- Be specific — reference actual data values (DXY level, fear/greed reading, yield curve state).
+- Provide a per-sector outlook breakdown with specific asset mentions for forex, crypto, indices, and commodities.
+- Be specific — reference actual data values (DXY level, fear/greed reading, yield curve state) and name specific instruments.
 - Respond with valid JSON only.`;
 
 function buildMarketSummaryPrompt(req: MarketSummaryRequest): string {
@@ -582,13 +583,23 @@ ${req.centralBanks.map((cb) => `  ${cb.bank}: Rate ${cb.rate}%, Direction: ${cb.
 
 Top News Headlines:
 ${req.newsHeadlines.map((n) => `  - [${n.sentiment}, score: ${n.score}] ${n.headline}`).join("\n")}
+${req.instrumentBiases && req.instrumentBiases.length > 0 ? `
+--- Current Instrument Biases ---
+${req.instrumentBiases.map((b) => `  ${b.symbol} (${b.category}): ${b.direction} (bias: ${b.bias})`).join("\n")}` : ""}
 
 Respond with JSON:
 {
   "overview": "<2-4 sentence macro summary>",
   "risks": ["<risk 1>", "<risk 2>"],
   "opportunities": ["<opportunity 1>", "<opportunity 2>"],
-  "outlook": "bullish" | "bearish" | "neutral"
+  "outlook": "bullish" | "bearish" | "neutral",
+  "sectorOutlook": [
+    {
+      "sector": "forex" | "crypto" | "indices" | "commodities",
+      "outlook": "bullish" | "bearish" | "neutral",
+      "keyAssets": ["<asset — brief reason>", "<asset — brief reason>"]
+    }
+  ]
 }`;
 }
 
@@ -612,6 +623,13 @@ function parseMarketSummary(
       risks: Array.isArray(parsed.risks) ? parsed.risks.map(String).slice(0, 5) : [],
       opportunities: Array.isArray(parsed.opportunities) ? parsed.opportunities.map(String).slice(0, 5) : [],
       outlook: outlook === "bullish" || outlook === "bearish" || outlook === "neutral" ? outlook : "neutral",
+      sectorOutlook: Array.isArray(parsed.sectorOutlook)
+        ? parsed.sectorOutlook.map((s: Record<string, unknown>) => ({
+            sector: String(s.sector ?? ""),
+            outlook: (["bullish", "bearish", "neutral"].includes(s.outlook as string) ? s.outlook : "neutral") as "bullish" | "bearish" | "neutral",
+            keyAssets: Array.isArray(s.keyAssets) ? (s.keyAssets as string[]).map(String).slice(0, 5) : [],
+          }))
+        : undefined,
       timestamp: Date.now(),
       provider,
     };

@@ -61,6 +61,13 @@ export interface MarketSummaryRequest {
   bondYields: { maturity: string; yield: number; change: number }[];
   centralBanks: { bank: string; rate: number; direction: string; stance: string }[];
   newsHeadlines: { headline: string; sentiment: string; score: number }[];
+  instrumentBiases?: { symbol: string; category: string; direction: string; bias: number }[];
+}
+
+export interface SectorOutlook {
+  sector: string;
+  outlook: "bullish" | "bearish" | "neutral";
+  keyAssets: string[];
 }
 
 export interface MarketSummaryResult {
@@ -68,6 +75,7 @@ export interface MarketSummaryResult {
   risks: string[];
   opportunities: string[];
   outlook: "bullish" | "bearish" | "neutral";
+  sectorOutlook?: SectorOutlook[];
   timestamp: number;
   provider: LLMProvider;
 }

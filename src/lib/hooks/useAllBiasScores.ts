@@ -25,6 +25,7 @@ export function useAllBiasScores() {
   const setBiasResult = useMarketStore((s) => s.setBiasResult);
   const setAllBiasResults = useMarketStore((s) => s.setAllBiasResults);
   const setBatchLLMResults = useMarketStore((s) => s.setBatchLLMResults);
+  const setBatchLLMReady = useMarketStore((s) => s.setBatchLLMReady);
 
   const { data: newsData } = useMarketNews();
   const { data: fearGreedData } = useFearGreed();
@@ -74,7 +75,7 @@ export function useAllBiasScores() {
 
   // Fetch LLM batch analysis using current timeframe results
   const currentTimeframeResults = biasTimeframe === "intraday" ? ruleBasedResults.intraday : ruleBasedResults.intraweek;
-  const { batchResults } = useLLMBatchAnalysis(currentTimeframeResults);
+  const { batchResults, isReady: llmReady } = useLLMBatchAnalysis(currentTimeframeResults);
 
   // Compute ADR ranks
   const adrRanks = useMemo(() => {
@@ -149,12 +150,13 @@ export function useAllBiasScores() {
       setAllBiasResults("intraday", allResults.intraday);
       setAllBiasResults("intraweek", allResults.intraweek);
       setBatchLLMResults(batchResults);
+      if (llmReady) setBatchLLMReady(true);
       const currentResults = biasTimeframe === "intraday" ? allResults.intraday : allResults.intraweek;
       for (const [id, result] of Object.entries(currentResults)) {
         setBiasResult(id, result);
       }
     }
-  }, [allResults, batchResults, setBiasResult, setAllBiasResults, setBatchLLMResults, biasTimeframe]);
+  }, [allResults, batchResults, llmReady, setBiasResult, setAllBiasResults, setBatchLLMResults, setBatchLLMReady, biasTimeframe]);
 
   return allResults;
 }

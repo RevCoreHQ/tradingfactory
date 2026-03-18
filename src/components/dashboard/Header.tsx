@@ -8,6 +8,7 @@ import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { getChangeClass } from "@/lib/utils/formatters";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 interface HeaderProps {
   mode?: "overview" | "analysis";
@@ -124,6 +125,8 @@ export function Header({ mode = "analysis" }: HeaderProps) {
               Intraweek
             </button>
           </div>
+
+          <ThemeToggle />
 
           {/* Live indicator */}
           <div className="flex items-center gap-1.5">

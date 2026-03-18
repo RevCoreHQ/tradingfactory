@@ -136,6 +136,7 @@ export function useLLMBatchAnalysis(allBiasResults: Record<string, BiasResult>) 
   return {
     batchResults: data?.batch?.results || null,
     isLoading,
+    isReady: !!data && !isLoading,
     error,
   };
 }

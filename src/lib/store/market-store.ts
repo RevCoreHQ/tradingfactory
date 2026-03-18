@@ -21,6 +21,7 @@ interface MarketStore {
     intraweek: Record<string, BiasResult>;
   };
   batchLLMResults: Record<string, LLMAnalysisResult> | null;
+  batchLLMReady: boolean;
   adrData: Record<string, ADRStoreData> | null;
   activeTab: string;
 
@@ -30,6 +31,7 @@ interface MarketStore {
   setBiasResult: (instrumentId: string, result: BiasResult) => void;
   setAllBiasResults: (timeframe: "intraday" | "intraweek", results: Record<string, BiasResult>) => void;
   setBatchLLMResults: (results: Record<string, LLMAnalysisResult> | null) => void;
+  setBatchLLMReady: (ready: boolean) => void;
   setADRData: (data: Record<string, ADRStoreData> | null) => void;
   setActiveTab: (tab: string) => void;
 }
@@ -41,6 +43,7 @@ export const useMarketStore = create<MarketStore>((set) => ({
   biasResults: {},
   allBiasResults: { intraday: {}, intraweek: {} },
   batchLLMResults: null,
+  batchLLMReady: false,
   adrData: null,
   activeTab: "overview",
 
@@ -59,6 +62,7 @@ export const useMarketStore = create<MarketStore>((set) => ({
       },
     })),
   setBatchLLMResults: (results) => set({ batchLLMResults: results }),
+  setBatchLLMReady: (ready) => set({ batchLLMReady: ready }),
   setADRData: (data) => set({ adrData: data }),
   setActiveTab: (tab) => set({ activeTab: tab }),
 }));
