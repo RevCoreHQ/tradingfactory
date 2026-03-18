@@ -44,9 +44,31 @@ export async function GET() {
     }
   }
 
-  // Test Anthropic (skip live call to preserve rate limit)
+  // Test Anthropic with a tiny call
   if (process.env.ANTHROPIC_API_KEY) {
-    tests.anthropic = "key configured (skipping live test to preserve rate limit)";
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": process.env.ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 10,
+          messages: [{ role: "user", content: "Reply with exactly: ok" }],
+        }),
+      });
+      if (res.ok) {
+        tests.anthropic = "ok";
+      } else {
+        const body = await res.text().catch(() => "");
+        tests.anthropic = `error ${res.status}: ${body.slice(0, 300)}`;
+      }
+    } catch (e) {
+      tests.anthropic = `exception: ${e instanceof Error ? e.message : String(e)}`;
+    }
   }
 
   // Test Gemini
