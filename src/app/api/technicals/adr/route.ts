@@ -19,7 +19,7 @@ function computeADR(candles: OHLCV[], pipSize: number): { pips: number; percent:
   };
 }
 
-// Server-side cache: refresh every 30 minutes
+// Accumulating cache — merges partial results across requests
 let cache: { data: Record<string, { pips: number; percent: number }>; timestamp: number } | null = null;
 const CACHE_TTL = 30 * 60 * 1000;
 
@@ -32,42 +32,58 @@ export async function GET() {
       );
     }
 
-    const results: Record<string, { pips: number; percent: number }> = {};
+    // Start with existing partial results so data accumulates across requests
+    const results: Record<string, { pips: number; percent: number }> =
+      cache?.data ? { ...cache.data } : {};
     const now = Math.floor(Date.now() / 1000);
-    const from = now - 30 * 24 * 60 * 60; // 30 days of daily data
+    const from = now - 30 * 24 * 60 * 60;
 
-    // Fetch daily candles for all instruments in parallel
-    const promises = INSTRUMENTS.map(async (inst) => {
+    // 1. Crypto via CoinGecko — parallel, fast, reliable free tier
+    const crypto = INSTRUMENTS.filter((i) => i.category === "crypto");
+    await Promise.allSettled(
+      crypto.map(async (inst) => {
+        try {
+          const candles = await fetchCryptoOHLC(inst.coingeckoId || "bitcoin", 30);
+          const adr = computeADR(candles, inst.pipSize);
+          if (adr) results[inst.id] = adr;
+        } catch {
+          // keep existing cached value if available
+        }
+      })
+    );
+
+    // 2. Forex + Commodity — sequential Alpha Vantage (5 calls/min rate limit)
+    //    Skip Finnhub: free tier returns no_data for OANDA forex symbols
+    const forexCommodity = INSTRUMENTS.filter(
+      (i) => i.category === "forex" || i.category === "commodity"
+    );
+    for (const inst of forexCommodity) {
       try {
-        let candles: OHLCV[] = [];
-
-        if (inst.category === "crypto") {
-          candles = await fetchCryptoOHLC(inst.coingeckoId || "bitcoin", 30);
-        } else if (inst.category === "forex" || inst.category === "commodity") {
-          try {
-            candles = await fetchForexCandles(inst.finnhubSymbol || "", "D", from, now);
-          } catch {
-            candles = await fetchForexDaily(inst.alphavantageSymbol, inst.alphavantageToSymbol || "USD");
-          }
-        } else {
-          // Index
-          try {
-            candles = await fetchForexCandles(inst.finnhubSymbol || "", "D", from, now);
-          } catch {
-            candles = [];
-          }
-        }
-
+        const candles = await fetchForexDaily(
+          inst.alphavantageSymbol,
+          inst.alphavantageToSymbol || "USD"
+        );
         const adr = computeADR(candles, inst.pipSize);
-        if (adr) {
-          results[inst.id] = adr;
-        }
-      } catch (error) {
-        console.error(`ADR fetch failed for ${inst.id}:`, error);
+        if (adr) results[inst.id] = adr;
+      } catch {
+        // Rate-limited or failed — keep existing cached value, will retry next cycle
       }
-    });
+    }
 
-    await Promise.allSettled(promises);
+    // 3. Indices via Finnhub — parallel, best-effort
+    const indices = INSTRUMENTS.filter((i) => i.category === "index");
+    await Promise.allSettled(
+      indices.map(async (inst) => {
+        if (results[inst.id]) return; // already have data from previous cache
+        try {
+          const candles = await fetchForexCandles(inst.finnhubSymbol || "", "D", from, now);
+          const adr = computeADR(candles, inst.pipSize);
+          if (adr) results[inst.id] = adr;
+        } catch {
+          // Finnhub free tier may not support FOREXCOM index symbols
+        }
+      })
+    );
 
     cache = { data: results, timestamp: Date.now() };
 
@@ -77,6 +93,6 @@ export async function GET() {
     );
   } catch (error) {
     console.error("ADR route error:", error);
-    return NextResponse.json({ adr: {} }, { status: 200 });
+    return NextResponse.json({ adr: cache?.data || {} }, { status: 200 });
   }
 }
