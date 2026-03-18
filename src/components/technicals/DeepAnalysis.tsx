@@ -3,7 +3,7 @@
 import { useDeepAnalysis, useDeepAnalysisLLM } from "@/lib/hooks/useDeepAnalysis";
 import { useBiasScore } from "@/lib/hooks/useBiasScore";
 import { useMarketStore } from "@/lib/store/market-store";
-import { PriceChart } from "./PriceChart";
+import { TradingViewChart } from "./TradingViewChart";
 import { cn } from "@/lib/utils";
 import {
   TrendingUp,
@@ -387,14 +387,8 @@ export function DeepAnalysis() {
 
   return (
     <div className="space-y-4">
-      {/* Enhanced chart with overlays */}
-      <PriceChart
-        supplyZones={deepAnalysis?.supplyZones}
-        demandZones={deepAnalysis?.demandZones}
-        confluenceLevels={deepAnalysis?.confluenceLevels}
-        showOverlays={true}
-        heightClass="h-[350px] lg:h-[420px]"
-      />
+      {/* TradingView embedded chart */}
+      <TradingViewChart heightClass="h-[400px] lg:h-[500px]" />
 
       {deepAnalysis && (
         <>
