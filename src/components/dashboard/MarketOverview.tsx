@@ -10,7 +10,7 @@ import { RedNewsWeek } from "@/components/fundamentals/RedNewsWeek";
 import { BondYields } from "@/components/fundamentals/BondYields";
 import { CurrencyBias } from "@/components/fundamentals/CurrencyBias";
 import { MarketHoursStrip } from "@/components/common/MarketHours";
-import { FallingPattern } from "@/components/ui/falling-pattern";
+import NeuralBackground from "@/components/ui/flow-field-background";
 import { useAllBiasScores } from "@/lib/hooks/useAllBiasScores";
 import { Activity, Sparkles, Target, AlertTriangle, BarChart3 } from "lucide-react";
 
@@ -19,12 +19,13 @@ export function MarketOverview() {
 
   return (
     <div className="relative min-h-screen bg-background">
-      {/* Animated falling pattern background */}
-      <div className="fixed inset-0 z-0">
-        <FallingPattern
-          className="h-full [mask-image:radial-gradient(ellipse_at_center,transparent,var(--background))]"
-          color="oklch(0.5 0.12 255)"
-          duration={150}
+      {/* Neural flow field background */}
+      <div className="fixed inset-0 z-0 opacity-40">
+        <NeuralBackground
+          color="#818cf8"
+          trailOpacity={0.12}
+          particleCount={400}
+          speed={0.6}
         />
       </div>
 
