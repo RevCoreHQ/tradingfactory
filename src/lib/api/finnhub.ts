@@ -130,3 +130,40 @@ export async function fetchForexCandles(
 ): Promise<OHLCV[]> {
   return fetchCandles(symbol, resolution, from, to);
 }
+
+/**
+ * Fetch forex candles via /forex/candle endpoint (different from /stock/candle).
+ * Works for OANDA symbols like "OANDA:EUR_USD" on Finnhub free tier.
+ */
+export async function fetchForexCandleData(
+  symbol: string,
+  resolution: string,
+  from: number,
+  to: number
+): Promise<OHLCV[]> {
+  const data = await finnhubFetch<{
+    c: number[];
+    h: number[];
+    l: number[];
+    o: number[];
+    t: number[];
+    v: number[];
+    s: string;
+  }>("/forex/candle", {
+    symbol,
+    resolution,
+    from: String(from),
+    to: String(to),
+  });
+
+  if (data.s === "no_data" || !data.c) return [];
+
+  return data.c.map((_, i) => ({
+    timestamp: data.t[i] * 1000,
+    open: data.o[i],
+    high: data.h[i],
+    low: data.l[i],
+    close: data.c[i],
+    volume: data.v?.[i] ?? 0,
+  }));
+}

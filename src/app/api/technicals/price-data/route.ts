@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchForexCandles } from "@/lib/api/finnhub";
+import { fetchForexCandles, fetchForexCandleData } from "@/lib/api/finnhub";
 import { fetchCryptoOHLC } from "@/lib/api/coingecko";
 import { fetchForexDaily, fetchForexIntraday } from "@/lib/api/alpha-vantage";
 import { INSTRUMENTS } from "@/lib/utils/constants";
@@ -59,27 +59,36 @@ export async function GET(req: NextRequest) {
       const coingeckoId = instrument.coingeckoId || "bitcoin";
       candles = await fetchCryptoOHLC(coingeckoId, days);
     } else if (instrument.category === "forex" || instrument.category === "commodity") {
-      // Finnhub free tier returns empty for OANDA forex symbols — go straight to Alpha Vantage
+      // Try Finnhub /forex/candle first (55 calls/min), fall back to Alpha Vantage (5 calls/min)
+      const finnhubSym = instrument.finnhubSymbol || "";
+      const resolution = RESOLUTION_MAP[timeframe] || "60";
       try {
-        if (timeframe === "1d" || timeframe === "1w") {
-          candles = await fetchForexDaily(
-            instrument.alphavantageSymbol,
-            instrument.alphavantageToSymbol || "USD"
-          );
-        } else {
-          // Always fetch 60min — for 4h, we aggregate 60min → 4h candles.
-          // This reuses the AV cache from 1h requests, saving rate limit budget.
-          candles = await fetchForexIntraday(
-            instrument.alphavantageSymbol,
-            instrument.alphavantageToSymbol || "USD",
-            "60min"
-          );
-          if (timeframe === "4h") {
-            candles = aggregateCandles(candles, 4);
-          }
-        }
+        candles = await fetchForexCandleData(finnhubSym, resolution, from, now);
       } catch {
         candles = [];
+      }
+
+      // Fall back to Alpha Vantage if Finnhub returned empty
+      if (candles.length === 0) {
+        try {
+          if (timeframe === "1d" || timeframe === "1w") {
+            candles = await fetchForexDaily(
+              instrument.alphavantageSymbol,
+              instrument.alphavantageToSymbol || "USD"
+            );
+          } else {
+            candles = await fetchForexIntraday(
+              instrument.alphavantageSymbol,
+              instrument.alphavantageToSymbol || "USD",
+              "60min"
+            );
+            if (timeframe === "4h") {
+              candles = aggregateCandles(candles, 4);
+            }
+          }
+        } catch {
+          candles = [];
+        }
       }
     } else {
       // Index - try Finnhub
