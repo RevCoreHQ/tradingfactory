@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { GlowingEffect } from "@/components/ui/glowing-effect";
 
 interface GlassCardProps {
   children: React.ReactNode;
@@ -9,20 +10,31 @@ interface GlassCardProps {
   accent?: "bullish" | "bearish" | "neutral" | null;
   animate?: boolean;
   delay?: number;
+  glow?: boolean;
 }
 
-export function GlassCard({ children, className, accent, animate = true, delay = 0 }: GlassCardProps) {
+export function GlassCard({ children, className, accent, animate = true, delay = 0, glow = false }: GlassCardProps) {
   const accentClass = accent === "bullish" ? "accent-bullish" : accent === "bearish" ? "accent-bearish" : accent === "neutral" ? "accent-neutral" : "";
 
   const content = (
     <div
       className={cn(
-        "panel rounded-lg p-4 transition-colors duration-200",
+        "relative panel rounded-lg p-4 transition-colors duration-200",
         "hover:border-border-bright",
         accentClass,
         className
       )}
     >
+      {glow && (
+        <GlowingEffect
+          spread={40}
+          glow={true}
+          disabled={false}
+          proximity={64}
+          inactiveZone={0.01}
+          borderWidth={2}
+        />
+      )}
       {children}
     </div>
   );

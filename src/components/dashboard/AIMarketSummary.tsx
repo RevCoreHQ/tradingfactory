@@ -3,6 +3,7 @@
 import { useMarketSummary } from "@/lib/hooks/useMarketSummary";
 import { cn } from "@/lib/utils";
 import { Sparkles, AlertTriangle, TrendingUp } from "lucide-react";
+import { GlowingEffect } from "@/components/ui/glowing-effect";
 
 function OutlookBadge({ outlook }: { outlook: "bullish" | "bearish" | "neutral" }) {
   return (
@@ -59,7 +60,15 @@ export function AIMarketSummary() {
     : "";
 
   return (
-    <div className="panel rounded-lg p-4">
+    <div className="relative panel rounded-lg p-4">
+      <GlowingEffect
+        spread={40}
+        glow={true}
+        disabled={false}
+        proximity={64}
+        inactiveZone={0.01}
+        borderWidth={2}
+      />
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
         <Sparkles className="h-3.5 w-3.5 text-neutral-accent" />

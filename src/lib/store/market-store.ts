@@ -6,6 +6,11 @@ import type { BiasResult } from "@/lib/types/bias";
 import type { LLMAnalysisResult } from "@/lib/types/llm";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 
+export interface ADRStoreData {
+  pips: number;
+  percent: number;
+}
+
 interface MarketStore {
   selectedInstrument: Instrument;
   selectedTimeframe: string;
@@ -16,6 +21,7 @@ interface MarketStore {
     intraweek: Record<string, BiasResult>;
   };
   batchLLMResults: Record<string, LLMAnalysisResult> | null;
+  adrData: Record<string, ADRStoreData> | null;
   activeTab: string;
 
   setSelectedInstrument: (instrument: Instrument) => void;
@@ -24,6 +30,7 @@ interface MarketStore {
   setBiasResult: (instrumentId: string, result: BiasResult) => void;
   setAllBiasResults: (timeframe: "intraday" | "intraweek", results: Record<string, BiasResult>) => void;
   setBatchLLMResults: (results: Record<string, LLMAnalysisResult> | null) => void;
+  setADRData: (data: Record<string, ADRStoreData> | null) => void;
   setActiveTab: (tab: string) => void;
 }
 
@@ -34,6 +41,7 @@ export const useMarketStore = create<MarketStore>((set) => ({
   biasResults: {},
   allBiasResults: { intraday: {}, intraweek: {} },
   batchLLMResults: null,
+  adrData: null,
   activeTab: "overview",
 
   setSelectedInstrument: (instrument) => set({ selectedInstrument: instrument }),
@@ -51,5 +59,6 @@ export const useMarketStore = create<MarketStore>((set) => ({
       },
     })),
   setBatchLLMResults: (results) => set({ batchLLMResults: results }),
+  setADRData: (data) => set({ adrData: data }),
   setActiveTab: (tab) => set({ activeTab: tab }),
 }));

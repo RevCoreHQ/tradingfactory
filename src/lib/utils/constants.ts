@@ -215,6 +215,7 @@ export const REFRESH_INTERVALS = {
   LLM_ANALYSIS: 300_000,
   LLM_BATCH_ANALYSIS: 600_000,
   MARKET_SUMMARY: 600_000,
+  ADR_DATA: 1_800_000, // 30 minutes — ADR changes slowly
 } as const;
 
 export const BIAS_THRESHOLDS = {

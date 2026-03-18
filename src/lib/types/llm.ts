@@ -12,6 +12,10 @@ export interface LLMAnalysisResult {
   confidence: number;
   signals: LLMSignal[];
   summary: string;
+  keyLevels?: { support: number; resistance: number };
+  projectedMovePercent?: number;
+  riskAssessment?: "low" | "medium" | "high";
+  catalysts?: string[];
 }
 
 export interface LLMBatchResult {

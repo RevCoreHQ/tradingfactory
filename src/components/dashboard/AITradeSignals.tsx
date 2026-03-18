@@ -5,6 +5,7 @@ import { INSTRUMENTS } from "@/lib/utils/constants";
 import { getBiasColor, getBiasLabel } from "@/lib/utils/formatters";
 import { cn } from "@/lib/utils";
 import { Sparkles } from "lucide-react";
+import { GlowingEffect } from "@/components/ui/glowing-effect";
 
 export function AITradeSignals() {
   const batchLLMResults = useMarketStore((s) => s.batchLLMResults);
@@ -51,7 +52,15 @@ export function AITradeSignals() {
     .slice(0, 5) as { instrument: typeof INSTRUMENTS[number]; llm: typeof batchLLMResults[string]; bias: typeof currentResults[string] }[];
 
   return (
-    <div className="panel rounded-lg p-4 h-full">
+    <div className="relative panel rounded-lg p-4 h-full">
+      <GlowingEffect
+        spread={40}
+        glow={true}
+        disabled={false}
+        proximity={64}
+        inactiveZone={0.01}
+        borderWidth={2}
+      />
       <div className="flex items-center gap-2 mb-4">
         <Sparkles className="h-3.5 w-3.5 text-neutral-accent" />
         <h3 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">

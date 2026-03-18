@@ -25,6 +25,25 @@ export interface BiasSignal {
   description: string;
 }
 
+export interface ADRData {
+  pips: number;
+  percent: number;
+  rank: number; // percentile rank among all instruments (0-100)
+}
+
+export type RiskSizing = "size_up" | "normal" | "size_down";
+
+export interface TradeSetup {
+  tradeScore: number;            // ADR-weighted conviction (ranking metric)
+  projectedMove: { pips: number; percent: number };
+  stopLoss: number;              // Price level
+  takeProfit: [number, number, number]; // TP1, TP2, TP3 price levels
+  riskReward: [number, number, number]; // R:R for each TP
+  riskSizing: RiskSizing;
+  riskReason: string;
+  entryZone: [number, number];   // low, high
+}
+
 export interface BiasResult {
   instrument: string;
   overallBias: number;
@@ -32,9 +51,13 @@ export interface BiasResult {
   confidence: number;
   fundamentalScore: FundamentalScore;
   technicalScore: TechnicalScore;
+  aiBias: number;                // AI/LLM bias component (-100 to +100)
   timeframe: "intraday" | "intraweek";
   timestamp: number;
   signals: BiasSignal[];
+  adr: ADRData | null;
+  tradeSetup: TradeSetup | null;
+  signalAgreement: number;       // 0-1, how much signals agree on direction
 }
 
 export interface BiasHistoryEntry {

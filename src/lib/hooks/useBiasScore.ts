@@ -6,6 +6,7 @@ import { useMarketNews, useFearGreed, useBondYields, useCentralBanks } from "./u
 import { useTechnicalData } from "./useTechnicalData";
 import { useLLMAnalysis } from "./useLLMAnalysis";
 import { calculateFundamentalScore, calculateTechnicalScore, calculateOverallBias, applyLLMAnalysis } from "@/lib/calculations/bias-engine";
+import { calculateTradeSetup } from "@/lib/calculations/trade-setup";
 
 const DEFAULT_FEAR_GREED = { value: 50, label: "Neutral", timestamp: 0, previousClose: 50, previousWeek: 50, previousMonth: 50 };
 const DEFAULT_DXY = { value: 0, change: 0, changePercent: 0, history: [] as { value: number }[] };
@@ -23,6 +24,7 @@ export function useBiasScore() {
   const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
   const setBiasResult = useMarketStore((s) => s.setBiasResult);
   const storedBias = useMarketStore((s) => s.biasResults[instrument.id]);
+  const adrData = useMarketStore((s) => s.adrData);
 
   const { data: newsData } = useMarketNews();
   const { data: fearGreedData } = useFearGreed();
@@ -57,9 +59,29 @@ export function useBiasScore() {
 
     const ruleBasedResult = calculateOverallBias(fundamentalScore, technicalScore, biasTimeframe, instrument.id);
 
-    // Enhance with LLM analysis (returns unmodified result if llmAnalysis is null)
-    return applyLLMAnalysis(ruleBasedResult, llmAnalysis);
-  }, [newsData, fearGreedData, bondData, bankData, indicators, candles, instrument.id, biasTimeframe, llmAnalysis]);
+    // Enhance with LLM analysis
+    let result = applyLLMAnalysis(ruleBasedResult, llmAnalysis);
+
+    // Attach ADR + trade setup if available
+    const instAdr = adrData?.[instrument.id];
+    if (instAdr && currentPrice > 0) {
+      const atr = indicators?.atr?.value || (instAdr.pips * instrument.pipSize);
+      const adrWithRank = { ...instAdr, rank: 50 }; // single instrument doesn't have ranking context
+      result = {
+        ...result,
+        adr: adrWithRank,
+        tradeSetup: calculateTradeSetup(
+          result,
+          atr,
+          adrWithRank,
+          currentPrice,
+          biasTimeframe
+        ),
+      };
+    }
+
+    return result;
+  }, [newsData, fearGreedData, bondData, bankData, indicators, candles, instrument, biasTimeframe, llmAnalysis, adrData]);
 
   // Use a ref to avoid setBiasResult triggering re-renders that cause infinite loops
   const prevBiasRef = useRef<string>("");

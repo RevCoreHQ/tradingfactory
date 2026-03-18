@@ -13,6 +13,7 @@ import { CentralBankTracker } from "@/components/fundamentals/CentralBankTracker
 import { CurrencyStrength } from "@/components/fundamentals/CurrencyStrength";
 import { IntermarketCorrelation } from "@/components/fundamentals/IntermarketCorrelation";
 import { TechnicalOverview } from "@/components/technicals/TechnicalOverview";
+import { TradeSetupCard } from "./TradeSetupCard";
 import { GlassCard } from "@/components/common/GlassCard";
 import { useMarketStore } from "@/lib/store/market-store";
 import { useBiasScore } from "@/lib/hooks/useBiasScore";
@@ -79,6 +80,7 @@ export function InstrumentAnalysis() {
               </div>
             </GlassCard>
 
+            <TradeSetupCard />
             <InstrumentBias />
           </div>
 

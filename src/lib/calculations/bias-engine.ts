@@ -522,54 +522,88 @@ export function calculateTechnicalScore(
 
 // ==================== OVERALL BIAS ====================
 
+// 3-way weighted scoring: Fundamental + Technical + AI
+// Intraday:  60% Technical, 25% Fundamental, 15% AI
+// Intraweek: 40% Technical, 45% Fundamental, 15% AI
+const SCORING_WEIGHTS = {
+  intraday:  { technical: 0.60, fundamental: 0.25, ai: 0.15 },
+  intraweek: { technical: 0.40, fundamental: 0.45, ai: 0.15 },
+} as const;
+
 export function calculateOverallBias(
   fundamentalScore: FundamentalScore,
   technicalScore: TechnicalScore,
   timeframe: "intraday" | "intraweek",
-  instrument: string
+  instrument: string,
+  aiBias?: number, // -100 to +100, from LLM
+  allSignals?: BiasSignal[], // all collected signals for agreement calc
 ): BiasResult {
   const isFundamentalDefault = Math.abs(fundamentalScore.total - 50) < 2;
   const isTechnicalDefault = Math.abs(technicalScore.total - 50) < 2;
-  let techWeight = timeframe === "intraday" ? 0.60 : 0.45;
-  let fundWeight = timeframe === "intraday" ? 0.40 : 0.55;
+  const hasAI = aiBias !== undefined && aiBias !== null;
 
-  if (isFundamentalDefault && !isTechnicalDefault) {
-    // No fundamental signal — lean on technicals
-    techWeight = 0.85;
-    fundWeight = 0.15;
-  } else if (isTechnicalDefault && !isFundamentalDefault) {
-    // No technical signal — lean on fundamentals
-    fundWeight = 0.90;
-    techWeight = 0.10;
-  } else if (isTechnicalDefault && isFundamentalDefault) {
-    // Both default — equal weight, but amplify any small signal
-    fundWeight = 0.50;
-    techWeight = 0.50;
+  const baseWeights = SCORING_WEIGHTS[timeframe];
+  let techWeight = baseWeights.technical;
+  let fundWeight = baseWeights.fundamental;
+  let aiWeight = hasAI ? baseWeights.ai : 0;
+
+  // Redistribute AI weight when not available
+  if (!hasAI) {
+    const ratio = techWeight / (techWeight + fundWeight);
+    techWeight += baseWeights.ai * ratio;
+    fundWeight += baseWeights.ai * (1 - ratio);
   }
 
-  // Map 0-100 scores to -100 to +100, with amplification when one side is default
-  const fundamentalBias = (fundamentalScore.total - 50) * 2;
-  const technicalBias = (technicalScore.total - 50) * 2;
+  // Handle sparse data: redistribute weights from default sources
+  if (isFundamentalDefault && !isTechnicalDefault) {
+    const redistrib = fundWeight * 0.7;
+    techWeight += redistrib;
+    fundWeight -= redistrib;
+  } else if (isTechnicalDefault && !isFundamentalDefault) {
+    const redistrib = techWeight * 0.7;
+    fundWeight += redistrib;
+    techWeight -= redistrib;
+  }
+
+  // Map 0-100 scores to -100 to +100
+  const fundamentalBiasVal = (fundamentalScore.total - 50) * 2;
+  const technicalBiasVal = (technicalScore.total - 50) * 2;
+  const aiBiasVal = hasAI ? aiBias! : 0;
 
   let overallBias = clamp(
-    fundamentalBias * fundWeight + technicalBias * techWeight,
+    fundamentalBiasVal * fundWeight +
+    technicalBiasVal * techWeight +
+    aiBiasVal * aiWeight,
     -100,
     100
   );
 
   // Amplify signals when data is sparse — prevents clustering at neutral
   if (isTechnicalDefault || isFundamentalDefault) {
-    overallBias = overallBias * 2.2;
-    overallBias = clamp(overallBias, -100, 100);
+    overallBias = clamp(overallBias * 2.0, -100, 100);
   }
 
   const direction = getBiasDirection(overallBias);
 
-  // Confidence: higher when fundamental and technical agree
-  const agreement = 100 - Math.abs(fundamentalBias - technicalBias);
-  const confidence = clamp(agreement, 10, 100);
+  // Signal agreement: what fraction of signals agree on the overall direction
+  const signalAgreement = computeSignalAgreement(allSignals || [], direction);
 
-  const signals: BiasSignal[] = [];
+  // Confidence: base agreement + quality multipliers
+  const ftAgreement = 100 - Math.abs(fundamentalBiasVal - technicalBiasVal);
+  let confidence = clamp(ftAgreement, 10, 100);
+
+  // Boost if AI agrees with rule-based
+  if (hasAI && Math.sign(aiBiasVal) === Math.sign(overallBias)) {
+    confidence = clamp(confidence * 1.1, 10, 100);
+  }
+  // Boost if signal agreement is high
+  if (signalAgreement > 0.7) {
+    confidence = clamp(confidence * 1.05, 10, 100);
+  }
+  // Penalize if signal agreement is low
+  if (signalAgreement < 0.3 && (allSignals?.length || 0) > 2) {
+    confidence = clamp(confidence * 0.85, 10, 100);
+  }
 
   return {
     instrument,
@@ -578,13 +612,41 @@ export function calculateOverallBias(
     confidence,
     fundamentalScore,
     technicalScore,
+    aiBias: aiBiasVal,
     timeframe,
     timestamp: Date.now(),
-    signals,
+    signals: allSignals || [],
+    adr: null,
+    tradeSetup: null,
+    signalAgreement,
   };
 }
 
+function computeSignalAgreement(signals: BiasSignal[], direction: string): number {
+  if (signals.length === 0) return 0.5;
+  const isBullish = direction.includes("bullish");
+  const isBearish = direction.includes("bearish");
+  if (!isBullish && !isBearish) return 0.5; // neutral
+
+  const agreeing = signals.filter((s) =>
+    isBullish ? s.signal === "bullish" : s.signal === "bearish"
+  ).length;
+  const disagreeing = signals.filter((s) =>
+    isBullish ? s.signal === "bearish" : s.signal === "bullish"
+  ).length;
+  const total = agreeing + disagreeing;
+  if (total === 0) return 0.5;
+  return agreeing / total;
+}
+
 // ==================== LLM INTEGRATION ====================
+
+// Convert LLM biasAdjustment (±50) to a full AI bias score (-100 to +100)
+function llmAdjustmentToAiBias(adjustment: number, confidence: number): number {
+  // Scale the adjustment by confidence and expand to full range
+  const confidenceScale = confidence / 100;
+  return clamp(adjustment * 2 * confidenceScale, -100, 100);
+}
 
 export function applyLLMAnalysis(
   baseResult: BiasResult,
@@ -592,41 +654,32 @@ export function applyLLMAnalysis(
 ): BiasResult {
   if (!llmResult) return baseResult;
 
-  const confidenceScale = llmResult.confidence / 100;
-  const effectiveAdjustment = llmResult.biasAdjustment * confidenceScale;
-
-  const newOverallBias = clamp(
-    baseResult.overallBias + effectiveAdjustment,
-    -100,
-    100
-  );
-
-  const newDirection = getBiasDirection(newOverallBias);
-
-  const agreement = Math.sign(baseResult.overallBias) === Math.sign(newOverallBias) ? 1.1 : 0.8;
-  const newConfidence = clamp(baseResult.confidence * agreement, 10, 100);
-
-  const mergedSignals: BiasSignal[] = [...baseResult.signals];
-
+  // Build signal list from LLM
+  const llmSignals: BiasSignal[] = [];
   if (llmResult.summary) {
-    mergedSignals.unshift({
+    llmSignals.push({
       source: "AI Analysis",
       signal: llmResult.biasAdjustment > 5 ? "bullish" : llmResult.biasAdjustment < -5 ? "bearish" : "neutral",
       strength: llmResult.confidence,
       description: llmResult.summary,
     });
   }
+  llmSignals.push(...llmResult.signals);
 
-  mergedSignals.push(...llmResult.signals);
+  const allSignals = [...llmSignals, ...baseResult.signals];
 
-  return {
-    ...baseResult,
-    overallBias: newOverallBias,
-    direction: newDirection,
-    confidence: newConfidence,
-    signals: mergedSignals,
-    timestamp: Date.now(),
-  };
+  // Convert LLM adjustment to AI bias score
+  const aiBiasVal = llmAdjustmentToAiBias(llmResult.biasAdjustment, llmResult.confidence);
+
+  // Recalculate with 3-way weighted scoring (F + T + AI)
+  return calculateOverallBias(
+    baseResult.fundamentalScore,
+    baseResult.technicalScore,
+    baseResult.timeframe,
+    baseResult.instrument,
+    aiBiasVal,
+    allSignals,
+  );
 }
 
 // ==================== HELPERS ====================

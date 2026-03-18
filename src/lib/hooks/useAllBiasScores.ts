@@ -5,7 +5,9 @@ import { INSTRUMENTS } from "@/lib/utils/constants";
 import { useMarketStore } from "@/lib/store/market-store";
 import { useMarketNews, useFearGreed, useBondYields, useCentralBanks } from "./useMarketData";
 import { useLLMBatchAnalysis } from "./useLLMAnalysis";
+import { useADRData } from "./useADRData";
 import { calculateFundamentalScore, calculateOverallBias, applyLLMAnalysis } from "@/lib/calculations/bias-engine";
+import { computeADRRanks, calculateTradeSetup } from "@/lib/calculations/trade-setup";
 
 const DEFAULT_FEAR_GREED = { value: 50, label: "Neutral", timestamp: 0, previousClose: 50, previousWeek: 50, previousMonth: 50 };
 const DEFAULT_DXY = { value: 0, change: 0, changePercent: 0, history: [] as { value: number }[] };
@@ -28,6 +30,7 @@ export function useAllBiasScores() {
   const { data: fearGreedData } = useFearGreed();
   const { data: bondData } = useBondYields();
   const { data: bankData } = useCentralBanks();
+  const { adrData } = useADRData();
 
   const ruleBasedResults = useMemo(() => {
     const news = newsData?.items || [];
@@ -73,26 +76,62 @@ export function useAllBiasScores() {
   const currentTimeframeResults = biasTimeframe === "intraday" ? ruleBasedResults.intraday : ruleBasedResults.intraweek;
   const { batchResults } = useLLMBatchAnalysis(currentTimeframeResults);
 
-  // Enhance results with LLM analysis
-  const allResults = useMemo(() => {
-    if (!batchResults) return ruleBasedResults;
+  // Compute ADR ranks
+  const adrRanks = useMemo(() => {
+    if (!adrData) return null;
+    return computeADRRanks(adrData);
+  }, [adrData]);
 
+  // Enhance results with LLM analysis + ADR + trade setups
+  const allResults = useMemo(() => {
     const enhanced = {
       intraday: { ...ruleBasedResults.intraday },
       intraweek: { ...ruleBasedResults.intraweek },
     };
 
-    for (const [instrumentId, llmResult] of Object.entries(batchResults)) {
-      if (enhanced.intraday[instrumentId]) {
-        enhanced.intraday[instrumentId] = applyLLMAnalysis(enhanced.intraday[instrumentId], llmResult);
+    // Apply LLM analysis
+    if (batchResults) {
+      for (const [instrumentId, llmResult] of Object.entries(batchResults)) {
+        if (enhanced.intraday[instrumentId]) {
+          enhanced.intraday[instrumentId] = applyLLMAnalysis(enhanced.intraday[instrumentId], llmResult);
+        }
+        if (enhanced.intraweek[instrumentId]) {
+          enhanced.intraweek[instrumentId] = applyLLMAnalysis(enhanced.intraweek[instrumentId], llmResult);
+        }
       }
-      if (enhanced.intraweek[instrumentId]) {
-        enhanced.intraweek[instrumentId] = applyLLMAnalysis(enhanced.intraweek[instrumentId], llmResult);
+    }
+
+    // Attach ADR + trade setup to each result
+    if (adrRanks) {
+      for (const timeframeKey of ["intraday", "intraweek"] as const) {
+        for (const [instId, result] of Object.entries(enhanced[timeframeKey])) {
+          const adr = adrRanks[instId];
+          if (adr) {
+            const inst = INSTRUMENTS.find((i) => i.id === instId);
+            const pipSize = inst?.pipSize || 0.0001;
+            // Use ADR as a proxy for ATR on homepage (no per-instrument candle data here)
+            const atrEstimate = adr.pips * pipSize;
+            // Get current price from the bias result's fundamental context (approximate)
+            const currentPrice = atrEstimate / (adr.percent / 100) || 1;
+
+            enhanced[timeframeKey][instId] = {
+              ...result,
+              adr,
+              tradeSetup: calculateTradeSetup(
+                result,
+                atrEstimate,
+                adr,
+                currentPrice,
+                timeframeKey
+              ),
+            };
+          }
+        }
       }
     }
 
     return enhanced;
-  }, [ruleBasedResults, batchResults]);
+  }, [ruleBasedResults, batchResults, adrRanks]);
 
   // Store all results, using ref to prevent infinite loops
   const prevHashRef = useRef("");

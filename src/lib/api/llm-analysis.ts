@@ -29,16 +29,21 @@ function getAvailableProviders(): { provider: LLMProvider; key: string }[] {
 // System prompt
 // ---------------------------------------------------------------------------
 
-const SYSTEM_PROMPT = `You are a quantitative market analyst. Your role is to evaluate financial instruments and provide a bias ADJUSTMENT that modifies an existing rule-based scoring system.
+const SYSTEM_PROMPT = `You are an elite quantitative market analyst at a prop trading desk. Your role is to evaluate financial instruments and provide actionable trading intelligence that modifies an existing rule-based scoring system.
 
 Rules:
-- Return a biasAdjustment value between -30 and +30.
+- Return a biasAdjustment value between -50 and +50.
   - Positive values mean you believe the instrument is MORE BULLISH than the rules suggest.
   - Negative values mean you believe the instrument is MORE BEARISH than the rules suggest.
   - 0 means you agree with the current rule-based assessment.
-- Provide 2-4 signals, each with a source name, signal direction (bullish/bearish/neutral), strength (0-100), and a brief description explaining your reasoning.
+  - Use the full range: ±40-50 for very strong conviction, ±20-40 for moderate, ±1-20 for minor.
+- Provide 2-5 signals, each with a source name, signal direction (bullish/bearish/neutral), strength (0-100), and a brief description explaining your reasoning.
 - Include a confidence score (0-100) indicating how confident you are in your adjustment.
-- Include a short summary sentence.
+- Include a short summary sentence (one sentence max).
+- Include keyLevels: the most important support and resistance price levels you identify.
+- Include projectedMovePercent: your estimate of likely % move in the direction of bias (0.1 to 5.0).
+- Include riskAssessment: "low", "medium", or "high" — how risky is this trade setup?
+- Include catalysts: 1-3 upcoming events or factors that could trigger the move.
 - Respond with valid JSON only. Do not include any markdown formatting or explanation outside the JSON.`;
 
 // ---------------------------------------------------------------------------
@@ -100,7 +105,7 @@ Direction: ${req.ruleBasedScores.direction}
 
 Respond with JSON matching this exact structure:
 {
-  "biasAdjustment": <number between -30 and 30>,
+  "biasAdjustment": <number between -50 and 50>,
   "confidence": <number between 0 and 100>,
   "signals": [
     {
@@ -110,7 +115,11 @@ Respond with JSON matching this exact structure:
       "description": "<brief reasoning>"
     }
   ],
-  "summary": "<one sentence summary>"
+  "summary": "<one sentence summary>",
+  "keyLevels": { "support": <price number>, "resistance": <price number> },
+  "projectedMovePercent": <number 0.1 to 5.0>,
+  "riskAssessment": "low" | "medium" | "high",
+  "catalysts": ["<catalyst 1>", "<catalyst 2>"]
 }`;
 
   return prompt;
@@ -153,7 +162,7 @@ Respond with JSON matching this exact structure:
 {
   "results": {
     "<instrumentId>": {
-      "biasAdjustment": <number between -30 and 30>,
+      "biasAdjustment": <number between -50 and 50>,
       "confidence": <number between 0 and 100>,
       "signals": [
         {
@@ -163,7 +172,11 @@ Respond with JSON matching this exact structure:
           "description": "<brief reasoning>"
         }
       ],
-      "summary": "<one sentence summary>"
+      "summary": "<one sentence summary>",
+      "keyLevels": { "support": <price number>, "resistance": <price number> },
+      "projectedMovePercent": <number 0.1 to 5.0>,
+      "riskAssessment": "low" | "medium" | "high",
+      "catalysts": ["<catalyst 1>", "<catalyst 2>"]
     }
   }
 }
@@ -341,10 +354,22 @@ function parseSingleResult(raw: string): LLMAnalysisResult | null {
     );
 
     return {
-      biasAdjustment: clamp(Number(parsed.biasAdjustment) || 0, -30, 30),
+      biasAdjustment: clamp(Number(parsed.biasAdjustment) || 0, -50, 50),
       confidence: clamp(Number(parsed.confidence) || 50, 0, 100),
       signals,
       summary: String(parsed.summary ?? ""),
+      keyLevels: parsed.keyLevels
+        ? { support: Number(parsed.keyLevels.support) || 0, resistance: Number(parsed.keyLevels.resistance) || 0 }
+        : undefined,
+      projectedMovePercent: parsed.projectedMovePercent
+        ? clamp(Number(parsed.projectedMovePercent) || 0, 0, 10)
+        : undefined,
+      riskAssessment: ["low", "medium", "high"].includes(parsed.riskAssessment)
+        ? parsed.riskAssessment
+        : undefined,
+      catalysts: Array.isArray(parsed.catalysts)
+        ? parsed.catalysts.map(String).slice(0, 5)
+        : undefined,
     };
   } catch (err) {
     console.error("Failed to parse LLM single response:", err);
@@ -374,11 +399,24 @@ function parseBatchResult(
         description: String(s.description ?? ""),
       }));
 
+      const kl = d.keyLevels as Record<string, unknown> | undefined;
       results[instrumentId] = {
-        biasAdjustment: clamp(Number(d.biasAdjustment) || 0, -30, 30),
+        biasAdjustment: clamp(Number(d.biasAdjustment) || 0, -50, 50),
         confidence: clamp(Number(d.confidence) || 50, 0, 100),
         signals,
         summary: String(d.summary ?? ""),
+        keyLevels: kl
+          ? { support: Number(kl.support) || 0, resistance: Number(kl.resistance) || 0 }
+          : undefined,
+        projectedMovePercent: d.projectedMovePercent
+          ? clamp(Number(d.projectedMovePercent) || 0, 0, 10)
+          : undefined,
+        riskAssessment: ["low", "medium", "high"].includes(d.riskAssessment as string)
+          ? (d.riskAssessment as "low" | "medium" | "high")
+          : undefined,
+        catalysts: Array.isArray(d.catalysts)
+          ? (d.catalysts as string[]).map(String).slice(0, 5)
+          : undefined,
       };
     }
 
