@@ -1,12 +1,49 @@
 "use client";
 
+import { useEffect } from "react";
 import useSWR from "swr";
 import { useMarketStore } from "@/lib/store/market-store";
 import { useMarketNews, useFearGreed, useBondYields, useCentralBanks } from "./useMarketData";
 import { useTechnicalData } from "./useTechnicalData";
 import { REFRESH_INTERVALS, INSTRUMENTS } from "@/lib/utils/constants";
-import type { LLMAnalysisResult, LLMAnalysisRequest, LLMBatchResult } from "@/lib/types/llm";
+import type { LLMAnalysisResult, LLMAnalysisRequest } from "@/lib/types/llm";
 import type { BiasResult } from "@/lib/types/bias";
+
+// ---------------------------------------------------------------------------
+// localStorage cache for batch results (4 hours)
+// ---------------------------------------------------------------------------
+const BATCH_CACHE_KEY = "tf_llm_batch";
+const BATCH_CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
+
+function getCachedBatch(): Record<string, LLMAnalysisResult> | null {
+  try {
+    const raw = localStorage.getItem(BATCH_CACHE_KEY);
+    if (!raw) return null;
+    const { data, expiry } = JSON.parse(raw);
+    if (Date.now() > expiry) {
+      localStorage.removeItem(BATCH_CACHE_KEY);
+      return null;
+    }
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function setCachedBatch(results: Record<string, LLMAnalysisResult>) {
+  try {
+    localStorage.setItem(
+      BATCH_CACHE_KEY,
+      JSON.stringify({ data: results, expiry: Date.now() + BATCH_CACHE_TTL_MS })
+    );
+  } catch {
+    // ignore
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Fetchers
+// ---------------------------------------------------------------------------
 
 const postFetcher = async ([url, body]: [string, unknown]) => {
   const res = await fetch(url, {
@@ -22,6 +59,10 @@ const delayedPostFetcher = async ([url, body]: [string, unknown]) => {
   await new Promise((r) => setTimeout(r, 15_000)); // wait 15s for market summary to finish
   return postFetcher([url, body]);
 };
+
+// ---------------------------------------------------------------------------
+// Request builder
+// ---------------------------------------------------------------------------
 
 function buildLLMRequest(
   instrumentId: string,
@@ -77,6 +118,10 @@ function buildLLMRequest(
   };
 }
 
+// ---------------------------------------------------------------------------
+// Single instrument LLM analysis (instrument detail page)
+// ---------------------------------------------------------------------------
+
 export function useLLMAnalysis() {
   const instrument = useMarketStore((s) => s.selectedInstrument);
   const storedBias = useMarketStore((s) => s.biasResults[instrument.id]);
@@ -112,6 +157,10 @@ export function useLLMAnalysis() {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Batch LLM analysis (homepage) — cached in localStorage for 4 hours
+// ---------------------------------------------------------------------------
+
 export function useLLMBatchAnalysis(allBiasResults: Record<string, BiasResult>) {
   const { data: newsData } = useMarketNews();
   const { data: fearGreedData } = useFearGreed();
@@ -120,7 +169,10 @@ export function useLLMBatchAnalysis(allBiasResults: Record<string, BiasResult>) 
 
   const hasData = !!fearGreedData;
 
-  const requestBody = hasData ? {
+  // Skip API call if we have a valid cached batch
+  const hasCached = typeof window !== "undefined" ? !!getCachedBatch() : false;
+
+  const requestBody = hasData && !hasCached ? {
     instruments: INSTRUMENTS.map(inst => buildLLMRequest(
       inst.id, inst.category,
       newsData, fearGreedData, bondData, bankData,
@@ -130,19 +182,31 @@ export function useLLMBatchAnalysis(allBiasResults: Record<string, BiasResult>) 
   } : null;
 
   const { data, error, isLoading } = useSWR<{ batch: { results: Record<string, LLMAnalysisResult> } | null }>(
-    hasData ? ["/api/analysis/llm-batch", requestBody] : null,
+    requestBody ? ["/api/analysis/llm-batch", requestBody] : null,
     delayedPostFetcher,
     {
-      refreshInterval: REFRESH_INTERVALS.LLM_BATCH_ANALYSIS,
+      refreshInterval: BATCH_CACHE_TTL_MS,
       revalidateOnFocus: false,
-      dedupingInterval: REFRESH_INTERVALS.LLM_BATCH_ANALYSIS,
+      dedupingInterval: BATCH_CACHE_TTL_MS,
     }
   );
 
+  // Persist fresh results to localStorage
+  const freshResults = data?.batch?.results || null;
+  useEffect(() => {
+    if (freshResults && Object.keys(freshResults).length > 0) {
+      setCachedBatch(freshResults);
+    }
+  }, [freshResults]);
+
+  // Return cached or fresh
+  const cached = typeof window !== "undefined" ? getCachedBatch() : null;
+  const batchResults = freshResults || cached;
+
   return {
-    batchResults: data?.batch?.results || null,
-    isLoading,
-    isReady: !!data && !isLoading,
+    batchResults,
+    isLoading: !batchResults && isLoading,
+    isReady: !!batchResults || (!!data && !isLoading),
     error,
   };
 }

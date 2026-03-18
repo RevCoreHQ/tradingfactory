@@ -1,10 +1,40 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import useSWR from "swr";
 import { useFearGreed, useBondYields, useCentralBanks } from "./useMarketData";
 import { useMarketStore } from "@/lib/store/market-store";
 import { REFRESH_INTERVALS, INSTRUMENTS } from "@/lib/utils/constants";
 import type { MarketSummaryResult } from "@/lib/types/llm";
+
+const CACHE_KEY = "tf_market_summary";
+const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
+
+function getCachedSummary(): MarketSummaryResult | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const { data, expiry } = JSON.parse(raw);
+    if (Date.now() > expiry) {
+      localStorage.removeItem(CACHE_KEY);
+      return null;
+    }
+    return data as MarketSummaryResult;
+  } catch {
+    return null;
+  }
+}
+
+function setCachedSummary(summary: MarketSummaryResult) {
+  try {
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({ data: summary, expiry: Date.now() + CACHE_TTL_MS })
+    );
+  } catch {
+    // localStorage full or unavailable — ignore
+  }
+}
 
 const postFetcher = async ([url, body]: [string, unknown]) => {
   const res = await fetch(url, {
@@ -35,6 +65,12 @@ export function useMarketSummary() {
   const currentResults = allBiasResults[biasTimeframe];
 
   const hasData = !!fearGreedData;
+  const cachedRef = useRef<MarketSummaryResult | null>(null);
+
+  // Load from localStorage on first render
+  if (cachedRef.current === null) {
+    cachedRef.current = getCachedSummary() ?? undefined as unknown as null;
+  }
 
   const instrumentBiases = Object.entries(currentResults).map(([id, result]) => {
     const inst = INSTRUMENTS.find((i) => i.id === id);
@@ -46,7 +82,10 @@ export function useMarketSummary() {
     };
   });
 
-  const requestBody = hasData
+  // Only fetch if we don't have a valid cached summary
+  const hasCached = !!getCachedSummary();
+
+  const requestBody = hasData && !hasCached
     ? {
         fearGreed: {
           value: fearGreedData.current?.value ?? 50,
@@ -77,18 +116,31 @@ export function useMarketSummary() {
     : null;
 
   const { data, error, isLoading } = useSWR<{ summary: MarketSummaryResult | null }>(
-    hasData ? ["/api/analysis/market-summary", requestBody] : null,
+    requestBody ? ["/api/analysis/market-summary", requestBody] : null,
     postFetcher,
     {
-      refreshInterval: REFRESH_INTERVALS.MARKET_SUMMARY,
+      refreshInterval: CACHE_TTL_MS, // only refetch after 4 hours
       revalidateOnFocus: false,
-      dedupingInterval: REFRESH_INTERVALS.MARKET_SUMMARY,
+      dedupingInterval: CACHE_TTL_MS,
     }
   );
 
+  // Persist new results to localStorage
+  const freshSummary = data?.summary || null;
+  useEffect(() => {
+    if (freshSummary) {
+      setCachedSummary(freshSummary);
+      cachedRef.current = freshSummary;
+    }
+  }, [freshSummary]);
+
+  // Return cached summary immediately, or fresh data when available
+  const cached = getCachedSummary();
+  const summary = freshSummary || cached || cachedRef.current;
+
   return {
-    summary: data?.summary || null,
-    isLoading,
+    summary,
+    isLoading: !summary && isLoading,
     error,
   };
 }
