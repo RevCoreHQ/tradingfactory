@@ -46,7 +46,7 @@ export function NewsFeed() {
               target="_blank"
               rel="noopener noreferrer"
               className={cn(
-                "block rounded-lg p-3 transition-colors hover:bg-white/5",
+                "block rounded-lg p-3 transition-colors hover:bg-[var(--surface-2)]",
                 "border-l-2",
                 item.sentimentLabel === "bullish" ? "border-l-bullish" : item.sentimentLabel === "bearish" ? "border-l-bearish" : "border-l-muted"
               )}

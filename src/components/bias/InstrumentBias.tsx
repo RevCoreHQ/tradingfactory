@@ -36,8 +36,8 @@ export function InstrumentBias() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.05 }}
             className={cn(
-              "glass-card rounded-xl p-3 text-left transition-all duration-300 cursor-pointer",
-              isActive && "ring-1 ring-white/20 glow-neutral"
+              "panel rounded-lg p-3 text-left transition-colors duration-200 cursor-pointer",
+              isActive && "ring-1 ring-border-bright border-border-bright"
             )}
           >
             <div className="flex items-center justify-between mb-2">

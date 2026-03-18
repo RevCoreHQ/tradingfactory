@@ -25,7 +25,7 @@ const MOCK_CORRELATIONS: Record<string, Record<string, number>> = {
 function getCorrelationColor(value: number): string {
   if (value > 0.7) return "bg-bullish/60";
   if (value > 0.3) return "bg-bullish/30";
-  if (value > -0.3) return "bg-white/10";
+  if (value > -0.3) return "bg-[var(--surface-3)]";
   if (value > -0.7) return "bg-bearish/30";
   return "bg-bearish/60";
 }
@@ -76,7 +76,7 @@ export function IntermarketCorrelation() {
           <span className="text-[9px] text-muted-foreground">Strong -</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded bg-white/10" />
+          <div className="w-3 h-3 rounded bg-[var(--surface-3)]" />
           <span className="text-[9px] text-muted-foreground">Neutral</span>
         </div>
         <div className="flex items-center gap-1">

@@ -34,7 +34,7 @@ export function EconomicCalendar() {
       <ScrollArea className="h-[300px]">
         <table className="w-full text-xs">
           <thead>
-            <tr className="text-muted-foreground border-b border-white/5">
+            <tr className="text-muted-foreground border-b border-border">
               <th className="text-left py-2 font-medium">Time</th>
               <th className="text-left py-2 font-medium">Event</th>
               <th className="text-center py-2 font-medium">Impact</th>
@@ -55,7 +55,7 @@ export function EconomicCalendar() {
               <tr
                 key={event.id}
                 className={cn(
-                  "border-b border-white/5 transition-colors hover:bg-white/5",
+                  "border-b border-border transition-colors hover:bg-[var(--surface-2)]",
                   event.impact === "high" && "bg-bearish/5"
                 )}
               >

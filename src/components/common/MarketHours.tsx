@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { TRADING_SESSIONS } from "@/lib/utils/constants";
-import { SessionClock } from "./SessionClock";
 import { GlassCard } from "./GlassCard";
 import { cn } from "@/lib/utils";
-import { Clock } from "lucide-react";
 
 function isSessionActive(session: { openHourUTC: number; closeHourUTC: number }, hourUTC: number): boolean {
   if (session.openHourUTC < session.closeHourUTC) {
@@ -24,10 +22,56 @@ function getTimeUntil(targetHourUTC: number, nowHourUTC: number, nowMinUTC: numb
   return `${h}h ${m}m`;
 }
 
-function formatHourUTC(hour: number): string {
-  return `${hour.toString().padStart(2, "0")}:00`;
+/** Compact market hours strip for the overview page */
+export function MarketHoursStrip() {
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const hourUTC = now.getUTCHours();
+  const minUTC = now.getUTCMinutes();
+
+  const sessions = Object.entries(TRADING_SESSIONS).map(([key, session]) => {
+    const active = isSessionActive(session, hourUTC);
+    const timeLeft = active
+      ? getTimeUntil(session.closeHourUTC, hourUTC, minUTC)
+      : getTimeUntil(session.openHourUTC, hourUTC, minUTC);
+    return { key, ...session, active, timeLeft };
+  });
+
+  return (
+    <div className="border-b border-border bg-[var(--surface-0)] px-4 py-1.5">
+      <div className="max-w-[1800px] mx-auto flex items-center gap-4 overflow-x-auto scrollbar-none">
+        <span className="text-[10px] font-mono text-muted-foreground shrink-0">
+          {now.toUTCString().slice(17, 25)} UTC
+        </span>
+        <div className="w-px h-3 bg-border shrink-0" />
+        {sessions.map((session) => (
+          <div key={session.key} className="flex items-center gap-1.5 shrink-0">
+            <span
+              className={cn("h-1.5 w-1.5 rounded-full shrink-0", session.active && "pulse-dot")}
+              style={{ backgroundColor: session.color, opacity: session.active ? 1 : 0.25 }}
+            />
+            <span className={cn(
+              "text-[10px]",
+              session.active ? "text-foreground font-medium" : "text-muted-foreground"
+            )}>
+              {session.name}
+            </span>
+            <span className="text-[10px] font-mono text-muted-foreground/60">
+              {session.active ? session.timeLeft : `in ${session.timeLeft}`}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
+/** Full market hours card for standalone use */
 export function MarketHours() {
   const [now, setNow] = useState(new Date());
 
@@ -44,34 +88,25 @@ export function MarketHours() {
     const timeLeft = active
       ? getTimeUntil(session.closeHourUTC, hourUTC, minUTC)
       : getTimeUntil(session.openHourUTC, hourUTC, minUTC);
-
     return { key, ...session, active, timeLeft };
   });
 
-  const activeSessions = sessions.filter((s) => s.active);
-
   return (
     <GlassCard delay={0.1}>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="h-7 w-7 rounded-lg bg-blue-500/20 flex items-center justify-center">
-            <Clock className="h-3.5 w-3.5 text-blue-400" />
-          </div>
-          <h3 className="text-sm font-semibold">Market Hours</h3>
-        </div>
-        <span className="text-xs text-muted-foreground font-mono">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Market Hours</h3>
+        <span className="text-[10px] text-muted-foreground font-mono">
           {now.toUTCString().slice(17, 25)} UTC
         </span>
       </div>
 
-      {/* Sessions Table */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
         {sessions.map((session) => (
           <div
             key={session.key}
             className={cn(
-              "rounded-lg p-3 transition-all border",
-              session.active ? "bg-white/5" : "bg-white/[0.02] border-transparent"
+              "rounded-lg p-3 transition-colors border",
+              session.active ? "bg-[var(--surface-2)]" : "bg-transparent border-transparent"
             )}
             style={{
               borderColor: session.active ? session.color + "40" : undefined,
@@ -86,46 +121,17 @@ export function MarketHours() {
                 {session.name}
               </span>
             </div>
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="text-muted-foreground">Open</span>
-                <span className="font-mono text-muted-foreground">{formatHourUTC(session.openHourUTC)}</span>
-              </div>
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="text-muted-foreground">Close</span>
-                <span className="font-mono text-muted-foreground">{formatHourUTC(session.closeHourUTC)}</span>
-              </div>
-              <div className="flex items-center justify-between text-[10px] pt-1 border-t border-white/5">
-                <span className={cn(session.active ? "text-foreground font-medium" : "text-muted-foreground")}>
-                  {session.active ? "Closes in" : "Opens in"}
-                </span>
-                <span className={cn("font-mono font-medium", session.active ? "text-foreground" : "text-muted-foreground/70")}>
-                  {session.timeLeft}
-                </span>
-              </div>
+            <div className="flex items-center justify-between text-[10px]">
+              <span className={cn(session.active ? "text-foreground font-medium" : "text-muted-foreground")}>
+                {session.active ? "Closes in" : "Opens in"}
+              </span>
+              <span className={cn("font-mono font-medium", session.active ? "text-foreground" : "text-muted-foreground/70")}>
+                {session.timeLeft}
+              </span>
             </div>
           </div>
         ))}
       </div>
-
-      {/* Active sessions summary */}
-      {activeSessions.length > 0 && (
-        <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
-          <span>Active:</span>
-          {activeSessions.map((s, i) => (
-            <span key={s.key}>
-              <span className="font-medium text-foreground">{s.name}</span>
-              {i < activeSessions.length - 1 && <span className="mx-1">+</span>}
-            </span>
-          ))}
-          {activeSessions.length > 1 && (
-            <span className="text-yellow-500/80 ml-auto text-[10px]">Overlap</span>
-          )}
-        </div>
-      )}
-
-      {/* Timeline */}
-      <SessionClock />
     </GlassCard>
   );
 }

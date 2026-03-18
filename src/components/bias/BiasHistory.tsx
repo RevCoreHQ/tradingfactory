@@ -85,7 +85,7 @@ export function BiasHistory({ instrumentId }: BiasHistoryProps) {
             <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
             <YAxis domain={[-100, 100]} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
             <Tooltip
-              contentStyle={{ background: "oklch(0.12 0.005 260)", border: "1px solid oklch(0.25 0 0)", borderRadius: "8px", fontSize: "12px" }}
+              contentStyle={{ background: "var(--surface-1)", border: "1px solid var(--border)", borderRadius: "8px", fontSize: "12px" }}
               labelStyle={{ color: "var(--foreground)" }}
             />
             <ReferenceLine y={0} stroke="var(--neutral-accent)" strokeOpacity={0.3} strokeDasharray="3 3" />

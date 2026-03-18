@@ -26,7 +26,7 @@ export function IndicatorCard({
 }: IndicatorCardProps) {
   return (
     <GlassCard
-      glow={signal === "bullish" ? "bullish" : signal === "bearish" ? "bearish" : null}
+      accent={signal === "bullish" ? "bullish" : signal === "bearish" ? "bearish" : null}
       className={cn("p-3", className)}
       animate={false}
     >

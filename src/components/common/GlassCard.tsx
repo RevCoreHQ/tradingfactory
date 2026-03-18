@@ -6,20 +6,20 @@ import { cn } from "@/lib/utils";
 interface GlassCardProps {
   children: React.ReactNode;
   className?: string;
-  glow?: "bullish" | "bearish" | "neutral" | null;
+  accent?: "bullish" | "bearish" | "neutral" | null;
   animate?: boolean;
   delay?: number;
 }
 
-export function GlassCard({ children, className, glow, animate = true, delay = 0 }: GlassCardProps) {
-  const glowClass = glow === "bullish" ? "glow-bullish" : glow === "bearish" ? "glow-bearish" : glow === "neutral" ? "glow-neutral" : "";
+export function GlassCard({ children, className, accent, animate = true, delay = 0 }: GlassCardProps) {
+  const accentClass = accent === "bullish" ? "accent-bullish" : accent === "bearish" ? "accent-bearish" : accent === "neutral" ? "accent-neutral" : "";
 
   const content = (
     <div
       className={cn(
-        "glass-card rounded-xl p-4 transition-all duration-300",
-        "hover:border-white/10",
-        glowClass,
+        "panel rounded-lg p-4 transition-colors duration-200",
+        "hover:border-border-bright",
+        accentClass,
         className
       )}
     >
@@ -31,9 +31,9 @@ export function GlassCard({ children, className, glow, animate = true, delay = 0
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.4, delay, ease: [0.25, 0.46, 0.45, 0.94] }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2, delay }}
     >
       {content}
     </motion.div>

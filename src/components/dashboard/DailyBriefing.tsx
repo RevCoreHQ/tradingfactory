@@ -53,11 +53,8 @@ export function DailyBriefing() {
   return (
     <GlassCard className="relative overflow-hidden" delay={0}>
       <div className="flex items-start gap-3">
-        <div className="h-8 w-8 rounded-lg bg-neutral-accent/20 flex items-center justify-center shrink-0 mt-0.5">
-          <FileText className="h-4 w-4 text-neutral-accent" />
-        </div>
         <div>
-          <h3 className="text-xs font-semibold text-foreground mb-1">Daily Briefing</h3>
+          <h3 className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-1">Daily Briefing</h3>
           <p className="text-xs text-muted-foreground leading-relaxed">
             <span className={cn("font-semibold", getBiasTextClass(biasResult.direction))}>
               {instrument.symbol}

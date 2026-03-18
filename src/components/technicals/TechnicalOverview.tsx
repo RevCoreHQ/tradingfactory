@@ -45,7 +45,7 @@ export function TechnicalOverview() {
       </div>
 
       {/* Moving Averages Summary */}
-      <div className="rounded-lg bg-white/5 p-3 mb-3">
+      <div className="rounded-lg bg-[var(--surface-2)] p-3 mb-3">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-medium text-muted-foreground">Moving Averages</span>
           <StatusBadge variant={maSignal}>{bullishMAs}/{totalMAs} bullish</StatusBadge>
@@ -116,7 +116,7 @@ export function TechnicalOverview() {
 
       {/* Pivot Points */}
       {pivotPoints.length > 0 && (
-        <div className="mt-3 rounded-lg bg-white/5 p-3">
+        <div className="mt-3 rounded-lg bg-[var(--surface-2)] p-3">
           <span className="text-xs font-medium text-muted-foreground">Daily Pivots</span>
           <div className="grid grid-cols-7 gap-1 mt-2 text-[10px] text-center">
             {(() => {

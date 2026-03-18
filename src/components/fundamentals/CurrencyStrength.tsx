@@ -25,7 +25,7 @@ export function CurrencyStrength() {
           return (
             <div key={item.currency} className="flex items-center gap-3">
               <span className="text-xs font-mono font-medium w-8 text-foreground">{item.currency}</span>
-              <div className="flex-1 h-2 rounded-full bg-white/5 overflow-hidden">
+              <div className="flex-1 h-2 rounded-full bg-[var(--surface-2)] overflow-hidden">
                 <div
                   className={cn("h-full rounded-full transition-all duration-700", color)}
                   style={{ width: `${item.strength}%`, opacity: 0.7 }}

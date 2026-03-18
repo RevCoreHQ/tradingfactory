@@ -24,7 +24,7 @@ function ScoreBar({ label, value, weight }: { label: string; value: number; weig
           <span className={cn("font-mono font-medium", textColor)}>{value.toFixed(0)}</span>
         </div>
       </div>
-      <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+      <div className="h-1.5 rounded-full bg-[var(--surface-2)] overflow-hidden">
         <div
           className={cn("h-full rounded-full transition-all duration-700", color)}
           style={{ width: `${value}%`, opacity: 0.8 }}

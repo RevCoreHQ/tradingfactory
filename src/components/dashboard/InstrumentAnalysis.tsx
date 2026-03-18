@@ -52,7 +52,7 @@ export function InstrumentAnalysis() {
       <Header mode="analysis" />
 
       <main className="max-w-[1800px] mx-auto px-3 py-4 space-y-4">
-        <h2 className="text-lg font-bold tracking-tight text-foreground">
+        <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
           Instrument Analysis — {instrument.symbol}
         </h2>
 
@@ -63,7 +63,7 @@ export function InstrumentAnalysis() {
           {/* Left Column - Bias */}
           <div className="lg:col-span-3 space-y-4">
             <GlassCard
-              glow={bias.direction.includes("bullish") ? "bullish" : bias.direction.includes("bearish") ? "bearish" : "neutral"}
+              accent={bias.direction.includes("bullish") ? "bullish" : bias.direction.includes("bearish") ? "bearish" : "neutral"}
               delay={0}
             >
               <div className="flex flex-col items-center py-4">

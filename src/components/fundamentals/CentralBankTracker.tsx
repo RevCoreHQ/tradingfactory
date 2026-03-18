@@ -36,7 +36,7 @@ export function CentralBankTracker() {
           const daysUntil = Math.ceil((nextMeeting.getTime() - now.getTime()) / 86400000);
 
           return (
-            <div key={bank.bank} className="rounded-lg bg-white/5 p-3">
+            <div key={bank.bank} className="rounded-lg bg-[var(--surface-2)] p-3">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <span className="text-lg">{BANK_FLAGS[bank.currency] || "🏦"}</span>

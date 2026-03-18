@@ -38,7 +38,7 @@ export function SessionClock() {
       </div>
 
       {/* Timeline bar */}
-      <div className="relative h-8 rounded-lg bg-white/5 overflow-hidden">
+      <div className="relative h-8 rounded-lg bg-[var(--surface-2)] overflow-hidden">
         {/* Session blocks */}
         {Object.entries(TRADING_SESSIONS).map(([key, session]) => {
           const startPercent = (session.openHourUTC / 24) * 100;
@@ -98,7 +98,7 @@ export function SessionClock() {
         {[0, 6, 12, 18].map((hour) => (
           <div
             key={hour}
-            className="absolute top-0 h-full w-px bg-white/10"
+            className="absolute top-0 h-full w-px bg-[var(--surface-3)]"
             style={{ left: `${(hour / 24) * 100}%` }}
           >
             <span className="absolute -bottom-4 -translate-x-1/2 text-[10px] text-muted-foreground">
