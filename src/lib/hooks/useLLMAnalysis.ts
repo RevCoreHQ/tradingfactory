@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import useSWR from "swr";
 import { useMarketStore } from "@/lib/store/market-store";
 import { useMarketNews, useFearGreed, useBondYields, useCentralBanks } from "./useMarketData";
@@ -124,7 +124,6 @@ function buildLLMRequest(
 
 export function useLLMAnalysis() {
   const instrument = useMarketStore((s) => s.selectedInstrument);
-  const storedBias = useMarketStore((s) => s.biasResults[instrument.id]);
 
   const { data: newsData } = useMarketNews();
   const { data: fearGreedData } = useFearGreed();
@@ -134,16 +133,17 @@ export function useLLMAnalysis() {
 
   const hasData = !!fearGreedData;
 
-  const requestBody = hasData ? buildLLMRequest(
-    instrument.id, instrument.category,
-    newsData, fearGreedData, bondData, bankData,
-    indicators, candles, storedBias,
-  ) : null;
-
-  // Stable SWR key — use instrument ID only, store body in ref to avoid
-  // infinite re-render loops from requestBody changing every render
-  const bodyRef = useRef(requestBody);
-  bodyRef.current = requestBody;
+  // Read storedBias non-reactively to avoid re-render loops.
+  // useBiasScore writes to biasResults; subscribing here would create a cycle.
+  const bodyRef = useRef<LLMAnalysisRequest | null>(null);
+  if (hasData) {
+    const storedBias = useMarketStore.getState().biasResults[instrument.id];
+    bodyRef.current = buildLLMRequest(
+      instrument.id, instrument.category,
+      newsData, fearGreedData, bondData, bankData,
+      indicators, candles, storedBias,
+    );
+  }
 
   const { data, error, isLoading } = useSWR<{ analysis: LLMAnalysisResult | null }>(
     hasData ? `llm-single-${instrument.id}` : null,
