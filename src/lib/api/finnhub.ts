@@ -70,7 +70,7 @@ export async function fetchEconomicCalendar(from: string, to: string): Promise<E
     event: item.event,
     date: item.date,
     time: item.time || "00:00",
-    impact: (item.impact === "3" ? "high" : item.impact === "2" ? "medium" : "low") as "low" | "medium" | "high",
+    impact: (String(item.impact) === "3" ? "high" : String(item.impact) === "2" ? "medium" : "low") as "low" | "medium" | "high",
     forecast: item.forecast,
     previous: item.prev,
     actual: item.actual,

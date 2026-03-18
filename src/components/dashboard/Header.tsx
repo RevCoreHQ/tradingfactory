@@ -6,7 +6,7 @@ import { useRates } from "@/lib/hooks/useMarketData";
 import { cn } from "@/lib/utils";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { getChangeClass } from "@/lib/utils/formatters";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
@@ -23,19 +23,26 @@ export function Header({ mode = "analysis" }: HeaderProps) {
   const quotes = ratesData?.quotes || {};
 
   return (
-    <header className="bg-[var(--surface-0)] border-b border-border px-4 py-2.5 sticky top-0 z-50">
-      <div className="max-w-[1800px] mx-auto flex items-center justify-between gap-4">
+    <header className="bg-[var(--surface-1)]/80 backdrop-blur-lg border-b border-border/50 px-6 py-3 sticky top-0 z-50">
+      <div className="max-w-[1400px] mx-auto flex items-center justify-between gap-4">
         {/* Logo + Nav */}
-        <div className="flex items-center gap-3 shrink-0">
-          <Link href="/" className="flex items-center gap-1.5">
-            <span className="text-sm font-bold uppercase tracking-wide text-foreground">Trading</span>
-            <span className="text-sm font-light uppercase tracking-wide text-muted-foreground">Factory</span>
+        <div className="flex items-center gap-4 shrink-0">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="h-7 w-7 rounded-lg gradient-strip-blue flex items-center justify-center">
+              <LayoutDashboard className="h-3.5 w-3.5 text-white" />
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-sm font-bold tracking-tight text-foreground">Trading</span>
+              <span className="text-sm font-light tracking-tight text-muted-foreground">Factory</span>
+            </div>
           </Link>
+
+          <div className="h-5 w-px bg-border/50 hidden sm:block" />
 
           {mode === "analysis" && (
             <Link
               href="/"
-              className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] text-muted-foreground hover:text-foreground hover:bg-[var(--surface-2)] transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] text-muted-foreground hover:text-foreground hover:bg-[var(--surface-2)] transition-colors"
             >
               <ArrowLeft className="h-3 w-3" />
               Overview
@@ -45,7 +52,7 @@ export function Header({ mode = "analysis" }: HeaderProps) {
           {mode === "overview" && (
             <Link
               href="/instrument"
-              className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] text-muted-foreground hover:text-foreground hover:bg-[var(--surface-2)] transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] text-muted-foreground hover:text-foreground hover:bg-[var(--surface-2)] transition-colors"
             >
               Analysis
               <ArrowRight className="h-3 w-3" />
@@ -61,7 +68,7 @@ export function Header({ mode = "analysis" }: HeaderProps) {
               return (
                 <div key={category} className="flex items-center gap-0.5">
                   {catIdx > 0 && (
-                    <div className="w-px h-4 bg-border mx-1 shrink-0" />
+                    <div className="w-px h-4 bg-border/40 mx-1 shrink-0" />
                   )}
                   {instruments.map((inst) => {
                     const isActive = selectedInstrument.id === inst.id;
@@ -72,9 +79,9 @@ export function Header({ mode = "analysis" }: HeaderProps) {
                         key={inst.id}
                         onClick={() => setSelectedInstrument(inst)}
                         className={cn(
-                          "flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs transition-colors whitespace-nowrap cursor-pointer",
+                          "flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-colors whitespace-nowrap cursor-pointer",
                           isActive
-                            ? "bg-[var(--surface-2)] text-foreground"
+                            ? "bg-[var(--surface-2)] text-foreground border border-border/50"
                             : "text-muted-foreground hover:text-foreground hover:bg-[var(--surface-2)]"
                         )}
                       >
@@ -103,14 +110,14 @@ export function Header({ mode = "analysis" }: HeaderProps) {
         )}
 
         {/* Right section */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-3 shrink-0">
           {/* Bias Timeframe Toggle */}
-          <div className="flex items-center gap-0.5 bg-[var(--surface-2)] rounded-md p-0.5">
+          <div className="flex items-center gap-0.5 bg-[var(--surface-2)] rounded-lg p-0.5 border border-border/30">
             <button
               onClick={() => setBiasTimeframe("intraday")}
               className={cn(
-                "px-2.5 py-1 rounded text-[10px] font-medium transition-colors",
-                biasTimeframe === "intraday" ? "bg-[var(--surface-3)] text-foreground" : "text-muted-foreground"
+                "px-3 py-1.5 rounded-md text-[10px] font-medium transition-all",
+                biasTimeframe === "intraday" ? "bg-[var(--surface-3)] text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
               )}
             >
               Intraday
@@ -118,8 +125,8 @@ export function Header({ mode = "analysis" }: HeaderProps) {
             <button
               onClick={() => setBiasTimeframe("intraweek")}
               className={cn(
-                "px-2.5 py-1 rounded text-[10px] font-medium transition-colors",
-                biasTimeframe === "intraweek" ? "bg-[var(--surface-3)] text-foreground" : "text-muted-foreground"
+                "px-3 py-1.5 rounded-md text-[10px] font-medium transition-all",
+                biasTimeframe === "intraweek" ? "bg-[var(--surface-3)] text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
               )}
             >
               Intraweek
@@ -129,9 +136,9 @@ export function Header({ mode = "analysis" }: HeaderProps) {
           <ThemeToggle />
 
           {/* Live indicator */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-bullish/8 border border-bullish/15">
             <span className="h-1.5 w-1.5 rounded-full bg-bullish pulse-dot" />
-            <span className="text-[10px] text-muted-foreground hidden md:inline">Live</span>
+            <span className="text-[10px] text-bullish font-medium hidden md:inline">Live</span>
           </div>
         </div>
       </div>

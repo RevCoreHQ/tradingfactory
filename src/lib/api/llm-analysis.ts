@@ -210,7 +210,7 @@ async function callGemini(
       generationConfig: {
         responseMimeType: "application/json",
         temperature: 0.3,
-        maxOutputTokens: 2048,
+        maxOutputTokens: 512,
       },
     }),
   });
@@ -248,7 +248,7 @@ async function callOpenAI(
       ],
       response_format: { type: "json_object" },
       temperature: 0.3,
-      max_tokens: 2048,
+      max_tokens: 512,
     }),
   });
 
@@ -280,7 +280,7 @@ async function callAnthropic(
     },
     body: JSON.stringify({
       model: "claude-sonnet-4-6",
-      max_tokens: 2048,
+      max_tokens: 512,
       temperature: 0.3,
       system: systemPrompt,
       messages: [
@@ -359,11 +359,11 @@ const SINGLE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const BATCH_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 function getCacheKey(req: LLMAnalysisRequest): string {
-  return `${req.instrument}:${req.currentPrice}:${req.ruleBasedScores.overallBias}`;
+  return `${req.instrument}:${Math.round(req.currentPrice * 100) / 100}:${Math.round(req.ruleBasedScores.overallBias)}`;
 }
 
 function getBatchCacheKey(req: LLMBatchRequest): string {
-  return req.instruments.map((i) => `${i.instrument}:${i.currentPrice}`).join("|");
+  return req.instruments.map((i) => `${i.instrument}:${Math.round(i.currentPrice * 100) / 100}`).join("|");
 }
 
 function cleanCache<T>(cache: Map<string, CacheEntry<T>>): void {

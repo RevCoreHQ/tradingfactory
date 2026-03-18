@@ -7,7 +7,7 @@ import { useMarketStore } from "@/lib/store/market-store";
 import { useBondYields } from "@/lib/hooks/useMarketData";
 import { getBiasColor, getBiasDirection, getBiasLabel } from "@/lib/utils/formatters";
 import type { BiasResult, BiasDirection } from "@/lib/types/bias";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Globe } from "lucide-react";
 
 interface CurrencyBiasData {
   currency: string;
@@ -81,14 +81,17 @@ export function CurrencyBias() {
   const hasData = Object.keys(currentResults).length > 0;
 
   return (
-    <div className="panel rounded-lg p-4">
-      <h3 className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-4">
-        Currency Bias Index
-      </h3>
+    <div className="section-card p-5 h-full">
+      <div className="flex items-center gap-2 mb-4">
+        <div className="h-6 w-6 rounded-md flex items-center justify-center bg-neutral-accent/15">
+          <Globe className="h-3.5 w-3.5 text-neutral-accent" />
+        </div>
+        <h3 className="text-xs font-semibold text-foreground">Currency Bias Index</h3>
+      </div>
 
       {/* DXY special row */}
       {dxy && dxy.value > 0 && (
-        <div className="mb-3 p-2.5 rounded-lg bg-[var(--surface-2)] flex items-center justify-between">
+        <div className="mb-4 p-3 rounded-lg bg-[var(--surface-2)] border border-border/30 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold font-mono">DXY</span>
             <span className="text-[10px] text-muted-foreground">US Dollar Index</span>
@@ -99,8 +102,8 @@ export function CurrencyBias() {
             </span>
             <span
               className={cn(
-                "text-[10px] font-mono",
-                dxy.change > 0 ? "text-bullish" : dxy.change < 0 ? "text-bearish" : "text-muted-foreground"
+                "text-[10px] font-mono font-medium px-1.5 py-0.5 rounded",
+                dxy.change > 0 ? "text-bullish bg-bullish/10" : dxy.change < 0 ? "text-bearish bg-bearish/10" : "text-muted-foreground"
               )}
             >
               {dxy.change > 0 ? "+" : ""}
@@ -112,23 +115,23 @@ export function CurrencyBias() {
 
       {/* Currency grid */}
       {!hasData ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="h-24 shimmer rounded-lg" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {biases.map((item) => {
             const color = getBiasColor(item.direction);
 
             return (
               <div
                 key={item.currency}
-                className="bg-[var(--surface-2)] rounded-lg p-2.5"
+                className="bg-[var(--surface-2)] rounded-lg p-3 border border-border/20"
                 style={{ borderLeft: `3px solid ${color}` }}
               >
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-1.5">
                     <DirectionIcon direction={item.direction} />
                     <span className="text-xs font-bold font-mono">{item.currency}</span>
@@ -141,7 +144,7 @@ export function CurrencyBias() {
                   </span>
                 </div>
 
-                <div className="text-center my-1">
+                <div className="text-center my-1.5">
                   <span className="text-lg font-mono font-bold" style={{ color }}>
                     {item.avgBias > 0 ? "+" : ""}
                     {item.avgBias.toFixed(0)}
@@ -149,13 +152,13 @@ export function CurrencyBias() {
                 </div>
 
                 {/* Strength bar */}
-                <div className="h-1.5 rounded-full bg-[var(--surface-3)] overflow-hidden mb-1.5">
+                <div className="h-1.5 rounded-full bg-[var(--surface-3)] overflow-hidden mb-2">
                   <div
                     className="h-full rounded-full transition-all duration-500"
                     style={{
                       width: `${Math.min(100, Math.abs(item.avgBias) + 50)}%`,
                       backgroundColor: color,
-                      opacity: 0.6,
+                      opacity: 0.7,
                     }}
                   />
                 </div>

@@ -339,7 +339,7 @@ function ConvictionList({
 
 export function TopPairs() {
   return (
-    <div className="relative panel rounded-lg p-4">
+    <div className="relative section-card p-5">
       <GlowingEffect
         spread={40}
         glow={true}
@@ -348,23 +348,15 @@ export function TopPairs() {
         inactiveZone={0.01}
         borderWidth={2}
       />
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <h3 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-            Conviction Board
-          </h3>
-          <span className="text-[9px] font-mono text-muted-foreground/30 hidden sm:block">
-            Ranked by ADR-weighted conviction
-          </span>
-        </div>
-        <span className="text-[10px] font-mono text-muted-foreground">
-          {new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+      <div className="flex items-center justify-between mb-5">
+        <span className="text-[10px] font-mono text-muted-foreground/40">
+          {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
         </span>
       </div>
 
-      <div className="flex flex-col lg:flex-row lg:gap-6 gap-6">
+      <div className="flex flex-col lg:flex-row lg:gap-8 gap-6">
         <ConvictionList timeframeKey="intraday" label="Intraday" />
-        <div className="hidden lg:block w-px bg-border self-stretch" />
+        <div className="hidden lg:block w-px bg-border/50 self-stretch" />
         <ConvictionList timeframeKey="intraweek" label="Intraweek" />
       </div>
     </div>

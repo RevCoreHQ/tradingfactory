@@ -1,8 +1,8 @@
 "use client";
 
 import { useEconomicCalendar } from "@/lib/hooks/useMarketData";
-import { GlassCard } from "@/components/common/GlassCard";
 import { cn } from "@/lib/utils";
+import { Calendar } from "lucide-react";
 
 const DAY_NAMES = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
@@ -11,21 +11,25 @@ export function RedNewsWeek() {
 
   if (isLoading) {
     return (
-      <GlassCard delay={0.05}>
-        <h3 className="text-xs font-medium uppercase tracking-widest text-red-400 mb-3">Red News</h3>
+      <div className="section-card p-5 h-full">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="h-6 w-6 rounded-md flex items-center justify-center bg-bearish/15">
+            <Calendar className="h-3.5 w-3.5 text-bearish" />
+          </div>
+          <h3 className="text-xs font-semibold text-foreground">Red News This Week</h3>
+        </div>
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-8 shimmer rounded" />
+            <div key={i} className="h-10 shimmer rounded-lg" />
           ))}
         </div>
-      </GlassCard>
+      </div>
     );
   }
 
   const events = data?.events || [];
   const redEvents = events.filter((e) => e.impact === "high");
 
-  // Group by date
   const grouped: Record<string, typeof redEvents> = {};
   for (const event of redEvents) {
     const dateKey = event.date;
@@ -37,18 +41,25 @@ export function RedNewsWeek() {
   const today = new Date().toISOString().split("T")[0];
 
   return (
-    <GlassCard delay={0.05}>
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs font-medium uppercase tracking-widest text-red-400">Red News</h3>
-        <span className="text-[10px] text-muted-foreground font-mono">{redEvents.length} events</span>
+    <div className="section-card p-5 h-full">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="h-6 w-6 rounded-md flex items-center justify-center bg-bearish/15">
+            <Calendar className="h-3.5 w-3.5 text-bearish" />
+          </div>
+          <h3 className="text-xs font-semibold text-foreground">Red News This Week</h3>
+        </div>
+        <span className="text-[10px] text-muted-foreground font-mono px-2 py-0.5 bg-bearish/10 rounded-md text-bearish">
+          {redEvents.length} events
+        </span>
       </div>
 
       {redEvents.length === 0 ? (
-        <p className="text-xs text-muted-foreground text-center py-3">
+        <p className="text-xs text-muted-foreground text-center py-6">
           No high-impact events this week
         </p>
       ) : (
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           {sortedDates.map((date) => {
             const dayEvents = grouped[date];
             const d = new Date(date + "T00:00:00");
@@ -60,26 +71,28 @@ export function RedNewsWeek() {
               <div
                 key={date}
                 className={cn(
-                  "rounded-md p-2",
-                  isToday && "accent-bearish bg-bearish/5"
+                  "rounded-lg p-3 transition-colors",
+                  isToday ? "bg-bearish/8 border border-bearish/20" : "bg-[var(--surface-2)]"
                 )}
               >
-                <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex items-center gap-2 mb-2">
                   <span className={cn(
                     "text-[10px] font-bold uppercase tracking-wider",
                     isToday ? "text-bearish" : "text-muted-foreground"
                   )}>
                     {dayName} {dayNum}
                   </span>
-                  {isToday && <span className="text-[9px] text-bearish font-medium ml-auto">TODAY</span>}
+                  {isToday && (
+                    <span className="text-[9px] font-bold text-bearish bg-bearish/15 px-1.5 py-0.5 rounded ml-auto">TODAY</span>
+                  )}
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   {dayEvents.map((event) => (
                     <div key={event.id} className="flex items-center gap-2 text-[11px]">
-                      <span className="text-muted-foreground shrink-0 w-11 font-mono text-[10px]">
+                      <span className="text-muted-foreground/60 shrink-0 w-11 font-mono text-[10px]">
                         {event.time || "\u2014"}
                       </span>
-                      <span className="text-[10px] font-mono bg-[var(--surface-2)] px-1 rounded-sm shrink-0">
+                      <span className="text-[10px] font-mono bg-[var(--surface-3)] px-1.5 py-0.5 rounded shrink-0">
                         {event.country}
                       </span>
                       <span className="text-foreground font-medium truncate flex-1">
@@ -91,7 +104,7 @@ export function RedNewsWeek() {
                         </span>
                       )}
                       {event.previous != null && (
-                        <span className="text-muted-foreground/60 font-mono text-[10px] shrink-0">
+                        <span className="text-muted-foreground/50 font-mono text-[10px] shrink-0">
                           prev: {event.previous}
                         </span>
                       )}
@@ -103,6 +116,6 @@ export function RedNewsWeek() {
           })}
         </div>
       )}
-    </GlassCard>
+    </div>
   );
 }
