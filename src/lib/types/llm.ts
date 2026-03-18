@@ -1,4 +1,4 @@
-export type LLMProvider = "gemini" | "openai";
+export type LLMProvider = "gemini" | "openai" | "anthropic";
 
 export interface LLMSignal {
   source: string;

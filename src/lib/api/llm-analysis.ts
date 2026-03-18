@@ -19,6 +19,9 @@ function getAvailableProviders(): { provider: LLMProvider; key: string }[] {
   if (process.env.GEMINI_API_KEY) {
     providers.push({ provider: "gemini", key: process.env.GEMINI_API_KEY });
   }
+  if (process.env.ANTHROPIC_API_KEY) {
+    providers.push({ provider: "anthropic", key: process.env.ANTHROPIC_API_KEY });
+  }
   if (process.env.OPENAI_API_KEY) {
     providers.push({ provider: "openai", key: process.env.OPENAI_API_KEY });
   }
@@ -255,6 +258,41 @@ async function callOpenAI(
 }
 
 // ---------------------------------------------------------------------------
+// API calls — Anthropic (Claude)
+// ---------------------------------------------------------------------------
+
+async function callAnthropic(
+  key: string,
+  systemPrompt: string,
+  userPrompt: string
+): Promise<string> {
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": key,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 2048,
+      temperature: 0.3,
+      system: systemPrompt,
+      messages: [
+        { role: "user", content: userPrompt },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Anthropic API error: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  return data.content[0].text;
+}
+
+// ---------------------------------------------------------------------------
 // Unified call with fallback chain
 // ---------------------------------------------------------------------------
 
@@ -264,7 +302,7 @@ async function callLLM(
 ): Promise<{ text: string; provider: LLMProvider } | null> {
   const providers = getAvailableProviders();
   if (providers.length === 0) {
-    console.warn("No LLM API keys configured (GEMINI_API_KEY or OPENAI_API_KEY)");
+    console.warn("No LLM API keys configured (GEMINI_API_KEY, ANTHROPIC_API_KEY, or OPENAI_API_KEY)");
     return null;
   }
 
@@ -278,10 +316,14 @@ async function callLLM(
     }
 
     try {
-      const text =
-        provider === "gemini"
-          ? await callGemini(key, systemPrompt, userPrompt)
-          : await callOpenAI(key, systemPrompt, userPrompt);
+      let text: string;
+      if (provider === "gemini") {
+        text = await callGemini(key, systemPrompt, userPrompt);
+      } else if (provider === "anthropic") {
+        text = await callAnthropic(key, systemPrompt, userPrompt);
+      } else {
+        text = await callOpenAI(key, systemPrompt, userPrompt);
+      }
       return { text, provider };
     } catch (err) {
       console.error(`LLM call failed for ${provider}:`, err);

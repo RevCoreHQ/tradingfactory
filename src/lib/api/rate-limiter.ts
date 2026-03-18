@@ -11,6 +11,7 @@ const PROVIDER_LIMITS: Record<string, RateLimitConfig> = {
   coingecko: { maxRequests: 25, windowMs: 60_000 },
   gemini: { maxRequests: 14, windowMs: 60_000 },
   openai: { maxRequests: 50, windowMs: 60_000 },
+  anthropic: { maxRequests: 40, windowMs: 60_000 },
 };
 
 const requestLog: Record<string, number[]> = {};

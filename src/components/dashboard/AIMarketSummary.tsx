@@ -76,7 +76,7 @@ export function AIMarketSummary() {
           AI Market Summary
         </h3>
         <span className="text-[9px] font-mono text-muted-foreground/40 ml-1">
-          {summary.provider === "gemini" ? "Gemini Flash" : "GPT-4o Mini"}
+          {summary.provider === "gemini" ? "Gemini Flash" : summary.provider === "anthropic" ? "Claude Sonnet" : "GPT-4o Mini"}
         </span>
         {timeSince && (
           <span className="text-[9px] font-mono text-muted-foreground/40 ml-auto">
