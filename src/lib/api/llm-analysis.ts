@@ -16,11 +16,12 @@ import { checkRateLimit } from "./rate-limiter";
 
 function getAvailableProviders(): { provider: LLMProvider; key: string }[] {
   const providers: { provider: LLMProvider; key: string }[] = [];
-  if (process.env.GEMINI_API_KEY) {
-    providers.push({ provider: "gemini", key: process.env.GEMINI_API_KEY });
-  }
+  // Claude first — best for structured financial analysis
   if (process.env.ANTHROPIC_API_KEY) {
     providers.push({ provider: "anthropic", key: process.env.ANTHROPIC_API_KEY });
+  }
+  if (process.env.GEMINI_API_KEY) {
+    providers.push({ provider: "gemini", key: process.env.GEMINI_API_KEY });
   }
   if (process.env.OPENAI_API_KEY) {
     providers.push({ provider: "openai", key: process.env.OPENAI_API_KEY });
