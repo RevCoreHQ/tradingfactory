@@ -3,24 +3,34 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTradeDeskData } from "@/lib/hooks/useTradeDeskData";
+import { useTrackedSetups } from "@/lib/hooks/useTrackedSetups";
 import { useMarketStore } from "@/lib/store/market-store";
 import { INSTRUMENTS } from "@/lib/utils/constants";
+import { getStatusLabel } from "@/lib/calculations/setup-tracker";
 import { cn } from "@/lib/utils";
-import type { TradeDeskSetup, ConvictionTier, ImpulseColor, MarketRegime } from "@/lib/types/signals";
+import type {
+  TradeDeskSetup,
+  TrackedSetup,
+  ConvictionTier,
+  ImpulseColor,
+  MarketRegime,
+  SetupStatus,
+  ConfluencePattern,
+} from "@/lib/types/signals";
 import {
   TrendingUp,
   TrendingDown,
   Activity,
   BarChart3,
-  Shield,
   ChevronDown,
   ChevronUp,
   AlertTriangle,
-  Zap,
   Target,
   Minus,
   Check,
   Copy,
+  History,
+  Brain,
 } from "lucide-react";
 
 // ==================== Copy Price ====================
@@ -55,6 +65,33 @@ function CopyPrice({ value, className }: { value: string; className?: string }) 
   );
 }
 
+// ==================== Status Badge ====================
+
+function StatusBadge({ status }: { status: SetupStatus }) {
+  const config: Record<SetupStatus, { cls: string }> = {
+    pending: { cls: "bg-muted/20 text-muted-foreground" },
+    active: { cls: "bg-neutral-accent/15 text-neutral-accent" },
+    breakeven: { cls: "bg-amber/15 text-[var(--amber)]" },
+    tp1_hit: { cls: "bg-bullish/15 text-bullish" },
+    tp2_hit: { cls: "bg-bullish/20 text-bullish" },
+    tp3_hit: { cls: "bg-bullish/25 text-bullish ring-1 ring-bullish/30" },
+    sl_hit: { cls: "bg-bearish/15 text-bearish" },
+    expired: { cls: "bg-muted/15 text-muted-foreground/60" },
+    invalidated: { cls: "bg-muted/15 text-muted-foreground/60" },
+  };
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider",
+        config[status].cls
+      )}
+    >
+      {getStatusLabel(status)}
+    </span>
+  );
+}
+
 // ==================== Sub-components ====================
 
 function RegimeBadge({ regime, adx }: { regime: MarketRegime; adx: number }) {
@@ -71,7 +108,7 @@ function RegimeBadge({ regime, adx }: { regime: MarketRegime; adx: number }) {
     <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider", c.cls)}>
       <Icon className="h-3 w-3" />
       {c.label}
-      <span className="opacity-60 ml-0.5">ADX {adx.toFixed(0)}</span>
+      {adx > 0 && <span className="opacity-60 ml-0.5">ADX {adx.toFixed(0)}</span>}
     </span>
   );
 }
@@ -126,12 +163,71 @@ function SignalDot({ direction, match }: { direction: string; match: boolean }) 
   );
 }
 
+// ==================== Progress Bar ====================
+
+function SetupProgress({ tracked }: { tracked: TrackedSetup }) {
+  const { setup } = tracked;
+  const price = setup.currentPrice;
+  const entryMid = (setup.entry[0] + setup.entry[1]) / 2;
+  const isBullish = setup.direction === "bullish";
+
+  const slDist = Math.abs(entryMid - setup.stopLoss);
+  const tp3Dist = Math.abs(setup.takeProfit[2] - entryMid);
+  const totalRange = slDist + tp3Dist;
+
+  if (totalRange === 0) return null;
+
+  const priceDist = isBullish ? price - entryMid : entryMid - price;
+  const clamped = Math.max(0, Math.min(100, ((priceDist + slDist) / totalRange) * 100));
+
+  const entryPos = (slDist / totalRange) * 100;
+  const tp1Pos = ((Math.abs(setup.takeProfit[0] - entryMid) + slDist) / totalRange) * 100;
+  const tp2Pos = ((Math.abs(setup.takeProfit[1] - entryMid) + slDist) / totalRange) * 100;
+
+  return (
+    <div className="mt-2">
+      <div className="relative h-2 rounded-full bg-muted/20 overflow-hidden">
+        <div
+          className="absolute inset-y-0 left-0 bg-bearish/20 rounded-l-full"
+          style={{ width: `${entryPos}%` }}
+        />
+        <div
+          className={cn(
+            "absolute inset-y-0 left-0 rounded-full transition-all duration-500",
+            clamped < entryPos ? "bg-bearish/60" : "bg-bullish/60"
+          )}
+          style={{ width: `${clamped}%` }}
+        />
+        {[tp1Pos, tp2Pos].map((pos, i) => (
+          <div
+            key={i}
+            className="absolute top-0 bottom-0 w-px bg-bullish/40"
+            style={{ left: `${pos}%` }}
+          />
+        ))}
+        <div
+          className="absolute top-0 bottom-0 w-0.5 bg-foreground/30"
+          style={{ left: `${entryPos}%` }}
+        />
+      </div>
+      <div className="flex justify-between mt-0.5 text-[8px] text-muted-foreground/40 font-mono">
+        <span>SL</span>
+        <span>Entry</span>
+        <span>TP1</span>
+        <span>TP2</span>
+        <span>TP3</span>
+      </div>
+    </div>
+  );
+}
+
 // ==================== Setup Card ====================
 
-function SetupCard({ setup, rank }: { setup: TradeDeskSetup; rank: number }) {
+function SetupCard({ tracked, rank }: { tracked: TrackedSetup; rank: number }) {
   const [expanded, setExpanded] = useState(false);
   const router = useRouter();
   const setSelectedInstrument = useMarketStore((s) => s.setSelectedInstrument);
+  const { setup, status } = tracked;
 
   const inst = INSTRUMENTS.find((i) => i.id === setup.instrumentId);
   const decimals = inst?.decimalPlaces ?? 4;
@@ -146,20 +242,16 @@ function SetupCard({ setup, rank }: { setup: TradeDeskSetup; rank: number }) {
 
   return (
     <div className="section-card overflow-hidden">
-      {/* Main Row */}
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full px-4 py-3 flex items-center gap-3 hover:bg-surface-2/50 transition-colors text-left"
       >
-        {/* Rank */}
         <span className="text-[10px] font-mono text-muted-foreground/50 w-4 shrink-0">
           {rank}
         </span>
 
-        {/* Conviction */}
         <ConvictionBadge tier={setup.conviction} />
 
-        {/* Instrument */}
         <div className="flex items-center gap-2 min-w-[110px]">
           <DirectionArrow direction={setup.direction} />
           <div>
@@ -168,7 +260,6 @@ function SetupCard({ setup, rank }: { setup: TradeDeskSetup; rank: number }) {
           </div>
         </div>
 
-        {/* Direction */}
         <span
           className={cn(
             "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded",
@@ -178,20 +269,17 @@ function SetupCard({ setup, rank }: { setup: TradeDeskSetup; rank: number }) {
           {isBullish ? "LONG" : "SHORT"}
         </span>
 
-        {/* Signal dots */}
+        <StatusBadge status={status} />
+
         <div className="flex items-center gap-1 ml-auto">
           {setup.signals.map((s, i) => (
             <SignalDot key={i} direction={s.direction} match={s.regimeMatch} />
           ))}
         </div>
 
-        {/* Impulse */}
         <ImpulseBadge color={setup.impulse} />
-
-        {/* Regime */}
         <RegimeBadge regime={setup.regime} adx={setup.adx} />
 
-        {/* Expand */}
         {expanded ? (
           <ChevronUp className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
         ) : (
@@ -199,10 +287,10 @@ function SetupCard({ setup, rank }: { setup: TradeDeskSetup; rank: number }) {
         )}
       </button>
 
-      {/* Expanded Detail */}
       {expanded && (
         <div className="border-t border-border/50 px-4 py-3 space-y-3">
-          {/* Signals Grid */}
+          <SetupProgress tracked={tracked} />
+
           <div>
             <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1.5">
               Mechanical Systems
@@ -220,9 +308,7 @@ function SetupCard({ setup, rank }: { setup: TradeDeskSetup; rank: number }) {
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-semibold">{sig.system}</span>
-                    {sig.regimeMatch && (
-                      <span className="text-[8px] opacity-60">MATCH</span>
-                    )}
+                    {sig.regimeMatch && <span className="text-[8px] opacity-60">MATCH</span>}
                   </div>
                   <div className="text-[9px] opacity-70 mt-0.5 leading-tight">{sig.description}</div>
                 </div>
@@ -230,7 +316,6 @@ function SetupCard({ setup, rank }: { setup: TradeDeskSetup; rank: number }) {
             </div>
           </div>
 
-          {/* Trade Levels — click to copy */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
               <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
@@ -271,7 +356,6 @@ function SetupCard({ setup, rank }: { setup: TradeDeskSetup; rank: number }) {
             </div>
           </div>
 
-          {/* Risk Sizing + Reasons to Exit */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
@@ -281,6 +365,15 @@ function SetupCard({ setup, rank }: { setup: TradeDeskSetup; rank: number }) {
                 <span className="font-mono">{setup.positionSizeLots} lots</span>
                 <span className="text-muted-foreground/60 ml-2">Risk: ${setup.riskAmount}</span>
               </div>
+              {setup.learningApplied && (
+                <div className="flex items-center gap-1 mt-1">
+                  <Brain className="h-2.5 w-2.5 text-neutral-accent" />
+                  <span className="text-[9px] text-neutral-accent">
+                    {setup.learningApplied.riskMultiplier > 1 ? "↑" : setup.learningApplied.riskMultiplier < 1 ? "↓" : "→"}{" "}
+                    {setup.learningApplied.riskMultiplier}x risk ({(setup.learningApplied.winRate * 100).toFixed(0)}% WR, {setup.learningApplied.trades} trades)
+                  </span>
+                </div>
+              )}
             </div>
             <div>
               <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
@@ -297,7 +390,6 @@ function SetupCard({ setup, rank }: { setup: TradeDeskSetup; rank: number }) {
             </div>
           </div>
 
-          {/* Navigate */}
           <button
             onClick={handleNavigate}
             className="text-[10px] text-neutral-accent hover:text-neutral-accent/80 font-semibold flex items-center gap-1 pt-1"
@@ -319,7 +411,6 @@ function StatsRow({
   setups: TradeDeskSetup[];
   portfolioRisk: { riskPerTrade: number; riskPercent: number; accountEquity: number };
 }) {
-  // Aggregate regime counts
   const regimeCounts: Record<MarketRegime, number> = { trending_up: 0, trending_down: 0, ranging: 0, volatile: 0 };
   const impulseCounts: Record<ImpulseColor, number> = { green: 0, red: 0, blue: 0 };
 
@@ -338,20 +429,16 @@ function StatsRow({
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-      {/* Dominant Regime */}
       <div className="section-card p-3">
         <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
           Market Regime
         </div>
-        {dominantRegime && (
-          <RegimeBadge regime={dominantRegime[0]} adx={0} />
-        )}
+        {dominantRegime && <RegimeBadge regime={dominantRegime[0]} adx={0} />}
         <div className="text-[10px] text-muted-foreground/50 mt-1">
           {regimeCounts.trending_up + regimeCounts.trending_down} trending · {regimeCounts.ranging} ranging · {regimeCounts.volatile} volatile
         </div>
       </div>
 
-      {/* System Consensus */}
       <div className="section-card p-3">
         <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
           System Consensus
@@ -371,7 +458,6 @@ function StatsRow({
         )}
       </div>
 
-      {/* Impulse */}
       <div className="section-card p-3">
         <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
           Impulse Distribution
@@ -392,7 +478,6 @@ function StatsRow({
         </div>
       </div>
 
-      {/* Risk */}
       <div className="section-card p-3">
         <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
           Risk per Trade
@@ -402,6 +487,243 @@ function StatsRow({
           <span className="text-muted-foreground/60 ml-1">({portfolioRisk.riskPercent}% of ${portfolioRisk.accountEquity.toLocaleString()})</span>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ==================== History Tab ====================
+
+function HistoryTab({ history }: { history: TrackedSetup[] }) {
+  if (history.length === 0) {
+    return (
+      <div className="section-card p-6 text-center">
+        <History className="h-6 w-6 text-muted-foreground/30 mx-auto mb-2" />
+        <p className="text-xs text-muted-foreground/60">No completed trades yet. Setups will appear here after they hit SL, TP, or expire.</p>
+      </div>
+    );
+  }
+
+  const wins = history.filter((h) => h.outcome === "win").length;
+  const losses = history.filter((h) => h.outcome === "loss").length;
+  const bes = history.filter((h) => h.outcome === "breakeven").length;
+  const decisions = wins + losses;
+  const winRate = decisions > 0 ? (wins / decisions) * 100 : 0;
+  const avgPnl = history.reduce((s, h) => s + (h.pnlPercent ?? 0), 0) / history.length;
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-4 gap-3">
+        <div className="section-card p-3">
+          <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">Total</div>
+          <div className="text-sm font-bold text-foreground">{history.length}</div>
+        </div>
+        <div className="section-card p-3">
+          <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">Win Rate</div>
+          <div className={cn("text-sm font-bold", winRate >= 50 ? "text-bullish" : "text-bearish")}>
+            {winRate.toFixed(0)}%
+          </div>
+        </div>
+        <div className="section-card p-3">
+          <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">W / L / BE</div>
+          <div className="text-xs">
+            <span className="text-bullish font-semibold">{wins}</span>
+            <span className="text-muted-foreground/40"> / </span>
+            <span className="text-bearish font-semibold">{losses}</span>
+            <span className="text-muted-foreground/40"> / </span>
+            <span className="text-muted-foreground/60">{bes}</span>
+          </div>
+        </div>
+        <div className="section-card p-3">
+          <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">Avg P&L</div>
+          <div className={cn("text-sm font-bold font-mono", avgPnl >= 0 ? "text-bullish" : "text-bearish")}>
+            {avgPnl >= 0 ? "+" : ""}{avgPnl.toFixed(2)}%
+          </div>
+        </div>
+      </div>
+
+      <div className="section-card overflow-hidden">
+        <div className="px-4 py-2 border-b border-border/30 grid grid-cols-7 text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-wider">
+          <span>Instrument</span>
+          <span>Direction</span>
+          <span>Status</span>
+          <span>Outcome</span>
+          <span>P&L</span>
+          <span>TP Hit</span>
+          <span>Date</span>
+        </div>
+        <div className="divide-y divide-border/20 max-h-[320px] overflow-y-auto">
+          {history.slice(0, 50).map((h) => {
+            const isBull = h.setup.direction === "bullish";
+            const date = h.closedAt ? new Date(h.closedAt) : null;
+            return (
+              <div key={h.id} className="px-4 py-2 grid grid-cols-7 items-center text-[11px] hover:bg-surface-2/30">
+                <span className="font-semibold text-foreground">{h.setup.symbol}</span>
+                <span className={cn("font-bold uppercase text-[9px]", isBull ? "text-bullish" : "text-bearish")}>
+                  {isBull ? "LONG" : "SHORT"}
+                </span>
+                <StatusBadge status={h.status} />
+                <span
+                  className={cn(
+                    "font-bold uppercase text-[9px] px-1.5 py-0.5 rounded w-fit",
+                    h.outcome === "win" && "bg-bullish/15 text-bullish",
+                    h.outcome === "loss" && "bg-bearish/15 text-bearish",
+                    h.outcome === "breakeven" && "bg-muted/20 text-muted-foreground"
+                  )}
+                >
+                  {h.outcome ?? "—"}
+                </span>
+                <span className={cn("font-mono", (h.pnlPercent ?? 0) >= 0 ? "text-bullish" : "text-bearish")}>
+                  {h.pnlPercent !== null ? `${h.pnlPercent >= 0 ? "+" : ""}${h.pnlPercent.toFixed(2)}%` : "—"}
+                </span>
+                <span className="text-muted-foreground/60">
+                  {h.highestTpHit > 0 ? `TP${h.highestTpHit}` : "—"}
+                </span>
+                <span className="text-muted-foreground/40 text-[10px]">
+                  {date ? `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, "0")}` : "—"}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==================== Learning Tab ====================
+
+function LearningTab({ patterns }: { patterns: Record<string, ConfluencePattern> }) {
+  const sorted = Object.values(patterns).sort((a, b) => b.trades - a.trades);
+
+  if (sorted.length === 0) {
+    return (
+      <div className="section-card p-6 text-center">
+        <Brain className="h-6 w-6 text-muted-foreground/30 mx-auto mb-2" />
+        <p className="text-xs text-muted-foreground/60">No confluence patterns recorded yet. The system learns from completed trades.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="section-card px-3 py-2 flex items-center gap-2">
+        <Brain className="h-3 w-3 text-neutral-accent" />
+        <span className="text-[10px] text-muted-foreground/60">
+          Risk and conviction adjustments activate after 5 trades per pattern
+        </span>
+      </div>
+
+      <div className="section-card overflow-hidden">
+        <div className="px-4 py-2 border-b border-border/30 grid grid-cols-6 text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-wider">
+          <span className="col-span-2">Pattern</span>
+          <span>Trades</span>
+          <span>Win Rate</span>
+          <span>Risk Mult</span>
+          <span>Conv Adj</span>
+        </div>
+        <div className="divide-y divide-border/20 max-h-[360px] overflow-y-auto">
+          {sorted.map((p) => {
+            const active = p.trades >= 5;
+            return (
+              <div
+                key={p.key}
+                className={cn(
+                  "px-4 py-2 grid grid-cols-6 items-center text-[11px] hover:bg-surface-2/30",
+                  !active && "opacity-50"
+                )}
+              >
+                <span className="col-span-2 font-mono text-[9px] text-foreground truncate" title={p.key}>
+                  {abbreviatePattern(p.key)}
+                </span>
+                <span className="text-foreground font-semibold">{p.trades}</span>
+                <span
+                  className={cn(
+                    "font-bold",
+                    p.winRate >= 0.6 ? "text-bullish" : p.winRate < 0.4 ? "text-bearish" : "text-foreground"
+                  )}
+                >
+                  {(p.winRate * 100).toFixed(0)}%
+                </span>
+                <span className={cn("font-mono", active ? "text-foreground" : "text-muted-foreground/40")}>
+                  {active ? `${p.riskMultiplier}x` : "—"}
+                </span>
+                <span className={cn("font-mono", p.convictionAdjust > 0 ? "text-bullish" : p.convictionAdjust < 0 ? "text-bearish" : "text-foreground")}>
+                  {active ? `${p.convictionAdjust > 0 ? "+" : ""}${p.convictionAdjust}` : "—"}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function abbreviatePattern(key: string): string {
+  const [systems, regime, impulse] = key.split("::");
+  const abbrevSystems = (systems ?? "")
+    .split("|")
+    .map((s) => {
+      if (s === "MA Crossover") return "MA";
+      if (s === "BB Breakout") return "BB";
+      if (s === "BB MR") return "MR";
+      if (s === "RSI Extremes") return "RSI";
+      if (s === "Elder Impulse") return "EI";
+      if (s === "Elder-Ray") return "ER";
+      if (s === "Trend Stack") return "TS";
+      return s.slice(0, 4);
+    })
+    .join("+");
+  const abbrevRegime = regime === "trending_up" ? "↑" : regime === "trending_down" ? "↓" : regime === "ranging" ? "→" : "⚡";
+  const abbrevImpulse = impulse === "green" ? "G" : impulse === "red" ? "R" : "B";
+  return `${abbrevSystems} ${abbrevRegime}${abbrevImpulse}`;
+}
+
+// ==================== Tab Bar ====================
+
+type TabId = "active" | "history" | "learning";
+
+function TabBar({
+  activeTab,
+  onTabChange,
+  historyCount,
+  patternCount,
+}: {
+  activeTab: TabId;
+  onTabChange: (tab: TabId) => void;
+  historyCount: number;
+  patternCount: number;
+}) {
+  const tabs: { id: TabId; label: string; icon: typeof Target; count?: number }[] = [
+    { id: "active", label: "Active", icon: Target },
+    { id: "history", label: "History", icon: History, count: historyCount },
+    { id: "learning", label: "Learning", icon: Brain, count: patternCount },
+  ];
+
+  return (
+    <div className="flex items-center gap-1 mb-4">
+      {tabs.map((tab) => {
+        const Icon = tab.icon;
+        const isActive = activeTab === tab.id;
+        return (
+          <button
+            key={tab.id}
+            onClick={() => onTabChange(tab.id)}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-semibold uppercase tracking-wider transition-colors",
+              isActive
+                ? "bg-foreground/10 text-foreground"
+                : "text-muted-foreground/50 hover:text-muted-foreground hover:bg-surface-2/50"
+            )}
+          >
+            <Icon className="h-3 w-3" />
+            {tab.label}
+            {tab.count !== undefined && tab.count > 0 && (
+              <span className="text-[9px] text-muted-foreground/40 ml-0.5">{tab.count}</span>
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -432,14 +754,12 @@ function TradeDeskSkeleton() {
 // ==================== Main Component ====================
 
 export function AITradeDesk() {
+  const [activeTab, setActiveTab] = useState<TabId>("active");
   const { setups, portfolioRisk, isLoading, error } = useTradeDeskData();
+  const { activeSetups, historySetups, confluencePatterns } = useTrackedSetups(setups);
 
   if (isLoading) {
-    return (
-      <div>
-        <TradeDeskSkeleton />
-      </div>
-    );
+    return <TradeDeskSkeleton />;
   }
 
   if (error || setups.length === 0) {
@@ -453,23 +773,38 @@ export function AITradeDesk() {
     );
   }
 
+  const patternCount = Object.keys(confluencePatterns).length;
+
   return (
     <div>
-      <StatsRow setups={setups} portfolioRisk={portfolioRisk} />
+      <TabBar
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        historyCount={historySetups.length}
+        patternCount={patternCount}
+      />
 
-      <div className="space-y-1.5">
-        {setups.slice(0, 8).map((setup, i) => (
-          <SetupCard key={setup.instrumentId} setup={setup} rank={i + 1} />
-        ))}
-      </div>
-
-      {setups.length === 0 && (
-        <div className="text-center py-6">
-          <p className="text-xs text-muted-foreground/50">
-            No high-conviction setups at this time. All systems show D-tier conviction.
-          </p>
-        </div>
+      {activeTab === "active" && (
+        <>
+          <StatsRow setups={setups} portfolioRisk={portfolioRisk} />
+          <div className="space-y-1.5">
+            {activeSetups.slice(0, 8).map((tracked, i) => (
+              <SetupCard key={tracked.id} tracked={tracked} rank={i + 1} />
+            ))}
+          </div>
+          {activeSetups.length === 0 && (
+            <div className="text-center py-6">
+              <p className="text-xs text-muted-foreground/50">
+                No active setups. All setups have either been stopped out or expired.
+              </p>
+            </div>
+          )}
+        </>
       )}
+
+      {activeTab === "history" && <HistoryTab history={historySetups} />}
+
+      {activeTab === "learning" && <LearningTab patterns={confluencePatterns} />}
     </div>
   );
 }

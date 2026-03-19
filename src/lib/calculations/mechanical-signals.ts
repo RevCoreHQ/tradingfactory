@@ -6,9 +6,12 @@ import type {
   ConvictionTier,
   MechanicalSignal,
   TradeDeskSetup,
+  ConfluencePattern,
 } from "@/lib/types/signals";
 import type { Instrument } from "@/lib/types/market";
 import { calcSMA, calcEMA } from "./technical-indicators";
+import { applyLearning, adjustedTier } from "./confluence-learning";
+import { buildConfluenceKey } from "./setup-tracker";
 
 // ==================== REGIME DETECTION ====================
 
@@ -535,7 +538,8 @@ export function generateTradeDeskSetup(
   summary: TechnicalSummary,
   instrument: Instrument,
   accountEquity: number = 10000,
-  riskPercent: number = 2
+  riskPercent: number = 2,
+  confluencePatterns?: Record<string, ConfluencePattern>
 ): TradeDeskSetup {
   // 1. Detect regime
   const { regime, label: regimeLabel } = detectRegime(summary);
@@ -597,7 +601,8 @@ export function generateTradeDeskSetup(
   // 7. Reasons to exit
   const reasonsToExit = generateReasonsToExit(direction, signals, summary);
 
-  return {
+  // 8. Apply confluence learning (if patterns available)
+  const baseSetup: TradeDeskSetup = {
     instrumentId: instrument.id,
     displayName: instrument.displayName,
     symbol: instrument.symbol,
@@ -612,6 +617,7 @@ export function generateTradeDeskSetup(
     direction,
     consensus: { bullish, bearish, neutral },
     currentPrice: price,
+    atr,
     entry,
     stopLoss,
     takeProfit,
@@ -620,6 +626,27 @@ export function generateTradeDeskSetup(
     riskAmount,
     reasonsToExit,
   };
+
+  if (confluencePatterns) {
+    const confKey = buildConfluenceKey(baseSetup);
+    const pattern = confluencePatterns[confKey] ?? null;
+    const learning = applyLearning(convictionScore, riskAmount, lots, pattern);
+
+    if (learning.applied) {
+      baseSetup.convictionScore = learning.adjustedScore;
+      baseSetup.conviction = adjustedTier(learning.adjustedScore);
+      baseSetup.riskAmount = learning.adjustedRisk;
+      baseSetup.positionSizeLots = learning.adjustedLots;
+      baseSetup.learningApplied = {
+        riskMultiplier: learning.riskMultiplier,
+        convictionAdjust: learning.convictionAdjust,
+        winRate: learning.winRate,
+        trades: learning.trades,
+      };
+    }
+  }
+
+  return baseSetup;
 }
 
 // ==================== RANKING ====================

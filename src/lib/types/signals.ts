@@ -34,6 +34,7 @@ export interface TradeDeskSetup {
   direction: "bullish" | "bearish" | "neutral";
   consensus: { bullish: number; bearish: number; neutral: number };
   currentPrice: number;
+  atr: number;
   entry: [number, number];
   stopLoss: number;
   takeProfit: [number, number, number];
@@ -41,6 +42,59 @@ export interface TradeDeskSetup {
   positionSizeLots: number;
   riskAmount: number;
   reasonsToExit: string[];
+  learningApplied?: {
+    riskMultiplier: number;
+    convictionAdjust: number;
+    winRate: number;
+    trades: number;
+  };
+}
+
+// ==================== Setup Lifecycle ====================
+
+export type SetupStatus =
+  | "pending"      // Price hasn't entered entry zone yet
+  | "active"       // Price entered the entry zone
+  | "breakeven"    // Price moved 1 ATR in direction (SL moved to entry)
+  | "tp1_hit"      // TP1 reached
+  | "tp2_hit"      // TP2 reached
+  | "tp3_hit"      // TP3 reached (full win)
+  | "sl_hit"       // Stop loss hit
+  | "expired"      // Setup older than 24h without entry
+  | "invalidated"; // Conviction dropped to D or signals flipped
+
+export type SetupOutcome = "win" | "loss" | "breakeven";
+
+export const TERMINAL_STATUSES: SetupStatus[] = [
+  "tp1_hit", "tp2_hit", "tp3_hit", "sl_hit", "expired", "invalidated",
+];
+
+export interface TrackedSetup {
+  id: string;
+  setup: TradeDeskSetup;
+  status: SetupStatus;
+  createdAt: number;
+  activatedAt: number | null;
+  closedAt: number | null;
+  outcome: SetupOutcome | null;
+  pnlPercent: number | null;
+  highestTpHit: 0 | 1 | 2 | 3;
+  confluenceKey: string;
+}
+
+// ==================== Confluence Learning ====================
+
+export interface ConfluencePattern {
+  key: string;
+  trades: number;
+  wins: number;
+  losses: number;
+  breakevens: number;
+  winRate: number;
+  avgPnlPercent: number;
+  riskMultiplier: number;
+  convictionAdjust: number;
+  lastUpdated: number;
 }
 
 // ==================== Portfolio Risk ====================

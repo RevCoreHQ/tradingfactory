@@ -3,7 +3,7 @@
 import useSWR from "swr";
 import { useMemo } from "react";
 import type { OHLCV } from "@/lib/types/market";
-import type { TradeDeskSetup, PortfolioRisk } from "@/lib/types/signals";
+import type { TradeDeskSetup, PortfolioRisk, ConfluencePattern } from "@/lib/types/signals";
 import { INSTRUMENTS, REFRESH_INTERVALS } from "@/lib/utils/constants";
 import { calculateAllIndicators } from "@/lib/calculations/technical-indicators";
 import { generateTradeDeskSetup, rankSetupsByConviction } from "@/lib/calculations/mechanical-signals";
@@ -38,7 +38,7 @@ async function fetchAllCandles(): Promise<Record<string, OHLCV[]>> {
   return results;
 }
 
-export function useTradeDeskData() {
+export function useTradeDeskData(confluencePatterns?: Record<string, ConfluencePattern>) {
   const accountEquity = getStoredNumber(ACCOUNT_EQUITY_KEY, 10000);
   const riskPercent = getStoredNumber(RISK_PERCENT_KEY, 2);
 
@@ -78,7 +78,8 @@ export function useTradeDeskData() {
         summary,
         inst,
         accountEquity,
-        riskPercent
+        riskPercent,
+        confluencePatterns
       );
       allSetups.push(setup);
     }
@@ -96,7 +97,7 @@ export function useTradeDeskData() {
     };
 
     return { setups: ranked, portfolioRisk };
-  }, [candleMap, accountEquity, riskPercent]);
+  }, [candleMap, accountEquity, riskPercent, confluencePatterns]);
 
   return {
     setups,
