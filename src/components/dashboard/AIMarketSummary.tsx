@@ -102,7 +102,7 @@ function SectorBreakdown({ sectors }: { sectors: { sector: string; outlook: "bul
 }
 
 export function AIMarketSummary() {
-  const { summary, isLoading } = useMarketSummary();
+  const { summary, isLoading, apiError } = useMarketSummary();
 
   if (isLoading) {
     return (
@@ -131,7 +131,9 @@ export function AIMarketSummary() {
           </div>
           <h3 className="text-xs font-semibold text-foreground">AI Market Summary</h3>
           <span className="text-[10px] text-muted-foreground/50 ml-auto">
-            AI analysis unavailable — check API keys in Vercel settings
+            {apiError
+              ? `AI error: ${apiError}`
+              : "AI analysis unavailable — check API keys in Vercel settings"}
           </span>
         </div>
       </div>

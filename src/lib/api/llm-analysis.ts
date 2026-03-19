@@ -24,6 +24,10 @@ function getAvailableProviders(): { provider: LLMProvider; key: string }[] {
   if (process.env.GEMINI_API_KEY) {
     providers.push({ provider: "gemini", key: process.env.GEMINI_API_KEY });
   }
+  // OpenAI as final fallback
+  if (process.env.OPENAI_API_KEY) {
+    providers.push({ provider: "openai", key: process.env.OPENAI_API_KEY });
+  }
   return providers;
 }
 

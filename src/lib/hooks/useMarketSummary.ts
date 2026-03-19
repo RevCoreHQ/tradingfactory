@@ -140,9 +140,15 @@ export function useMarketSummary() {
   const cached = getCachedSummary();
   const summary = freshSummary || cached || cachedRef.current;
 
+  // Surface API-level error (returned as { summary: null, error: "..." })
+  const apiError = data && !data.summary
+    ? (data as Record<string, unknown>).error as string | undefined
+    : undefined;
+
   return {
     summary,
     isLoading: !summary && isLoading,
     error,
+    apiError,
   };
 }

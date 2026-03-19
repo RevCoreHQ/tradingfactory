@@ -11,6 +11,7 @@ export function AITradeSignals() {
   const router = useRouter();
   const batchLLMResults = useMarketStore((s) => s.batchLLMResults);
   const batchLLMReady = useMarketStore((s) => s.batchLLMReady);
+  const batchLLMError = useMarketStore((s) => s.batchLLMError);
   const allBiasResults = useMarketStore((s) => s.allBiasResults);
   const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
   const setSelectedInstrument = useMarketStore((s) => s.setSelectedInstrument);
@@ -27,7 +28,9 @@ export function AITradeSignals() {
         </div>
         {batchLLMReady ? (
           <p className="text-xs text-muted-foreground/60 text-center py-8">
-            AI analysis unavailable — check API keys in Vercel settings
+            {batchLLMError
+              ? `AI error: ${batchLLMError}`
+              : "AI analysis unavailable — check API keys in Vercel settings"}
           </p>
         ) : (
           <div className="space-y-3">

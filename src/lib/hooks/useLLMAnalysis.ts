@@ -243,10 +243,16 @@ export function useLLMBatchAnalysis(allBiasResults: Record<string, BiasResult>) 
   const cached = typeof window !== "undefined" ? getCachedBatch() : null;
   const batchResults = freshResults || cached;
 
+  // Surface API-level error (returned as { batch: null, error: "..." })
+  const apiError = data && !data.batch
+    ? (data as Record<string, unknown>).error as string | undefined
+    : undefined;
+
   return {
     batchResults,
     isLoading: !batchResults && isLoading,
     isReady: !!batchResults || attemptedRef.current || (!!data && !isLoading) || !!error,
     error,
+    apiError,
   };
 }
