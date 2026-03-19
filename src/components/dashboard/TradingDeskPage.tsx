@@ -40,15 +40,22 @@ export function TradingDeskPage() {
     };
   }, [trackedSetups]);
 
+  // Only count actionable setups (pending/active) for heat — running/BE
+  // setups are hidden from the desk so they shouldn't inflate risk
+  const actionableSetups = useMemo(
+    () => activeSetups.filter((t) => isActionable(t.status)),
+    [activeSetups]
+  );
+
   const portfolioRisk = useMemo(
     () =>
       computePortfolioRisk(
         baseRisk.accountEquity,
         baseRisk.riskPercent,
-        activeSetups,
+        actionableSetups,
         historySetups
       ),
-    [baseRisk.accountEquity, baseRisk.riskPercent, activeSetups, historySetups]
+    [baseRisk.accountEquity, baseRisk.riskPercent, actionableSetups, historySetups]
   );
 
   return (
