@@ -1,6 +1,7 @@
 "use client";
 
 import { Header } from "./Header";
+import { Watchlist } from "./Watchlist";
 import { DailyBriefing } from "./DailyBriefing";
 import { SectionHeader } from "./SectionHeader";
 import { BiasGauge } from "@/components/bias/BiasGauge";
@@ -68,177 +69,183 @@ export function InstrumentAnalysis() {
     <div className="min-h-screen bg-background">
       <Header mode="analysis" />
 
-      <main className="max-w-[1800px] mx-auto px-8 py-4 space-y-6">
-        <DailyBriefing />
+      <div className="flex">
+        {/* Left: Watchlist sidebar */}
+        <Watchlist />
 
-        {/* ── Section 1: Bias & Setup ── */}
-        <section>
-          <SectionHeader
-            title="Bias & Setup"
-            subtitle={`Direction, confidence, and trade levels — ${instrument.symbol}`}
-            icon={<Target className="h-3.5 w-3.5" />}
-            accentColor="green"
-          />
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            {/* Bias Gauge */}
-            <div className="lg:col-span-3">
-              <GlassCard accent={biasAccent} delay={0}>
-                <div className="flex flex-col items-center py-4">
-                  <h3 className="text-xs font-semibold text-muted-foreground mb-4 uppercase tracking-widest">
-                    Overall Bias
-                  </h3>
-                  <BiasGauge
-                    bias={bias.overallBias}
-                    confidence={bias.confidence}
-                    direction={bias.direction}
-                    size="lg"
-                  />
+        {/* Right: Main content */}
+        <main className="flex-1 min-w-0 px-6 py-4 space-y-6">
+          <DailyBriefing />
+
+          {/* ── Section 1: Bias & Setup ── */}
+          <section>
+            <SectionHeader
+              title="Bias & Setup"
+              subtitle={`Direction, confidence, and trade levels — ${instrument.symbol}`}
+              icon={<Target className="h-3.5 w-3.5" />}
+              accentColor="green"
+            />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+              {/* Bias Gauge */}
+              <div className="lg:col-span-3">
+                <GlassCard accent={biasAccent} delay={0}>
+                  <div className="flex flex-col items-center py-4">
+                    <h3 className="text-xs font-semibold text-muted-foreground mb-4 uppercase tracking-widest">
+                      Overall Bias
+                    </h3>
+                    <BiasGauge
+                      bias={bias.overallBias}
+                      confidence={bias.confidence}
+                      direction={bias.direction}
+                      size="lg"
+                    />
+                  </div>
+                </GlassCard>
+              </div>
+
+              {/* Trade Setup */}
+              <div className="lg:col-span-5">
+                <div className="rounded-xl border-l-[3px]" style={{ borderLeftColor: biasColor }}>
+                  <TradeSetupCard />
                 </div>
-              </GlassCard>
-            </div>
-
-            {/* Trade Setup */}
-            <div className="lg:col-span-5">
-              <div className="rounded-xl border-l-[3px]" style={{ borderLeftColor: biasColor }}>
-                <TradeSetupCard />
-              </div>
-            </div>
-
-            {/* Bias Breakdown + Key Signals — MOVED UP from Row 3 */}
-            <div className="lg:col-span-4">
-              <BiasBreakdown
-                fundamentalScore={bias.fundamentalScore}
-                technicalScore={bias.technicalScore}
-                signals={bias.signals}
-                compact
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* ── Section 2: Analysis & Chart ── */}
-        <section>
-          <SectionHeader
-            title="Analysis & Chart"
-            subtitle="Price action, zones, and AI trade ideas"
-            icon={<BarChart3 className="h-3.5 w-3.5" />}
-            accentColor="blue"
-          />
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            {/* Sidebar: Session + MTF + Trade Log */}
-            <div className="lg:col-span-3 space-y-4">
-              <SessionCard instrumentId={instrument.id} />
-              <MTFConfluence />
-              <QuickTradeLog instrumentId={instrument.id} biasResult={biasResult} currentPrice={currentPrice} />
-            </div>
-
-            {/* Chart + Deep Analysis / Technical (wider!) */}
-            <div className="lg:col-span-9 space-y-4">
-              <div className="flex gap-1 mb-1">
-                <button
-                  onClick={() => setActiveTab("deep")}
-                  className={cn(
-                    "px-3 py-1 rounded-lg text-[11px] font-semibold transition-colors",
-                    activeTab === "deep"
-                      ? "bg-neutral-accent/15 text-neutral-accent"
-                      : "text-muted-foreground hover:text-foreground hover:bg-[var(--surface-2)]"
-                  )}
-                >
-                  Deep Analysis
-                </button>
-                <button
-                  onClick={() => setActiveTab("technical")}
-                  className={cn(
-                    "px-3 py-1 rounded-lg text-[11px] font-semibold transition-colors",
-                    activeTab === "technical"
-                      ? "bg-neutral-accent/15 text-neutral-accent"
-                      : "text-muted-foreground hover:text-foreground hover:bg-[var(--surface-2)]"
-                  )}
-                >
-                  Technical
-                </button>
               </div>
 
-              {activeTab === "deep" ? (
-                <DeepAnalysis />
-              ) : (
-                <>
-                  <TechnicalOverview />
-                  <IntermarketCorrelation />
-                </>
-              )}
+              {/* Bias Breakdown + Key Signals */}
+              <div className="lg:col-span-4">
+                <BiasBreakdown
+                  fundamentalScore={bias.fundamentalScore}
+                  technicalScore={bias.technicalScore}
+                  signals={bias.signals}
+                  compact
+                />
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* ── Section 3: News & Context ── */}
-        <section>
-          <SectionHeader
-            title="News & Context"
-            subtitle="Market news and instrument comparison"
-            icon={<AlertTriangle className="h-3.5 w-3.5" />}
-            accentColor="red"
-          />
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            <div className="lg:col-span-8">
-              <NewsFeed />
-            </div>
-            <div className="lg:col-span-4">
-              <InstrumentBias />
-            </div>
-          </div>
-        </section>
+          {/* ── Section 2: Analysis & Chart ── */}
+          <section>
+            <SectionHeader
+              title="Analysis & Chart"
+              subtitle="Price action, zones, and AI trade ideas"
+              icon={<BarChart3 className="h-3.5 w-3.5" />}
+              accentColor="blue"
+            />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+              {/* Sidebar: Session + MTF + Trade Log */}
+              <div className="lg:col-span-3 space-y-4 min-h-[300px]">
+                <SessionCard instrumentId={instrument.id} />
+                <MTFConfluence />
+                <QuickTradeLog instrumentId={instrument.id} biasResult={biasResult} currentPrice={currentPrice} />
+              </div>
 
-        {/* ── Section 4: Macro & Positioning ── */}
-        <section>
-          <SectionHeader
-            title="Macro & Positioning"
-            subtitle="Institutional positioning, yields, calendar, and cross-market data"
-            icon={<Globe className="h-3.5 w-3.5" />}
-            accentColor="amber"
-          />
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            <div className="lg:col-span-4">
-              <COTPositioning />
-            </div>
-            <div className="lg:col-span-4">
-              <EconomicCalendar />
-            </div>
-            <div className="lg:col-span-4">
-              <BondYields />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mt-4">
-            <div className="lg:col-span-6">
-              <CentralBankTracker />
-            </div>
-            <div className="lg:col-span-6">
-              <IntermarketCorrelation />
-            </div>
-          </div>
-        </section>
+              {/* Chart + Deep Analysis / Technical */}
+              <div className="lg:col-span-9 space-y-4">
+                <div className="flex gap-1 mb-1">
+                  <button
+                    onClick={() => setActiveTab("deep")}
+                    className={cn(
+                      "px-3 py-1 rounded-lg text-[11px] font-semibold transition-colors",
+                      activeTab === "deep"
+                        ? "bg-neutral-accent/15 text-neutral-accent"
+                        : "text-muted-foreground hover:text-foreground hover:bg-[var(--surface-2)]"
+                    )}
+                  >
+                    Deep Analysis
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("technical")}
+                    className={cn(
+                      "px-3 py-1 rounded-lg text-[11px] font-semibold transition-colors",
+                      activeTab === "technical"
+                        ? "bg-neutral-accent/15 text-neutral-accent"
+                        : "text-muted-foreground hover:text-foreground hover:bg-[var(--surface-2)]"
+                    )}
+                  >
+                    Technical
+                  </button>
+                </div>
 
-        {/* ── Section 5: Track Record ── */}
-        <section>
-          <SectionHeader
-            title="Track Record"
-            subtitle="Currency strength, bias history, and prediction accuracy"
-            icon={<History className="h-3.5 w-3.5" />}
-            accentColor="blue"
-          />
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            <div className="lg:col-span-6">
-              <CurrencyStrength />
+                {activeTab === "deep" ? (
+                  <DeepAnalysis />
+                ) : (
+                  <>
+                    <TechnicalOverview />
+                    <IntermarketCorrelation />
+                  </>
+                )}
+              </div>
             </div>
-            <div className="lg:col-span-6">
-              <BiasHistory instrumentId={instrument.id} />
+          </section>
+
+          {/* ── Section 3: News & Context ── */}
+          <section>
+            <SectionHeader
+              title="News & Context"
+              subtitle="Market news and instrument comparison"
+              icon={<AlertTriangle className="h-3.5 w-3.5" />}
+              accentColor="red"
+            />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+              <div className="lg:col-span-8">
+                <NewsFeed />
+              </div>
+              <div className="lg:col-span-4">
+                <InstrumentBias />
+              </div>
             </div>
-          </div>
-          <div className="mt-4">
-            <BiasAccuracyCard instrumentId={instrument.id} />
-          </div>
-        </section>
-      </main>
+          </section>
+
+          {/* ── Section 4: Macro & Positioning ── */}
+          <section>
+            <SectionHeader
+              title="Macro & Positioning"
+              subtitle="Institutional positioning, yields, calendar, and cross-market data"
+              icon={<Globe className="h-3.5 w-3.5" />}
+              accentColor="amber"
+            />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+              <div className="lg:col-span-4">
+                <COTPositioning />
+              </div>
+              <div className="lg:col-span-4">
+                <EconomicCalendar />
+              </div>
+              <div className="lg:col-span-4">
+                <BondYields />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mt-4">
+              <div className="lg:col-span-6">
+                <CentralBankTracker />
+              </div>
+              <div className="lg:col-span-6">
+                <IntermarketCorrelation />
+              </div>
+            </div>
+          </section>
+
+          {/* ── Section 5: Track Record ── */}
+          <section>
+            <SectionHeader
+              title="Track Record"
+              subtitle="Currency strength, bias history, and prediction accuracy"
+              icon={<History className="h-3.5 w-3.5" />}
+              accentColor="blue"
+            />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+              <div className="lg:col-span-6">
+                <CurrencyStrength />
+              </div>
+              <div className="lg:col-span-6">
+                <BiasHistory instrumentId={instrument.id} />
+              </div>
+            </div>
+            <div className="mt-4">
+              <BiasAccuracyCard instrumentId={instrument.id} />
+            </div>
+          </section>
+        </main>
+      </div>
     </div>
   );
 }

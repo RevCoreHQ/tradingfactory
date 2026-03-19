@@ -14,7 +14,19 @@ export function DailyBriefing() {
   const { biasResult } = useBiasScore();
   const { indicators } = useTechnicalData();
 
-  if (!biasResult) return null;
+  if (!biasResult) {
+    return (
+      <GlassCard className="relative overflow-hidden" delay={0}>
+        <div>
+          <h3 className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-1">Daily Briefing</h3>
+          <div className="space-y-1.5">
+            <div className="h-3 w-3/4 shimmer rounded" />
+            <div className="h-3 w-1/2 shimmer rounded" />
+          </div>
+        </div>
+      </GlassCard>
+    );
+  }
 
   const parts: string[] = [];
 
