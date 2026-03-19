@@ -5,7 +5,7 @@ import type { TradeDeskSetup } from "@/lib/types/signals";
 import type { TradingAdvisorRequest, TradingAdvisorResult } from "@/lib/types/llm";
 
 const CACHE_KEY = "tradingfactory_advisor_cache";
-const CACHE_TTL = 15 * 60 * 1000; // 15 min client-side
+const CACHE_TTL = 2 * 60 * 1000; // 2 min client-side — keep desk manager near-real-time
 
 interface CachedAdvisor {
   data: TradingAdvisorResult;
@@ -38,13 +38,21 @@ function buildSetupHash(
   setups: TradeDeskSetup[],
   trackedStatuses?: Record<string, string>
 ): string {
+  const statuses = trackedStatuses ?? {};
   const setupPart = setups
     .map((s) => {
-      const status = trackedStatuses?.[s.instrumentId] ?? "new";
+      const status = statuses[s.instrumentId] ?? "new";
       return `${s.instrumentId}:${s.conviction}:${s.direction}:${s.impulse}:${status}`;
     })
     .join("|");
-  return setupPart;
+
+  // Include status distribution so ANY transition busts the cache
+  const statusValues = Object.values(statuses);
+  const entryZone = statusValues.filter((s) => s.includes("Entry")).length;
+  const pending = statusValues.filter((s) => s.includes("Await")).length;
+  const running = statusValues.filter((s) => s.includes("Running")).length;
+
+  return `${setups.length}:${entryZone}ez:${pending}p:${running}r|${setupPart}`;
 }
 
 async function fetchAdvisor(
@@ -147,8 +155,8 @@ export function useTradingAdvisor(params: UseTradingAdvisorParams | null) {
     },
     {
       revalidateOnFocus: false,
-      refreshInterval: 0, // Manual refresh only
-      dedupingInterval: 60_000,
+      refreshInterval: 0,
+      dedupingInterval: 30_000, // Allow re-fetch after 30s if hash changed
     }
   );
 
