@@ -185,6 +185,25 @@ export function useTrackedSetups(
     }
 
     for (const [, remaining] of activeMap) {
+      const isStillActionable =
+        remaining.status === "pending" || remaining.status === "active";
+
+      // If still actionable but no longer in A+/A rankings, invalidate —
+      // conviction dropped, impulse flipped, or R:R collapsed
+      if (isStillActionable) {
+        changed = true;
+        const invalidated: TrackedSetup = {
+          ...remaining,
+          status: "invalidated",
+          closedAt: Date.now(),
+          outcome: "breakeven",
+          pnlPercent: 0,
+        };
+        terminalList.push(invalidated);
+        continue;
+      }
+
+      // Running/BE setups: still track price movement for SL/TP exits
       const updated = updateSetupStatus(remaining, remaining.setup.currentPrice);
       if (!isSetupActive(updated.status)) {
         changed = true;

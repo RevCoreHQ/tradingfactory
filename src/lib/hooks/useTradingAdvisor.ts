@@ -39,7 +39,6 @@ function buildSetupHash(
   trackedStatuses?: Record<string, string>
 ): string {
   const setupPart = setups
-    .slice(0, 6)
     .map((s) => {
       const status = trackedStatuses?.[s.instrumentId] ?? "new";
       return `${s.instrumentId}:${s.conviction}:${s.direction}:${s.impulse}:${status}`;
@@ -85,7 +84,7 @@ export function useTradingAdvisor(params: UseTradingAdvisorParams | null) {
       if (cached) return cached;
 
       // Build request from setups
-      const topSetups = params.setups.slice(0, 6);
+      const topSetups = params.setups; // Send all A+/A setups (max 13 instruments)
 
       // Regime summary
       const regimeCounts: Record<string, number> = {};

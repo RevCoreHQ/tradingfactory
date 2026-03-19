@@ -308,8 +308,8 @@ export function PipelineFlow() {
       >
         <p>
           Every trade setup is tracked through its lifecycle: <strong>pending → active → breakeven → TP/SL/expired</strong>.
-          Pending/active setups are continuously re-evaluated — if conviction drops below A or impulse conflicts,
-          the setup is <strong>invalidated</strong> (thesis changed). Outcomes are stored with a confluence pattern
+          Pending/active setups are continuously re-evaluated — if the setup drops out of the A+/A rankings
+          (conviction fell, impulse flipped, or R:R collapsed), it is <strong>invalidated</strong> immediately. Outcomes are stored with a confluence pattern
           key built from the agreeing system names + regime + impulse color + trading style.
         </p>
         <p>
