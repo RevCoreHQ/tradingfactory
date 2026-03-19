@@ -1,7 +1,6 @@
 "use client";
 
-import { useRef, useCallback, useMemo, useEffect } from "react";
-import useSWR from "swr";
+import { useRef, useCallback, useMemo, useState, useEffect } from "react";
 import type { TradeDeskSetup, TrackedSetup, ConfluencePattern } from "@/lib/types/signals";
 import {
   createTrackedSetup,
@@ -29,22 +28,22 @@ export function useTrackedSetups(
   freshSetups: TradeDeskSetup[]
 ): UseTrackedSetupsResult {
   const patternsRef = useRef<Record<string, ConfluencePattern>>({});
-  const pendingSaveRef = useRef<{ all: TrackedSetup[]; patterns: Record<string, ConfluencePattern> } | null>(null);
+  const trackedRef = useRef<TrackedSetup[]>([]);
+  const initializedRef = useRef(false);
 
-  // Load persisted state via SWR (runs once on mount, then manual mutations)
-  const { data: tracked, mutate } = useSWR(
-    "tracked-setups",
-    () => {
-      const setups = loadTrackedSetups();
-      patternsRef.current = loadConfluencePatterns();
-      return setups;
-    },
-    { revalidateOnFocus: false, refreshInterval: 0 }
-  );
+  // Load from localStorage once on mount (ref-based, no SWR)
+  if (!initializedRef.current && typeof window !== "undefined") {
+    trackedRef.current = loadTrackedSetups();
+    patternsRef.current = loadConfluencePatterns();
+    initializedRef.current = true;
+  }
 
-  // Pure computation — NO side effects
-  const { activeSetups, historySetups, needsPersist } = useMemo(() => {
-    const currentTracked = tracked ?? [];
+  // Force re-render trigger (only used by clearHistory)
+  const [, setTick] = useState(0);
+
+  // Pure computation against ref state — no SWR, no mutate
+  const { activeSetups, historySetups } = useMemo(() => {
+    const currentTracked = trackedRef.current;
     const patterns = { ...patternsRef.current };
     let changed = false;
 
@@ -66,7 +65,7 @@ export function useTrackedSetups(
 
       if (existing) {
         const updated = updateSetupStatus(existing, fresh.currentPrice);
-        // Keep currentPrice in sync for progress bar (visual only, no persist trigger)
+        // Keep currentPrice in sync for progress bar
         if (updated.setup.currentPrice !== fresh.currentPrice) {
           updated.setup = { ...updated.setup, currentPrice: fresh.currentPrice };
         }
@@ -115,9 +114,15 @@ export function useTrackedSetups(
       }
     }
 
-    // Stage for persistence (but don't execute here)
-    if (changed) {
+    // Update ref for next cycle
+    const all = [...updatedActive, ...terminalList];
+    trackedRef.current = all;
+
+    // Persist to localStorage if state changed (idempotent, no re-render)
+    if (changed && typeof window !== "undefined") {
       patternsRef.current = patterns;
+      saveTrackedSetups(all);
+      saveConfluencePatterns(patterns);
     }
 
     return {
@@ -127,24 +132,15 @@ export function useTrackedSetups(
       historySetups: terminalList.sort(
         (a, b) => (b.closedAt ?? 0) - (a.closedAt ?? 0)
       ),
-      needsPersist: changed ? [...updatedActive, ...terminalList] : null,
     };
-  }, [freshSetups, tracked]);
-
-  // Persist OUTSIDE of useMemo — runs after render, no re-render loop
-  useEffect(() => {
-    if (needsPersist && typeof window !== "undefined") {
-      saveTrackedSetups(needsPersist);
-      saveConfluencePatterns(patternsRef.current);
-      mutate(needsPersist, false);
-    }
-  }, [needsPersist, mutate]);
+  }, [freshSetups]);
 
   const clearHistory = useCallback(() => {
     clearAllTrackingData();
+    trackedRef.current = [];
     patternsRef.current = {};
-    mutate([], false);
-  }, [mutate]);
+    setTick((t) => t + 1);
+  }, []);
 
   return {
     activeSetups,

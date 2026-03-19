@@ -26,8 +26,7 @@ import { isSetupActive } from "@/lib/calculations/setup-tracker";
 import { computePortfolioRisk } from "@/lib/calculations/risk-engine";
 import { DEFAULT_RISK_CONFIG } from "@/lib/types/signals";
 import { loadTrackedSetups } from "@/lib/storage/setup-storage";
-import useSWR from "swr";
-import { useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Activity, Sparkles, AlertTriangle, BarChart3, Shield, Brain, MessageSquare } from "lucide-react";
 
 export function MarketOverview() {
@@ -37,18 +36,20 @@ export function MarketOverview() {
   const journalOpen = useMarketStore((s) => s.journalOpen);
   const setJournalOpen = useMarketStore((s) => s.setJournalOpen);
 
-  // Read tracked setups from SWR (same key as useTrackedSetups — reads cached data, no processing)
+  // Read tracked setups from localStorage on a timer (decoupled from AITradeDesk)
   const { portfolioRisk: baseRisk } = useTradeDeskData();
-  const { data: trackedSetups } = useSWR("tracked-setups", loadTrackedSetups, {
-    revalidateOnFocus: false,
-    refreshInterval: 0,
-  });
+  const [trackedSetups, setTrackedSetups] = useState<import("@/lib/types/signals").TrackedSetup[]>([]);
+
+  useEffect(() => {
+    setTrackedSetups(loadTrackedSetups());
+    const interval = setInterval(() => setTrackedSetups(loadTrackedSetups()), 10_000);
+    return () => clearInterval(interval);
+  }, []);
 
   const { activeSetups, historySetups } = useMemo(() => {
-    const all = trackedSetups ?? [];
     return {
-      activeSetups: all.filter((t) => isSetupActive(t.status)),
-      historySetups: all.filter((t) => !isSetupActive(t.status)),
+      activeSetups: trackedSetups.filter((t) => isSetupActive(t.status)),
+      historySetups: trackedSetups.filter((t) => !isSetupActive(t.status)),
     };
   }, [trackedSetups]);
 
