@@ -64,9 +64,57 @@ export function useTrackedSetups(
       const existing = activeMap.get(fresh.instrumentId);
 
       if (existing) {
+        const isStillActionable =
+          existing.status === "pending" || existing.status === "active";
+
+        // If direction flipped on an actionable setup, invalidate — thesis changed
+        if (isStillActionable && fresh.direction !== existing.setup.direction) {
+          changed = true;
+          const invalidated: TrackedSetup = {
+            ...existing,
+            status: "invalidated",
+            closedAt: Date.now(),
+            outcome: "breakeven",
+            pnlPercent: 0,
+          };
+          terminalList.push(invalidated);
+          activeMap.delete(fresh.instrumentId);
+          // Let the "no existing" branch below create a new tracked setup
+          const confKey = buildConfluenceKey(fresh);
+          const newTracked = createTrackedSetup(fresh);
+          const checked = updateSetupStatus(newTracked, fresh.currentPrice);
+          updatedActive.push(checked);
+          continue;
+        }
+
         const updated = updateSetupStatus(existing, fresh.currentPrice);
-        // Keep currentPrice in sync for progress bar
-        if (updated.setup.currentPrice !== fresh.currentPrice) {
+
+        // For actionable setups, sync signal data so cards match advisor
+        if (isStillActionable) {
+          updated.setup = {
+            ...updated.setup,
+            currentPrice: fresh.currentPrice,
+            conviction: fresh.conviction,
+            convictionScore: fresh.convictionScore,
+            impulse: fresh.impulse,
+            regime: fresh.regime,
+            regimeLabel: fresh.regimeLabel,
+            adx: fresh.adx,
+            signals: fresh.signals,
+            consensus: fresh.consensus,
+            entry: fresh.entry,
+            stopLoss: fresh.stopLoss,
+            takeProfit: fresh.takeProfit,
+            riskReward: fresh.riskReward,
+            positionSizeLots: fresh.positionSizeLots,
+            riskAmount: fresh.riskAmount,
+            reasonsToExit: fresh.reasonsToExit,
+            learningApplied: fresh.learningApplied,
+          };
+          updated.confluenceKey = buildConfluenceKey(fresh);
+          changed = true;
+        } else if (updated.setup.currentPrice !== fresh.currentPrice) {
+          // Running setups: only sync price
           updated.setup = { ...updated.setup, currentPrice: fresh.currentPrice };
         }
 
