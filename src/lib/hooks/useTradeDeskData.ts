@@ -6,7 +6,8 @@ import type { OHLCV } from "@/lib/types/market";
 import type { TradeDeskSetup, PortfolioRisk, ConfluencePattern } from "@/lib/types/signals";
 import { INSTRUMENTS, REFRESH_INTERVALS } from "@/lib/utils/constants";
 import { calculateAllIndicators } from "@/lib/calculations/technical-indicators";
-import { generateTradeDeskSetup, rankSetupsByConviction } from "@/lib/calculations/mechanical-signals";
+import { generateTradeDeskSetup, rankSetupsByConviction, selectTradingStyle } from "@/lib/calculations/mechanical-signals";
+import { getSessionRelevance } from "@/lib/calculations/session-scoring";
 
 const ACCOUNT_EQUITY_KEY = "tradingfactory_account_equity";
 const RISK_PERCENT_KEY = "tradingfactory_risk_percent";
@@ -20,17 +21,29 @@ function getStoredNumber(key: string, defaultValue: number): number {
   return defaultValue;
 }
 
-async function fetchAllCandles(): Promise<Record<string, OHLCV[]>> {
-  const results: Record<string, OHLCV[]> = {};
+interface DualCandles {
+  candles1h: OHLCV[];
+  candles4h: OHLCV[];
+}
+
+async function fetchAllCandles(): Promise<Record<string, DualCandles>> {
+  const results: Record<string, DualCandles> = {};
   const promises = INSTRUMENTS.map(async (inst) => {
     try {
-      const res = await fetch(
-        `/api/technicals/price-data?instrument=${inst.id}&timeframe=4h`
-      );
-      if (!res.ok) return;
-      const data = await res.json();
-      if (data.candles?.length > 20) {
-        results[inst.id] = data.candles;
+      const [res1h, res4h] = await Promise.all([
+        fetch(`/api/technicals/price-data?instrument=${inst.id}&timeframe=1h`),
+        fetch(`/api/technicals/price-data?instrument=${inst.id}&timeframe=4h`),
+      ]);
+
+      const data1h = res1h.ok ? await res1h.json() : { candles: [] };
+      const data4h = res4h.ok ? await res4h.json() : { candles: [] };
+
+      // Need at least 4h data; 1h is optional (fallback to swing)
+      if (data4h.candles?.length > 20) {
+        results[inst.id] = {
+          candles1h: data1h.candles?.length > 20 ? data1h.candles : [],
+          candles4h: data4h.candles,
+        };
       }
     } catch {}
   });
@@ -69,24 +82,46 @@ export function useTradeDeskData(confluencePatterns?: Record<string, ConfluenceP
     const allSetups: TradeDeskSetup[] = [];
 
     for (const inst of INSTRUMENTS) {
-      const candles = candleMap[inst.id];
-      if (!candles || candles.length < 30) continue;
+      const dual = candleMap[inst.id];
+      if (!dual || dual.candles4h.length < 30) continue;
 
-      const summary = calculateAllIndicators(candles, inst.id, "4h");
+      // Always compute 4h summary for regime detection
+      const summary4h = calculateAllIndicators(dual.candles4h, inst.id, "4h");
+      const adx = summary4h.adx.adx;
+
+      // Select trading style based on 4h regime + session
+      const session = getSessionRelevance(inst.id);
+      const style = selectTradingStyle(adx, session.sessionScore);
+
+      // Pick candles for the selected timeframe
+      let candles: OHLCV[];
+      let summary;
+
+      if (style === "intraday" && dual.candles1h.length >= 30) {
+        candles = dual.candles1h;
+        summary = calculateAllIndicators(dual.candles1h, inst.id, "1h");
+      } else {
+        // Fallback to swing if 1h data unavailable
+        candles = dual.candles4h;
+        summary = summary4h;
+      }
+
+      const effectiveStyle = style === "intraday" && dual.candles1h.length >= 30 ? "intraday" : "swing";
+
       const setup = generateTradeDeskSetup(
         candles,
         summary,
         inst,
         accountEquity,
         riskPercent,
-        confluencePatterns
+        confluencePatterns,
+        effectiveStyle
       );
       allSetups.push(setup);
     }
 
     const ranked = rankSetupsByConviction(allSetups);
 
-    // Portfolio risk (simplified — no open positions tracked)
     const portfolioRisk: PortfolioRisk = {
       accountEquity,
       riskPerTrade: accountEquity * (riskPercent / 100),

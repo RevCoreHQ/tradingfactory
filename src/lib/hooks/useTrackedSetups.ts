@@ -100,6 +100,8 @@ export function useTrackedSetups(
             regime: fresh.regime,
             regimeLabel: fresh.regimeLabel,
             adx: fresh.adx,
+            tradingStyle: fresh.tradingStyle,
+            timeframe: fresh.timeframe,
             signals: fresh.signals,
             consensus: fresh.consensus,
             entry: fresh.entry,

@@ -6,6 +6,8 @@ export type ImpulseColor = "green" | "red" | "blue";
 
 export type ConvictionTier = "A+" | "A" | "B" | "C" | "D";
 
+export type TradingStyle = "intraday" | "swing";
+
 // ==================== Mechanical Signal ====================
 
 export interface MechanicalSignal {
@@ -27,6 +29,8 @@ export interface TradeDeskSetup {
   regime: MarketRegime;
   regimeLabel: string;
   adx: number;
+  tradingStyle: TradingStyle;
+  timeframe: "1h" | "4h";
   impulse: ImpulseColor;
   signals: MechanicalSignal[];
   conviction: ConvictionTier;

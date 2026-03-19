@@ -27,7 +27,8 @@ import { SessionCard } from "@/components/common/SessionIndicator";
 import { QuickTradeLog } from "@/components/journal/QuickTradeLog";
 import { MTFConfluence } from "@/components/technicals/MTFConfluence";
 import { useRealtimePrices } from "@/lib/hooks/useRealtimePrices";
-import { generateTradeDeskSetup } from "@/lib/calculations/mechanical-signals";
+import { generateTradeDeskSetup, selectTradingStyle } from "@/lib/calculations/mechanical-signals";
+import { getSessionRelevance } from "@/lib/calculations/session-scoring";
 import { useEffect, useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import type { TradeDeskSetup, ConvictionTier, ImpulseColor, MarketRegime } from "@/lib/types/signals";
@@ -44,7 +45,13 @@ export function InstrumentAnalysis() {
   // Mechanical signal engine — same brain as overview page
   const mechanicalSetup = useMemo(() => {
     if (!indicators || candles.length < 30) return null;
-    const setup = generateTradeDeskSetup(candles, indicators, instrument);
+
+    // Select trading style based on ADX regime + session
+    const adx = indicators.adx.adx;
+    const session = getSessionRelevance(instrument.id);
+    const style = selectTradingStyle(adx, session.sessionScore);
+
+    const setup = generateTradeDeskSetup(candles, indicators, instrument, 10000, 2, undefined, style);
     // Filter same as overview: only A+/A conviction, non-neutral, R:R >= 1.5, impulse aligned
     if (setup.conviction === "D" || setup.conviction === "C" || setup.conviction === "B") return null;
     if (setup.direction === "neutral") return null;

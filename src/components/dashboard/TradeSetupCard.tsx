@@ -164,8 +164,13 @@ export function TradeSetupCard({ setup, decimals = 5 }: { setup: TradeDeskSetup 
           <h3 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
             Trade Setup
           </h3>
-          <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted/5 border border-border/20">
-            4H Swing
+          <span className={cn(
+            "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border",
+            setup.tradingStyle === "intraday"
+              ? "text-neutral-accent/70 bg-neutral-accent/8 border-neutral-accent/20"
+              : "text-muted-foreground/40 bg-muted/5 border-border/20"
+          )}>
+            {setup.tradingStyle === "intraday" ? "1H Intraday" : "4H Swing"}
           </span>
         </div>
         <div className="flex items-center gap-2">

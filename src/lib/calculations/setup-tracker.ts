@@ -4,8 +4,7 @@ import type {
   SetupStatus,
   SetupOutcome,
 } from "@/lib/types/signals";
-
-const EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+import { STYLE_PARAMS } from "./mechanical-signals";
 
 // ==================== CONFLUENCE KEY ====================
 
@@ -15,7 +14,7 @@ export function buildConfluenceKey(setup: TradeDeskSetup): string {
     .map((s) => s.system)
     .sort()
     .join("|");
-  return `${agreeing}::${setup.regime}::${setup.impulse}`;
+  return `${agreeing}::${setup.regime}::${setup.impulse}::${setup.tradingStyle ?? "swing"}`;
 }
 
 // ==================== CREATE TRACKED SETUP ====================
@@ -67,8 +66,9 @@ export function updateSetupStatus(
   const now = Date.now();
   const entryMid = (setup.entry[0] + setup.entry[1]) / 2;
 
-  // Check expiry (pending only)
-  if (status === "pending" && now - tracked.createdAt > EXPIRY_MS) {
+  // Check expiry (pending only) — style-specific window
+  const expiryMs = STYLE_PARAMS[setup.tradingStyle ?? "swing"].expiryMs;
+  if (status === "pending" && now - tracked.createdAt > expiryMs) {
     return finalize(tracked, "expired", currentPrice);
   }
 

@@ -7,11 +7,50 @@ import type {
   MechanicalSignal,
   TradeDeskSetup,
   ConfluencePattern,
+  TradingStyle,
 } from "@/lib/types/signals";
 import type { Instrument } from "@/lib/types/market";
 import { calcSMA, calcEMA } from "./technical-indicators";
 import { applyLearning, adjustedTier } from "./confluence-learning";
 import { buildConfluenceKey } from "./setup-tracker";
+
+// ==================== TRADING STYLE ====================
+
+interface StyleParams {
+  slMultiplier: number;
+  tpMultipliers: [number, number, number];
+  entrySpreadMultiplier: number;
+  expiryMs: number;
+  label: string;
+}
+
+export const STYLE_PARAMS: Record<TradingStyle, StyleParams> = {
+  intraday: {
+    slMultiplier: 1.5,
+    tpMultipliers: [2.25, 3.75, 5.25], // 1.5/2.5/3.5 R:R with 1.5 ATR SL
+    entrySpreadMultiplier: 0.4,
+    expiryMs: 8 * 60 * 60 * 1000, // 8 hours
+    label: "1H Intraday",
+  },
+  swing: {
+    slMultiplier: 2.0,
+    tpMultipliers: [3.0, 5.0, 7.0], // 1.5/2.5/3.5 R:R with 2.0 ATR SL
+    entrySpreadMultiplier: 0.5,
+    expiryMs: 24 * 60 * 60 * 1000, // 24 hours
+    label: "4H Swing",
+  },
+};
+
+export function selectTradingStyle(adx: number, sessionScore: number): TradingStyle {
+  // Off-hours: prefer swing (wider stops = less noise-sensitive)
+  if (sessionScore < 30) return "swing";
+  // Volatile: intraday for shorter exposure
+  if (adx > 50) return "intraday";
+  // Trending or developing trend: swing to ride it
+  if (adx > 20) return "swing";
+  // Ranging/choppy: intraday mean reversion
+  return "intraday";
+}
 
 // ==================== STRUCTURAL LEVELS ====================
 
@@ -689,7 +728,8 @@ export function generateTradeDeskSetup(
   instrument: Instrument,
   accountEquity: number = 10000,
   riskPercent: number = 2,
-  confluencePatterns?: Record<string, ConfluencePattern>
+  confluencePatterns?: Record<string, ConfluencePattern>,
+  tradingStyle?: TradingStyle
 ): TradeDeskSetup {
   // 1. Detect regime
   const { regime, label: regimeLabel } = detectRegime(summary);
@@ -716,23 +756,27 @@ export function generateTradeDeskSetup(
   const bearish = signals.filter((s) => s.direction === "bearish").length;
   const neutral = signals.filter((s) => s.direction === "neutral").length;
 
-  // 5. Entry/SL/TP (using ATR-based levels)
+  // 5. Resolve trading style and apply style-specific parameters
+  const style: TradingStyle = tradingStyle ?? "swing";
+  const params = STYLE_PARAMS[style];
+  const tf: "1h" | "4h" = style === "intraday" ? "1h" : "4h";
+
   const atr = summary.atr.value;
   const price = summary.currentPrice;
   const isBullish = direction === "bullish";
   const dir = isBullish ? 1 : -1;
 
-  const entrySpread = atr * 0.5; // Wider entry zone — room for confirmation
+  const entrySpread = atr * params.entrySpreadMultiplier;
   const entry: [number, number] = isBullish
     ? [price - entrySpread, price]
     : [price, price + entrySpread];
 
-  const slDistance = atr * 2.0; // 2 ATR stop — room to breathe past noise
+  const slDistance = atr * params.slMultiplier;
   const stopLoss = price - dir * slDistance;
 
-  const tp1 = price + dir * atr * 3.0; // 1.5 R:R (3 ATR / 2 ATR SL)
-  const tp2 = price + dir * atr * 5.0; // 2.5 R:R
-  const tp3 = price + dir * atr * 7.0; // 3.5 R:R
+  const tp1 = price + dir * atr * params.tpMultipliers[0];
+  const tp2 = price + dir * atr * params.tpMultipliers[1];
+  const tp3 = price + dir * atr * params.tpMultipliers[2];
   const takeProfit: [number, number, number] = [tp1, tp2, tp3];
 
   // 5b. Snap levels to structural S/R, pivots, fibs
@@ -769,6 +813,8 @@ export function generateTradeDeskSetup(
     regime,
     regimeLabel,
     adx,
+    tradingStyle: style,
+    timeframe: tf,
     impulse: impulseColor,
     signals,
     conviction: tier,

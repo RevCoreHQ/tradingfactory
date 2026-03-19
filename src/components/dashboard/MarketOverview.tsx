@@ -4,7 +4,6 @@ import { Header } from "./Header";
 import { MarketPulse } from "./MarketPulse";
 import { SectionHeader } from "./SectionHeader";
 import { AIMarketSummary } from "./AIMarketSummary";
-import { AITradeSignals } from "./AITradeSignals";
 import { RedNewsWeek } from "@/components/fundamentals/RedNewsWeek";
 import { BondYields } from "@/components/fundamentals/BondYields";
 import { CurrencyBias } from "@/components/fundamentals/CurrencyBias";
@@ -127,22 +126,15 @@ export function MarketOverview() {
             </div>
           </section>
 
-          {/* Section 4: Risk Calendar + AI Signals */}
+          {/* Section 4: Risk Calendar */}
           <section>
             <SectionHeader
               title="Risk Calendar"
-              subtitle="High-impact events and AI trade signals"
+              subtitle="High-impact economic events and news risk"
               icon={<AlertTriangle className="h-3.5 w-3.5" />}
               accentColor="red"
             />
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-              <div className="lg:col-span-7">
-                <RedNewsWeek />
-              </div>
-              <div className="lg:col-span-5">
-                <AITradeSignals />
-              </div>
-            </div>
+            <RedNewsWeek />
           </section>
 
           {/* Section 5: Deep Dive */}
