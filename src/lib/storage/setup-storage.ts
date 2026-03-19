@@ -25,21 +25,22 @@ function dedup(setups: TrackedSetup[]): TrackedSetup[] {
 
   for (const s of setups) {
     if (!isTerminalStatus(s.status)) {
-      // Only keep one active per instrument
       if (!active.some((a) => a.setup.instrumentId === s.setup.instrumentId)) {
         active.push(s);
       }
     } else {
-      // For terminals, keep the latest per instrument+confluenceKey
-      const key = `${s.setup.instrumentId}:${s.confluenceKey}:${s.closedAt}`;
-      if (!terminalMap.has(key)) {
+      // Round closedAt to nearest hour — duplicates from crash loops collapse
+      const hourBucket = Math.floor((s.closedAt ?? 0) / 3_600_000);
+      const key = `${s.setup.instrumentId}:${s.confluenceKey}:${hourBucket}`;
+      // Keep the latest entry per bucket
+      const existing = terminalMap.get(key);
+      if (!existing || (s.closedAt ?? 0) > (existing.closedAt ?? 0)) {
         terminalMap.set(key, s);
       }
     }
   }
 
   const result = [...active, ...terminalMap.values()];
-  // If we deduped anything, save the clean version
   if (result.length < setups.length && typeof window !== "undefined") {
     localStorage.setItem(TRACKED_KEY, JSON.stringify(result));
   }
