@@ -19,6 +19,7 @@ import {
   Ban,
 } from "lucide-react";
 import type { TradingAdvisorResult } from "@/lib/types/llm";
+import { GlowingEffect } from "@/components/ui/glowing-effect";
 
 const DEFAULT_FEAR_GREED = { value: 50, label: "Neutral" };
 const DEFAULT_DXY = { value: 0, change: 0 };
@@ -51,7 +52,15 @@ function AdvisorContent({ advisor, onRefresh }: { advisor: TradingAdvisorResult;
   const timeLabel = minutesAgo < 1 ? "Just now" : `${minutesAgo}m ago`;
 
   return (
-    <div className="section-card p-5">
+    <div className="relative section-card p-5">
+      <GlowingEffect
+        spread={40}
+        glow={true}
+        disabled={false}
+        proximity={64}
+        inactiveZone={0.01}
+        borderWidth={2}
+      />
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         <div className="h-6 w-6 rounded-md flex items-center justify-center bg-neutral-accent/15">

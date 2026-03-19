@@ -36,6 +36,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
+import { GlowingEffect } from "@/components/ui/glowing-effect";
 
 // ==================== Copy Price ====================
 
@@ -337,7 +338,15 @@ function SetupCard({ tracked, rank }: { tracked: TrackedSetup; rank: number }) {
   };
 
   return (
-    <div className="section-card overflow-hidden">
+    <div className="relative section-card overflow-hidden">
+      <GlowingEffect
+        spread={setup.conviction === "A+" ? 50 : 35}
+        glow={true}
+        disabled={false}
+        proximity={setup.conviction === "A+" ? 80 : 50}
+        inactiveZone={0.01}
+        borderWidth={setup.conviction === "A+" ? 2 : 1}
+      />
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full px-4 py-3 flex items-center gap-3 hover:bg-surface-2/50 transition-colors text-left"
