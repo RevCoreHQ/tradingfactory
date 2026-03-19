@@ -7,47 +7,33 @@ import { useMarketStore } from "@/lib/store/market-store";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import type { BiasResult } from "@/lib/types/bias";
 import type { MarketSummaryResult, SectorOutlook } from "@/lib/types/llm";
-import { getBiasDirection } from "@/lib/utils/formatters";
 
 /**
- * Compute sector outlooks from actual bias results so they always
- * agree with the Top Opportunities / conviction board.
+ * Correct the LLM's sector outlook badges using actual bias results,
+ * but keep the LLM's rich keyAssets descriptions intact.
  */
-function computeSectorOutlooks(
+function correctSectorOutlooks(
+  llmSectors: SectorOutlook[],
   results: Record<string, BiasResult>
 ): SectorOutlook[] {
-  const sectors: Record<string, { symbol: string; bias: number }[]> = {
-    forex: [],
-    crypto: [],
-    indices: [],
-    commodities: [],
-  };
-
+  // Compute average bias per sector from actual scores
+  const sectorBiases: Record<string, number[]> = {};
   for (const [id, result] of Object.entries(results)) {
     const inst = INSTRUMENTS.find((i) => i.id === id);
     if (!inst) continue;
-    const sectorKey =
+    const key =
       inst.category === "index" ? "indices" : inst.category === "commodity" ? "commodities" : inst.category;
-    if (sectors[sectorKey]) {
-      sectors[sectorKey].push({ symbol: inst.symbol, bias: result.overallBias });
-    }
+    (sectorBiases[key] ??= []).push(result.overallBias);
   }
 
-  return Object.entries(sectors)
-    .filter(([, instruments]) => instruments.length > 0)
-    .map(([sector, instruments]) => {
-      const avgBias = instruments.reduce((sum, i) => sum + i.bias, 0) / instruments.length;
-      const outlook: "bullish" | "bearish" | "neutral" =
-        avgBias > 10 ? "bullish" : avgBias < -10 ? "bearish" : "neutral";
-
-      const sorted = [...instruments].sort((a, b) => Math.abs(b.bias) - Math.abs(a.bias));
-      const keyAssets = sorted.slice(0, 3).map((i) => {
-        const dir = getBiasDirection(i.bias);
-        return `${i.symbol} — ${dir} (${i.bias > 0 ? "+" : ""}${Math.round(i.bias)})`;
-      });
-
-      return { sector, outlook, keyAssets };
-    });
+  return llmSectors.map((sector) => {
+    const biases = sectorBiases[sector.sector];
+    if (!biases || biases.length === 0) return sector;
+    const avg = biases.reduce((a, b) => a + b, 0) / biases.length;
+    const correctedOutlook: "bullish" | "bearish" | "neutral" =
+      avg > 10 ? "bullish" : avg < -10 ? "bearish" : "neutral";
+    return { ...sector, outlook: correctedOutlook };
+  });
 }
 
 const CACHE_KEY = "tf_market_summary";
@@ -193,11 +179,11 @@ export function useMarketSummary() {
   const cached = getCachedSummary();
   const baseSummary = freshSummary || cached || cachedRef.current;
 
-  // Override LLM sector outlook with data-driven values from actual bias results
-  // so Sector Breakdown always agrees with Top Opportunities
+  // Correct the LLM's sector outlook badges using actual bias scores
+  // so the badges always agree with Top Opportunities, while keeping the LLM's descriptions
   const hasBiasData = Object.keys(currentResults).length > 0;
-  const summary = baseSummary && hasBiasData
-    ? { ...baseSummary, sectorOutlook: computeSectorOutlooks(currentResults) }
+  const summary = baseSummary && hasBiasData && baseSummary.sectorOutlook?.length
+    ? { ...baseSummary, sectorOutlook: correctSectorOutlooks(baseSummary.sectorOutlook, currentResults) }
     : baseSummary;
 
   // Surface API-level error (returned as { summary: null, error: "..." })
