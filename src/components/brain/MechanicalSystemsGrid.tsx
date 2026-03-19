@@ -23,7 +23,7 @@ const systems: MechanicalSystem[] = [
   },
   {
     name: "MACD",
-    book: "Elder",
+    book: "Weissman",
     type: "Trend",
     logic: "MACD line (EMA13-EMA26) crosses signal line. Histogram confirms momentum.",
     params: "Fast: 13, Slow: 26, Signal: 9",
@@ -31,7 +31,7 @@ const systems: MechanicalSystem[] = [
   },
   {
     name: "BB Breakout",
-    book: "Bollinger",
+    book: "Weissman",
     type: "Trend",
     logic: "Price closes above upper band (bullish) or below lower band (bearish).",
     params: "Period: 20, StdDev: 2",
@@ -39,7 +39,7 @@ const systems: MechanicalSystem[] = [
   },
   {
     name: "RSI Extremes",
-    book: "Wilder / Connors",
+    book: "Weissman",
     type: "Mean Reversion",
     logic: "RSI(14) below 30 with price above SMA(200) = bullish. Above 70 with price below SMA(200) = bearish.",
     params: "Period: 14, Oversold: 30, Overbought: 70",
@@ -47,7 +47,7 @@ const systems: MechanicalSystem[] = [
   },
   {
     name: "BB Mean Reversion",
-    book: "Bollinger",
+    book: "Weissman",
     type: "Mean Reversion",
     logic: "Price touches lower band with SMA(200) above = bullish bounce. Upper band with SMA(200) below = bearish fade.",
     params: "Period: 20, StdDev: 2, Filter: SMA(200)",

@@ -98,7 +98,7 @@ const steps: Step[] = [
         <p>The conviction algorithm scores the setup:</p>
         <div className="space-y-1.5">
           {[
-            { factor: "Agreement", calc: "7/8 bullish = 87.5%", pts: 35, max: 40 },
+            { factor: "Agreement", calc: "7/7 non-neutral = 100%", pts: 40, max: 40 },
             { factor: "Regime Match", calc: "5/7 match trending", pts: 22, max: 25 },
             { factor: "Impulse", calc: "GREEN + bullish", pts: 20, max: 20 },
             { factor: "Strong Signals", calc: "5 signals ≥ 70", pts: 10, max: 15 },
@@ -113,7 +113,7 @@ const steps: Step[] = [
         <div className="flex items-center gap-3 mt-2 bg-bullish/10 rounded-md px-3 py-2">
           <span className="text-2xl font-black text-bullish">A+</span>
           <div>
-            <div className="text-[10px] font-mono text-foreground/70">Score: 87/100</div>
+            <div className="text-[10px] font-mono text-foreground/70">Score: 92/100</div>
             <div className="text-[9px] text-muted-foreground/50">7 agreeing signals (need 5+ for A+)</div>
           </div>
         </div>

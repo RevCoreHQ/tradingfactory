@@ -31,11 +31,13 @@ export function PipelineFlow() {
         <p>
           Every signal starts with raw data. The system fetches OHLCV candles from Finnhub (forex, commodities)
           and Twelve Data (indices, crypto) across multiple timeframes — <strong>1H and 4H in parallel</strong> for
-          all 13 instruments.
+          all 13 instruments. Candles are the sole input to the 8 mechanical systems below.
         </p>
         <p>
-          Simultaneously, fundamental data streams in from 7 sources: news sentiment, Fear &amp; Greed index,
-          central bank policy, bond yields, economic calendar events, COT positioning, and average daily range.
+          In parallel (but on a <strong>separate track</strong>), fundamental data streams from 7 sources: news
+          sentiment, Fear &amp; Greed, central bank policy, bond yields, economic calendar, COT positioning,
+          and ADR. Fundamentals feed the bias engine and AI advisor — they do <strong>not</strong> feed the
+          mechanical signal systems directly.
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mt-2">
           {["Finnhub", "Twelve Data", "FMP", "Alternative.me"].map((src) => (
@@ -94,10 +96,12 @@ export function PipelineFlow() {
           a strength score (0-100), and whether they match the current market regime.
         </p>
         <p>
-          Systems are categorized as <strong>Trend</strong> (MA Crossover, MACD, BB Breakout, Trend Stack),
-          <strong> Mean Reversion</strong> (RSI Extremes, BB Mean Reversion), or <strong>Momentum</strong> (Elder
-          Impulse, Elder-Ray). Trend systems score higher in trending markets; mean reversion systems score
-          higher in ranging markets.
+          The regime is detected from ADX: <strong>ADX &gt; 50</strong> = volatile,{" "}
+          <strong>ADX &gt; 30</strong> = trending (up/down based on DI+/DI-),{" "}
+          <strong>ADX ≤ 30</strong> = ranging. Systems are categorized as <strong>Trend</strong> (MA Crossover,
+          MACD, BB Breakout, Trend Stack), <strong>Mean Reversion</strong> (RSI Extremes, BB Mean Reversion),
+          or <strong>Momentum</strong> (Elder Impulse, Elder-Ray). Signals that don&apos;t match the regime get
+          their strength reduced by 40%.
         </p>
         <p className="text-bullish/70 font-semibold">
           This is 100% rule-based. Zero AI. Pure math from indicator values.
