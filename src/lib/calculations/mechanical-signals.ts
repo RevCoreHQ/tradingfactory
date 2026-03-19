@@ -234,6 +234,8 @@ function maSignal(candles: OHLCV[], regime: MarketRegime): MechanicalSignal {
   }
 
   const isTrending = regime === "trending_up" || regime === "trending_down";
+  // Weissman: trend signals are noise in ranging markets — reduce strength
+  if (!isTrending && direction !== "neutral") strength = Math.round(strength * 0.6);
   return {
     system: "MA Crossover",
     type: "trend",
@@ -271,6 +273,7 @@ function macdSignal(summary: TechnicalSummary, regime: MarketRegime): Mechanical
   }
 
   const isTrending = regime === "trending_up" || regime === "trending_down";
+  if (!isTrending && direction !== "neutral") strength = Math.round(strength * 0.6);
   return {
     system: "MACD",
     type: "trend",
@@ -309,6 +312,7 @@ function bbBreakoutSignal(summary: TechnicalSummary, regime: MarketRegime): Mech
   }
 
   const isTrending = regime === "trending_up" || regime === "trending_down";
+  if (!isTrending && direction !== "neutral") strength = Math.round(strength * 0.6);
   return {
     system: "BB Breakout",
     type: "trend",
@@ -373,13 +377,16 @@ function rsiExtremesSignal(
   }
 
   const isRanging = regime === "ranging";
+  const regimeMatch = isRanging || regime === "volatile";
+  // Weissman: MR signals in trending markets are dangerous — reduce strength
+  if (!regimeMatch && direction !== "neutral") strength = Math.round(strength * 0.6);
   return {
     system: "RSI Extremes",
     type: "mean_reversion",
     direction,
     strength,
     description,
-    regimeMatch: isRanging || regime === "volatile",
+    regimeMatch,
   };
 }
 
@@ -421,13 +428,15 @@ function bbMeanReversionSignal(
   }
 
   const isRanging = regime === "ranging";
+  const regimeMatch = isRanging || regime === "volatile";
+  if (!regimeMatch && direction !== "neutral") strength = Math.round(strength * 0.6);
   return {
     system: "BB MR",
     type: "mean_reversion",
     direction,
     strength,
     description,
-    regimeMatch: isRanging || regime === "volatile",
+    regimeMatch,
   };
 }
 
@@ -545,6 +554,7 @@ function trendAlignmentSignal(summary: TechnicalSummary, regime: MarketRegime): 
   }
 
   const isTrending = regime === "trending_up" || regime === "trending_down";
+  if (!isTrending && direction !== "neutral") strength = Math.round(strength * 0.6);
   return {
     system: "Trend Stack",
     type: "trend",
@@ -560,7 +570,8 @@ function trendAlignmentSignal(summary: TechnicalSummary, regime: MarketRegime): 
 function calculateConviction(
   signals: MechanicalSignal[],
   regime: MarketRegime,
-  impulseColor: ImpulseColor
+  impulseColor: ImpulseColor,
+  adx: number
 ): { tier: ConvictionTier; score: number; direction: "bullish" | "bearish" | "neutral" } {
   // Count signal directions
   const bullish = signals.filter((s) => s.direction === "bullish");
@@ -591,16 +602,21 @@ function calculateConviction(
   else if (matched >= 2) score += 15;
   else if (matched >= 1) score += 8;
 
-  // Impulse alignment (0-20 pts)
+  // Impulse alignment (-15 to +20 pts) — Elder: no longs on RED, no shorts on GREEN
   if (direction === "bullish" && impulseColor === "green") score += 20;
   else if (direction === "bearish" && impulseColor === "red") score += 20;
   else if (impulseColor === "blue") score += 5;
+  else if (direction === "bullish" && impulseColor === "red") score -= 15;
+  else if (direction === "bearish" && impulseColor === "green") score -= 15;
 
   // Strong signal bonus (0-15 pts)
   const strongSignals = signals.filter(
     (s) => s.direction === direction && s.strength >= 70
   ).length;
   score += Math.min(15, strongSignals * 5);
+
+  // ADX exhaustion penalty — extreme trends often signal reversal
+  if (adx > 50) score -= 10;
 
   // Map to tier
   let tier: ConvictionTier;
@@ -610,7 +626,7 @@ function calculateConviction(
   else if (score >= 25 && agreeing >= 2) tier = "C";
   else tier = "D";
 
-  return { tier, score: Math.min(100, score), direction };
+  return { tier, score: Math.max(0, Math.min(100, score)), direction };
 }
 
 // ==================== REASONS TO EXIT ====================
@@ -706,7 +722,8 @@ export function generateTradeDeskSetup(
   ];
 
   // 3. Calculate conviction
-  const { tier, score: convictionScore, direction } = calculateConviction(signals, regime, impulseColor);
+  const adx = summary.adx.adx;
+  const { tier, score: convictionScore, direction } = calculateConviction(signals, regime, impulseColor, adx);
 
   // 4. Consensus
   const bullish = signals.filter((s) => s.direction === "bullish").length;
@@ -737,10 +754,18 @@ export function generateTradeDeskSetup(
     summary, direction, price, atr, entry, stopLoss, takeProfit
   );
 
-  // 6. Position sizing (2% rule) — uses snapped SL for accurate risk
+  // 6. Position sizing — conviction-scaled risk (Hougaard: size up on best setups)
+  const tierRiskMultiplier: Record<ConvictionTier, number> = {
+    "A+": 1.25, // 2.5% risk at base 2%
+    "A":  1.0,  // 2.0% risk (base)
+    "B":  0.75, // 1.5% risk
+    "C":  0.5,  // 1.0% risk
+    "D":  0.25, // 0.5% risk
+  };
+  const adjustedRisk = riskPercent * tierRiskMultiplier[tier];
   const { lots, riskAmount } = calculatePositionSize(
     accountEquity,
-    riskPercent,
+    adjustedRisk,
     price,
     snapped.stopLoss,
     instrument.pipSize
@@ -757,7 +782,7 @@ export function generateTradeDeskSetup(
     category: instrument.category,
     regime,
     regimeLabel,
-    adx: summary.adx.adx,
+    adx,
     impulse: impulseColor,
     signals,
     conviction: tier,
@@ -805,7 +830,12 @@ export function rankSetupsByConviction(setups: TradeDeskSetup[]): TradeDeskSetup
   };
 
   return [...setups]
-    .filter((s) => s.conviction !== "D" && s.direction !== "neutral")
+    .filter((s) =>
+      s.conviction !== "D" &&
+      s.conviction !== "C" &&       // Bellafiore: only trade A+/A/B quality
+      s.direction !== "neutral" &&
+      s.riskReward[0] >= 1.5        // Minimum R:R gate — no edge below 1.5
+    )
     .sort((a, b) => {
       const tierDiff = tierOrder[b.conviction] - tierOrder[a.conviction];
       if (tierDiff !== 0) return tierDiff;
