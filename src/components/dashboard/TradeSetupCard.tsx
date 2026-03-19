@@ -94,6 +94,38 @@ function ImpulseBadge({ color }: { color: ImpulseColor }) {
   );
 }
 
+// ── Strategy Label ──
+
+function getStrategyLabel(setup: TradeDeskSetup): { name: string; source: string } {
+  const agreeing = setup.signals.filter((s) => s.direction === setup.direction);
+  const systems = new Set(agreeing.map((s) => s.system));
+
+  const hasImpulse = systems.has("Elder Impulse");
+  const hasElderRay = systems.has("Elder-Ray");
+  const hasMACD = systems.has("MACD");
+  const hasMA = systems.has("MA Crossover");
+  const hasBBBreak = systems.has("BB Breakout");
+  const hasTrendStack = systems.has("Trend Stack");
+  const hasRSI = systems.has("RSI Extremes");
+  const hasBBMR = systems.has("BB MR");
+
+  if (hasImpulse && hasElderRay && (hasMACD || hasMA)) return { name: "Elder Triple Screen", source: "Elder" };
+  if (hasTrendStack && hasBBBreak && hasMA) return { name: "Structural Breakout", source: "Weissman" };
+  if (hasMA && hasMACD && hasTrendStack) return { name: "Trend Continuation", source: "Weissman" };
+  if (hasBBBreak && hasImpulse) return { name: "Momentum Breakout", source: "Weissman" };
+  if (hasRSI && hasBBMR) return { name: "MR Pullback", source: "Weissman" };
+  if (hasImpulse && hasElderRay) return { name: "Elder Momentum", source: "Elder" };
+  if (hasMA && hasTrendStack) return { name: "Trend Follow", source: "Weissman" };
+  if (hasRSI || hasBBMR) return { name: "Mean Reversion", source: "Weissman" };
+
+  const counts: Record<string, number> = {};
+  for (const s of agreeing) counts[s.type] = (counts[s.type] || 0) + 1;
+  const dominant = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
+  if (dominant === "trend") return { name: "Trend Signal", source: "Multi" };
+  if (dominant === "momentum") return { name: "Momentum Signal", source: "Elder" };
+  return { name: "Confluence", source: "Multi" };
+}
+
 // ── Main Component ──
 
 export function TradeSetupCard({ setup, decimals = 5 }: { setup: TradeDeskSetup | null; decimals?: number }) {
@@ -109,7 +141,7 @@ export function TradeSetupCard({ setup, decimals = 5 }: { setup: TradeDeskSetup 
         <div className="flex flex-col items-center py-8 text-center">
           <Minus className="h-6 w-6 text-muted-foreground/30 mb-2" />
           <p className="text-xs text-muted-foreground/50">
-            No qualifying setup. Conviction below B tier or signals neutral.
+            No qualifying setup. Conviction below A tier or impulse misaligned.
           </p>
           <p className="text-[10px] text-muted-foreground/30 mt-1">
             Wait for higher confluence — quality over quantity.
@@ -121,6 +153,7 @@ export function TradeSetupCard({ setup, decimals = 5 }: { setup: TradeDeskSetup 
 
   const isBullish = setup.direction === "bullish";
   const dec = decimals;
+  const strategy = getStrategyLabel(setup);
 
   return (
     <div className="panel rounded-lg p-4 space-y-4">
@@ -131,10 +164,21 @@ export function TradeSetupCard({ setup, decimals = 5 }: { setup: TradeDeskSetup 
           <h3 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
             Trade Setup
           </h3>
+          <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted/5 border border-border/20">
+            4H Swing
+          </span>
         </div>
-        <span className="text-[9px] font-mono text-muted-foreground/40">
-          Score: {setup.convictionScore.toFixed(0)}/100
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted/10 cursor-help"
+            title={`Strategy: ${strategy.name} — derived from ${strategy.source}'s methodology`}
+          >
+            {strategy.name}
+          </span>
+          <span className="text-[9px] font-mono text-muted-foreground/40">
+            {setup.convictionScore.toFixed(0)}/100
+          </span>
+        </div>
       </div>
 
       {/* Direction + Conviction */}

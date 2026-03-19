@@ -33,6 +33,8 @@ import {
   History,
   Brain,
   RefreshCw,
+  X,
+  Zap,
 } from "lucide-react";
 
 // ==================== Copy Price ====================
@@ -183,28 +185,76 @@ function SignalDot({ direction, match }: { direction: string; match: boolean }) 
   );
 }
 
-function getTradeType(setup: TradeDeskSetup): string {
+function getStrategyLabel(setup: TradeDeskSetup): { name: string; source: string } {
   const agreeing = setup.signals.filter((s) => s.direction === setup.direction);
-  if (agreeing.length === 0) return "Mixed";
-  const counts: Record<string, number> = {};
-  for (const s of agreeing) {
-    counts[s.type] = (counts[s.type] || 0) + 1;
+  const systems = new Set(agreeing.map((s) => s.system));
+
+  // Elder Triple Screen: Impulse + Elder-Ray + (MACD or MA)
+  const hasImpulse = systems.has("Elder Impulse");
+  const hasElderRay = systems.has("Elder-Ray");
+  const hasMACD = systems.has("MACD");
+  const hasMA = systems.has("MA Crossover");
+  const hasBBBreak = systems.has("BB Breakout");
+  const hasTrendStack = systems.has("Trend Stack");
+  const hasRSI = systems.has("RSI Extremes");
+  const hasBBMR = systems.has("BB MR");
+
+  if (hasImpulse && hasElderRay && (hasMACD || hasMA)) {
+    return { name: "Elder Triple Screen", source: "Elder" };
   }
-  const dominant = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
-  const labels: Record<string, string> = {
-    trend: "Trend",
-    mean_reversion: "Mean Rev",
-    momentum: "Momentum",
-    reversal: "Reversal",
-  };
-  return labels[dominant] ?? dominant;
+
+  // Structural Breakout: Trend Stack + BB Breakout + MA
+  if (hasTrendStack && hasBBBreak && hasMA) {
+    return { name: "Structural Breakout", source: "Weissman" };
+  }
+
+  // Trend Continuation: MA + MACD + Trend Stack (classic trend-following)
+  if (hasMA && hasMACD && hasTrendStack) {
+    return { name: "Trend Continuation", source: "Weissman" };
+  }
+
+  // Momentum Breakout: BB Breakout + Impulse + MACD
+  if (hasBBBreak && hasImpulse) {
+    return { name: "Momentum Breakout", source: "Weissman" };
+  }
+
+  // Mean Reversion Pullback: RSI Extremes + BB MR
+  if (hasRSI && hasBBMR) {
+    return { name: "MR Pullback", source: "Weissman" };
+  }
+
+  // Elder Momentum: Impulse + Elder-Ray
+  if (hasImpulse && hasElderRay) {
+    return { name: "Elder Momentum", source: "Elder" };
+  }
+
+  // Trend-following stack: MA + Trend Stack
+  if (hasMA && hasTrendStack) {
+    return { name: "Trend Follow", source: "Weissman" };
+  }
+
+  // RSI-driven mean reversion
+  if (hasRSI || hasBBMR) {
+    return { name: "Mean Reversion", source: "Weissman" };
+  }
+
+  // Fallback based on dominant type
+  const counts: Record<string, number> = {};
+  for (const s of agreeing) counts[s.type] = (counts[s.type] || 0) + 1;
+  const dominant = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
+  if (dominant === "trend") return { name: "Trend Signal", source: "Multi" };
+  if (dominant === "momentum") return { name: "Momentum Signal", source: "Elder" };
+  return { name: "Confluence", source: "Multi" };
 }
 
-function TradeTypeBadge({ setup }: { setup: TradeDeskSetup }) {
-  const label = getTradeType(setup);
+function StrategyBadge({ setup }: { setup: TradeDeskSetup }) {
+  const { name, source } = getStrategyLabel(setup);
   return (
-    <span className="text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted/10">
-      {label}
+    <span
+      className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted/10 cursor-help"
+      title={`Strategy: ${name} — derived from ${source}'s methodology`}
+    >
+      {name}
     </span>
   );
 }
@@ -319,7 +369,10 @@ function SetupCard({ tracked, rank }: { tracked: TrackedSetup; rank: number }) {
         </span>
 
         <StatusBadge status={status} />
-        <TradeTypeBadge setup={setup} />
+        <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted/5 border border-border/20">
+          4H Swing
+        </span>
+        <StrategyBadge setup={setup} />
 
         <div className="flex items-center gap-1 ml-auto">
           {setup.signals.map((s, i) => (
@@ -819,6 +872,133 @@ function TradeDeskSkeleton() {
   );
 }
 
+// ==================== Setup Alert Banner ====================
+
+interface SetupAlert {
+  id: string;
+  symbol: string;
+  direction: "bullish" | "bearish";
+  conviction: ConvictionTier;
+  score: number;
+  strategy: string;
+  timestamp: number;
+}
+
+function useSetupAlerts(setups: TradeDeskSetup[]) {
+  const [alerts, setAlerts] = useState<SetupAlert[]>([]);
+  const seenRef = useRef<Set<string>>(new Set());
+  const initializedRef = useRef(false);
+
+  useEffect(() => {
+    if (setups.length === 0) return;
+
+    // Skip alerting on first load — only alert on NEW setups
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      for (const s of setups) {
+        seenRef.current.add(`${s.instrumentId}:${s.direction}`);
+      }
+      return;
+    }
+
+    const newAlerts: SetupAlert[] = [];
+    for (const s of setups) {
+      const key = `${s.instrumentId}:${s.direction}`;
+      if (seenRef.current.has(key)) continue;
+      seenRef.current.add(key);
+
+      // Only alert on A+ and A
+      if (s.conviction !== "A+" && s.conviction !== "A") continue;
+      if (s.direction === "neutral") continue;
+
+      const { name } = getStrategyLabel(s);
+      newAlerts.push({
+        id: `${key}:${Date.now()}`,
+        symbol: s.symbol,
+        direction: s.direction,
+        conviction: s.conviction,
+        score: s.convictionScore,
+        strategy: name,
+        timestamp: Date.now(),
+      });
+    }
+
+    if (newAlerts.length > 0) {
+      setAlerts((prev) => [...newAlerts, ...prev].slice(0, 5));
+    }
+
+    // Clean up stale keys from setups that no longer exist
+    const currentKeys = new Set(setups.map((s) => `${s.instrumentId}:${s.direction}`));
+    for (const key of seenRef.current) {
+      if (!currentKeys.has(key)) seenRef.current.delete(key);
+    }
+  }, [setups]);
+
+  const dismiss = (id: string) => setAlerts((prev) => prev.filter((a) => a.id !== id));
+  const dismissAll = () => setAlerts([]);
+
+  // Auto-dismiss after 30 seconds
+  useEffect(() => {
+    if (alerts.length === 0) return;
+    const timer = setInterval(() => {
+      const now = Date.now();
+      setAlerts((prev) => prev.filter((a) => now - a.timestamp < 30_000));
+    }, 5_000);
+    return () => clearInterval(timer);
+  }, [alerts.length]);
+
+  return { alerts, dismiss, dismissAll };
+}
+
+function SetupAlertBanner({ alerts, onDismiss }: { alerts: SetupAlert[]; onDismiss: (id: string) => void }) {
+  if (alerts.length === 0) return null;
+
+  return (
+    <div className="space-y-1.5 mb-4">
+      {alerts.map((alert) => (
+        <div
+          key={alert.id}
+          className={cn(
+            "flex items-center gap-3 px-4 py-2.5 rounded-lg border animate-in slide-in-from-top-2 fade-in duration-300",
+            alert.conviction === "A+"
+              ? "bg-bullish/10 border-bullish/30"
+              : "bg-bullish/8 border-bullish/20"
+          )}
+        >
+          <Zap className={cn(
+            "h-4 w-4 shrink-0",
+            alert.conviction === "A+" ? "text-bullish animate-pulse" : "text-bullish"
+          )} />
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-foreground">
+                New {alert.conviction} Setup
+              </span>
+              <span className={cn(
+                "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded",
+                alert.direction === "bullish" ? "bg-bullish/15 text-bullish" : "bg-bearish/15 text-bearish"
+              )}>
+                {alert.direction === "bullish" ? "LONG" : "SHORT"} {alert.symbol}
+              </span>
+              <span className="text-[9px] text-muted-foreground/60">
+                {alert.strategy} · Score {alert.score}
+              </span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => onDismiss(alert.id)}
+            className="p-1 rounded hover:bg-foreground/5 text-muted-foreground/40 hover:text-muted-foreground shrink-0"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ==================== Main Component ====================
 
 function useTimeAgo(deps: unknown[]) {
@@ -851,6 +1031,7 @@ export function AITradeDesk() {
   const { setups, portfolioRisk: baseRisk, isLoading, error, refresh } = useTradeDeskData();
   const { activeSetups, historySetups, confluencePatterns } = useTrackedSetups(setups);
   const timeAgo = useTimeAgo([setups]);
+  const { alerts: setupAlerts, dismiss: dismissAlert } = useSetupAlerts(setups);
 
   const portfolioRisk = useMemo(
     () =>
@@ -907,6 +1088,8 @@ export function AITradeDesk() {
           </button>
         </div>
       </div>
+
+      <SetupAlertBanner alerts={setupAlerts} onDismiss={dismissAlert} />
 
       {activeTab === "active" && (() => {
         const actionable = activeSetups.filter((t) => isActionable(t.status));

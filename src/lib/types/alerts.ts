@@ -2,7 +2,8 @@ export type AlertType =
   | "confluence_approach"
   | "zone_approach"
   | "bias_shift"
-  | "session_optimal";
+  | "session_optimal"
+  | "high_conviction_setup";
 
 export type AlertSeverity = "info" | "warning" | "danger";
 
