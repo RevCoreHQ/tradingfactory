@@ -12,7 +12,7 @@ import { useAllBiasScores } from "@/lib/hooks/useAllBiasScores";
 import { useSmartAlerts } from "@/lib/hooks/useSmartAlerts";
 import { useRealtimePrices } from "@/lib/hooks/useRealtimePrices";
 import { useTradeDeskData } from "@/lib/hooks/useTradeDeskData";
-import { isSetupActive } from "@/lib/calculations/setup-tracker";
+import { isSetupActive, isActionable } from "@/lib/calculations/setup-tracker";
 import { computePortfolioRisk } from "@/lib/calculations/risk-engine";
 import { DEFAULT_RISK_CONFIG } from "@/lib/types/signals";
 import { loadTrackedSetups } from "@/lib/storage/setup-storage";
@@ -67,7 +67,7 @@ export function TradingDeskPage() {
         <MarketHoursStrip />
         <AccountStatusBar
           portfolioRisk={portfolioRisk}
-          openPositions={activeSetups.length}
+          openPositions={activeSetups.filter((t) => isActionable(t.status)).length}
           maxPositions={DEFAULT_RISK_CONFIG.maxOpenPositions}
         />
 

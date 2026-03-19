@@ -1129,7 +1129,6 @@ export function AITradeDesk() {
 
       {activeTab === "active" && (() => {
         const actionable = activeSetups.filter((t) => isActionable(t.status));
-        const running = activeSetups.filter((t) => !isActionable(t.status));
         return (
           <>
             <StatsRow setups={setups} portfolioRisk={portfolioRisk} />
@@ -1147,19 +1146,6 @@ export function AITradeDesk() {
                 <p className="text-xs text-muted-foreground/50">
                   No actionable setups right now. Waiting for new entry signals.
                 </p>
-              </div>
-            )}
-
-            {running.length > 0 && (
-              <div className="mt-4">
-                <div className="text-[9px] font-semibold text-muted-foreground/40 uppercase tracking-wider mb-2">
-                  Running — Do Not Chase
-                </div>
-                <div className="space-y-1 opacity-60">
-                  {running.map((tracked, i) => (
-                    <SetupCard key={tracked.id} tracked={tracked} rank={actionable.length + i + 1} />
-                  ))}
-                </div>
               </div>
             )}
           </>
