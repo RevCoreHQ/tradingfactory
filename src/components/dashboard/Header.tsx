@@ -8,7 +8,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { AlertsBell } from "@/components/alerts/AlertsPanel";
 
 interface HeaderProps {
-  mode?: "overview" | "analysis";
+  mode?: "overview" | "analysis" | "brain";
 }
 
 export function Header({ mode = "analysis" }: HeaderProps) {
@@ -48,6 +48,17 @@ export function Header({ mode = "analysis" }: HeaderProps) {
             )}
           >
             Analysis
+          </Link>
+          <Link
+            href="/brain"
+            className={cn(
+              "px-4 py-1.5 rounded-full text-xs font-medium transition-all",
+              mode === "brain"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Brain
           </Link>
         </div>
 
