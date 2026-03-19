@@ -116,14 +116,32 @@ function RegimeBadge({ regime, adx }: { regime: MarketRegime; adx: number }) {
 }
 
 function ImpulseBadge({ color }: { color: ImpulseColor }) {
-  const config: Record<ImpulseColor, { label: string; cls: string; dot: string }> = {
-    green: { label: "GREEN", cls: "text-bullish", dot: "bg-bullish" },
-    red: { label: "RED", cls: "text-bearish", dot: "bg-bearish" },
-    blue: { label: "BLUE", cls: "text-neutral-accent", dot: "bg-neutral-accent" },
+  const config: Record<ImpulseColor, { label: string; cls: string; dot: string; tooltip: string }> = {
+    green: {
+      label: "GREEN",
+      cls: "text-bullish",
+      dot: "bg-bullish",
+      tooltip: "GREEN — Buying pressure. MACD histogram rising + EMA slope up. Favorable for longs.",
+    },
+    red: {
+      label: "RED",
+      cls: "text-bearish",
+      dot: "bg-bearish",
+      tooltip: "RED — Selling pressure. MACD histogram falling + EMA slope down. Favorable for shorts.",
+    },
+    blue: {
+      label: "BLUE",
+      cls: "text-neutral-accent",
+      dot: "bg-neutral-accent",
+      tooltip: "BLUE — Mixed momentum. MACD and EMA disagree. Exercise caution — wait for clarity.",
+    },
   };
   const c = config[color];
   return (
-    <span className={cn("inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider", c.cls)}>
+    <span
+      className={cn("inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider cursor-help", c.cls)}
+      title={c.tooltip}
+    >
       <span className={cn("h-2 w-2 rounded-full animate-pulse", c.dot)} />
       {c.label}
     </span>
@@ -278,7 +296,10 @@ function SetupCard({ tracked, rank }: { tracked: TrackedSetup; rank: number }) {
           {rank}
         </span>
 
-        <ConvictionBadge tier={setup.conviction} />
+        <div className="flex items-center gap-1 shrink-0">
+          <ConvictionBadge tier={setup.conviction} />
+          <span className="text-[9px] font-mono text-muted-foreground/40">{setup.convictionScore}</span>
+        </div>
 
         <div className="flex items-center gap-2 min-w-[110px]">
           <DirectionArrow direction={setup.direction} />

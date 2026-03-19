@@ -100,6 +100,7 @@ export interface TradingAdvisorSetupInput {
   riskReward: string;
   positionSize: string;
   currentPrice: number;
+  trackedStatus?: string; // e.g. "Awaiting Entry", "Entry Zone", "Running (BE)" — from setup tracker
 }
 
 export interface TradingAdvisorRequest {

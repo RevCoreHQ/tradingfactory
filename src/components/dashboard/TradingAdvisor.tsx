@@ -1,8 +1,11 @@
 "use client";
 
+import { useState, useEffect, useMemo } from "react";
 import { useTradeDeskData } from "@/lib/hooks/useTradeDeskData";
 import { useTradingAdvisor } from "@/lib/hooks/useTradingAdvisor";
 import { useMarketNews, useFearGreed, useBondYields } from "@/lib/hooks/useMarketData";
+import { loadTrackedSetups } from "@/lib/storage/setup-storage";
+import { getStatusLabel } from "@/lib/calculations/setup-tracker";
 import { cn } from "@/lib/utils";
 import {
   MessageSquare,
@@ -196,6 +199,25 @@ export function TradingAdvisor() {
   const { data: fearGreedData } = useFearGreed();
   const { data: bondData } = useBondYields();
 
+  // Read tracked setup statuses from localStorage (decoupled from AITradeDesk)
+  const [trackedStatuses, setTrackedStatuses] = useState<Record<string, string>>({});
+  useEffect(() => {
+    const update = () => {
+      const tracked = loadTrackedSetups();
+      const statuses: Record<string, string> = {};
+      for (const t of tracked) {
+        // Keep the most "advanced" status per instrument (active > pending)
+        if (!statuses[t.setup.instrumentId]) {
+          statuses[t.setup.instrumentId] = getStatusLabel(t.status);
+        }
+      }
+      setTrackedStatuses(statuses);
+    };
+    update();
+    const interval = setInterval(update, 15_000);
+    return () => clearInterval(interval);
+  }, []);
+
   const fearGreed = fearGreedData?.current
     ? { value: fearGreedData.current.value, label: fearGreedData.current.label }
     : DEFAULT_FEAR_GREED;
@@ -216,6 +238,7 @@ export function TradingAdvisor() {
         })),
         accountEquity: portfolioRisk.accountEquity,
         riskPercent: portfolioRisk.riskPercent,
+        trackedStatuses,
       }
     : null;
 

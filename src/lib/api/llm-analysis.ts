@@ -840,11 +840,12 @@ Your style:
 Rules:
 - greeting: 1 sentence setting the tone for the session (reference market regime or dominant theme)
 - marketRegime: 2-3 sentences assessing the overall market regime across instruments, what it means for strategy selection
-- topPick: Your #1 setup — explain WHY based on the mechanical signals and conviction data. Be specific about which systems agree.
-- otherSetups: 2-3 one-sentence notes on other viable setups
-- avoidList: 1-2 instruments/situations to avoid and why
+- topPick: Your #1 ACTIONABLE setup — only recommend setups still "Awaiting Entry" or "Entry Zone". Never recommend setups already running (Running BE/TP1/TP2). Explain WHY based on the mechanical signals and conviction data. Be specific about which systems agree.
+- otherSetups: 2-3 one-sentence notes on other ACTIONABLE setups. Skip setups already running at breakeven or beyond.
+- avoidList: 1-2 instruments/situations to avoid and why (include any setups already running that should not be chased)
 - riskWarning: Key risk to watch right now (economic event, regime shift, correlation, etc.)
 - deskNote: One piece of wisdom from the books — connect it to today's conditions (e.g. "As Elder says, the impulse is RED on weekly — no longs until it turns blue" or "Weissman's combined system approach says run both trend and MR here")
+- If a setup has a "Trade Status" field, it means the position is already being tracked. "Awaiting Entry" and "Entry Zone" are still tradeable. "Running (BE)", "Running (TP1)", "Running (TP2)" mean the trade has moved past entry — do NOT recommend entering these.
 - Respond with valid JSON only.`;
 
 function buildTradingAdvisorPrompt(req: TradingAdvisorRequest): string {
@@ -865,6 +866,7 @@ ${req.bondYields.map((b) => `  ${b.maturity}: ${b.yield.toFixed(3)}% (${b.change
 `;
 
   for (const setup of req.setups) {
+    const statusLine = setup.trackedStatus ? `  Trade Status: ${setup.trackedStatus}\n` : "";
     prompt += `
 ${setup.symbol} (${setup.category}) — ${setup.conviction} conviction (score: ${setup.convictionScore})
   Direction: ${setup.direction} | Regime: ${setup.regime} (ADX ${setup.adx.toFixed(0)}) | Impulse: ${setup.impulse}
@@ -872,7 +874,7 @@ ${setup.symbol} (${setup.category}) — ${setup.conviction} conviction (score: $
   Systems agreeing: ${setup.systemsAgreeing.join(", ") || "none"}
   Price: ${setup.currentPrice} | Entry: ${setup.entry} | SL: ${setup.stopLoss} | TP: ${setup.takeProfit}
   R:R: ${setup.riskReward} | Size: ${setup.positionSize}
-`;
+${statusLine}`;
   }
 
   prompt += `
@@ -900,7 +902,7 @@ const advisorCache = new Map<string, CacheEntry<TradingAdvisorResult>>();
 const ADVISOR_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 function getAdvisorCacheKey(req: TradingAdvisorRequest): string {
-  return `advisor:${req.setups.map((s) => `${s.instrument}:${s.conviction}`).join("|")}`;
+  return `advisor:${req.setups.map((s) => `${s.instrument}:${s.conviction}:${s.direction}:${s.impulse}:${s.regime}`).join("|")}`;
 }
 
 function parseAdvisorResult(raw: string, provider: LLMProvider): TradingAdvisorResult | null {

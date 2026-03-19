@@ -62,6 +62,7 @@ interface UseTradingAdvisorParams {
   bondYields: { maturity: string; yield: number; change: number }[];
   accountEquity: number;
   riskPercent: number;
+  trackedStatuses?: Record<string, string>; // instrumentId -> status label
 }
 
 export function useTradingAdvisor(params: UseTradingAdvisorParams | null) {
@@ -98,6 +99,7 @@ export function useTradingAdvisor(params: UseTradingAdvisorParams | null) {
 
       const impulseSummary = `GREEN: ${impulseCounts["green"] || 0}, RED: ${impulseCounts["red"] || 0}, BLUE: ${impulseCounts["blue"] || 0}`;
 
+      const trackedStatuses = params.trackedStatuses ?? {};
       const request: TradingAdvisorRequest = {
         setups: topSetups.map((s) => ({
           instrument: s.instrumentId,
@@ -119,6 +121,7 @@ export function useTradingAdvisor(params: UseTradingAdvisorParams | null) {
           riskReward: `1:${s.riskReward[0]} / 1:${s.riskReward[1]} / 1:${s.riskReward[2]}`,
           positionSize: `${s.positionSizeLots} lots ($${s.riskAmount} risk)`,
           currentPrice: s.currentPrice,
+          trackedStatus: trackedStatuses[s.instrumentId],
         })),
         regimeSummary,
         consensusSummary,
