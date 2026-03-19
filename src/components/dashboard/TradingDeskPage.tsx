@@ -1,9 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
 import { Header } from "./Header";
 import { SectionHeader } from "./SectionHeader";
-import { AccountStatusBar } from "./AccountStatusBar";
 import { AITradeDesk } from "./AITradeDesk";
 import { TradingAdvisor } from "./TradingAdvisor";
 import { MarketHoursStrip } from "@/components/common/MarketHours";
@@ -11,52 +9,12 @@ import { EtheralShadow } from "@/components/ui/etheral-shadow";
 import { useAllBiasScores } from "@/lib/hooks/useAllBiasScores";
 import { useSmartAlerts } from "@/lib/hooks/useSmartAlerts";
 import { useRealtimePrices } from "@/lib/hooks/useRealtimePrices";
-import { useTradeDeskData } from "@/lib/hooks/useTradeDeskData";
-import { isSetupActive, isActionable } from "@/lib/calculations/setup-tracker";
-import { computePortfolioRisk } from "@/lib/calculations/risk-engine";
-import { DEFAULT_RISK_CONFIG } from "@/lib/types/signals";
-import { loadTrackedSetups } from "@/lib/storage/setup-storage";
-import type { TrackedSetup } from "@/lib/types/signals";
 import { Brain, LayoutList } from "lucide-react";
 
 export function TradingDeskPage() {
   useAllBiasScores();
   useSmartAlerts();
   useRealtimePrices();
-
-  const { portfolioRisk: baseRisk } = useTradeDeskData();
-  const [trackedSetups, setTrackedSetups] = useState<TrackedSetup[]>([]);
-
-  useEffect(() => {
-    setTrackedSetups(loadTrackedSetups());
-    const interval = setInterval(() => setTrackedSetups(loadTrackedSetups()), 10_000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const { activeSetups, historySetups } = useMemo(() => {
-    return {
-      activeSetups: trackedSetups.filter((t) => isSetupActive(t.status)),
-      historySetups: trackedSetups.filter((t) => !isSetupActive(t.status)),
-    };
-  }, [trackedSetups]);
-
-  // Only count actionable setups (pending/active) for heat — running/BE
-  // setups are hidden from the desk so they shouldn't inflate risk
-  const actionableSetups = useMemo(
-    () => activeSetups.filter((t) => isActionable(t.status)),
-    [activeSetups]
-  );
-
-  const portfolioRisk = useMemo(
-    () =>
-      computePortfolioRisk(
-        baseRisk.accountEquity,
-        baseRisk.riskPercent,
-        actionableSetups,
-        historySetups
-      ),
-    [baseRisk.accountEquity, baseRisk.riskPercent, actionableSetups, historySetups]
-  );
 
   return (
     <div className="relative min-h-screen bg-background">
@@ -72,11 +30,6 @@ export function TradingDeskPage() {
       <div className="relative z-10">
         <Header mode="desk" />
         <MarketHoursStrip />
-        <AccountStatusBar
-          portfolioRisk={portfolioRisk}
-          openPositions={activeSetups.filter((t) => isActionable(t.status)).length}
-          maxPositions={DEFAULT_RISK_CONFIG.maxOpenPositions}
-        />
 
         <main className="max-w-[1600px] mx-auto px-8 py-6 space-y-8">
           <section>
