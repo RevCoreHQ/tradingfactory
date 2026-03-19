@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { FundamentalScore, TechnicalScore, BiasSignal } from "@/lib/types/bias";
 import { GlassCard } from "@/components/common/GlassCard";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
@@ -36,7 +37,13 @@ function ScoreBar({ label, value, weight }: { label: string; value: number; weig
 }
 
 export function BiasBreakdown({ fundamentalScore, technicalScore, signals, compact }: BiasBreakdownProps) {
+  const [signalsExpanded, setSignalsExpanded] = useState(false);
+
   if (compact) {
+    const COLLAPSED_COUNT = 3;
+    const visibleSignals = signalsExpanded ? signals.slice(0, 6) : signals.slice(0, COLLAPSED_COUNT);
+    const hasMore = signals.length > COLLAPSED_COUNT;
+
     return (
       <div className="space-y-3">
         {/* Compact score summary */}
@@ -75,28 +82,44 @@ export function BiasBreakdown({ fundamentalScore, technicalScore, signals, compa
           </div>
         </GlassCard>
 
-        {/* Compact signals */}
-        {signals.length > 0 && (
-          <GlassCard delay={0.2}>
-            <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Key Signals</h3>
-            <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
-              {signals.slice(0, 6).map((signal, i) => (
-                <div key={i} className="flex items-start gap-1.5 text-[10px]">
-                  <span
-                    className={cn(
-                      "mt-1 h-1.5 w-1.5 rounded-full shrink-0",
-                      signal.signal === "bullish" ? "bg-bullish" : signal.signal === "bearish" ? "bg-bearish" : "bg-neutral-accent"
-                    )}
-                  />
-                  <div className="min-w-0">
-                    <span className="font-semibold text-foreground">{signal.source}</span>
-                    <span className="text-muted-foreground/70"> — {signal.description}</span>
-                  </div>
-                </div>
-              ))}
+        {/* Compact signals — always renders to prevent layout shift */}
+        <GlassCard delay={0.2}>
+          <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Key Signals</h3>
+          {signals.length === 0 ? (
+            <div className="space-y-1.5">
+              <div className="h-3 w-3/4 shimmer rounded" />
+              <div className="h-3 w-2/3 shimmer rounded" />
+              <div className="h-3 w-1/2 shimmer rounded" />
             </div>
-          </GlassCard>
-        )}
+          ) : (
+            <>
+              <div className="space-y-1.5">
+                {visibleSignals.map((signal, i) => (
+                  <div key={i} className="flex items-start gap-1.5 text-[10px]">
+                    <span
+                      className={cn(
+                        "mt-1 h-1.5 w-1.5 rounded-full shrink-0",
+                        signal.signal === "bullish" ? "bg-bullish" : signal.signal === "bearish" ? "bg-bearish" : "bg-neutral-accent"
+                      )}
+                    />
+                    <div className="min-w-0">
+                      <span className="font-semibold text-foreground">{signal.source}</span>
+                      <span className="text-muted-foreground/70"> — {signal.description}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {hasMore && (
+                <button
+                  onClick={() => setSignalsExpanded(!signalsExpanded)}
+                  className="mt-2 text-[10px] text-neutral-accent hover:text-foreground transition-colors"
+                >
+                  {signalsExpanded ? "Show less" : `Show ${signals.length - COLLAPSED_COUNT} more`}
+                </button>
+              )}
+            </>
+          )}
+        </GlassCard>
       </div>
     );
   }
