@@ -174,7 +174,8 @@ export function detectRegime(summary: TechnicalSummary): {
   if (adx > 50) {
     return { regime: "volatile", label: `Volatile (ADX ${adx.toFixed(0)})` };
   }
-  if (adx > 20) {
+  if (adx > 30) {
+    // Wilder: ADX > 30 = strong trend (20-30 is weak/developing — treat as ranging)
     if (plusDI > minusDI) {
       return { regime: "trending_up", label: `Trending Up (ADX ${adx.toFixed(0)})` };
     }
@@ -328,25 +329,10 @@ function rsiExtremesSignal(
   candles: OHLCV[],
   regime: MarketRegime
 ): MechanicalSignal {
-  // Weissman: RSI(9)<35 AND Close>SMA(200) = buy; RSI(9)>65 AND Close<SMA(200) = sell
+  // Weissman: RSI extremes with SMA(200) filter — using RSI(14) for less noise
   const closes = candles.map((c) => c.close);
   const price = summary.currentPrice;
-
-  // Compute RSI(9) from candles
-  let rsi9 = summary.rsi.value; // Fallback to RSI(14)
-  if (closes.length > 10) {
-    // Quick RSI(9) calculation
-    const period = 9;
-    let gains = 0, losses = 0;
-    for (let i = closes.length - period; i < closes.length; i++) {
-      const diff = closes[i] - closes[i - 1];
-      if (diff > 0) gains += diff; else losses -= diff;
-    }
-    const avgGain = gains / period;
-    const avgLoss = losses / period;
-    const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
-    rsi9 = 100 - 100 / (1 + rs);
-  }
+  const rsi = summary.rsi.value; // RSI(14) — standard, less noisy than RSI(9)
 
   // SMA(200) filter
   const sma200 = calcSMA(closes, 200);
@@ -355,24 +341,24 @@ function rsiExtremesSignal(
   const belowSma200 = hasSma200 && price < sma200[sma200.length - 1];
 
   let direction: "bullish" | "bearish" | "neutral" = "neutral";
-  let description = `RSI(9) at ${rsi9.toFixed(0)}`;
+  let description = `RSI(14) at ${rsi.toFixed(0)}`;
   let strength = 20;
 
-  if (rsi9 < 35 && aboveSma200) {
+  if (rsi < 30 && aboveSma200) {
     direction = "bullish";
-    description = `RSI(9) oversold (${rsi9.toFixed(0)}) + price above SMA(200) — mean reversion buy`;
+    description = `RSI(14) oversold (${rsi.toFixed(0)}) + price above SMA(200) — mean reversion buy`;
     strength = 80;
-  } else if (rsi9 > 65 && belowSma200) {
+  } else if (rsi > 70 && belowSma200) {
     direction = "bearish";
-    description = `RSI(9) overbought (${rsi9.toFixed(0)}) + price below SMA(200) — mean reversion sell`;
+    description = `RSI(14) overbought (${rsi.toFixed(0)}) + price below SMA(200) — mean reversion sell`;
     strength = 80;
-  } else if (rsi9 < 35) {
+  } else if (rsi < 30) {
     direction = "bullish";
-    description = `RSI(9) oversold (${rsi9.toFixed(0)}) — needs SMA(200) filter confirmation`;
+    description = `RSI(14) oversold (${rsi.toFixed(0)}) — needs SMA(200) filter confirmation`;
     strength = 50;
-  } else if (rsi9 > 65) {
+  } else if (rsi > 70) {
     direction = "bearish";
-    description = `RSI(9) overbought (${rsi9.toFixed(0)}) — needs SMA(200) filter confirmation`;
+    description = `RSI(14) overbought (${rsi.toFixed(0)}) — needs SMA(200) filter confirmation`;
     strength = 50;
   }
 
@@ -736,17 +722,17 @@ export function generateTradeDeskSetup(
   const isBullish = direction === "bullish";
   const dir = isBullish ? 1 : -1;
 
-  const entrySpread = atr * 0.25;
+  const entrySpread = atr * 0.5; // Wider entry zone — room for confirmation
   const entry: [number, number] = isBullish
     ? [price - entrySpread, price]
     : [price, price + entrySpread];
 
-  const slDistance = atr * 1.0; // 1 ATR stop (Elder: 2-bar low/high)
+  const slDistance = atr * 2.0; // 2 ATR stop — room to breathe past noise
   const stopLoss = price - dir * slDistance;
 
-  const tp1 = price + dir * atr * 1.5;
-  const tp2 = price + dir * atr * 2.5;
-  const tp3 = price + dir * atr * 3.5;
+  const tp1 = price + dir * atr * 3.0; // 1.5 R:R (3 ATR / 2 ATR SL)
+  const tp2 = price + dir * atr * 5.0; // 2.5 R:R
+  const tp3 = price + dir * atr * 7.0; // 3.5 R:R
   const takeProfit: [number, number, number] = [tp1, tp2, tp3];
 
   // 5b. Snap levels to structural S/R, pivots, fibs
@@ -832,9 +818,13 @@ export function rankSetupsByConviction(setups: TradeDeskSetup[]): TradeDeskSetup
   return [...setups]
     .filter((s) =>
       s.conviction !== "D" &&
-      s.conviction !== "C" &&       // Bellafiore: only trade A+/A/B quality
+      s.conviction !== "C" &&
+      s.conviction !== "B" &&       // Bellafiore: only trade A+/A quality
       s.direction !== "neutral" &&
-      s.riskReward[0] >= 1.5        // Minimum R:R gate — no edge below 1.5
+      s.riskReward[0] >= 1.5 &&     // Minimum R:R gate — no edge below 1.5
+      // Elder hard gate: NEVER trade against impulse color
+      !(s.direction === "bullish" && s.impulse === "red") &&
+      !(s.direction === "bearish" && s.impulse === "green")
     )
     .sort((a, b) => {
       const tierDiff = tierOrder[b.conviction] - tierOrder[a.conviction];

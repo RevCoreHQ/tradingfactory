@@ -90,7 +90,7 @@ function loadWatchlistIds(): string[] {
 
 export const useMarketStore = create<MarketStore>((set) => ({
   selectedInstrument: INSTRUMENTS[0],
-  selectedTimeframe: "1h",
+  selectedTimeframe: "4h",
   biasTimeframe: "intraday",
   biasResults: {},
   allBiasResults: { intraday: {}, intraweek: {} },

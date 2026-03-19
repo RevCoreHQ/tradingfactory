@@ -45,10 +45,13 @@ export function InstrumentAnalysis() {
   const mechanicalSetup = useMemo(() => {
     if (!indicators || candles.length < 30) return null;
     const setup = generateTradeDeskSetup(candles, indicators, instrument);
-    // Filter same as overview: only B+ conviction, non-neutral, R:R >= 1.5
-    if (setup.conviction === "D" || setup.conviction === "C") return null;
+    // Filter same as overview: only A+/A conviction, non-neutral, R:R >= 1.5, impulse aligned
+    if (setup.conviction === "D" || setup.conviction === "C" || setup.conviction === "B") return null;
     if (setup.direction === "neutral") return null;
     if (setup.riskReward[0] < 1.5) return null;
+    // Elder hard gate: never trade against impulse
+    if (setup.direction === "bullish" && setup.impulse === "red") return null;
+    if (setup.direction === "bearish" && setup.impulse === "green") return null;
     return setup;
   }, [candles, indicators, instrument]);
 

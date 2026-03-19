@@ -25,7 +25,7 @@ async function fetchAllCandles(): Promise<Record<string, OHLCV[]>> {
   const promises = INSTRUMENTS.map(async (inst) => {
     try {
       const res = await fetch(
-        `/api/technicals/price-data?instrument=${inst.id}&timeframe=1h`
+        `/api/technicals/price-data?instrument=${inst.id}&timeframe=4h`
       );
       if (!res.ok) return;
       const data = await res.json();
@@ -72,7 +72,7 @@ export function useTradeDeskData(confluencePatterns?: Record<string, ConfluenceP
       const candles = candleMap[inst.id];
       if (!candles || candles.length < 30) continue;
 
-      const summary = calculateAllIndicators(candles, inst.id, "1h");
+      const summary = calculateAllIndicators(candles, inst.id, "4h");
       const setup = generateTradeDeskSetup(
         candles,
         summary,
