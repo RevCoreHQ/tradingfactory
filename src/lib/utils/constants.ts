@@ -91,6 +91,28 @@ export const INSTRUMENTS: Instrument[] = [
     pipSize: 0.01,
     decimalPlaces: 2,
   },
+  {
+    id: "XAG_USD",
+    symbol: "XAG/USD",
+    displayName: "Silver",
+    category: "commodity",
+    alphavantageSymbol: "XAG",
+    alphavantageToSymbol: "USD",
+    finnhubSymbol: "OANDA:XAG_USD",
+    pipSize: 0.001,
+    decimalPlaces: 3,
+  },
+  {
+    id: "USOIL",
+    symbol: "USOIL",
+    displayName: "US Oil (WTI)",
+    category: "commodity",
+    alphavantageSymbol: "WTI",
+    alphavantageToSymbol: "USD",
+    finnhubSymbol: "OANDA:WTICO_USD",
+    pipSize: 0.01,
+    decimalPlaces: 2,
+  },
   // Crypto
   {
     id: "BTC_USD",

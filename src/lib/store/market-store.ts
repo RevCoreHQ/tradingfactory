@@ -37,6 +37,7 @@ interface MarketStore {
   alertConfig: AlertConfig;
   realtimeQuotes: Record<string, RealtimeQuote>;
   wsConnected: boolean;
+  watchlistIds: string[];
 
   setSelectedInstrument: (instrument: Instrument) => void;
   setSelectedTimeframe: (timeframe: string) => void;
@@ -55,6 +56,22 @@ interface MarketStore {
   setAlertConfig: (config: Partial<AlertConfig>) => void;
   updateRealtimePrice: (instrumentId: string, price: number, timestamp: number) => void;
   setWsConnected: (connected: boolean) => void;
+  addToWatchlist: (id: string) => void;
+  removeFromWatchlist: (id: string) => void;
+}
+
+function loadWatchlistIds(): string[] {
+  if (typeof window === "undefined") return INSTRUMENTS.map((i) => i.id);
+  try {
+    const stored = localStorage.getItem("watchlistIds");
+    if (stored) {
+      const ids = JSON.parse(stored) as string[];
+      // Validate: only keep IDs that exist in INSTRUMENTS
+      const valid = ids.filter((id) => INSTRUMENTS.some((i) => i.id === id));
+      if (valid.length > 0) return valid;
+    }
+  } catch {}
+  return INSTRUMENTS.map((i) => i.id);
 }
 
 export const useMarketStore = create<MarketStore>((set) => ({
@@ -73,6 +90,7 @@ export const useMarketStore = create<MarketStore>((set) => ({
   alertConfig: DEFAULT_ALERT_CONFIG,
   realtimeQuotes: {},
   wsConnected: false,
+  watchlistIds: loadWatchlistIds(),
 
   setSelectedInstrument: (instrument) => set({ selectedInstrument: instrument }),
   setSelectedTimeframe: (timeframe) => set({ selectedTimeframe: timeframe }),
@@ -115,4 +133,18 @@ export const useMarketStore = create<MarketStore>((set) => ({
       },
     })),
   setWsConnected: (connected) => set({ wsConnected: connected }),
+  addToWatchlist: (id) =>
+    set((state) => {
+      if (state.watchlistIds.includes(id)) return state;
+      const next = [...state.watchlistIds, id];
+      try { localStorage.setItem("watchlistIds", JSON.stringify(next)); } catch {}
+      return { watchlistIds: next };
+    }),
+  removeFromWatchlist: (id) =>
+    set((state) => {
+      if (state.watchlistIds.length <= 1) return state;
+      const next = state.watchlistIds.filter((wid) => wid !== id);
+      try { localStorage.setItem("watchlistIds", JSON.stringify(next)); } catch {}
+      return { watchlistIds: next };
+    }),
 }));
