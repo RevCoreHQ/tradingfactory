@@ -126,7 +126,7 @@ export function RiskManagementVisual() {
             { step: "1", label: "Trade closes", desc: "Win, loss, or breakeven recorded" },
             { step: "2", label: "Pattern key built", desc: "Signals + regime + impulse + style" },
             { step: "3", label: "Stats updated", desc: "Win rate, avg P&L per pattern" },
-            { step: "4", label: "Multiplier adjusted", desc: "≥75% → 1.5x, ≥60% → 1.25x, ≥50% → 1.0x, <30% → 0.5x" },
+            { step: "4", label: "Multiplier adjusted", desc: "≥75% → 1.5x, ≥60% → 1.25x, ≥50% → 1.0x, ≥30% → 0.75x, <30% → 0.5x" },
           ].map((s) => (
             <div key={s.step} className="flex items-start gap-2">
               <span className="h-5 w-5 rounded-full bg-bullish/15 text-bullish text-[9px] font-bold flex items-center justify-center shrink-0 mt-0.5">

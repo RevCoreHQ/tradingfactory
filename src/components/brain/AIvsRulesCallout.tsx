@@ -53,8 +53,8 @@ export function AIvsRulesCallout() {
             <div className="space-y-1.5">
               {[
                 { name: "Instrument Analysis", desc: "Narrates a single instrument's fundamentals + technicals into a readable report" },
-                { name: "Batch Analysis", desc: "Generates market summaries for all 13 instruments simultaneously" },
-                { name: "Desk Manager", desc: "Receives the top 6 mechanical setups and provides commentary, risk warnings, and a top pick" },
+                { name: "Batch Analysis", desc: "Generates market summaries for all 16 instruments simultaneously" },
+                { name: "Desk Manager", desc: "Receives all A+/A mechanical setups and provides commentary, risk warnings, and a top pick" },
               ].map((ai, i) => (
                 <div key={ai.name} className="flex gap-2 items-start">
                   <span className="text-[9px] font-mono text-amber-500/60 w-4 shrink-0 mt-0.5">{i + 1}.</span>

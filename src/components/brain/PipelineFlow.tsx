@@ -31,7 +31,7 @@ export function PipelineFlow() {
         <p>
           Every signal starts with raw data. The system fetches OHLCV candles from Finnhub (forex, commodities)
           and Twelve Data (indices, crypto) across multiple timeframes — <strong>1H and 4H in parallel</strong> for
-          all 13 instruments. Candles are the sole input to the 8 mechanical systems below.
+          all 16 instruments. Candles are the sole input to the 8 mechanical systems below.
         </p>
         <p>
           In parallel (but on a <strong>separate track</strong>), fundamental data streams from 7 sources: news
@@ -65,7 +65,7 @@ export function PipelineFlow() {
             "EMA (9,13,21,50,200)",
             "SMA (9,20,26,50,200)",
             "RSI(14)",
-            "MACD (13,26,9)",
+            "MACD (12,26,9)",
             "Bollinger Bands",
             "ATR(14)",
             "ADX",
@@ -277,7 +277,7 @@ export function PipelineFlow() {
       >
         <p>
           <strong>This is where AI enters.</strong> The mechanical engine has already decided the trade ideas.
-          The AI Trade Advisor (Desk Manager) receives the top 6 setups along with market context — regime
+          The AI Trade Advisor (Desk Manager) receives all A+/A setups along with market context — regime
           summary, Fear &amp; Greed, DXY, bond yields, account equity.
         </p>
         <p>
@@ -287,8 +287,8 @@ export function PipelineFlow() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 mt-2">
           {[
             { name: "Instrument LLM", desc: "Single-instrument deep analysis" },
-            { name: "Batch LLM", desc: "All 13 instruments in parallel" },
-            { name: "Desk Manager", desc: "Top 6 setups + market context" },
+            { name: "Batch LLM", desc: "All 16 instruments in parallel" },
+            { name: "Desk Manager", desc: "All A+/A setups + market context" },
           ].map((ai) => (
             <div key={ai.name} className="bg-amber-500/8 border border-amber-500/15 rounded-md px-2.5 py-1.5 text-center">
               <div className="text-[10px] font-semibold text-amber-500/80">{ai.name}</div>
@@ -307,9 +307,12 @@ export function PipelineFlow() {
         accentColor="green"
       >
         <p>
-          Every trade setup is tracked through its lifecycle: <strong>pending → active → breakeven → TP/SL/expired</strong>.
+          Every trade setup is tracked through its lifecycle: <strong>pending → active → breakeven → TP1 → TP2 → TP3</strong> (or SL hit / expired / invalidated at any stage).
           Pending/active setups are continuously re-evaluated — if the setup drops out of the A+/A rankings
-          (conviction fell, impulse flipped, or R:R collapsed), it is <strong>invalidated</strong> immediately. Outcomes are stored with a confluence pattern
+          (conviction fell, impulse flipped, or R:R collapsed), it is <strong>invalidated</strong> immediately.
+          Trade plan levels (entry zone, SL, TP, R:R) are synced live while <strong>pending</strong> but <strong>frozen on activation</strong> —
+          once price enters the entry zone, the levels lock in place so breakeven/TP tracking uses the actual
+          entry price, not a drifting recalculation. Outcomes are stored with a confluence pattern
           key built from the agreeing system names + regime + impulse color + trading style.
         </p>
         <p>

@@ -260,7 +260,7 @@ const steps: Step[] = [
     content: (
       <div className="space-y-2">
         <p>
-          The mechanical engine has finished. Now the AI Desk Manager receives this setup (and up to 5 others)
+          The mechanical engine has finished. Now the AI Desk Manager receives this setup (and all other A+/A setups)
           along with market context, and produces a narrative:
         </p>
         <div className="bg-amber-500/8 border border-amber-500/15 rounded-md px-3 py-2 text-[10px] text-foreground/70 italic leading-relaxed">

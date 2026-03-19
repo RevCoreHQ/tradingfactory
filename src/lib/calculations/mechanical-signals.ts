@@ -287,7 +287,7 @@ function maSignal(candles: OHLCV[], regime: MarketRegime): MechanicalSignal {
 }
 
 function macdSignal(summary: TechnicalSummary, regime: MarketRegime): MechanicalSignal {
-  // Weissman: EMA(13)-EMA(26) crossover with signal line
+  // Weissman: EMA(12)-EMA(26) crossover with signal line
   const { macd, signal, histogram, crossover } = summary.macd;
 
   let direction: "bullish" | "bearish" | "neutral" = "neutral";

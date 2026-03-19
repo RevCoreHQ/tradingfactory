@@ -64,8 +64,8 @@ export type SetupStatus =
   | "tp2_hit"      // TP2 reached
   | "tp3_hit"      // TP3 reached (full win)
   | "sl_hit"       // Stop loss hit
-  | "expired"      // Setup older than 24h without entry
-  | "invalidated"; // Conviction dropped to D or signals flipped
+  | "expired"      // Setup exceeded style-specific expiry (8h intraday, 24h swing) without entry
+  | "invalidated"; // Conviction dropped below A, impulse conflict, or direction flipped
 
 export type SetupOutcome = "win" | "loss" | "breakeven";
 

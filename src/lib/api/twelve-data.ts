@@ -47,6 +47,32 @@ export async function fetchTwelveDataCandles(
     .reverse(); // Twelve Data returns newest first
 }
 
+/**
+ * Fetch latest price for a single symbol from Twelve Data /price endpoint.
+ * Returns the current price or null on failure.
+ */
+export async function fetchTwelveDataPrice(symbol: string): Promise<number | null> {
+  const apiKey = getApiKey();
+  if (!apiKey) return null;
+
+  const { allowed } = checkRateLimit("twelvedata");
+  if (!allowed) return null;
+
+  const url = new URL(`${BASE_URL}/price`);
+  url.searchParams.set("symbol", symbol);
+  url.searchParams.set("apikey", apiKey);
+
+  try {
+    const res = await fetch(url.toString(), { next: { revalidate: 60 } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.price) return parseFloat(data.price);
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 // Twelve Data interval map (matches our timeframe strings)
 export const TWELVE_DATA_INTERVALS: Record<string, string> = {
   "1min": "1min",

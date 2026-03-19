@@ -25,8 +25,8 @@ const systems: MechanicalSystem[] = [
     name: "MACD",
     book: "Weissman",
     type: "Trend",
-    logic: "MACD line (EMA13-EMA26) crosses signal line. Histogram confirms momentum.",
-    params: "Fast: 13, Slow: 26, Signal: 9",
+    logic: "MACD line (EMA12-EMA26) crosses signal line. Histogram confirms momentum.",
+    params: "Fast: 12, Slow: 26, Signal: 9",
     regimeFit: "Trending markets",
   },
   {
@@ -35,7 +35,7 @@ const systems: MechanicalSystem[] = [
     type: "Trend",
     logic: "Price closes above upper band (bullish) or below lower band (bearish).",
     params: "Period: 20, StdDev: 2",
-    regimeFit: "Trending + volatile markets",
+    regimeFit: "Trending markets",
   },
   {
     name: "RSI Extremes",
@@ -43,7 +43,7 @@ const systems: MechanicalSystem[] = [
     type: "Mean Reversion",
     logic: "RSI(14) below 30 with price above SMA(200) = bullish. Above 70 with price below SMA(200) = bearish.",
     params: "Period: 14, Oversold: 30, Overbought: 70",
-    regimeFit: "Ranging markets",
+    regimeFit: "Ranging + volatile markets",
   },
   {
     name: "BB Mean Reversion",
@@ -51,7 +51,7 @@ const systems: MechanicalSystem[] = [
     type: "Mean Reversion",
     logic: "Price touches lower band with SMA(200) above = bullish bounce. Upper band with SMA(200) below = bearish fade.",
     params: "Period: 20, StdDev: 2, Filter: SMA(200)",
-    regimeFit: "Ranging markets",
+    regimeFit: "Ranging + volatile markets",
   },
   {
     name: "Elder Impulse",
@@ -67,7 +67,7 @@ const systems: MechanicalSystem[] = [
     type: "Momentum",
     logic: "Bull Power (High - EMA13) and Bear Power (Low - EMA13). Positive bull power = bullish, negative bear power = bearish.",
     params: "EMA: 13",
-    regimeFit: "Trending markets",
+    regimeFit: "All regimes",
   },
   {
     name: "Trend Stack",

@@ -123,8 +123,14 @@ export function useTrackedSetups(
 
         const updated = updateSetupStatus(existing, fresh.currentPrice);
 
-        // For actionable setups, sync signal data so cards match advisor
+        // For actionable setups, sync signal metadata so cards match advisor.
+        // IMPORTANT: Once a setup is "active" (price entered the zone), freeze
+        // the trade plan levels (entry/SL/TP/R:R). Only pending setups get
+        // level updates — active setups must keep the levels they entered with,
+        // otherwise the entry zone drifts with price causing false breakeven
+        // triggers and misaligned progress bars.
         if (isStillActionable) {
+          const isPending = existing.status === "pending";
           updated.setup = {
             ...updated.setup,
             currentPrice: fresh.currentPrice,
@@ -138,12 +144,15 @@ export function useTrackedSetups(
             timeframe: fresh.timeframe,
             signals: fresh.signals,
             consensus: fresh.consensus,
-            entry: fresh.entry,
-            stopLoss: fresh.stopLoss,
-            takeProfit: fresh.takeProfit,
-            riskReward: fresh.riskReward,
-            positionSizeLots: fresh.positionSizeLots,
-            riskAmount: fresh.riskAmount,
+            // Only sync trade plan levels for pending setups — freeze on activation
+            ...(isPending ? {
+              entry: fresh.entry,
+              stopLoss: fresh.stopLoss,
+              takeProfit: fresh.takeProfit,
+              riskReward: fresh.riskReward,
+              positionSizeLots: fresh.positionSizeLots,
+              riskAmount: fresh.riskAmount,
+            } : {}),
             reasonsToExit: fresh.reasonsToExit,
             learningApplied: fresh.learningApplied,
           };

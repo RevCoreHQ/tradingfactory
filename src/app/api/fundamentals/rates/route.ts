@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchForexRates, fetchForexCandles } from "@/lib/api/finnhub";
 import { fetchCryptoPrice } from "@/lib/api/coingecko";
+import { fetchTwelveDataPrice, fetchTwelveDataCandles } from "@/lib/api/twelve-data";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import type { PriceQuote } from "@/lib/types/market";
 
@@ -10,23 +11,43 @@ export async function GET(req: NextRequest) {
 
     const quotes: Record<string, PriceQuote> = {};
 
-    // Fetch forex rates
+    // Fetch forex rates — Finnhub primary, Twelve Data fallback
     const forexInstruments = INSTRUMENTS.filter(
       (i) => i.category === "forex" && requestedIds.includes(i.id)
     );
     if (forexInstruments.length > 0) {
-      const rates = await fetchForexRates("USD");
+      let finnhubRates: Record<string, number> | null = null;
+      try {
+        finnhubRates = await fetchForexRates("USD");
+      } catch {
+        // Finnhub down — will fall through to Twelve Data
+      }
+
       for (const inst of forexInstruments) {
         const from = inst.alphavantageSymbol;
         const to = inst.alphavantageToSymbol || "USD";
 
-        let mid: number;
-        if (from === "USD") {
-          mid = rates[to] || 0;
-        } else if (to === "USD") {
-          mid = rates[from] ? 1 / rates[from] : 0;
-        } else {
-          mid = rates[from] && rates[to] ? rates[to] / rates[from] : 0;
+        let mid = 0;
+
+        // Try Finnhub rates first
+        if (finnhubRates) {
+          if (from === "USD") {
+            mid = finnhubRates[to] || 0;
+          } else if (to === "USD") {
+            mid = finnhubRates[from] ? 1 / finnhubRates[from] : 0;
+          } else {
+            mid = finnhubRates[from] && finnhubRates[to] ? finnhubRates[to] / finnhubRates[from] : 0;
+          }
+        }
+
+        // Fallback: Twelve Data /price for the pair
+        if (mid === 0) {
+          try {
+            const price = await fetchTwelveDataPrice(inst.symbol);
+            if (price) mid = price;
+          } catch {
+            // Silent fail
+          }
         }
 
         if (mid > 0) {
@@ -57,7 +78,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Fetch commodity prices via Finnhub candles
+    // Fetch commodity prices — Finnhub candles primary, Twelve Data fallback
     const commodityInstruments = INSTRUMENTS.filter(
       (i) => i.category === "commodity" && requestedIds.includes(i.id)
     );
@@ -84,7 +105,29 @@ export async function GET(req: NextRequest) {
           };
         }
       } catch {
-        // Silent fail for commodity prices
+        // Finnhub failed — try Twelve Data
+        try {
+          const tdCandles = await fetchTwelveDataCandles(inst.symbol, "1h", 24);
+          if (tdCandles.length > 0) {
+            const latest = tdCandles[tdCandles.length - 1];
+            const first = tdCandles[0];
+            const change = latest.close - first.open;
+            const changePercent = (change / first.open) * 100;
+            quotes[inst.id] = {
+              instrument: inst.id,
+              bid: latest.close - inst.pipSize,
+              ask: latest.close + inst.pipSize,
+              mid: latest.close,
+              timestamp: latest.timestamp,
+              change,
+              changePercent,
+              high24h: Math.max(...tdCandles.map((c) => c.high)),
+              low24h: Math.min(...tdCandles.map((c) => c.low)),
+            };
+          }
+        } catch {
+          // Silent fail
+        }
       }
     }
 
