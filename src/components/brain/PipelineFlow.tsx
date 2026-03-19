@@ -29,8 +29,8 @@ export function PipelineFlow() {
         accentColor="blue"
       >
         <p>
-          Every signal starts with raw data. The system fetches OHLCV candles from Finnhub (forex, commodities)
-          and Twelve Data (indices, crypto) across multiple timeframes — <strong>1H and 4H in parallel</strong> for
+          Every signal starts with raw data. The system fetches OHLCV candles from Twelve Data (primary, paid tier)
+          with Finnhub and Alpha Vantage as fallbacks, across multiple timeframes — <strong>1H and 4H in parallel</strong> for
           all 16 instruments. Candles are the sole input to the 8 mechanical systems below.
         </p>
         <p>

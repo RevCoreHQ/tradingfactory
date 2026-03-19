@@ -19,7 +19,7 @@ const steps: Step[] = [
     badgeColor: "bg-neutral-accent/12 text-neutral-accent border-neutral-accent/20",
     content: (
       <div className="space-y-2">
-        <p>The system fetches 1H and 4H OHLCV candles for <strong>EUR/USD</strong> from Finnhub.</p>
+        <p>The system fetches 1H and 4H OHLCV candles for <strong>EUR/USD</strong> from Twelve Data (primary) with Finnhub fallback.</p>
         <div className="bg-surface-2/30 rounded-md px-3 py-2 font-mono text-[9px] text-muted-foreground/60 space-y-0.5">
           <div>Instrument: EUR_USD</div>
           <div>Timeframes: 1H (300 candles), 4H (300 candles)</div>
@@ -269,7 +269,7 @@ const steps: Step[] = [
           trending regime (ADX 35). The London-NY session overlap provides optimal liquidity. This is my top
           pick for today — entry zone 1.0840-1.0850 with stop below weekly S1 at 1.0788.&rdquo;
         </div>
-        <p className="text-[9px] text-amber-500/60 font-semibold">
+        <p className="text-[9px] text-muted-foreground/60 font-semibold">
           The AI did not create this trade idea. It explained the mechanical output in human-readable form.
         </p>
       </div>

@@ -85,14 +85,14 @@ export function FundamentalSourcesGrid() {
           className="panel rounded-lg p-3 space-y-2"
         >
           <div className="flex items-center gap-2">
-            <span className="text-amber-500/60">{src.icon}</span>
+            <span className="text-amber-500/80">{src.icon}</span>
             <div>
               <div className="text-[11px] font-semibold text-foreground">{src.name}</div>
               <div className="text-[9px] font-mono text-muted-foreground/50">{src.provider}</div>
             </div>
           </div>
           <p className="text-[10px] text-muted-foreground/70 leading-relaxed">{src.measures}</p>
-          <p className="text-[9px] text-amber-500/50 leading-relaxed">{src.feedsInto}</p>
+          <p className="text-[9px] text-muted-foreground/60 leading-relaxed">{src.feedsInto}</p>
         </motion.div>
       ))}
     </div>
