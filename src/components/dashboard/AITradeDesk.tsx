@@ -877,6 +877,36 @@ function TradeDeskSkeleton() {
   );
 }
 
+// ==================== Alert Sound ====================
+
+function playAlertTone() {
+  try {
+    const ctx = new AudioContext();
+    const now = ctx.currentTime;
+
+    // Two-tone chime: C5 → E5
+    const frequencies = [523.25, 659.25];
+    for (let i = 0; i < frequencies.length; i++) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = frequencies[i];
+      gain.gain.setValueAtTime(0, now + i * 0.15);
+      gain.gain.linearRampToValueAtTime(0.15, now + i * 0.15 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 0.3);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + i * 0.15);
+      osc.stop(now + i * 0.15 + 0.3);
+    }
+
+    // Clean up after sound finishes
+    setTimeout(() => ctx.close(), 1000);
+  } catch {
+    // AudioContext not available (SSR or browser restriction)
+  }
+}
+
 // ==================== Setup Alert Banner ====================
 
 interface SetupAlert {
@@ -930,6 +960,7 @@ function useSetupAlerts(setups: TradeDeskSetup[]) {
 
     if (newAlerts.length > 0) {
       setAlerts((prev) => [...newAlerts, ...prev].slice(0, 5));
+      playAlertTone();
     }
 
     // Clean up stale keys from setups that no longer exist
