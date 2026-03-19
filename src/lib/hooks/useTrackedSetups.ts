@@ -67,10 +67,9 @@ export function useTrackedSetups(
       if (existing) {
         // Update status with current price
         const updated = updateSetupStatus(existing, fresh.currentPrice);
-        // Keep setup.currentPrice in sync for progress bar visualization
+        // Keep setup.currentPrice in sync for progress bar visualization (no persist needed)
         if (updated.setup.currentPrice !== fresh.currentPrice) {
           updated.setup = { ...updated.setup, currentPrice: fresh.currentPrice };
-          changed = true;
         }
 
         if (updated.status !== existing.status) {

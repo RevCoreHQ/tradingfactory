@@ -22,9 +22,11 @@ import { AITradeDesk } from "./AITradeDesk";
 import { TradingAdvisor } from "./TradingAdvisor";
 import { AccountStatusBar } from "./AccountStatusBar";
 import { useTradeDeskData } from "@/lib/hooks/useTradeDeskData";
-import { useTrackedSetups } from "@/lib/hooks/useTrackedSetups";
+import { isSetupActive } from "@/lib/calculations/setup-tracker";
 import { computePortfolioRisk } from "@/lib/calculations/risk-engine";
 import { DEFAULT_RISK_CONFIG } from "@/lib/types/signals";
+import { loadTrackedSetups } from "@/lib/storage/setup-storage";
+import useSWR from "swr";
 import { useMemo } from "react";
 import { Activity, Sparkles, AlertTriangle, BarChart3, Shield, Brain, MessageSquare } from "lucide-react";
 
@@ -35,9 +37,20 @@ export function MarketOverview() {
   const journalOpen = useMarketStore((s) => s.journalOpen);
   const setJournalOpen = useMarketStore((s) => s.setJournalOpen);
 
-  // SWR deduplicates — same cache key as AITradeDesk, no extra API calls
-  const { setups, portfolioRisk: baseRisk } = useTradeDeskData();
-  const { activeSetups, historySetups } = useTrackedSetups(setups);
+  // Read tracked setups from SWR (same key as useTrackedSetups — reads cached data, no processing)
+  const { portfolioRisk: baseRisk } = useTradeDeskData();
+  const { data: trackedSetups } = useSWR("tracked-setups", loadTrackedSetups, {
+    revalidateOnFocus: false,
+    refreshInterval: 0,
+  });
+
+  const { activeSetups, historySetups } = useMemo(() => {
+    const all = trackedSetups ?? [];
+    return {
+      activeSetups: all.filter((t) => isSetupActive(t.status)),
+      historySetups: all.filter((t) => !isSetupActive(t.status)),
+    };
+  }, [trackedSetups]);
 
   const portfolioRisk = useMemo(
     () =>
