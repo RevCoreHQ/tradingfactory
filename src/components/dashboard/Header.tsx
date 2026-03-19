@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { AlertsBell } from "@/components/alerts/AlertsPanel";
+import { DataFeedStatus } from "./DataFeedStatus";
 
 interface HeaderProps {
   mode?: "overview" | "desk" | "analysis" | "journal" | "brain";
@@ -96,6 +97,8 @@ export function Header({ mode = "analysis" }: HeaderProps) {
               {wsConnected ? "Live" : "Polling"}
             </span>
           </div>
+
+          <DataFeedStatus />
 
           <AlertsBell />
 
