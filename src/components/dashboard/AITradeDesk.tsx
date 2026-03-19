@@ -316,7 +316,7 @@ function SetupCard({ tracked, rank }: { tracked: TrackedSetup; rank: number }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
                 Entry Zone
@@ -337,21 +337,22 @@ function SetupCard({ tracked, rank }: { tracked: TrackedSetup; rank: number }) {
               <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
                 Take Profit
               </div>
-              <div className="text-xs flex items-center gap-2">
-                <span className="text-muted-foreground/50 text-[9px]">TP1</span>
-                <CopyPrice value={setup.takeProfit[0].toFixed(decimals)} className="text-bullish" />
-                <span className="text-muted-foreground/50 text-[9px]">TP2</span>
-                <CopyPrice value={setup.takeProfit[1].toFixed(decimals)} className="text-bullish opacity-60" />
-                <span className="text-muted-foreground/50 text-[9px]">TP3</span>
-                <CopyPrice value={setup.takeProfit[2].toFixed(decimals)} className="text-bullish opacity-40" />
-              </div>
-            </div>
-            <div>
-              <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
-                R:R
-              </div>
-              <div className="text-xs font-mono text-foreground">
-                1:{setup.riskReward[0]} / 1:{setup.riskReward[1]} / 1:{setup.riskReward[2]}
+              <div className="text-xs space-y-0.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground/50 text-[9px] w-5">TP1</span>
+                  <CopyPrice value={setup.takeProfit[0].toFixed(decimals)} className="text-bullish" />
+                  <span className="text-muted-foreground/40 font-mono text-[9px]">1:{setup.riskReward[0]}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground/50 text-[9px] w-5">TP2</span>
+                  <CopyPrice value={setup.takeProfit[1].toFixed(decimals)} className="text-bullish opacity-70" />
+                  <span className="text-muted-foreground/40 font-mono text-[9px]">1:{setup.riskReward[1]}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground/50 text-[9px] w-5">TP3</span>
+                  <CopyPrice value={setup.takeProfit[2].toFixed(decimals)} className="text-bullish opacity-50" />
+                  <span className="text-muted-foreground/40 font-mono text-[9px]">1:{setup.riskReward[2]}</span>
+                </div>
               </div>
             </div>
           </div>

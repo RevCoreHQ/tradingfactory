@@ -3,7 +3,6 @@
 import { Header } from "./Header";
 import { MarketPulse } from "./MarketPulse";
 import { SectionHeader } from "./SectionHeader";
-import { TopPairs } from "@/components/bias/TopPairs";
 import { AIMarketSummary } from "./AIMarketSummary";
 import { AITradeSignals } from "./AITradeSignals";
 import { RedNewsWeek } from "@/components/fundamentals/RedNewsWeek";
@@ -21,7 +20,7 @@ import { useSmartAlerts } from "@/lib/hooks/useSmartAlerts";
 import { useRealtimePrices } from "@/lib/hooks/useRealtimePrices";
 import { AITradeDesk } from "./AITradeDesk";
 import { TradingAdvisor } from "./TradingAdvisor";
-import { Activity, Sparkles, Target, AlertTriangle, BarChart3, Shield, Brain, MessageSquare } from "lucide-react";
+import { Activity, Sparkles, AlertTriangle, BarChart3, Shield, Brain, MessageSquare } from "lucide-react";
 
 export function MarketOverview() {
   useAllBiasScores();
@@ -86,17 +85,6 @@ export function MarketOverview() {
                 <AITradeDesk />
               </div>
             </div>
-          </section>
-
-          {/* Section 4: Top Opportunities */}
-          <section>
-            <SectionHeader
-              title="Top Opportunities"
-              subtitle="Ranked by ADR-weighted conviction score"
-              icon={<Target className="h-3.5 w-3.5" />}
-              accentColor="green"
-            />
-            <TopPairs />
           </section>
 
           {/* Section 4: Risk Calendar + AI Signals */}
