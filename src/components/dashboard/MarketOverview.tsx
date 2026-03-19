@@ -13,55 +13,14 @@ import { useAllBiasScores } from "@/lib/hooks/useAllBiasScores";
 import { BiasAccuracySummary } from "@/components/bias/BiasAccuracy";
 import { RiskCorrelation } from "@/components/bias/RiskCorrelation";
 import { COTPositioning } from "@/components/fundamentals/COTPositioning";
-import { TradeJournal } from "@/components/journal/TradeJournal";
-import { useMarketStore } from "@/lib/store/market-store";
 import { useSmartAlerts } from "@/lib/hooks/useSmartAlerts";
 import { useRealtimePrices } from "@/lib/hooks/useRealtimePrices";
-import { AITradeDesk } from "./AITradeDesk";
-import { TradingAdvisor } from "./TradingAdvisor";
-import { AccountStatusBar } from "./AccountStatusBar";
-import { useTradeDeskData } from "@/lib/hooks/useTradeDeskData";
-import { isSetupActive } from "@/lib/calculations/setup-tracker";
-import { computePortfolioRisk } from "@/lib/calculations/risk-engine";
-import { DEFAULT_RISK_CONFIG } from "@/lib/types/signals";
-import { loadTrackedSetups } from "@/lib/storage/setup-storage";
-import { useState, useEffect, useMemo } from "react";
-import { Activity, Sparkles, AlertTriangle, BarChart3, Shield, Brain, MessageSquare } from "lucide-react";
+import { Activity, Sparkles, AlertTriangle, BarChart3, Shield } from "lucide-react";
 
 export function MarketOverview() {
   useAllBiasScores();
   useSmartAlerts();
   useRealtimePrices();
-  const journalOpen = useMarketStore((s) => s.journalOpen);
-  const setJournalOpen = useMarketStore((s) => s.setJournalOpen);
-
-  // Read tracked setups from localStorage on a timer (decoupled from AITradeDesk)
-  const { portfolioRisk: baseRisk } = useTradeDeskData();
-  const [trackedSetups, setTrackedSetups] = useState<import("@/lib/types/signals").TrackedSetup[]>([]);
-
-  useEffect(() => {
-    setTrackedSetups(loadTrackedSetups());
-    const interval = setInterval(() => setTrackedSetups(loadTrackedSetups()), 10_000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const { activeSetups, historySetups } = useMemo(() => {
-    return {
-      activeSetups: trackedSetups.filter((t) => isSetupActive(t.status)),
-      historySetups: trackedSetups.filter((t) => !isSetupActive(t.status)),
-    };
-  }, [trackedSetups]);
-
-  const portfolioRisk = useMemo(
-    () =>
-      computePortfolioRisk(
-        baseRisk.accountEquity,
-        baseRisk.riskPercent,
-        activeSetups,
-        historySetups
-      ),
-    [baseRisk.accountEquity, baseRisk.riskPercent, activeSetups, historySetups]
-  );
 
   return (
     <div className="relative min-h-screen bg-background">
@@ -78,11 +37,6 @@ export function MarketOverview() {
       <div className="relative z-10">
         <Header mode="overview" />
         <MarketHoursStrip />
-        <AccountStatusBar
-          portfolioRisk={portfolioRisk}
-          openPositions={activeSetups.length}
-          maxPositions={DEFAULT_RISK_CONFIG.maxOpenPositions}
-        />
 
         <main className="max-w-[1400px] mx-auto px-8 py-6 space-y-8">
           {/* Section 1: Market Pulse */}
@@ -108,25 +62,7 @@ export function MarketOverview() {
             <AIMarketSummary />
           </section>
 
-          {/* Section 3: Trading Advisor + AI Trade Desk */}
-          <section>
-            <SectionHeader
-              title="AI Trade Desk"
-              subtitle="Book-sourced mechanical systems, conviction tiers, and risk management"
-              icon={<Brain className="h-3.5 w-3.5" />}
-              accentColor="green"
-            />
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
-              <div className="lg:col-span-5">
-                <TradingAdvisor />
-              </div>
-              <div className="lg:col-span-7">
-                <AITradeDesk />
-              </div>
-            </div>
-          </section>
-
-          {/* Section 4: Risk Calendar */}
+          {/* Section 3: Risk Calendar */}
           <section>
             <SectionHeader
               title="Risk Calendar"
@@ -137,7 +73,7 @@ export function MarketOverview() {
             <RedNewsWeek />
           </section>
 
-          {/* Section 5: Deep Dive */}
+          {/* Section 4: Deep Dive */}
           <section>
             <SectionHeader
               title="Deep Dive"
@@ -158,7 +94,7 @@ export function MarketOverview() {
             </div>
           </section>
 
-          {/* Section 6: Portfolio Risk */}
+          {/* Section 5: Portfolio Risk */}
           <section>
             <SectionHeader
               title="Portfolio Risk"
@@ -171,7 +107,6 @@ export function MarketOverview() {
         </main>
       </div>
 
-      {journalOpen && <TradeJournal onClose={() => setJournalOpen(false)} />}
     </div>
   );
 }

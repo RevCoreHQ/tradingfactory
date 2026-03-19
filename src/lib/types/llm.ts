@@ -68,6 +68,8 @@ export interface SectorOutlook {
   sector: string;
   outlook: "bullish" | "bearish" | "neutral";
   keyAssets: string[];
+  focusPairs?: string[];
+  avoidPairs?: string[];
 }
 
 export interface MarketSummaryResult {
@@ -76,6 +78,8 @@ export interface MarketSummaryResult {
   opportunities: string[];
   outlook: "bullish" | "bearish" | "neutral";
   sectorOutlook?: SectorOutlook[];
+  focusToday?: string[];
+  sitOutToday?: string[];
   timestamp: number;
   provider: LLMProvider;
 }

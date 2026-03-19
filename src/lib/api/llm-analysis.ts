@@ -562,6 +562,9 @@ Rules:
 - List 2-3 opportunities the data suggests.
 - Provide an overall market outlook: bullish, bearish, or neutral.
 - Provide a per-sector outlook breakdown with specific asset mentions for forex, crypto, indices, and commodities.
+- For each sector, identify 1-2 specific FOCUS instruments that have the clearest setups today, and any instruments to AVOID.
+- Provide a global "focusToday" list: the top 3-5 instruments across all sectors that deserve attention today.
+- Provide a "sitOutToday" list: instruments or conditions where the right move is to sit on your hands. Be willing to say "no clear setups" for entire sectors if conditions are unclear or choppy.
 - Be specific — reference actual data values (DXY level, fear/greed reading, yield curve state) and name specific instruments.
 - Respond with valid JSON only.`;
 
@@ -605,9 +608,13 @@ Respond with JSON:
     {
       "sector": "forex" | "crypto" | "indices" | "commodities",
       "outlook": "bullish" | "bearish" | "neutral",
-      "keyAssets": ["<asset — brief reason>", "<asset — brief reason>"]
+      "keyAssets": ["<asset — brief reason>", "<asset — brief reason>"],
+      "focusPairs": ["<instrument — why it deserves focus>"],
+      "avoidPairs": ["<instrument — why to avoid>"]
     }
-  ]
+  ],
+  "focusToday": ["EURUSD", "XAUUSD"],
+  "sitOutToday": ["Crypto — no clear regime", "GBPJPY — choppy price action"]
 }`;
 }
 
@@ -636,8 +643,12 @@ function parseMarketSummary(
             sector: String(s.sector ?? ""),
             outlook: (["bullish", "bearish", "neutral"].includes(s.outlook as string) ? s.outlook : "neutral") as "bullish" | "bearish" | "neutral",
             keyAssets: Array.isArray(s.keyAssets) ? (s.keyAssets as string[]).map(String).slice(0, 5) : [],
+            focusPairs: Array.isArray(s.focusPairs) ? (s.focusPairs as string[]).map(String).slice(0, 3) : undefined,
+            avoidPairs: Array.isArray(s.avoidPairs) ? (s.avoidPairs as string[]).map(String).slice(0, 3) : undefined,
           }))
         : undefined,
+      focusToday: Array.isArray(parsed.focusToday) ? (parsed.focusToday as string[]).map(String).slice(0, 5) : undefined,
+      sitOutToday: Array.isArray(parsed.sitOutToday) ? (parsed.sitOutToday as string[]).map(String).slice(0, 5) : undefined,
       timestamp: Date.now(),
       provider,
     };

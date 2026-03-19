@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMarketSummary } from "@/lib/hooks/useMarketSummary";
 import { cn } from "@/lib/utils";
-import { Sparkles, AlertTriangle, Zap, ChevronDown, RefreshCw } from "lucide-react";
+import { Sparkles, AlertTriangle, Zap, ChevronDown, RefreshCw, Target, Ban } from "lucide-react";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
 
 function OutlookBadge({ outlook }: { outlook: "bullish" | "bearish" | "neutral" }) {
@@ -22,7 +22,7 @@ function OutlookBadge({ outlook }: { outlook: "bullish" | "bearish" | "neutral" 
   );
 }
 
-function SectorCard({ sector }: { sector: { sector: string; outlook: "bullish" | "bearish" | "neutral"; keyAssets: string[] } }) {
+function SectorCard({ sector }: { sector: { sector: string; outlook: "bullish" | "bearish" | "neutral"; keyAssets: string[]; focusPairs?: string[]; avoidPairs?: string[] } }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -78,6 +78,22 @@ function SectorCard({ sector }: { sector: { sector: string; outlook: "bullish" |
                   {asset}
                 </motion.p>
               ))}
+              {sector.focusPairs && sector.focusPairs.length > 0 && (
+                <div className="mt-2 pt-2 border-t border-border/30">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-bullish">Focus</span>
+                  {sector.focusPairs.map((fp, j) => (
+                    <p key={j} className="text-[10px] text-bullish/80 leading-snug pl-3">• {fp}</p>
+                  ))}
+                </div>
+              )}
+              {sector.avoidPairs && sector.avoidPairs.length > 0 && (
+                <div className="mt-1">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Avoid</span>
+                  {sector.avoidPairs.map((ap, j) => (
+                    <p key={j} className="text-[10px] text-muted-foreground/60 leading-snug pl-3">• {ap}</p>
+                  ))}
+                </div>
+              )}
             </div>
           </motion.div>
         )}
@@ -86,7 +102,7 @@ function SectorCard({ sector }: { sector: { sector: string; outlook: "bullish" |
   );
 }
 
-function SectorBreakdown({ sectors }: { sectors: { sector: string; outlook: "bullish" | "bearish" | "neutral"; keyAssets: string[] }[] }) {
+function SectorBreakdown({ sectors }: { sectors: { sector: string; outlook: "bullish" | "bearish" | "neutral"; keyAssets: string[]; focusPairs?: string[]; avoidPairs?: string[] }[] }) {
   return (
     <div className="mt-5 pt-4 border-t border-border/50">
       <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">
@@ -230,6 +246,39 @@ export function AIMarketSummary() {
       {summary.sectorOutlook && summary.sectorOutlook.length > 0 && (
         <SectorBreakdown sectors={summary.sectorOutlook} />
       )}
+
+      {/* Focus Today / Sit Out */}
+      {(summary.focusToday?.length || summary.sitOutToday?.length) ? (
+        <div className="mt-5 pt-4 border-t border-border/50">
+          {summary.focusToday && summary.focusToday.length > 0 && (
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-bullish flex items-center gap-1.5">
+                <Target className="h-3 w-3" />
+                Focus Today
+              </div>
+              {summary.focusToday.map((pair, i) => (
+                <span key={i} className="text-[11px] font-medium text-foreground bg-bullish/10 px-2.5 py-1 rounded-md border border-bullish/20">
+                  {pair}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {summary.sitOutToday && summary.sitOutToday.length > 0 && (
+            <div className="flex items-center gap-3 flex-wrap mt-3">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <Ban className="h-3 w-3" />
+                Sit Out
+              </div>
+              {summary.sitOutToday.map((note, i) => (
+                <span key={i} className="text-[11px] text-muted-foreground bg-[var(--surface-2)] px-2.5 py-1 rounded-md border border-border/30">
+                  {note}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

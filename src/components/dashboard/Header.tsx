@@ -2,18 +2,15 @@
 
 import { useMarketStore } from "@/lib/store/market-store";
 import { cn } from "@/lib/utils";
-import { BookOpen } from "lucide-react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { AlertsBell } from "@/components/alerts/AlertsPanel";
 
 interface HeaderProps {
-  mode?: "overview" | "analysis" | "brain";
+  mode?: "overview" | "desk" | "analysis" | "journal" | "brain";
 }
 
 export function Header({ mode = "analysis" }: HeaderProps) {
-  const journalOpen = useMarketStore((s) => s.journalOpen);
-  const setJournalOpen = useMarketStore((s) => s.setJournalOpen);
   const wsConnected = useMarketStore((s) => s.wsConnected);
 
   return (
@@ -39,6 +36,17 @@ export function Header({ mode = "analysis" }: HeaderProps) {
             Overview
           </Link>
           <Link
+            href="/desk"
+            className={cn(
+              "px-4 py-1.5 rounded-full text-xs font-medium transition-all",
+              mode === "desk"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Desk
+          </Link>
+          <Link
             href="/instrument"
             className={cn(
               "px-4 py-1.5 rounded-full text-xs font-medium transition-all",
@@ -48,6 +56,17 @@ export function Header({ mode = "analysis" }: HeaderProps) {
             )}
           >
             Analysis
+          </Link>
+          <Link
+            href="/journal"
+            className={cn(
+              "px-4 py-1.5 rounded-full text-xs font-medium transition-all",
+              mode === "journal"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Journal
           </Link>
           <Link
             href="/brain"
@@ -77,19 +96,6 @@ export function Header({ mode = "analysis" }: HeaderProps) {
               {wsConnected ? "Live" : "Polling"}
             </span>
           </div>
-
-          <button
-            onClick={() => setJournalOpen(!journalOpen)}
-            className={cn(
-              "p-2 rounded-full transition-colors",
-              journalOpen
-                ? "bg-neutral-accent/15 text-neutral-accent"
-                : "text-muted-foreground hover:text-foreground hover:bg-[var(--surface-2)]"
-            )}
-            aria-label="Trade journal"
-          >
-            <BookOpen className="h-4 w-4" />
-          </button>
 
           <AlertsBell />
 
