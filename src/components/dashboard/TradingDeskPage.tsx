@@ -17,7 +17,7 @@ import { computePortfolioRisk } from "@/lib/calculations/risk-engine";
 import { DEFAULT_RISK_CONFIG } from "@/lib/types/signals";
 import { loadTrackedSetups } from "@/lib/storage/setup-storage";
 import type { TrackedSetup } from "@/lib/types/signals";
-import { Brain } from "lucide-react";
+import { Brain, LayoutList } from "lucide-react";
 
 export function TradingDeskPage() {
   useAllBiasScores();
@@ -71,22 +71,25 @@ export function TradingDeskPage() {
           maxPositions={DEFAULT_RISK_CONFIG.maxOpenPositions}
         />
 
-        <main className="max-w-[1600px] mx-auto px-8 py-6 space-y-6">
+        <main className="max-w-[1600px] mx-auto px-8 py-6 space-y-8">
           <section>
             <SectionHeader
-              title="AI Trade Desk"
-              subtitle="Book-sourced mechanical systems, conviction tiers, and risk management"
+              title="Desk Manager"
+              subtitle="AI-powered trading advisor interpreting mechanical signals"
               icon={<Brain className="h-3.5 w-3.5" />}
               accentColor="green"
             />
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-              <div className="lg:col-span-4">
-                <TradingAdvisor />
-              </div>
-              <div className="lg:col-span-8">
-                <AITradeDesk />
-              </div>
-            </div>
+            <TradingAdvisor />
+          </section>
+
+          <section>
+            <SectionHeader
+              title="Trade Setups"
+              subtitle="Book-sourced mechanical systems, conviction tiers, and risk management"
+              icon={<LayoutList className="h-3.5 w-3.5" />}
+              accentColor="blue"
+            />
+            <AITradeDesk />
           </section>
         </main>
       </div>
