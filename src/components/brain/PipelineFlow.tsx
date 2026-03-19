@@ -307,13 +307,14 @@ export function PipelineFlow() {
         accentColor="green"
       >
         <p>
-          Every trade setup is tracked through its lifecycle: <strong>pending → active → TP/SL/expired</strong>.
-          Outcomes are stored with a confluence pattern key (instrument + direction + regime + conviction + impulse + style).
+          Every trade setup is tracked through its lifecycle: <strong>pending → active → breakeven → TP/SL/expired</strong>.
+          Outcomes are stored with a confluence pattern key built from the agreeing system names + regime +
+          impulse color + trading style.
         </p>
         <p>
-          After 5+ trades on a pattern, the system adjusts risk multipliers: patterns with &gt;55% win rate
-          get sized up (up to 1.5x), while losing patterns get sized down (down to 0.5x). This creates a
-          self-improving feedback loop — all without AI.
+          After 5+ trades on a pattern, the system adjusts risk multipliers based on win rate: ≥75% → 1.5x,
+          ≥60% → 1.25x, ≥50% → 1.0x, ≥30% → 0.75x, &lt;30% → 0.5x. This creates a self-improving feedback
+          loop — all without AI.
         </p>
       </PipelineStageCard>
     </div>
