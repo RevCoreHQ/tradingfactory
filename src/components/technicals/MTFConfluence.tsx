@@ -18,9 +18,9 @@ const macdLabel = (c: "bullish" | "bearish" | null) => {
 };
 
 export function MTFConfluence() {
-  const { confluence, isLoading } = useMultiTimeframeAnalysis();
+  const { confluence, isLoading, insufficientData } = useMultiTimeframeAnalysis();
 
-  if (isLoading || !confluence) {
+  if (isLoading) {
     return (
       <GlassCard accent="neutral" delay={0.1}>
         <div className="p-4 space-y-3">
@@ -35,6 +35,24 @@ export function MTFConfluence() {
               <div key={i} className="h-8 shimmer rounded-lg" />
             ))}
           </div>
+        </div>
+      </GlassCard>
+    );
+  }
+
+  if (!confluence || insufficientData) {
+    return (
+      <GlassCard accent="neutral" delay={0.1}>
+        <div className="p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Layers className="h-3.5 w-3.5 text-muted-foreground/40" />
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+              Multi-Timeframe
+            </span>
+          </div>
+          <p className="text-[10px] text-muted-foreground/50 text-center py-2">
+            Insufficient candle data for MTF analysis
+          </p>
         </div>
       </GlassCard>
     );

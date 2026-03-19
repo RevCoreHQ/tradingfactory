@@ -15,6 +15,7 @@ const TIMEFRAMES = ["1h", "4h", "1d"] as const;
 export function useMultiTimeframeAnalysis(): {
   confluence: MTFConfluenceResult | null;
   isLoading: boolean;
+  insufficientData: boolean;
 } {
   const instrument = useMarketStore((s) => s.selectedInstrument);
 
@@ -32,6 +33,7 @@ export function useMultiTimeframeAnalysis(): {
   });
 
   const isLoading = results.some((r) => r.isLoading);
+  const allLoaded = results.every((r) => !r.isLoading);
   const allReady = results.every((r) => r.data && r.data.candles && r.data.candles.length >= 20);
 
   const confluence = useMemo<MTFConfluenceResult | null>(() => {
@@ -48,5 +50,5 @@ export function useMultiTimeframeAnalysis(): {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allReady, instrument.id, ...results.map((r) => r.data)]);
 
-  return { confluence, isLoading };
+  return { confluence, isLoading, insufficientData: allLoaded && !allReady };
 }

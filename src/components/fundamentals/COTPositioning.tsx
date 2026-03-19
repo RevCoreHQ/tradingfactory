@@ -91,7 +91,19 @@ export function COTPositioning() {
   }
 
   const positions = data?.positions || [];
-  if (positions.length === 0) return null;
+  if (positions.length === 0) {
+    return (
+      <GlassCard delay={0.1}>
+        <div className="flex items-center gap-2 mb-3">
+          <Users className="h-4 w-4 text-neutral-accent" />
+          <h3 className="text-xs font-semibold text-foreground">COT Positioning</h3>
+        </div>
+        <p className="text-[10px] text-muted-foreground/50 text-center py-4">
+          No COT data available — CFTC reports update weekly (Tuesdays)
+        </p>
+      </GlassCard>
+    );
+  }
 
   // Get COT signal for current instrument
   const relevantPosition = cotMapping

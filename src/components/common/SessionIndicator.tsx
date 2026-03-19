@@ -40,7 +40,17 @@ export function SessionBadge({ instrumentId }: { instrumentId: string }) {
 /** Detailed session card for instrument page */
 export function SessionCard({ instrumentId }: { instrumentId: string }) {
   const { relevance } = useSessionRelevance(instrumentId);
-  if (!relevance) return null;
+  if (!relevance) {
+    return (
+      <GlassCard delay={0.15}>
+        <div className="flex items-center gap-1.5 mb-3">
+          <Clock className="h-3.5 w-3.5 text-muted-foreground/40" />
+          <h3 className="text-xs font-semibold text-muted-foreground">Session Window</h3>
+        </div>
+        <p className="text-[10px] text-muted-foreground/50">Loading session data...</p>
+      </GlassCard>
+    );
+  }
 
   const scoreColor = relevance.sessionScore >= 75
     ? "text-bullish"
