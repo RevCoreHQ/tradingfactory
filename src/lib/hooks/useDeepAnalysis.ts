@@ -88,8 +88,10 @@ export function useDeepAnalysisLLM(
   const bodyRef = useRef(requestBody);
   bodyRef.current = requestBody;
 
+  const [retryCount, setRetryCount] = useState(0);
+
   const { data, error, isLoading } = useSWR<{ analysis: DeepAnalysisLLMResult | null }>(
-    shouldFetch && requestBody ? `deep-analysis-${instrument.id}` : null,
+    shouldFetch && requestBody ? `deep-analysis-${instrument.id}-${retryCount}` : null,
     async () => {
       const body = bodyRef.current;
       if (!body) return { analysis: null };
@@ -110,11 +112,16 @@ export function useDeepAnalysisLLM(
     setShouldFetch(true);
   }, []);
 
+  const retry = useCallback(() => {
+    setRetryCount((c) => c + 1);
+  }, []);
+
   return {
     tradeIdeas: data?.analysis || null,
     isLoading,
     error,
     generate,
+    retry,
     isRequested: shouldFetch,
   };
 }

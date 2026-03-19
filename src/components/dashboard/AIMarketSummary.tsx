@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMarketSummary } from "@/lib/hooks/useMarketSummary";
 import { cn } from "@/lib/utils";
-import { Sparkles, AlertTriangle, Zap, ChevronDown } from "lucide-react";
+import { Sparkles, AlertTriangle, Zap, ChevronDown, RefreshCw } from "lucide-react";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
 
 function OutlookBadge({ outlook }: { outlook: "bullish" | "bearish" | "neutral" }) {
@@ -102,7 +102,7 @@ function SectorBreakdown({ sectors }: { sectors: { sector: string; outlook: "bul
 }
 
 export function AIMarketSummary() {
-  const { summary, isLoading, apiError } = useMarketSummary();
+  const { summary, isLoading, isRefreshing, apiError, refresh } = useMarketSummary();
 
   if (isLoading) {
     return (
@@ -163,11 +163,21 @@ export function AIMarketSummary() {
         <span className="text-[9px] font-mono text-muted-foreground/40 px-1.5 py-0.5 bg-[var(--surface-2)] rounded">
           {summary.provider === "gemini" ? "Gemini Flash" : summary.provider === "anthropic" ? "Claude Sonnet" : "GPT-4o Mini"}
         </span>
-        {timeSince && (
-          <span className="text-[9px] font-mono text-muted-foreground/40 ml-auto">
-            {timeSince}
-          </span>
-        )}
+        <div className="flex items-center gap-2 ml-auto">
+          {timeSince && (
+            <span className="text-[9px] font-mono text-muted-foreground/40">
+              {timeSince}
+            </span>
+          )}
+          <button
+            onClick={refresh}
+            disabled={isRefreshing}
+            className="p-1.5 rounded-md hover:bg-[var(--surface-2)] text-muted-foreground/40 hover:text-muted-foreground transition-colors disabled:opacity-40"
+            title="Refresh AI summary"
+          >
+            <RefreshCw className={cn("h-3 w-3", isRefreshing && "animate-spin")} />
+          </button>
+        </div>
       </div>
 
       {/* Content */}

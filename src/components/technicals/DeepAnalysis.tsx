@@ -289,7 +289,7 @@ function AITradeIdeas({ deepAnalysis, indicators, biasResult }: {
   indicators: import("@/lib/types/indicators").TechnicalSummary | null;
   biasResult: import("@/lib/types/bias").BiasResult | null;
 }) {
-  const { tradeIdeas, isLoading, generate, isRequested } = useDeepAnalysisLLM(deepAnalysis, indicators, biasResult);
+  const { tradeIdeas, isLoading, generate, retry, isRequested } = useDeepAnalysisLLM(deepAnalysis, indicators, biasResult);
   const instrument = useMarketStore((s) => s.selectedInstrument);
   const hasIndicators = !!indicators;
 
@@ -360,9 +360,20 @@ function AITradeIdeas({ deepAnalysis, indicators, biasResult }: {
           )}
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground/50 text-center py-6">
-          {!hasIndicators ? "Waiting for price data..." : "AI analysis unavailable — try again"}
-        </p>
+        <div className="text-center py-6 space-y-3">
+          <p className="text-xs text-muted-foreground/50">
+            {!hasIndicators ? "Waiting for price data..." : "AI analysis unavailable"}
+          </p>
+          {hasIndicators && (
+            <button
+              onClick={retry}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-neutral-accent/15 text-neutral-accent hover:bg-neutral-accent/25 transition-colors mx-auto"
+            >
+              <Sparkles className="h-3 w-3" />
+              Retry
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

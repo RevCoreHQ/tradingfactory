@@ -41,58 +41,49 @@ export function BiasBreakdown({ fundamentalScore, technicalScore, signals, compa
 
   if (compact) {
     const COLLAPSED_COUNT = 3;
-    const visibleSignals = signalsExpanded ? signals.slice(0, 6) : signals.slice(0, COLLAPSED_COUNT);
+    const visibleSignals = signalsExpanded ? signals.slice(0, 8) : signals.slice(0, COLLAPSED_COUNT);
     const hasMore = signals.length > COLLAPSED_COUNT;
 
     return (
-      <div className="space-y-3">
-        {/* Compact score summary */}
-        <GlassCard delay={0.1}>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Scores</h3>
+      <GlassCard delay={0.1}>
+        <div className="space-y-3">
+          {/* Score summary */}
+          <div className="flex items-center justify-between">
+            <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Scores</h3>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex-1 text-center">
+              <div className="text-[9px] text-muted-foreground/60 uppercase">Fund</div>
+              <AnimatedNumber
+                value={fundamentalScore.total}
+                format={(n) => n.toFixed(0)}
+                colorize
+                className="text-base font-bold"
+              />
             </div>
-            <div className="flex items-center gap-3">
-              <div className="flex-1 text-center">
-                <div className="text-[9px] text-muted-foreground/60 uppercase">Fund</div>
-                <AnimatedNumber
-                  value={fundamentalScore.total}
-                  format={(n) => n.toFixed(0)}
-                  colorize
-                  className="text-base font-bold"
-                />
-              </div>
-              <div className="w-px h-6 bg-border/30" />
-              <div className="flex-1 text-center">
-                <div className="text-[9px] text-muted-foreground/60 uppercase">Tech</div>
-                <AnimatedNumber
-                  value={technicalScore.total}
-                  format={(n) => n.toFixed(0)}
-                  colorize
-                  className="text-base font-bold"
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <ScoreBar label="Trend" value={technicalScore.trendDirection} weight={0.30} />
-              <ScoreBar label="Momentum" value={technicalScore.momentum} weight={0.30} />
-              <ScoreBar label="News" value={fundamentalScore.newsSentiment} weight={0.25} />
-              <ScoreBar label="Central Bank" value={fundamentalScore.centralBankPolicy} weight={0.20} />
+            <div className="w-px h-6 bg-border/30" />
+            <div className="flex-1 text-center">
+              <div className="text-[9px] text-muted-foreground/60 uppercase">Tech</div>
+              <AnimatedNumber
+                value={technicalScore.total}
+                format={(n) => n.toFixed(0)}
+                colorize
+                className="text-base font-bold"
+              />
             </div>
           </div>
-        </GlassCard>
+          <div className="space-y-1.5">
+            <ScoreBar label="Trend" value={technicalScore.trendDirection} weight={0.30} />
+            <ScoreBar label="Momentum" value={technicalScore.momentum} weight={0.30} />
+            <ScoreBar label="News" value={fundamentalScore.newsSentiment} weight={0.25} />
+            <ScoreBar label="Central Bank" value={fundamentalScore.centralBankPolicy} weight={0.20} />
+          </div>
 
-        {/* Compact signals — always renders to prevent layout shift */}
-        <GlassCard delay={0.2}>
-          <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Key Signals</h3>
-          {signals.length === 0 ? (
-            <div className="space-y-1.5">
-              <div className="h-3 w-3/4 shimmer rounded" />
-              <div className="h-3 w-2/3 shimmer rounded" />
-              <div className="h-3 w-1/2 shimmer rounded" />
-            </div>
-          ) : (
+          {/* Key Signals — inline, no separate card */}
+          {signals.length > 0 && (
             <>
+              <div className="h-px bg-border/20" />
+              <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Key Signals</h3>
               <div className="space-y-1.5">
                 {visibleSignals.map((signal, i) => (
                   <div key={i} className="flex items-start gap-1.5 text-[10px]">
@@ -112,15 +103,15 @@ export function BiasBreakdown({ fundamentalScore, technicalScore, signals, compa
               {hasMore && (
                 <button
                   onClick={() => setSignalsExpanded(!signalsExpanded)}
-                  className="mt-2 text-[10px] text-neutral-accent hover:text-foreground transition-colors"
+                  className="text-[10px] text-neutral-accent hover:text-foreground transition-colors"
                 >
-                  {signalsExpanded ? "Show less" : `Show ${signals.length - COLLAPSED_COUNT} more`}
+                  {signalsExpanded ? "Show less" : `+${signals.length - COLLAPSED_COUNT} more`}
                 </button>
               )}
             </>
           )}
-        </GlassCard>
-      </div>
+        </div>
+      </GlassCard>
     );
   }
 

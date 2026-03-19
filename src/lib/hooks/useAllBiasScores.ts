@@ -43,7 +43,7 @@ export function useAllBiasScores() {
     const intradayResults: Record<string, ReturnType<typeof calculateOverallBias>> = {};
 
     for (const inst of INSTRUMENTS) {
-      const fundamentalScore = calculateFundamentalScore(
+      const fundamentalResult = calculateFundamentalScore(
         news,
         [],
         { cpi: 0, gdp: 0, unemployment: 0 },
@@ -56,10 +56,12 @@ export function useAllBiasScores() {
       );
 
       intradayResults[inst.id] = calculateOverallBias(
-        fundamentalScore,
+        fundamentalResult.score,
         DEFAULT_TECHNICAL_SCORE,
         "intraday",
-        inst.id
+        inst.id,
+        undefined,
+        fundamentalResult.signals
       );
     }
 

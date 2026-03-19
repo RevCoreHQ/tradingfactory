@@ -1,14 +1,57 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import { useFearGreed, useBondYields, useCentralBanks } from "./useMarketData";
 import { useMarketStore } from "@/lib/store/market-store";
 import { INSTRUMENTS } from "@/lib/utils/constants";
-import type { MarketSummaryResult } from "@/lib/types/llm";
+import type { BiasResult } from "@/lib/types/bias";
+import type { MarketSummaryResult, SectorOutlook } from "@/lib/types/llm";
+import { getBiasDirection } from "@/lib/utils/formatters";
+
+/**
+ * Compute sector outlooks from actual bias results so they always
+ * agree with the Top Opportunities / conviction board.
+ */
+function computeSectorOutlooks(
+  results: Record<string, BiasResult>
+): SectorOutlook[] {
+  const sectors: Record<string, { symbol: string; bias: number }[]> = {
+    forex: [],
+    crypto: [],
+    indices: [],
+    commodities: [],
+  };
+
+  for (const [id, result] of Object.entries(results)) {
+    const inst = INSTRUMENTS.find((i) => i.id === id);
+    if (!inst) continue;
+    const sectorKey =
+      inst.category === "index" ? "indices" : inst.category === "commodity" ? "commodities" : inst.category;
+    if (sectors[sectorKey]) {
+      sectors[sectorKey].push({ symbol: inst.symbol, bias: result.overallBias });
+    }
+  }
+
+  return Object.entries(sectors)
+    .filter(([, instruments]) => instruments.length > 0)
+    .map(([sector, instruments]) => {
+      const avgBias = instruments.reduce((sum, i) => sum + i.bias, 0) / instruments.length;
+      const outlook: "bullish" | "bearish" | "neutral" =
+        avgBias > 10 ? "bullish" : avgBias < -10 ? "bearish" : "neutral";
+
+      const sorted = [...instruments].sort((a, b) => Math.abs(b.bias) - Math.abs(a.bias));
+      const keyAssets = sorted.slice(0, 3).map((i) => {
+        const dir = getBiasDirection(i.bias);
+        return `${i.symbol} — ${dir} (${i.bias > 0 ? "+" : ""}${Math.round(i.bias)})`;
+      });
+
+      return { sector, outlook, keyAssets };
+    });
+}
 
 const CACHE_KEY = "tf_market_summary";
-const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 function getCachedSummary(): MarketSummaryResult | null {
   try {
@@ -112,11 +155,13 @@ export function useMarketSummary() {
   const bodyRef = useRef(requestBody);
   bodyRef.current = requestBody;
 
-  const hasCached = !!getCachedSummary();
+  const [manualRefresh, setManualRefresh] = useState(0);
+
+  const hasCached = manualRefresh === 0 && !!getCachedSummary();
   const shouldFetch = (hasAnyData || timerReady) && !hasCached;
 
   const { data, error, isLoading } = useSWR<{ summary: MarketSummaryResult | null }>(
-    shouldFetch ? "market-summary" : null,
+    shouldFetch ? `market-summary-${manualRefresh}` : null,
     async () => {
       const body = bodyRef.current;
       const res = await fetch("/api/analysis/market-summary", {
@@ -146,17 +191,32 @@ export function useMarketSummary() {
 
   // Return cached summary immediately, or fresh data when available
   const cached = getCachedSummary();
-  const summary = freshSummary || cached || cachedRef.current;
+  const baseSummary = freshSummary || cached || cachedRef.current;
+
+  // Override LLM sector outlook with data-driven values from actual bias results
+  // so Sector Breakdown always agrees with Top Opportunities
+  const hasBiasData = Object.keys(currentResults).length > 0;
+  const summary = baseSummary && hasBiasData
+    ? { ...baseSummary, sectorOutlook: computeSectorOutlooks(currentResults) }
+    : baseSummary;
 
   // Surface API-level error (returned as { summary: null, error: "..." })
   const apiError = data && !data.summary
     ? (data as Record<string, unknown>).error as string | undefined
     : undefined;
 
+  const refresh = useCallback(() => {
+    localStorage.removeItem(CACHE_KEY);
+    cachedRef.current = null;
+    setManualRefresh((c) => c + 1);
+  }, []);
+
   return {
     summary,
     isLoading: !summary && isLoading,
+    isRefreshing: !!summary && isLoading,
     error,
     apiError,
+    refresh,
   };
 }

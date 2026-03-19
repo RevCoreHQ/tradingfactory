@@ -19,14 +19,14 @@ export function computeMTFTimeframeResult(
   currentPrice: number,
   timeframe: string
 ): MTFTimeframeResult {
-  const techScore = calculateTechnicalScore(summary, currentPrice);
+  const techResult = calculateTechnicalScore(summary, currentPrice);
   // Map 0-100 score to -100..+100 bias
-  const bias = (techScore.total - 50) * 2;
+  const bias = (techResult.score.total - 50) * 2;
 
   return {
     timeframe,
     label: TF_LABELS[timeframe] || timeframe.toUpperCase(),
-    technicalScore: techScore.total,
+    technicalScore: techResult.score.total,
     trendDirection: summary.trend.direction,
     rsi: summary.rsi.value,
     macdCrossover: summary.macd.crossover,

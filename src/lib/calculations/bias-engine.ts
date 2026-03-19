@@ -251,7 +251,7 @@ export function calculateFundamentalScore(
   bondYields: BondYield[],
   _quotes: Record<string, unknown>,
   instrument: string
-): FundamentalScore {
+): { score: FundamentalScore; signals: BiasSignal[] } {
   const ns = scoreNewsSentiment(news, instrument);
   const ed = scoreEconomicData(events, indicators, instrument);
   const cb = scoreCentralBankPolicy(banks, instrument);
@@ -288,12 +288,15 @@ export function calculateFundamentalScore(
     ic.score * interW;
 
   return {
-    total: clamp(total, 0, 100),
-    newsSentiment: ns.score,
-    economicData: ed.score,
-    centralBankPolicy: cb.score,
-    marketSentiment: ms.score,
-    intermarketCorrelation: ic.score,
+    score: {
+      total: clamp(total, 0, 100),
+      newsSentiment: ns.score,
+      economicData: ed.score,
+      centralBankPolicy: cb.score,
+      marketSentiment: ms.score,
+      intermarketCorrelation: ic.score,
+    },
+    signals: [...ns.signals, ...ed.signals, ...cb.signals, ...ms.signals, ...ic.signals],
   };
 }
 
@@ -496,7 +499,7 @@ function scoreSupportResistance(summary: TechnicalSummary, currentPrice: number)
 export function calculateTechnicalScore(
   summary: TechnicalSummary,
   currentPrice: number
-): TechnicalScore {
+): { score: TechnicalScore; signals: BiasSignal[] } {
   const td = scoreTrendDirection(summary);
   const mo = scoreMomentum(summary);
   const vo = scoreVolatility(summary);
@@ -511,12 +514,15 @@ export function calculateTechnicalScore(
     sr.score * 0.15;
 
   return {
-    total: clamp(total, 0, 100),
-    trendDirection: td.score,
-    momentum: mo.score,
-    volatility: vo.score,
-    volumeAnalysis: va.score,
-    supportResistance: sr.score,
+    score: {
+      total: clamp(total, 0, 100),
+      trendDirection: td.score,
+      momentum: mo.score,
+      volatility: vo.score,
+      volumeAnalysis: va.score,
+      supportResistance: sr.score,
+    },
+    signals: [...td.signals, ...mo.signals, ...vo.signals, ...va.signals, ...sr.signals],
   };
 }
 

@@ -42,7 +42,7 @@ export function useBiasScore() {
     const dxy = bondData?.dxy || DEFAULT_DXY;
     const banks = bankData?.banks || [];
 
-    const fundamentalScore = calculateFundamentalScore(
+    const fundamentalResult = calculateFundamentalScore(
       news,
       [],
       { cpi: 0, gdp: 0, unemployment: 0 },
@@ -55,11 +55,15 @@ export function useBiasScore() {
     );
 
     const currentPrice = candles.length > 0 ? candles[candles.length - 1].close : 0;
-    const technicalScore = indicators
+    const technicalResult = indicators
       ? calculateTechnicalScore(indicators, currentPrice)
-      : DEFAULT_TECHNICAL_SCORE;
+      : null;
 
-    const ruleBasedResult = calculateOverallBias(fundamentalScore, technicalScore, biasTimeframe, instrument.id);
+    const fundamentalScore = fundamentalResult.score;
+    const technicalScore = technicalResult?.score ?? DEFAULT_TECHNICAL_SCORE;
+    const allSignals = [...fundamentalResult.signals, ...(technicalResult?.signals ?? [])];
+
+    const ruleBasedResult = calculateOverallBias(fundamentalScore, technicalScore, biasTimeframe, instrument.id, undefined, allSignals);
 
     // Enhance with LLM analysis
     let result = applyLLMAnalysis(ruleBasedResult, llmAnalysis);
