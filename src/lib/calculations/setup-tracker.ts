@@ -195,15 +195,20 @@ export function isSetupActive(status: SetupStatus): boolean {
 
 export function getStatusLabel(status: SetupStatus): string {
   const labels: Record<SetupStatus, string> = {
-    pending: "Pending Entry",
-    active: "Active",
-    breakeven: "Breakeven",
-    tp1_hit: "TP1 Hit",
-    tp2_hit: "TP2 Hit",
+    pending: "Awaiting Entry",
+    active: "Entry Zone",
+    breakeven: "Running (BE)",
+    tp1_hit: "Running (TP1)",
+    tp2_hit: "Running (TP2)",
     tp3_hit: "TP3 Hit",
     sl_hit: "SL Hit",
     expired: "Expired",
     invalidated: "Invalidated",
   };
   return labels[status];
+}
+
+/** Returns true if the setup is still actionable (can be entered) */
+export function isActionable(status: SetupStatus): boolean {
+  return status === "pending" || status === "active";
 }

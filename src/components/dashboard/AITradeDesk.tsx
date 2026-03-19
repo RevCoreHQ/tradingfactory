@@ -6,7 +6,7 @@ import { useTradeDeskData } from "@/lib/hooks/useTradeDeskData";
 import { useTrackedSetups } from "@/lib/hooks/useTrackedSetups";
 import { useMarketStore } from "@/lib/store/market-store";
 import { INSTRUMENTS } from "@/lib/utils/constants";
-import { getStatusLabel } from "@/lib/calculations/setup-tracker";
+import { getStatusLabel, isActionable } from "@/lib/calculations/setup-tracker";
 import { computePortfolioRisk } from "@/lib/calculations/risk-engine";
 import { cn } from "@/lib/utils";
 import type {
@@ -165,6 +165,32 @@ function SignalDot({ direction, match }: { direction: string; match: boolean }) 
   );
 }
 
+function getTradeType(setup: TradeDeskSetup): string {
+  const agreeing = setup.signals.filter((s) => s.direction === setup.direction);
+  if (agreeing.length === 0) return "Mixed";
+  const counts: Record<string, number> = {};
+  for (const s of agreeing) {
+    counts[s.type] = (counts[s.type] || 0) + 1;
+  }
+  const dominant = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+  const labels: Record<string, string> = {
+    trend: "Trend",
+    mean_reversion: "Mean Rev",
+    momentum: "Momentum",
+    reversal: "Reversal",
+  };
+  return labels[dominant] ?? dominant;
+}
+
+function TradeTypeBadge({ setup }: { setup: TradeDeskSetup }) {
+  const label = getTradeType(setup);
+  return (
+    <span className="text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted/10">
+      {label}
+    </span>
+  );
+}
+
 // ==================== Progress Bar ====================
 
 function SetupProgress({ tracked }: { tracked: TrackedSetup }) {
@@ -272,6 +298,7 @@ function SetupCard({ tracked, rank }: { tracked: TrackedSetup; rank: number }) {
         </span>
 
         <StatusBadge status={status} />
+        <TradeTypeBadge setup={setup} />
 
         <div className="flex items-center gap-1 ml-auto">
           {setup.signals.map((s, i) => (
@@ -860,23 +887,44 @@ export function AITradeDesk() {
         </div>
       </div>
 
-      {activeTab === "active" && (
-        <>
-          <StatsRow setups={setups} portfolioRisk={portfolioRisk} />
-          <div className="space-y-1.5">
-            {activeSetups.slice(0, 8).map((tracked, i) => (
-              <SetupCard key={tracked.id} tracked={tracked} rank={i + 1} />
-            ))}
-          </div>
-          {activeSetups.length === 0 && (
-            <div className="text-center py-6">
-              <p className="text-xs text-muted-foreground/50">
-                No active setups. All setups have either been stopped out or expired.
-              </p>
-            </div>
-          )}
-        </>
-      )}
+      {activeTab === "active" && (() => {
+        const actionable = activeSetups.filter((t) => isActionable(t.status));
+        const running = activeSetups.filter((t) => !isActionable(t.status));
+        return (
+          <>
+            <StatsRow setups={setups} portfolioRisk={portfolioRisk} />
+
+            {actionable.length > 0 && (
+              <div className="space-y-1.5">
+                {actionable.slice(0, 8).map((tracked, i) => (
+                  <SetupCard key={tracked.id} tracked={tracked} rank={i + 1} />
+                ))}
+              </div>
+            )}
+
+            {actionable.length === 0 && (
+              <div className="text-center py-6">
+                <p className="text-xs text-muted-foreground/50">
+                  No actionable setups right now. Waiting for new entry signals.
+                </p>
+              </div>
+            )}
+
+            {running.length > 0 && (
+              <div className="mt-4">
+                <div className="text-[9px] font-semibold text-muted-foreground/40 uppercase tracking-wider mb-2">
+                  Running — Do Not Chase
+                </div>
+                <div className="space-y-1 opacity-60">
+                  {running.map((tracked, i) => (
+                    <SetupCard key={tracked.id} tracked={tracked} rank={actionable.length + i + 1} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        );
+      })()}
 
       {activeTab === "history" && <HistoryTab history={historySetups} />}
 
