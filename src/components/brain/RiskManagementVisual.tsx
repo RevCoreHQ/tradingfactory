@@ -48,7 +48,7 @@ export function RiskManagementVisual() {
         </div>
       </motion.div>
 
-      {/* Portfolio Limits */}
+      {/* Risk Per Trade */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -58,49 +58,38 @@ export function RiskManagementVisual() {
       >
         <div className="flex items-center gap-2 mb-1">
           <ShieldAlert className="h-4 w-4 text-bearish/60" />
-          <h4 className="text-[11px] font-semibold text-foreground">Portfolio Guardrails</h4>
+          <h4 className="text-[11px] font-semibold text-foreground">Risk Per Trade</h4>
         </div>
         <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
-          Hard limits that prevent over-exposure regardless of conviction.
+          Fixed percentage risk model. Every trade risks the same % of account equity, scaled by conviction.
         </p>
         <div className="space-y-2.5">
-          {[
-            { name: "Portfolio Heat", limit: "6%", desc: "Max total equity at risk", pct: 60 },
-            { name: "Daily Loss", limit: "5%", desc: "Stop trading if hit", pct: 50 },
-            { name: "Weekly Loss", limit: "10%", desc: "Stop trading if hit", pct: 100 },
-            { name: "Open Positions", limit: "5 max", desc: "Concurrent trade cap", pct: 50 },
-          ].map((g) => (
-            <div key={g.name} className="space-y-0.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-semibold text-foreground">{g.name}</span>
-                <span className="text-[10px] font-mono text-bearish/70">{g.limit}</span>
-              </div>
-              <div className="h-1.5 bg-surface-2/50 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  whileInView={{ width: `${g.pct}%` }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6 }}
-                  className="h-full bg-bearish/40 rounded-full"
-                />
-              </div>
-              <span className="text-[9px] text-muted-foreground/40">{g.desc}</span>
+          <div className="space-y-0.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-semibold text-foreground">Base Risk</span>
+              <span className="text-[10px] font-mono text-neutral-accent/70">2% per trade</span>
             </div>
-          ))}
+            <span className="text-[9px] text-muted-foreground/40">Applied to A-tier setups</span>
+          </div>
+          <div className="space-y-0.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-semibold text-foreground">A+ Premium</span>
+              <span className="text-[10px] font-mono text-bullish/70">2.5% per trade</span>
+            </div>
+            <span className="text-[9px] text-muted-foreground/40">1.25x multiplier for highest conviction</span>
+          </div>
+          <div className="space-y-0.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-semibold text-foreground">Learning Adjusted</span>
+              <span className="text-[10px] font-mono text-muted-foreground/60">0.5x — 1.5x</span>
+            </div>
+            <span className="text-[9px] text-muted-foreground/40">Confluence learning scales risk after 5+ trades on a pattern</span>
+          </div>
         </div>
-        <div className="mt-2 space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-bullish" />
-            <span className="text-[9px] text-muted-foreground/50">CLEAR — All limits within bounds</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-amber-500" />
-            <span className="text-[9px] text-muted-foreground/50">CAUTION — Approaching limit (60%+)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-bearish" />
-            <span className="text-[9px] text-muted-foreground/50">STOP — Limit hit, no new trades</span>
-          </div>
+        <div className="mt-2 bg-surface-2/30 rounded-md px-3 py-2">
+          <p className="text-[9px] font-mono text-muted-foreground/50 leading-relaxed">
+            risk$ = equity &times; 2% &times; convictionMult &times; learningMult
+          </p>
         </div>
       </motion.div>
 

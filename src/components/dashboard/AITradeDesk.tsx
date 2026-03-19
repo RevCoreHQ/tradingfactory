@@ -598,28 +598,13 @@ function StatsRow({
 
       <div className="section-card p-3">
         <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
-          Portfolio Heat
+          Risk Per Trade
         </div>
-        <div className="flex items-center gap-2">
-          <span className={cn(
-            "text-xs font-bold font-mono",
-            portfolioRisk.portfolioHeat >= 6 ? "text-bearish" : portfolioRisk.portfolioHeat >= 3.6 ? "text-[var(--amber)]" : "text-bullish"
-          )}>
-            {portfolioRisk.portfolioHeat.toFixed(1)}%
-          </span>
-          {portfolioRisk.riskStatus && (
-            <span className={cn(
-              "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded",
-              portfolioRisk.riskStatus === "CLEAR" && "bg-bullish/15 text-bullish",
-              portfolioRisk.riskStatus === "CAUTION" && "bg-amber/15 text-[var(--amber)] animate-pulse",
-              portfolioRisk.riskStatus === "STOP" && "bg-bearish/15 text-bearish animate-pulse"
-            )}>
-              {portfolioRisk.riskStatus}
-            </span>
-          )}
+        <div className="text-xs font-bold font-mono text-foreground">
+          {portfolioRisk.riskPercent}%
         </div>
         <div className="text-[10px] text-muted-foreground/50 mt-0.5">
-          ${portfolioRisk.riskPerTrade.toFixed(0)} risk/trade ({portfolioRisk.riskPercent}%)
+          ${portfolioRisk.riskPerTrade.toFixed(0)} per trade
         </div>
       </div>
     </div>
