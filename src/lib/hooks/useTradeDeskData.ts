@@ -42,7 +42,7 @@ export function useTradeDeskData(confluencePatterns?: Record<string, ConfluenceP
   const accountEquity = getStoredNumber(ACCOUNT_EQUITY_KEY, 10000);
   const riskPercent = getStoredNumber(RISK_PERCENT_KEY, 2);
 
-  const { data: candleMap, isLoading, error } = useSWR(
+  const { data: candleMap, isLoading, error, mutate } = useSWR(
     "trade-desk-candles",
     fetchAllCandles,
     {
@@ -105,5 +105,6 @@ export function useTradeDeskData(confluencePatterns?: Record<string, ConfluenceP
     isLoading,
     error,
     allInstrumentCount: INSTRUMENTS.length,
+    refresh: () => mutate(),
   };
 }

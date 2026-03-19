@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTradeDeskData } from "@/lib/hooks/useTradeDeskData";
 import { useTrackedSetups } from "@/lib/hooks/useTrackedSetups";
@@ -32,6 +32,7 @@ import {
   Copy,
   History,
   Brain,
+  RefreshCw,
 } from "lucide-react";
 
 // ==================== Copy Price ====================
@@ -720,7 +721,7 @@ function TabBar({
   ];
 
   return (
-    <div className="flex items-center gap-1 mb-4">
+    <div className="flex items-center gap-1">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
@@ -772,10 +773,36 @@ function TradeDeskSkeleton() {
 
 // ==================== Main Component ====================
 
+function useTimeAgo(deps: unknown[]) {
+  const [lastUpdated, setLastUpdated] = useState<number>(Date.now());
+  const [, setTick] = useState(0);
+
+  // Update timestamp when deps change
+  const depsKey = JSON.stringify(deps.map((d) => (Array.isArray(d) ? d.length : d)));
+  const prevRef = useRef(depsKey);
+  if (prevRef.current !== depsKey) {
+    prevRef.current = depsKey;
+    setLastUpdated(Date.now());
+  }
+
+  // Tick every 10s for "X ago" display
+  useEffect(() => {
+    const interval = setInterval(() => setTick((t) => t + 1), 10_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const seconds = Math.floor((Date.now() - lastUpdated) / 1000);
+  if (seconds < 10) return "Just now";
+  if (seconds < 60) return `${seconds}s ago`;
+  return `${Math.floor(seconds / 60)}m ago`;
+}
+
 export function AITradeDesk() {
   const [activeTab, setActiveTab] = useState<TabId>("active");
-  const { setups, portfolioRisk: baseRisk, isLoading, error } = useTradeDeskData();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { setups, portfolioRisk: baseRisk, isLoading, error, refresh } = useTradeDeskData();
   const { activeSetups, historySetups, confluencePatterns } = useTrackedSetups(setups);
+  const timeAgo = useTimeAgo([setups]);
 
   const portfolioRisk = useMemo(
     () =>
@@ -805,14 +832,33 @@ export function AITradeDesk() {
 
   const patternCount = Object.keys(confluencePatterns).length;
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refresh();
+    setIsRefreshing(false);
+  };
+
   return (
     <div>
-      <TabBar
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        historyCount={historySetups.length}
-        patternCount={patternCount}
-      />
+      <div className="flex items-center justify-between mb-4">
+        <TabBar
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          historyCount={historySetups.length}
+          patternCount={patternCount}
+        />
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-muted-foreground/40">{timeAgo}</span>
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="p-1 rounded-md hover:bg-surface-2/50 transition-colors text-muted-foreground/40 hover:text-muted-foreground disabled:opacity-30"
+            title="Refresh signals"
+          >
+            <RefreshCw className={cn("h-3 w-3", isRefreshing && "animate-spin")} />
+          </button>
+        </div>
+      </div>
 
       {activeTab === "active" && (
         <>
