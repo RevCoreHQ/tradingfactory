@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback, useMemo } from "react";
+import { useRef, useCallback, useMemo, useEffect } from "react";
 import useSWR from "swr";
 import type { TradeDeskSetup, TrackedSetup, ConfluencePattern } from "@/lib/types/signals";
 import {
@@ -29,6 +29,7 @@ export function useTrackedSetups(
   freshSetups: TradeDeskSetup[]
 ): UseTrackedSetupsResult {
   const patternsRef = useRef<Record<string, ConfluencePattern>>({});
+  const pendingSaveRef = useRef<{ all: TrackedSetup[]; patterns: Record<string, ConfluencePattern> } | null>(null);
 
   // Load persisted state via SWR (runs once on mount, then manual mutations)
   const { data: tracked, mutate } = useSWR(
@@ -41,13 +42,12 @@ export function useTrackedSetups(
     { revalidateOnFocus: false, refreshInterval: 0 }
   );
 
-  // Process fresh setups against tracked state
-  const { activeSetups, historySetups } = useMemo(() => {
+  // Pure computation — NO side effects
+  const { activeSetups, historySetups, needsPersist } = useMemo(() => {
     const currentTracked = tracked ?? [];
-    const patterns = patternsRef.current;
+    const patterns = { ...patternsRef.current };
     let changed = false;
 
-    // Map of instrumentId → existing tracked (non-terminal only)
     const activeMap = new Map<string, TrackedSetup>();
     const terminalList: TrackedSetup[] = [];
 
@@ -65,41 +65,35 @@ export function useTrackedSetups(
       const existing = activeMap.get(fresh.instrumentId);
 
       if (existing) {
-        // Update status with current price
         const updated = updateSetupStatus(existing, fresh.currentPrice);
-        // Keep setup.currentPrice in sync for progress bar visualization (no persist needed)
+        // Keep currentPrice in sync for progress bar (visual only, no persist trigger)
         if (updated.setup.currentPrice !== fresh.currentPrice) {
           updated.setup = { ...updated.setup, currentPrice: fresh.currentPrice };
         }
 
         if (updated.status !== existing.status) {
           changed = true;
-
-          // If just became terminal, record outcome
           if (!isSetupActive(updated.status)) {
             const key = updated.confluenceKey;
             patterns[key] = recordOutcome(patterns[key] ?? null, updated);
             terminalList.push(updated);
-            continue; // Don't add to active list
+            continue;
           }
         }
 
         updatedActive.push(updated);
         activeMap.delete(fresh.instrumentId);
       } else {
-        // Check if there's a recent terminal for this instrument with same confluence
         const confKey = buildConfluenceKey(fresh);
         const recentTerminal = terminalList.find(
           (t) =>
             t.setup.instrumentId === fresh.instrumentId &&
             t.confluenceKey === confKey &&
-            Date.now() - (t.closedAt ?? 0) < 60 * 60 * 1000 // Within 1 hour
+            Date.now() - (t.closedAt ?? 0) < 60 * 60 * 1000
         );
 
         if (!recentTerminal) {
-          // New setup — create tracked
           const newTracked = createTrackedSetup(fresh);
-          // Immediately check if already active (price in zone)
           const checked = updateSetupStatus(newTracked, fresh.currentPrice);
           updatedActive.push(checked);
           changed = true;
@@ -107,7 +101,6 @@ export function useTrackedSetups(
       }
     }
 
-    // Any remaining in activeMap that weren't in freshSetups — check expiry
     for (const [, remaining] of activeMap) {
       const updated = updateSetupStatus(remaining, remaining.setup.currentPrice);
       if (!isSetupActive(updated.status)) {
@@ -122,14 +115,9 @@ export function useTrackedSetups(
       }
     }
 
-    // Persist if changed
-    if (changed && typeof window !== "undefined") {
-      const all = [...updatedActive, ...terminalList];
-      saveTrackedSetups(all);
-      saveConfluencePatterns(patterns);
+    // Stage for persistence (but don't execute here)
+    if (changed) {
       patternsRef.current = patterns;
-      // Trigger SWR revalidation without refetching
-      mutate(all, false);
     }
 
     return {
@@ -139,8 +127,18 @@ export function useTrackedSetups(
       historySetups: terminalList.sort(
         (a, b) => (b.closedAt ?? 0) - (a.closedAt ?? 0)
       ),
+      needsPersist: changed ? [...updatedActive, ...terminalList] : null,
     };
-  }, [freshSetups, tracked, mutate]);
+  }, [freshSetups, tracked]);
+
+  // Persist OUTSIDE of useMemo — runs after render, no re-render loop
+  useEffect(() => {
+    if (needsPersist && typeof window !== "undefined") {
+      saveTrackedSetups(needsPersist);
+      saveConfluencePatterns(patternsRef.current);
+      mutate(needsPersist, false);
+    }
+  }, [needsPersist, mutate]);
 
   const clearHistory = useCallback(() => {
     clearAllTrackingData();
