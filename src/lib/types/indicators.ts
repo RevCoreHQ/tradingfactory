@@ -72,6 +72,28 @@ export interface TrendAnalysis {
   swingPoints: { price: number; timestamp: number; type: "high" | "low" }[];
 }
 
+export interface ADXResult {
+  adx: number;
+  plusDI: number;
+  minusDI: number;
+}
+
+export interface ForceIndexResult {
+  shortTerm: number;      // 2-period EMA of Force Index
+  intermediate: number;   // 13-period EMA of Force Index
+}
+
+export interface ElderRayResult {
+  bullPower: number;      // High - EMA(13)
+  bearPower: number;      // Low - EMA(13)
+}
+
+export interface ImpulseResult {
+  color: "green" | "red" | "blue";
+  emaSlope: "up" | "down" | "flat";
+  macdHistogramSlope: "up" | "down" | "flat";
+}
+
 export interface TechnicalSummary {
   instrument: string;
   timeframe: string;
@@ -88,4 +110,8 @@ export interface TechnicalSummary {
   supportResistance: SupportResistanceLevel[];
   fibonacci: FibonacciLevel[];
   trend: TrendAnalysis;
+  adx: ADXResult;
+  forceIndex: ForceIndexResult;
+  elderRay: ElderRayResult;
+  impulse: ImpulseResult;
 }

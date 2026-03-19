@@ -19,7 +19,8 @@ import { TradeJournal } from "@/components/journal/TradeJournal";
 import { useMarketStore } from "@/lib/store/market-store";
 import { useSmartAlerts } from "@/lib/hooks/useSmartAlerts";
 import { useRealtimePrices } from "@/lib/hooks/useRealtimePrices";
-import { Activity, Sparkles, Target, AlertTriangle, BarChart3, Shield } from "lucide-react";
+import { AITradeDesk } from "./AITradeDesk";
+import { Activity, Sparkles, Target, AlertTriangle, BarChart3, Shield, Brain } from "lucide-react";
 
 export function MarketOverview() {
   useAllBiasScores();
@@ -68,7 +69,18 @@ export function MarketOverview() {
             <AIMarketSummary />
           </section>
 
-          {/* Section 3: Top Opportunities */}
+          {/* Section 3: AI Trade Desk */}
+          <section>
+            <SectionHeader
+              title="AI Trade Desk"
+              subtitle="Book-sourced mechanical systems, conviction tiers, and risk management"
+              icon={<Brain className="h-3.5 w-3.5" />}
+              accentColor="green"
+            />
+            <AITradeDesk />
+          </section>
+
+          {/* Section 4: Top Opportunities */}
           <section>
             <SectionHeader
               title="Top Opportunities"

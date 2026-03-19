@@ -12,11 +12,15 @@ import type {
   SupportResistanceLevel,
   FibonacciLevel,
   TrendAnalysis,
+  ADXResult,
+  ForceIndexResult,
+  ElderRayResult,
+  ImpulseResult,
 } from "@/lib/types/indicators";
 
 // ============== EMA / SMA ==============
 
-function calcEMA(values: number[], period: number): number[] {
+export function calcEMA(values: number[], period: number): number[] {
   if (values.length < period) return [];
   const k = 2 / (period + 1);
   const ema: number[] = [];
@@ -29,7 +33,7 @@ function calcEMA(values: number[], period: number): number[] {
   return ema;
 }
 
-function calcSMA(values: number[], period: number): number[] {
+export function calcSMA(values: number[], period: number): number[] {
   if (values.length < period) return [];
   const sma: number[] = [];
   let sum = 0;
@@ -47,7 +51,7 @@ export function calculateMovingAverages(candles: OHLCV[]): MovingAverageResult[]
   const currentPrice = closes[closes.length - 1];
   const results: MovingAverageResult[] = [];
 
-  for (const period of [9, 21, 50, 200]) {
+  for (const period of [9, 13, 21, 50, 200]) {
     const emaValues = calcEMA(closes, period);
     if (emaValues.length > 0) {
       const value = emaValues[emaValues.length - 1];
@@ -60,7 +64,7 @@ export function calculateMovingAverages(candles: OHLCV[]): MovingAverageResult[]
     }
   }
 
-  for (const period of [50, 200]) {
+  for (const period of [9, 20, 26, 50, 200]) {
     const smaValues = calcSMA(closes, period);
     if (smaValues.length > 0) {
       const value = smaValues[smaValues.length - 1];
@@ -424,6 +428,175 @@ export function analyzeTrend(candles: OHLCV[]): TrendAnalysis {
   return { direction, pattern, strength: Math.max(0, Math.min(100, strength)), swingPoints };
 }
 
+// ============== ADX (Average Directional Index) ==============
+
+export function calculateADX(candles: OHLCV[], period: number = 14): ADXResult {
+  if (candles.length < period * 2 + 1) {
+    return { adx: 0, plusDI: 0, minusDI: 0 };
+  }
+
+  const plusDM: number[] = [];
+  const minusDM: number[] = [];
+  const trueRange: number[] = [];
+
+  for (let i = 1; i < candles.length; i++) {
+    const upMove = candles[i].high - candles[i - 1].high;
+    const downMove = candles[i - 1].low - candles[i].low;
+    plusDM.push(upMove > downMove && upMove > 0 ? upMove : 0);
+    minusDM.push(downMove > upMove && downMove > 0 ? downMove : 0);
+    trueRange.push(
+      Math.max(
+        candles[i].high - candles[i].low,
+        Math.abs(candles[i].high - candles[i - 1].close),
+        Math.abs(candles[i].low - candles[i - 1].close)
+      )
+    );
+  }
+
+  // Wilder smoothing
+  function wilderSmooth(values: number[], p: number): number[] {
+    const result: number[] = [];
+    let sum = 0;
+    for (let i = 0; i < p; i++) sum += values[i];
+    result.push(sum);
+    for (let i = p; i < values.length; i++) {
+      result.push(result[result.length - 1] - result[result.length - 1] / p + values[i]);
+    }
+    return result;
+  }
+
+  const smoothPlusDM = wilderSmooth(plusDM, period);
+  const smoothMinusDM = wilderSmooth(minusDM, period);
+  const smoothTR = wilderSmooth(trueRange, period);
+
+  const len = Math.min(smoothPlusDM.length, smoothMinusDM.length, smoothTR.length);
+  const plusDIArr: number[] = [];
+  const minusDIArr: number[] = [];
+  const dx: number[] = [];
+
+  for (let i = 0; i < len; i++) {
+    const pdi = smoothTR[i] > 0 ? (smoothPlusDM[i] / smoothTR[i]) * 100 : 0;
+    const mdi = smoothTR[i] > 0 ? (smoothMinusDM[i] / smoothTR[i]) * 100 : 0;
+    plusDIArr.push(pdi);
+    minusDIArr.push(mdi);
+    const sum = pdi + mdi;
+    dx.push(sum > 0 ? (Math.abs(pdi - mdi) / sum) * 100 : 0);
+  }
+
+  if (dx.length < period) {
+    return { adx: 0, plusDI: 0, minusDI: 0 };
+  }
+
+  let adxSum = 0;
+  for (let i = 0; i < period; i++) adxSum += dx[i];
+  let adx = adxSum / period;
+  for (let i = period; i < dx.length; i++) {
+    adx = (adx * (period - 1) + dx[i]) / period;
+  }
+
+  return {
+    adx,
+    plusDI: plusDIArr[plusDIArr.length - 1],
+    minusDI: minusDIArr[minusDIArr.length - 1],
+  };
+}
+
+// ============== Force Index ==============
+
+export function calculateForceIndex(candles: OHLCV[]): ForceIndexResult {
+  if (candles.length < 14) {
+    return { shortTerm: 0, intermediate: 0 };
+  }
+
+  // Raw Force Index: (Close - PrevClose) × Volume
+  const forceRaw: number[] = [];
+  for (let i = 1; i < candles.length; i++) {
+    forceRaw.push((candles[i].close - candles[i - 1].close) * (candles[i].volume || 1));
+  }
+
+  const ema2 = calcEMA(forceRaw, 2);
+  const ema13 = calcEMA(forceRaw, 13);
+
+  return {
+    shortTerm: ema2.length > 0 ? ema2[ema2.length - 1] : 0,
+    intermediate: ema13.length > 0 ? ema13[ema13.length - 1] : 0,
+  };
+}
+
+// ============== Elder-Ray ==============
+
+export function calculateElderRay(candles: OHLCV[]): ElderRayResult {
+  if (candles.length < 14) {
+    return { bullPower: 0, bearPower: 0 };
+  }
+
+  const closes = candles.map((c) => c.close);
+  const ema13 = calcEMA(closes, 13);
+  if (ema13.length === 0) {
+    return { bullPower: 0, bearPower: 0 };
+  }
+
+  const currentEma = ema13[ema13.length - 1];
+  const currentCandle = candles[candles.length - 1];
+
+  return {
+    bullPower: currentCandle.high - currentEma,
+    bearPower: currentCandle.low - currentEma,
+  };
+}
+
+// ============== Elder Impulse System ==============
+
+export function calculateImpulse(candles: OHLCV[]): ImpulseResult {
+  if (candles.length < 27) {
+    return { color: "blue", emaSlope: "flat", macdHistogramSlope: "flat" };
+  }
+
+  const closes = candles.map((c) => c.close);
+
+  // EMA(13) slope
+  const ema13 = calcEMA(closes, 13);
+  let emaSlope: "up" | "down" | "flat" = "flat";
+  if (ema13.length >= 2) {
+    const diff = ema13[ema13.length - 1] - ema13[ema13.length - 2];
+    if (diff > 0) emaSlope = "up";
+    else if (diff < 0) emaSlope = "down";
+  }
+
+  // MACD Histogram slope
+  const ema12 = calcEMA(closes, 12);
+  const ema26 = calcEMA(closes, 26);
+  let macdHistogramSlope: "up" | "down" | "flat" = "flat";
+
+  if (ema12.length > 0 && ema26.length > 0) {
+    const offset = ema12.length - ema26.length;
+    const macdLine: number[] = [];
+    for (let i = 0; i < ema26.length; i++) {
+      macdLine.push(ema12[i + offset] - ema26[i]);
+    }
+    const signalLine = calcEMA(macdLine, 9);
+    if (signalLine.length >= 2) {
+      const sOffset = macdLine.length - signalLine.length;
+      const histCurr = macdLine[macdLine.length - 1] - signalLine[signalLine.length - 1];
+      const histPrev = macdLine[macdLine.length - 2] - signalLine[signalLine.length - 2];
+      if (histCurr > histPrev) macdHistogramSlope = "up";
+      else if (histCurr < histPrev) macdHistogramSlope = "down";
+    }
+  }
+
+  // Combine
+  let color: "green" | "red" | "blue";
+  if (emaSlope === "up" && macdHistogramSlope === "up") {
+    color = "green";
+  } else if (emaSlope === "down" && macdHistogramSlope === "down") {
+    color = "red";
+  } else {
+    color = "blue";
+  }
+
+  return { color, emaSlope, macdHistogramSlope };
+}
+
 // ============== Master Function ==============
 
 export function calculateAllIndicators(
@@ -452,5 +625,9 @@ export function calculateAllIndicators(
     supportResistance: detectSupportResistance(candles),
     fibonacci: calculateFibonacci(candles),
     trend: analyzeTrend(candles),
+    adx: calculateADX(candles),
+    forceIndex: calculateForceIndex(candles),
+    elderRay: calculateElderRay(candles),
+    impulse: calculateImpulse(candles),
   };
 }
