@@ -97,6 +97,24 @@ export interface ConfluencePattern {
   lastUpdated: number;
 }
 
+// ==================== Risk Management ====================
+
+export type RiskStatus = "CLEAR" | "CAUTION" | "STOP";
+
+export interface RiskConfig {
+  maxDailyLossPercent: number;   // e.g. 5
+  maxWeeklyLossPercent: number;  // e.g. 10
+  maxOpenPositions: number;      // e.g. 5
+  maxPortfolioHeat: number;      // e.g. 6 (%)
+}
+
+export const DEFAULT_RISK_CONFIG: RiskConfig = {
+  maxDailyLossPercent: 5,
+  maxWeeklyLossPercent: 10,
+  maxOpenPositions: 5,
+  maxPortfolioHeat: 6,
+};
+
 // ==================== Portfolio Risk ====================
 
 export interface PortfolioRisk {
@@ -106,4 +124,12 @@ export interface PortfolioRisk {
   portfolioHeat: number; // % of equity at risk across all open
   canTrade: boolean;
   warning: string | null;
+  // Extended risk fields
+  riskStatus?: RiskStatus;
+  dailyPnl?: number;
+  dailyPnlPercent?: number;
+  weeklyPnl?: number;
+  weeklyPnlPercent?: number;
+  openPositions?: number;
+  warnings?: string[];
 }

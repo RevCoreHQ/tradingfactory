@@ -20,6 +20,12 @@ import { useSmartAlerts } from "@/lib/hooks/useSmartAlerts";
 import { useRealtimePrices } from "@/lib/hooks/useRealtimePrices";
 import { AITradeDesk } from "./AITradeDesk";
 import { TradingAdvisor } from "./TradingAdvisor";
+import { AccountStatusBar } from "./AccountStatusBar";
+import { useTradeDeskData } from "@/lib/hooks/useTradeDeskData";
+import { useTrackedSetups } from "@/lib/hooks/useTrackedSetups";
+import { computePortfolioRisk } from "@/lib/calculations/risk-engine";
+import { DEFAULT_RISK_CONFIG } from "@/lib/types/signals";
+import { useMemo } from "react";
 import { Activity, Sparkles, AlertTriangle, BarChart3, Shield, Brain, MessageSquare } from "lucide-react";
 
 export function MarketOverview() {
@@ -28,6 +34,21 @@ export function MarketOverview() {
   useRealtimePrices();
   const journalOpen = useMarketStore((s) => s.journalOpen);
   const setJournalOpen = useMarketStore((s) => s.setJournalOpen);
+
+  // SWR deduplicates — same cache key as AITradeDesk, no extra API calls
+  const { setups, portfolioRisk: baseRisk } = useTradeDeskData();
+  const { activeSetups, historySetups } = useTrackedSetups(setups);
+
+  const portfolioRisk = useMemo(
+    () =>
+      computePortfolioRisk(
+        baseRisk.accountEquity,
+        baseRisk.riskPercent,
+        activeSetups,
+        historySetups
+      ),
+    [baseRisk.accountEquity, baseRisk.riskPercent, activeSetups, historySetups]
+  );
 
   return (
     <div className="relative min-h-screen bg-background">
@@ -44,6 +65,11 @@ export function MarketOverview() {
       <div className="relative z-10">
         <Header mode="overview" />
         <MarketHoursStrip />
+        <AccountStatusBar
+          portfolioRisk={portfolioRisk}
+          openPositions={activeSetups.length}
+          maxPositions={DEFAULT_RISK_CONFIG.maxOpenPositions}
+        />
 
         <main className="max-w-[1400px] mx-auto px-8 py-6 space-y-8">
           {/* Section 1: Market Pulse */}

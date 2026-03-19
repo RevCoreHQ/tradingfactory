@@ -1,5 +1,5 @@
 import type { OHLCV } from "@/lib/types/market";
-import type { TechnicalSummary } from "@/lib/types/indicators";
+import type { TechnicalSummary, SupportResistanceLevel, PivotPointResult, FibonacciLevel } from "@/lib/types/indicators";
 import type {
   MarketRegime,
   ImpulseColor,
@@ -12,6 +12,154 @@ import type { Instrument } from "@/lib/types/market";
 import { calcSMA, calcEMA } from "./technical-indicators";
 import { applyLearning, adjustedTier } from "./confluence-learning";
 import { buildConfluenceKey } from "./setup-tracker";
+
+// ==================== STRUCTURAL LEVELS ====================
+
+interface StructuralLevel {
+  price: number;
+  type: "support" | "resistance";
+  strength: number;
+}
+
+function collectStructuralLevels(
+  summary: TechnicalSummary,
+  currentPrice: number
+): StructuralLevel[] {
+  const levels: StructuralLevel[] = [];
+
+  // S/R levels (fractal-based)
+  for (const sr of summary.supportResistance) {
+    levels.push({ price: sr.price, type: sr.type, strength: Math.min(10, sr.strength * 2) });
+  }
+
+  // Pivot points (daily + weekly)
+  for (const pp of summary.pivotPoints) {
+    const bonus = pp.type === "weekly" ? 2 : 0;
+    levels.push({ price: pp.pivot, type: pp.pivot < currentPrice ? "support" : "resistance", strength: 5 + bonus });
+    levels.push({ price: pp.r1, type: "resistance", strength: 4 + bonus });
+    levels.push({ price: pp.r2, type: "resistance", strength: 3 + bonus });
+    levels.push({ price: pp.r3, type: "resistance", strength: 2 + bonus });
+    levels.push({ price: pp.s1, type: "support", strength: 4 + bonus });
+    levels.push({ price: pp.s2, type: "support", strength: 3 + bonus });
+    levels.push({ price: pp.s3, type: "support", strength: 2 + bonus });
+  }
+
+  // Fibonacci levels
+  for (const fib of summary.fibonacci) {
+    const fibStrength = (fib.level === 0.618 || fib.level === 0.382) ? 4 : 2;
+    levels.push({
+      price: fib.price,
+      type: fib.price < currentPrice ? "support" : "resistance",
+      strength: fibStrength,
+    });
+  }
+
+  // Filter out levels at 0 or too far (>10% from price)
+  return levels
+    .filter((l) => l.price > 0 && Math.abs(l.price - currentPrice) / currentPrice < 0.10)
+    .sort((a, b) => a.price - b.price);
+}
+
+function snapLevelsToStructure(
+  summary: TechnicalSummary,
+  direction: "bullish" | "bearish" | "neutral",
+  price: number,
+  atr: number,
+  atrEntry: [number, number],
+  atrSL: number,
+  atrTP: [number, number, number]
+): {
+  entry: [number, number];
+  stopLoss: number;
+  takeProfit: [number, number, number];
+  riskReward: [number, number, number];
+} {
+  if (direction === "neutral" || atr === 0) {
+    return { entry: atrEntry, stopLoss: atrSL, takeProfit: atrTP, riskReward: [1.5, 2.5, 3.5] };
+  }
+
+  const levels = collectStructuralLevels(summary, price);
+  if (levels.length === 0) {
+    return { entry: atrEntry, stopLoss: atrSL, takeProfit: atrTP, riskReward: [1.5, 2.5, 3.5] };
+  }
+
+  const isBull = direction === "bullish";
+  let snappedSL = atrSL;
+  let snappedEntry: [number, number] = [...atrEntry];
+  let snappedTP: [number, number, number] = [...atrTP];
+
+  // --- Snap Stop Loss ---
+  // For longs: find strongest support between (atrSL - 0.5*ATR) and entry
+  // For shorts: find strongest resistance between entry and (atrSL + 0.5*ATR)
+  const slCandidates = levels.filter((l) => {
+    if (isBull) {
+      return l.type === "support" && l.price > atrSL - atr * 0.5 && l.price < atrEntry[0];
+    } else {
+      return l.type === "resistance" && l.price < atrSL + atr * 0.5 && l.price > atrEntry[1];
+    }
+  });
+
+  if (slCandidates.length > 0) {
+    // Pick strongest candidate
+    const best = slCandidates.sort((a, b) => b.strength - a.strength)[0];
+    // Place SL 0.3*ATR past the level (below support for longs, above resistance for shorts)
+    snappedSL = isBull ? best.price - atr * 0.3 : best.price + atr * 0.3;
+  }
+
+  // --- Snap Entry Zone ---
+  // For longs: if there's a support within 0.5*ATR of price, use it as entry lower bound
+  const entryCandidates = levels.filter((l) => {
+    if (isBull) {
+      return l.type === "support" && l.price > price - atr * 0.5 && l.price < price;
+    } else {
+      return l.type === "resistance" && l.price < price + atr * 0.5 && l.price > price;
+    }
+  });
+
+  if (entryCandidates.length > 0) {
+    const best = entryCandidates.sort((a, b) => b.strength - a.strength)[0];
+    if (isBull) {
+      snappedEntry = [best.price, price];
+    } else {
+      snappedEntry = [price, best.price];
+    }
+  }
+
+  // --- Snap Take Profits ---
+  const entryMid = (snappedEntry[0] + snappedEntry[1]) / 2;
+  const slDist = Math.abs(entryMid - snappedSL);
+
+  // For longs: find resistance levels above entry, sorted ascending
+  // For shorts: find support levels below entry, sorted descending
+  const tpCandidates = levels
+    .filter((l) => {
+      if (isBull) return l.price > entryMid + atr * 0.5;
+      return l.price < entryMid - atr * 0.5;
+    })
+    .sort((a, b) => isBull ? a.price - b.price : b.price - a.price);
+
+  const minRR = [1.5, 2.0, 2.5]; // Minimum R:R for each TP
+  let tpIdx = 0;
+
+  for (const candidate of tpCandidates) {
+    if (tpIdx >= 3) break;
+    const dist = Math.abs(candidate.price - entryMid);
+    const rr = slDist > 0 ? dist / slDist : 0;
+    if (rr >= minRR[tpIdx]) {
+      snappedTP[tpIdx] = candidate.price;
+      tpIdx++;
+    }
+  }
+
+  // Recalculate R:R from actual levels
+  const rr: [number, number, number] = [
+    slDist > 0 ? Number((Math.abs(snappedTP[0] - entryMid) / slDist).toFixed(1)) : 1.5,
+    slDist > 0 ? Number((Math.abs(snappedTP[1] - entryMid) / slDist).toFixed(1)) : 2.5,
+    slDist > 0 ? Number((Math.abs(snappedTP[2] - entryMid) / slDist).toFixed(1)) : 3.5,
+  ];
+
+  return { entry: snappedEntry, stopLoss: snappedSL, takeProfit: snappedTP, riskReward: rr };
+}
 
 // ==================== REGIME DETECTION ====================
 
@@ -523,7 +671,7 @@ function calculatePositionSize(
   // Position size in units (for forex, 1 lot = 100,000 units)
   const pipsAtRisk = stopDistance / pipSize;
   const pipValue = pipSize * 100000; // Standard lot pip value
-  const lots = pipsAtRisk > 0 ? riskAmount / (pipsAtRisk * pipValue * pipSize) : 0;
+  const lots = pipsAtRisk > 0 ? riskAmount / (pipsAtRisk * pipValue) : 0;
 
   return {
     lots: Number(Math.max(0.01, lots).toFixed(2)),
@@ -584,17 +732,17 @@ export function generateTradeDeskSetup(
   const tp3 = price + dir * atr * 3.5;
   const takeProfit: [number, number, number] = [tp1, tp2, tp3];
 
-  const rr1 = 1.5;
-  const rr2 = 2.5;
-  const rr3 = 3.5;
-  const riskReward: [number, number, number] = [rr1, rr2, rr3];
+  // 5b. Snap levels to structural S/R, pivots, fibs
+  const snapped = snapLevelsToStructure(
+    summary, direction, price, atr, entry, stopLoss, takeProfit
+  );
 
-  // 6. Position sizing (2% rule)
+  // 6. Position sizing (2% rule) — uses snapped SL for accurate risk
   const { lots, riskAmount } = calculatePositionSize(
     accountEquity,
     riskPercent,
     price,
-    stopLoss,
+    snapped.stopLoss,
     instrument.pipSize
   );
 
@@ -618,10 +766,10 @@ export function generateTradeDeskSetup(
     consensus: { bullish, bearish, neutral },
     currentPrice: price,
     atr,
-    entry,
-    stopLoss,
-    takeProfit,
-    riskReward,
+    entry: snapped.entry,
+    stopLoss: snapped.stopLoss,
+    takeProfit: snapped.takeProfit,
+    riskReward: snapped.riskReward,
     positionSizeLots: lots,
     riskAmount,
     reasonsToExit,

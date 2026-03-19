@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTradeDeskData } from "@/lib/hooks/useTradeDeskData";
 import { useTrackedSetups } from "@/lib/hooks/useTrackedSetups";
 import { useMarketStore } from "@/lib/store/market-store";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import { getStatusLabel } from "@/lib/calculations/setup-tracker";
+import { computePortfolioRisk } from "@/lib/calculations/risk-engine";
 import { cn } from "@/lib/utils";
 import type {
   TradeDeskSetup,
@@ -410,7 +411,7 @@ function StatsRow({
   portfolioRisk,
 }: {
   setups: TradeDeskSetup[];
-  portfolioRisk: { riskPerTrade: number; riskPercent: number; accountEquity: number };
+  portfolioRisk: import("@/lib/types/signals").PortfolioRisk;
 }) {
   const regimeCounts: Record<MarketRegime, number> = { trending_up: 0, trending_down: 0, ranging: 0, volatile: 0 };
   const impulseCounts: Record<ImpulseColor, number> = { green: 0, red: 0, blue: 0 };
@@ -481,11 +482,28 @@ function StatsRow({
 
       <div className="section-card p-3">
         <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
-          Risk per Trade
+          Portfolio Heat
         </div>
-        <div className="text-xs font-mono text-foreground">
-          ${portfolioRisk.riskPerTrade.toFixed(0)}
-          <span className="text-muted-foreground/60 ml-1">({portfolioRisk.riskPercent}% of ${portfolioRisk.accountEquity.toLocaleString()})</span>
+        <div className="flex items-center gap-2">
+          <span className={cn(
+            "text-xs font-bold font-mono",
+            portfolioRisk.portfolioHeat >= 6 ? "text-bearish" : portfolioRisk.portfolioHeat >= 3.6 ? "text-[var(--amber)]" : "text-bullish"
+          )}>
+            {portfolioRisk.portfolioHeat.toFixed(1)}%
+          </span>
+          {portfolioRisk.riskStatus && (
+            <span className={cn(
+              "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded",
+              portfolioRisk.riskStatus === "CLEAR" && "bg-bullish/15 text-bullish",
+              portfolioRisk.riskStatus === "CAUTION" && "bg-amber/15 text-[var(--amber)] animate-pulse",
+              portfolioRisk.riskStatus === "STOP" && "bg-bearish/15 text-bearish animate-pulse"
+            )}>
+              {portfolioRisk.riskStatus}
+            </span>
+          )}
+        </div>
+        <div className="text-[10px] text-muted-foreground/50 mt-0.5">
+          ${portfolioRisk.riskPerTrade.toFixed(0)} risk/trade ({portfolioRisk.riskPercent}%)
         </div>
       </div>
     </div>
@@ -756,8 +774,19 @@ function TradeDeskSkeleton() {
 
 export function AITradeDesk() {
   const [activeTab, setActiveTab] = useState<TabId>("active");
-  const { setups, portfolioRisk, isLoading, error } = useTradeDeskData();
+  const { setups, portfolioRisk: baseRisk, isLoading, error } = useTradeDeskData();
   const { activeSetups, historySetups, confluencePatterns } = useTrackedSetups(setups);
+
+  const portfolioRisk = useMemo(
+    () =>
+      computePortfolioRisk(
+        baseRisk.accountEquity,
+        baseRisk.riskPercent,
+        activeSetups,
+        historySetups
+      ),
+    [baseRisk.accountEquity, baseRisk.riskPercent, activeSetups, historySetups]
+  );
 
   if (isLoading) {
     return <TradeDeskSkeleton />;
