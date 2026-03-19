@@ -13,7 +13,7 @@ export function AITradeSignals() {
   const batchLLMReady = useMarketStore((s) => s.batchLLMReady);
   const batchLLMError = useMarketStore((s) => s.batchLLMError);
   const allBiasResults = useMarketStore((s) => s.allBiasResults);
-  const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
+  const biasTimeframe = "intraday" as const;
   const setSelectedInstrument = useMarketStore((s) => s.setSelectedInstrument);
   const currentResults = allBiasResults[biasTimeframe];
 

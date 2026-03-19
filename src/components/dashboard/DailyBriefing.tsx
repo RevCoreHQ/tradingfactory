@@ -10,7 +10,7 @@ import { FileText } from "lucide-react";
 
 export function DailyBriefing() {
   const instrument = useMarketStore((s) => s.selectedInstrument);
-  const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
+  const biasTimeframe = "intraday" as const;
   const { biasResult } = useBiasScore();
   const { indicators } = useTechnicalData();
 
@@ -48,7 +48,6 @@ export function DailyBriefing() {
     `Fundamental: ${biasResult.fundamentalScore.total.toFixed(0)}/100, Technical: ${biasResult.technicalScore.total.toFixed(0)}/100`
   );
 
-  parts.push(`Timeframe: ${biasTimeframe}`);
 
   return (
     <GlassCard className="relative overflow-hidden" delay={0}>

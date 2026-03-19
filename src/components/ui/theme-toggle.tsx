@@ -22,11 +22,11 @@ export function ThemeToggle() {
     <button
       onClick={toggle}
       className={cn(
-        "p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-[var(--surface-2)] transition-colors"
+        "p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-[var(--surface-2)] transition-colors"
       )}
       aria-label="Toggle theme"
     >
-      {isDark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+      {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
     </button>
   );
 }

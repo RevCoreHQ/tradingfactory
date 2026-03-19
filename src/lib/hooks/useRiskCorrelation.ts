@@ -9,13 +9,12 @@ export function useRiskCorrelation(): {
   assessment: PortfolioRiskAssessment | null;
 } {
   const allBiasResults = useMarketStore((s) => s.allBiasResults);
-  const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
 
   const assessment = useMemo(() => {
-    const currentResults = allBiasResults[biasTimeframe];
+    const currentResults = allBiasResults.intraday;
     if (!currentResults || Object.keys(currentResults).length === 0) return null;
     return assessPortfolioRisk(currentResults);
-  }, [allBiasResults, biasTimeframe]);
+  }, [allBiasResults]);
 
   return { assessment };
 }

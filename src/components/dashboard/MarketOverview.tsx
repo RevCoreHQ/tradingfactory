@@ -44,11 +44,10 @@ export function MarketOverview() {
         <Header mode="overview" />
         <MarketHoursStrip />
 
-        <main className="max-w-[1400px] mx-auto px-6 py-6 space-y-8">
+        <main className="max-w-[1400px] mx-auto px-8 py-6 space-y-8">
           {/* Section 1: Market Pulse */}
           <section>
             <SectionHeader
-              step={1}
               title="Market Pulse"
               subtitle="Current market conditions at a glance"
               icon={<Activity className="h-3.5 w-3.5" />}
@@ -61,7 +60,6 @@ export function MarketOverview() {
           {/* Section 2: AI Intelligence */}
           <section>
             <SectionHeader
-              step={2}
               title="AI Intelligence"
               subtitle="AI-generated macro analysis and sector breakdown"
               icon={<Sparkles className="h-3.5 w-3.5" />}
@@ -73,7 +71,6 @@ export function MarketOverview() {
           {/* Section 3: Top Opportunities */}
           <section>
             <SectionHeader
-              step={3}
               title="Top Opportunities"
               subtitle="Ranked by ADR-weighted conviction score"
               icon={<Target className="h-3.5 w-3.5" />}
@@ -85,7 +82,6 @@ export function MarketOverview() {
           {/* Section 4: Risk Calendar + AI Signals */}
           <section>
             <SectionHeader
-              step={4}
               title="Risk Calendar"
               subtitle="High-impact events and AI trade signals"
               icon={<AlertTriangle className="h-3.5 w-3.5" />}
@@ -104,7 +100,6 @@ export function MarketOverview() {
           {/* Section 5: Deep Dive */}
           <section>
             <SectionHeader
-              step={5}
               title="Deep Dive"
               subtitle="Institutional positioning, bond yields, and currency strength"
               icon={<BarChart3 className="h-3.5 w-3.5" />}
@@ -126,7 +121,6 @@ export function MarketOverview() {
           {/* Section 6: Portfolio Risk */}
           <section>
             <SectionHeader
-              step={6}
               title="Portfolio Risk"
               subtitle="Currency exposure and correlation warnings"
               icon={<Shield className="h-3.5 w-3.5" />}

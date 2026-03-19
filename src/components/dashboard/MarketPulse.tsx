@@ -27,7 +27,7 @@ export function MarketPulse() {
   const { data: fearGreedData } = useFearGreed();
   const { data: bondData } = useBondYields();
   const allBiasResults = useMarketStore((s) => s.allBiasResults);
-  const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
+  const biasTimeframe = "intraday" as const;
   const currentResults = allBiasResults[biasTimeframe];
 
   const [now, setNow] = useState(new Date());

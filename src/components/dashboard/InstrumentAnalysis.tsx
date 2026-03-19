@@ -68,13 +68,12 @@ export function InstrumentAnalysis() {
     <div className="min-h-screen bg-background">
       <Header mode="analysis" />
 
-      <main className="max-w-[1800px] mx-auto px-3 py-4 space-y-6">
+      <main className="max-w-[1800px] mx-auto px-8 py-4 space-y-6">
         <DailyBriefing />
 
         {/* ── Section 1: Bias & Setup ── */}
         <section>
           <SectionHeader
-            step={1}
             title="Bias & Setup"
             subtitle={`Direction, confidence, and trade levels — ${instrument.symbol}`}
             icon={<Target className="h-3.5 w-3.5" />}
@@ -120,7 +119,6 @@ export function InstrumentAnalysis() {
         {/* ── Section 2: Analysis & Chart ── */}
         <section>
           <SectionHeader
-            step={2}
             title="Analysis & Chart"
             subtitle="Price action, zones, and AI trade ideas"
             icon={<BarChart3 className="h-3.5 w-3.5" />}
@@ -176,7 +174,6 @@ export function InstrumentAnalysis() {
         {/* ── Section 3: News & Context ── */}
         <section>
           <SectionHeader
-            step={3}
             title="News & Context"
             subtitle="Market news and instrument comparison"
             icon={<AlertTriangle className="h-3.5 w-3.5" />}
@@ -195,7 +192,6 @@ export function InstrumentAnalysis() {
         {/* ── Section 4: Macro & Positioning ── */}
         <section>
           <SectionHeader
-            step={4}
             title="Macro & Positioning"
             subtitle="Institutional positioning, yields, calendar, and cross-market data"
             icon={<Globe className="h-3.5 w-3.5" />}
@@ -225,7 +221,6 @@ export function InstrumentAnalysis() {
         {/* ── Section 5: Track Record ── */}
         <section>
           <SectionHeader
-            step={5}
             title="Track Record"
             subtitle="Currency strength, bias history, and prediction accuracy"
             icon={<History className="h-3.5 w-3.5" />}

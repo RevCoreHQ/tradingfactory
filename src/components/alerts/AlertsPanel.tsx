@@ -22,13 +22,13 @@ export function AlertsBell() {
       <button
         onClick={() => setOpen(!open)}
         className={cn(
-          "relative flex items-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-medium transition-colors",
+          "relative p-2 rounded-full transition-colors",
           open
             ? "bg-neutral-accent/15 text-neutral-accent"
             : "text-muted-foreground hover:text-foreground hover:bg-[var(--surface-2)]"
         )}
       >
-        <Bell className="h-3.5 w-3.5" />
+        <Bell className="h-4 w-4" />
         {activeCount > 0 && (
           <span className="absolute -top-0.5 -right-0.5 h-3.5 min-w-[14px] flex items-center justify-center rounded-full bg-bearish text-white text-[8px] font-bold px-0.5">
             {activeCount}

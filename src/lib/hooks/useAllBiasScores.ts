@@ -21,7 +21,6 @@ const DEFAULT_TECHNICAL_SCORE = {
 };
 
 export function useAllBiasScores() {
-  const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
   const setBiasResult = useMarketStore((s) => s.setBiasResult);
   const setAllBiasResults = useMarketStore((s) => s.setAllBiasResults);
   const setBatchLLMResults = useMarketStore((s) => s.setBatchLLMResults);
@@ -42,7 +41,6 @@ export function useAllBiasScores() {
     const banks = bankData?.banks || [];
 
     const intradayResults: Record<string, ReturnType<typeof calculateOverallBias>> = {};
-    const intraweekResults: Record<string, ReturnType<typeof calculateOverallBias>> = {};
 
     for (const inst of INSTRUMENTS) {
       const fundamentalScore = calculateFundamentalScore(
@@ -63,19 +61,13 @@ export function useAllBiasScores() {
         "intraday",
         inst.id
       );
-      intraweekResults[inst.id] = calculateOverallBias(
-        fundamentalScore,
-        DEFAULT_TECHNICAL_SCORE,
-        "intraweek",
-        inst.id
-      );
     }
 
-    return { intraday: intradayResults, intraweek: intraweekResults };
+    return { intraday: intradayResults, intraweek: {} as Record<string, ReturnType<typeof calculateOverallBias>> };
   }, [newsData, fearGreedData, bondData, bankData]);
 
-  // Fetch LLM batch analysis using current timeframe results
-  const currentTimeframeResults = biasTimeframe === "intraday" ? ruleBasedResults.intraday : ruleBasedResults.intraweek;
+  // Fetch LLM batch analysis using intraday results
+  const currentTimeframeResults = ruleBasedResults.intraday;
   const { batchResults, isReady: llmReady, apiError: llmApiError } = useLLMBatchAnalysis(currentTimeframeResults);
 
   // Compute ADR ranks
@@ -88,7 +80,7 @@ export function useAllBiasScores() {
   const allResults = useMemo(() => {
     const enhanced = {
       intraday: { ...ruleBasedResults.intraday },
-      intraweek: { ...ruleBasedResults.intraweek },
+      intraweek: {} as typeof ruleBasedResults.intraday,
     };
 
     // Apply LLM analysis
@@ -97,37 +89,30 @@ export function useAllBiasScores() {
         if (enhanced.intraday[instrumentId]) {
           enhanced.intraday[instrumentId] = applyLLMAnalysis(enhanced.intraday[instrumentId], llmResult);
         }
-        if (enhanced.intraweek[instrumentId]) {
-          enhanced.intraweek[instrumentId] = applyLLMAnalysis(enhanced.intraweek[instrumentId], llmResult);
-        }
       }
     }
 
     // Attach ADR + trade setup to each result
     if (adrRanks) {
-      for (const timeframeKey of ["intraday", "intraweek"] as const) {
-        for (const [instId, result] of Object.entries(enhanced[timeframeKey])) {
-          const adr = adrRanks[instId];
-          if (adr) {
-            const inst = INSTRUMENTS.find((i) => i.id === instId);
-            const pipSize = inst?.pipSize || 0.0001;
-            // Use ADR as a proxy for ATR on homepage (no per-instrument candle data here)
-            const atrEstimate = adr.pips * pipSize;
-            // Get current price from the bias result's fundamental context (approximate)
-            const currentPrice = atrEstimate / (adr.percent / 100) || 1;
+      for (const [instId, result] of Object.entries(enhanced.intraday)) {
+        const adr = adrRanks[instId];
+        if (adr) {
+          const inst = INSTRUMENTS.find((i) => i.id === instId);
+          const pipSize = inst?.pipSize || 0.0001;
+          const atrEstimate = adr.pips * pipSize;
+          const currentPrice = atrEstimate / (adr.percent / 100) || 1;
 
-            enhanced[timeframeKey][instId] = {
-              ...result,
+          enhanced.intraday[instId] = {
+            ...result,
+            adr,
+            tradeSetup: calculateTradeSetup(
+              result,
+              atrEstimate,
               adr,
-              tradeSetup: calculateTradeSetup(
-                result,
-                atrEstimate,
-                adr,
-                currentPrice,
-                timeframeKey
-              ),
-            };
-          }
+              currentPrice,
+              "intraday"
+            ),
+          };
         }
       }
     }
@@ -138,29 +123,21 @@ export function useAllBiasScores() {
   // Store all results, using ref to prevent infinite loops
   const prevHashRef = useRef("");
   useEffect(() => {
-    const intradayHash = Object.values(allResults.intraday)
+    const hash = Object.values(allResults.intraday)
       .map((r) => `${r.instrument}:${r.overallBias.toFixed(1)}`)
       .join("|");
-    const intraweekHash = Object.values(allResults.intraweek)
-      .map((r) => `${r.instrument}:${r.overallBias.toFixed(1)}`)
-      .join("|");
-    const hash = `${intradayHash}||${intraweekHash}`;
 
     if (hash !== prevHashRef.current) {
       prevHashRef.current = hash;
       setAllBiasResults("intraday", allResults.intraday);
-      setAllBiasResults("intraweek", allResults.intraweek);
-      const currentResults = biasTimeframe === "intraday" ? allResults.intraday : allResults.intraweek;
-      for (const [id, result] of Object.entries(currentResults)) {
+      for (const [id, result] of Object.entries(allResults.intraday)) {
         setBiasResult(id, result);
       }
     }
-    // Always update batch LLM state regardless of hash — batch results can
-    // arrive without changing the bias hash (e.g. small adjustments rounded away)
     setBatchLLMResults(batchResults);
     if (llmReady) setBatchLLMReady(true);
     if (llmApiError) setBatchLLMError(llmApiError);
-  }, [allResults, batchResults, llmReady, llmApiError, setBiasResult, setAllBiasResults, setBatchLLMResults, setBatchLLMReady, setBatchLLMError, biasTimeframe]);
+  }, [allResults, batchResults, llmReady, llmApiError, setBiasResult, setAllBiasResults, setBatchLLMResults, setBatchLLMReady, setBatchLLMError]);
 
   return allResults;
 }

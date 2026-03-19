@@ -15,7 +15,7 @@ function isSessionActive(session: { openHourUTC: number; closeHourUTC: number },
 
 export function MarketContext() {
   const allBiasResults = useMarketStore((s) => s.allBiasResults);
-  const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
+  const biasTimeframe = "intraday" as const;
   const { data: bondData } = useBondYields();
 
   const dxy = bondData?.dxy || { value: 0, change: 0, changePercent: 0 };
@@ -54,12 +54,6 @@ export function MarketContext() {
       value: `${strongConviction} / ${totalInstruments}`,
       extra: strongConviction > 0 ? "instruments" : null,
       extraClass: "text-muted-foreground",
-    },
-    {
-      label: "Timeframe",
-      value: biasTimeframe === "intraday" ? "Intraday" : "Intraweek",
-      extra: null,
-      extraClass: "",
     },
   ];
 

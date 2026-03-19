@@ -52,8 +52,7 @@ export function useMarketSummary() {
   const { data: bankData } = useCentralBanks();
   const { data: newsData } = useGeneralNews();
   const allBiasResults = useMarketStore((s) => s.allBiasResults);
-  const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
-  const currentResults = allBiasResults[biasTimeframe];
+  const currentResults = allBiasResults.intraday;
 
   const cachedRef = useRef<MarketSummaryResult | null>(null);
 

@@ -21,7 +21,7 @@ const DEFAULT_TECHNICAL_SCORE = {
 
 export function useBiasScore() {
   const instrument = useMarketStore((s) => s.selectedInstrument);
-  const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
+  const biasTimeframe = "intraday" as const;
   const setBiasResult = useMarketStore((s) => s.setBiasResult);
   // Read storedBias non-reactively to avoid re-render cascades
   // (useAllBiasScores on the homepage writes to biasResults for all instruments)

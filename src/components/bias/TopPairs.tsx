@@ -302,7 +302,7 @@ export function TopPairs() {
   const [expanded, setExpanded] = useState(false);
   const [selectedItem, setSelectedItem] = useState<RankedItem | null>(null);
   const allBiasResults = useMarketStore((s) => s.allBiasResults);
-  const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
+  const biasTimeframe = "intraday" as const;
   const batchLLMResults = useMarketStore((s) => s.batchLLMResults);
   const setSelectedInstrument = useMarketStore((s) => s.setSelectedInstrument);
   const router = useRouter();
@@ -349,7 +349,7 @@ export function TopPairs() {
           {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
         </span>
         <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-          {biasTimeframe === "intraday" ? "Intraday" : "Intraweek"}
+          Intraday
         </span>
       </div>
 

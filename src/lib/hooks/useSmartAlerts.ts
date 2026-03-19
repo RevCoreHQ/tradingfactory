@@ -6,7 +6,7 @@ import { useRates } from "@/lib/hooks/useMarketData";
 import { evaluateAlerts, pruneExpiredAlerts } from "@/lib/calculations/alert-engine";
 
 export function useSmartAlerts() {
-  const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
+  const biasTimeframe = "intraday" as const;
   const hashRef = useRef("");
 
   const { data: ratesData } = useRates();

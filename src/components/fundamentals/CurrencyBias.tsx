@@ -68,7 +68,7 @@ function DirectionIcon({ direction }: { direction: BiasDirection }) {
 
 export function CurrencyBias() {
   const allBiasResults = useMarketStore((s) => s.allBiasResults);
-  const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
+  const biasTimeframe = "intraday" as const;
   const currentResults = allBiasResults[biasTimeframe];
   const { data: bondData } = useBondYields();
   const dxy = bondData?.dxy;
