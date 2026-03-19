@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { fetchForexCandles } from "@/lib/api/finnhub";
 import { fetchCryptoOHLC } from "@/lib/api/coingecko";
 import { fetchForexDaily } from "@/lib/api/alpha-vantage";
+import { fetchTwelveDataCandles } from "@/lib/api/twelve-data";
 import { getRateLimitStatus } from "@/lib/api/rate-limiter";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import type { OHLCV } from "@/lib/types/market";
@@ -53,18 +54,30 @@ export async function GET() {
       })
     );
 
-    // 2. Forex + Commodity — sequential Alpha Vantage (5 calls/min rate limit)
-    //    Only fetch instruments without cached ADR, and cap at 3 calls to leave
-    //    budget for the price-data route (instrument page charts + MTF).
+    // 2. Forex + Commodity — Twelve Data primary (paid), Alpha Vantage fallback
     const forexCommodity = INSTRUMENTS.filter(
       (i) => i.category === "forex" || i.category === "commodity"
     );
+
+    // Fetch from Twelve Data in parallel (paid tier, 55/min)
+    const tdResults = await Promise.allSettled(
+      forexCommodity
+        .filter((inst) => !results[inst.id])
+        .map(async (inst) => {
+          const candles = await fetchTwelveDataCandles(inst.symbol, "1day", 30);
+          const adr = computeADR(candles, inst.pipSize);
+          if (adr) results[inst.id] = adr;
+          return { id: inst.id, success: !!adr };
+        })
+    );
+
+    // Fallback: Alpha Vantage for anything Twelve Data missed
+    const missingForex = forexCommodity.filter((inst) => !results[inst.id]);
     const MAX_AV_CALLS = 3;
     let avCallsMade = 0;
-    for (const inst of forexCommodity) {
-      if (results[inst.id]) continue; // already have cached data
+    for (const inst of missingForex) {
       const { used, max } = getRateLimitStatus("alphavantage");
-      if (used >= max - 2 || avCallsMade >= MAX_AV_CALLS) break; // leave budget for other routes
+      if (used >= max - 2 || avCallsMade >= MAX_AV_CALLS) break;
       try {
         const candles = await fetchForexDaily(
           inst.alphavantageSymbol,
@@ -74,21 +87,30 @@ export async function GET() {
         const adr = computeADR(candles, inst.pipSize);
         if (adr) results[inst.id] = adr;
       } catch {
-        // Rate-limited or failed — keep existing cached value, will retry next cycle
+        // Rate-limited or failed
       }
     }
 
-    // 3. Indices via Finnhub — parallel, best-effort
+    // 3. Indices — Twelve Data primary, Finnhub fallback
     const indices = INSTRUMENTS.filter((i) => i.category === "index");
     await Promise.allSettled(
       indices.map(async (inst) => {
-        if (results[inst.id]) return; // already have data from previous cache
+        if (results[inst.id]) return;
+        // Try Twelve Data first
+        try {
+          const candles = await fetchTwelveDataCandles(inst.symbol, "1day", 30);
+          const adr = computeADR(candles, inst.pipSize);
+          if (adr) { results[inst.id] = adr; return; }
+        } catch {
+          // fall through
+        }
+        // Fallback: Finnhub
         try {
           const candles = await fetchForexCandles(inst.finnhubSymbol || "", "D", from, now);
           const adr = computeADR(candles, inst.pipSize);
           if (adr) results[inst.id] = adr;
         } catch {
-          // Finnhub free tier may not support FOREXCOM index symbols
+          // Both failed
         }
       })
     );

@@ -49,37 +49,7 @@ async function pingProvider(
 export async function GET() {
   const providers: Promise<ProviderStatus>[] = [];
 
-  // 1. Finnhub — forex candles, rates, news, calendar
-  const finnhubKey = process.env.FINNHUB_API_KEY;
-  providers.push(
-    finnhubKey
-      ? pingProvider(
-          "Finnhub",
-          async () => {
-            const res = await fetch(
-              `https://finnhub.io/api/v1/forex/rates?base=USD&token=${finnhubKey}`,
-              { cache: "no-store" }
-            );
-            if (!res.ok) return { ok: false, message: `HTTP ${res.status}` };
-            const data = await res.json();
-            return { ok: !!data.quote, message: data.quote ? "Connected" : "No data returned" };
-          },
-          "Forex candles, rates, news",
-          "Free (55 req/min)",
-          "Twelve Data, Alpha Vantage"
-        )
-      : Promise.resolve({
-          name: "Finnhub",
-          status: "no_key" as const,
-          latencyMs: null,
-          message: "FINNHUB_API_KEY not set",
-          provides: "Forex candles, rates, news",
-          tier: "Free (55 req/min)",
-          fallback: "Twelve Data, Alpha Vantage",
-        })
-  );
-
-  // 2. Twelve Data — forex candles, price quotes (fallback)
+  // 1. Twelve Data — PRIMARY provider (paid, 55 req/min)
   const twelveKey = process.env.TWELVE_DATA_API_KEY;
   providers.push(
     twelveKey
@@ -94,20 +64,48 @@ export async function GET() {
             const data = await res.json();
             return { ok: !!data.price, message: data.price ? "Connected" : (data.message || "No data") };
           },
-          "Forex candles, price quotes",
-          "Free (800/day, 8/min)"
+          "Forex/commodity candles, rates (primary)",
+          "Paid (55 req/min)"
         )
       : Promise.resolve({
           name: "Twelve Data",
           status: "no_key" as const,
           latencyMs: null,
           message: "TWELVE_DATA_API_KEY not set",
-          provides: "Forex candles, price quotes",
-          tier: "Free (800/day, 8/min)",
+          provides: "Forex/commodity candles, rates (primary)",
+          tier: "Paid (55 req/min)",
         })
   );
 
-  // 3. Alpha Vantage — forex candles (fallback)
+  // 2. Finnhub — fallback for candles/rates, primary for news
+  const finnhubKey = process.env.FINNHUB_API_KEY;
+  providers.push(
+    finnhubKey
+      ? pingProvider(
+          "Finnhub",
+          async () => {
+            const res = await fetch(
+              `https://finnhub.io/api/v1/forex/rates?base=USD&token=${finnhubKey}`,
+              { cache: "no-store" }
+            );
+            if (!res.ok) return { ok: false, message: `HTTP ${res.status}` };
+            const data = await res.json();
+            return { ok: !!data.quote, message: data.quote ? "Connected" : "No data returned" };
+          },
+          "News, candles/rates (fallback)",
+          "Free (55 req/min)"
+        )
+      : Promise.resolve({
+          name: "Finnhub",
+          status: "no_key" as const,
+          latencyMs: null,
+          message: "FINNHUB_API_KEY not set",
+          provides: "News, candles/rates (fallback)",
+          tier: "Free (55 req/min)",
+        })
+  );
+
+  // 3. Alpha Vantage — last resort fallback
   const avKey = process.env.ALPHA_VANTAGE_API_KEY;
   providers.push(
     avKey

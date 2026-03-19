@@ -60,20 +60,20 @@ export async function GET(req: NextRequest) {
       const coingeckoId = instrument.coingeckoId || "bitcoin";
       candles = await fetchCryptoOHLC(coingeckoId, days);
     } else if (instrument.category === "forex" || instrument.category === "commodity") {
-      // Try Finnhub /forex/candle first (55 calls/min), fall back to Alpha Vantage (5 calls/min)
-      const finnhubSym = instrument.finnhubSymbol || "";
-      const resolution = RESOLUTION_MAP[timeframe] || "60";
+      // Primary: Twelve Data (paid, 55 req/min)
       try {
-        candles = await fetchForexCandleData(finnhubSym, resolution, from, now);
+        const tdInterval = TWELVE_DATA_INTERVALS[timeframe] || "1h";
+        candles = await fetchTwelveDataCandles(instrument.symbol, tdInterval);
       } catch {
         candles = [];
       }
 
-      // Fallback 2: Twelve Data (800 calls/day, 8/min)
+      // Fallback 2: Finnhub /forex/candle
       if (candles.length === 0) {
+        const finnhubSym = instrument.finnhubSymbol || "";
+        const resolution = RESOLUTION_MAP[timeframe] || "60";
         try {
-          const tdInterval = TWELVE_DATA_INTERVALS[timeframe] || "1h";
-          candles = await fetchTwelveDataCandles(instrument.symbol, tdInterval);
+          candles = await fetchForexCandleData(finnhubSym, resolution, from, now);
         } catch {
           candles = [];
         }
@@ -102,26 +102,28 @@ export async function GET(req: NextRequest) {
         }
       }
     } else {
-      // Index - try Finnhub
+      // Index — try Twelve Data first, then Finnhub
       try {
-        const resolution = RESOLUTION_MAP[timeframe] || "D";
-        candles = await fetchForexCandles(instrument.finnhubSymbol || "", resolution, from, now);
+        const tdInterval = TWELVE_DATA_INTERVALS[timeframe] || "1h";
+        candles = await fetchTwelveDataCandles(instrument.symbol, tdInterval);
       } catch {
         candles = [];
+      }
+      if (candles.length === 0) {
+        try {
+          const resolution = RESOLUTION_MAP[timeframe] || "D";
+          candles = await fetchForexCandles(instrument.finnhubSymbol || "", resolution, from, now);
+        } catch {
+          candles = [];
+        }
       }
     }
 
     candles = candles.slice(-limit);
 
-    // Forex/commodity: cache longer (5 min) to reduce AV rate limit pressure
-    const isForexOrCommodity = instrument.category === "forex" || instrument.category === "commodity";
-    const cacheHeader = isForexOrCommodity
-      ? "s-maxage=300, stale-while-revalidate=120"
-      : "s-maxage=60, stale-while-revalidate=30";
-
     return NextResponse.json(
       { candles, instrument: instrumentId, timeframe },
-      { headers: { "Cache-Control": cacheHeader } }
+      { headers: { "Cache-Control": "s-maxage=120, stale-while-revalidate=60" } }
     );
   } catch (error) {
     console.error("Price data error:", error);
