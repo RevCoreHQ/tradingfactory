@@ -7,7 +7,7 @@ import { useRates } from "@/lib/hooks/useMarketData";
 import { cn } from "@/lib/utils";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { getChangeClass } from "@/lib/utils/formatters";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Star } from "lucide-react";
 
 const CATEGORIES = [
   { key: "forex", label: "Forex" },
@@ -22,8 +22,10 @@ export function Watchlist() {
   const setSelectedInstrument = useMarketStore((s) => s.setSelectedInstrument);
   const realtimeQuotes = useMarketStore((s) => s.realtimeQuotes);
   const watchlistIds = useMarketStore((s) => s.watchlistIds);
+  const favoriteIds = useMarketStore((s) => s.favoriteIds);
   const addToWatchlist = useMarketStore((s) => s.addToWatchlist);
   const removeFromWatchlist = useMarketStore((s) => s.removeFromWatchlist);
+  const toggleFavorite = useMarketStore((s) => s.toggleFavorite);
   const { data: ratesData } = useRates();
   const quotes = ratesData?.quotes || {};
 
@@ -116,6 +118,7 @@ export function Watchlist() {
               </div>
               {instruments.map((inst) => {
                 const isActive = selectedInstrument.id === inst.id;
+                const isFavorite = favoriteIds.includes(inst.id);
                 const wsQuote = realtimeQuotes[inst.id];
                 const quote = quotes[inst.id];
                 const displayPrice = wsQuote?.price || quote?.mid || 0;
@@ -126,12 +129,28 @@ export function Watchlist() {
                   <div
                     key={inst.id}
                     className={cn(
-                      "group w-full flex items-center justify-between px-4 py-2 transition-colors",
+                      "group w-full flex items-center px-4 py-2 transition-colors",
                       isActive
                         ? "bg-[var(--surface-2)] border-l-2 border-l-neutral-accent"
-                        : "hover:bg-[var(--surface-1)] border-l-2 border-l-transparent"
+                        : isFavorite
+                          ? "bg-amber-500/[0.04] border-l-2 border-l-amber-500/40 hover:bg-amber-500/[0.07]"
+                          : "hover:bg-[var(--surface-1)] border-l-2 border-l-transparent"
                     )}
                   >
+                    {/* Star toggle */}
+                    <button
+                      onClick={() => toggleFavorite(inst.id)}
+                      className={cn(
+                        "mr-1.5 p-0.5 rounded transition-all shrink-0",
+                        isFavorite
+                          ? "text-amber-500 opacity-100"
+                          : "text-muted-foreground/20 opacity-0 group-hover:opacity-100 hover:text-amber-500"
+                      )}
+                      aria-label={isFavorite ? `Unfavorite ${inst.symbol}` : `Favorite ${inst.symbol}`}
+                    >
+                      <Star className={cn("h-3 w-3", isFavorite && "fill-amber-500")} />
+                    </button>
+
                     <button
                       onClick={() => setSelectedInstrument(inst)}
                       className="flex-1 flex items-center justify-between text-left cursor-pointer min-w-0"

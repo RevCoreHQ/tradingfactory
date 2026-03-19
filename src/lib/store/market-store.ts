@@ -38,6 +38,7 @@ interface MarketStore {
   realtimeQuotes: Record<string, RealtimeQuote>;
   wsConnected: boolean;
   watchlistIds: string[];
+  favoriteIds: string[];
 
   setSelectedInstrument: (instrument: Instrument) => void;
   setSelectedTimeframe: (timeframe: string) => void;
@@ -58,6 +59,19 @@ interface MarketStore {
   setWsConnected: (connected: boolean) => void;
   addToWatchlist: (id: string) => void;
   removeFromWatchlist: (id: string) => void;
+  toggleFavorite: (id: string) => void;
+}
+
+function loadFavoriteIds(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const stored = localStorage.getItem("favoriteIds");
+    if (stored) {
+      const ids = JSON.parse(stored) as string[];
+      return ids.filter((id) => INSTRUMENTS.some((i) => i.id === id));
+    }
+  } catch {}
+  return [];
 }
 
 function loadWatchlistIds(): string[] {
@@ -91,6 +105,7 @@ export const useMarketStore = create<MarketStore>((set) => ({
   realtimeQuotes: {},
   wsConnected: false,
   watchlistIds: loadWatchlistIds(),
+  favoriteIds: loadFavoriteIds(),
 
   setSelectedInstrument: (instrument) => set({ selectedInstrument: instrument }),
   setSelectedTimeframe: (timeframe) => set({ selectedTimeframe: timeframe }),
@@ -146,5 +161,13 @@ export const useMarketStore = create<MarketStore>((set) => ({
       const next = state.watchlistIds.filter((wid) => wid !== id);
       try { localStorage.setItem("watchlistIds", JSON.stringify(next)); } catch {}
       return { watchlistIds: next };
+    }),
+  toggleFavorite: (id) =>
+    set((state) => {
+      const next = state.favoriteIds.includes(id)
+        ? state.favoriteIds.filter((fid) => fid !== id)
+        : [...state.favoriteIds, id];
+      try { localStorage.setItem("favoriteIds", JSON.stringify(next)); } catch {}
+      return { favoriteIds: next };
     }),
 }));
