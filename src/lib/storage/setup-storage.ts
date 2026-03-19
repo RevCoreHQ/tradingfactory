@@ -11,10 +11,39 @@ export function loadTrackedSetups(): TrackedSetup[] {
   try {
     const raw = localStorage.getItem(TRACKED_KEY);
     if (!raw) return [];
-    return JSON.parse(raw) as TrackedSetup[];
+    const setups = JSON.parse(raw) as TrackedSetup[];
+    // Dedup: keep only the latest entry per instrument+status combo for terminals
+    return dedup(setups);
   } catch {
     return [];
   }
+}
+
+function dedup(setups: TrackedSetup[]): TrackedSetup[] {
+  const active: TrackedSetup[] = [];
+  const terminalMap = new Map<string, TrackedSetup>();
+
+  for (const s of setups) {
+    if (!isTerminalStatus(s.status)) {
+      // Only keep one active per instrument
+      if (!active.some((a) => a.setup.instrumentId === s.setup.instrumentId)) {
+        active.push(s);
+      }
+    } else {
+      // For terminals, keep the latest per instrument+confluenceKey
+      const key = `${s.setup.instrumentId}:${s.confluenceKey}:${s.closedAt}`;
+      if (!terminalMap.has(key)) {
+        terminalMap.set(key, s);
+      }
+    }
+  }
+
+  const result = [...active, ...terminalMap.values()];
+  // If we deduped anything, save the clean version
+  if (result.length < setups.length && typeof window !== "undefined") {
+    localStorage.setItem(TRACKED_KEY, JSON.stringify(result));
+  }
+  return result;
 }
 
 export function saveTrackedSetups(setups: TrackedSetup[]): void {
