@@ -225,7 +225,9 @@ export function useLLMBatchAnalysis(allBiasResults: Record<string, BiasResult>) 
     {
       refreshInterval: BATCH_CACHE_TTL_MS,
       revalidateOnFocus: false,
-      dedupingInterval: BATCH_CACHE_TTL_MS,
+      dedupingInterval: 60_000, // retry after 1 min if failed (not 4 hours)
+      shouldRetryOnError: true,
+      errorRetryCount: 2,
     }
   );
 

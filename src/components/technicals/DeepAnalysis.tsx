@@ -373,38 +373,32 @@ export function DeepAnalysis() {
   const { biasResult } = useBiasScore();
   const instrument = useMarketStore((s) => s.selectedInstrument);
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="h-[400px] shimmer rounded-lg" />
-        <div className="grid grid-cols-2 gap-4">
-          <div className="h-48 shimmer rounded-lg" />
-          <div className="h-48 shimmer rounded-lg" />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
-      {/* TradingView embedded chart */}
+      {/* TradingView chart always renders — it loads its own data */}
       <TradingViewChart heightClass="h-[400px] lg:h-[500px]" />
 
-      {deepAnalysis && (
+      {isLoading ? (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="h-32 shimmer rounded-lg" />
+          <div className="h-32 shimmer rounded-lg" />
+        </div>
+      ) : (
         <>
-          {/* Zone Summary */}
-          <ZoneSummary
-            supplyZones={deepAnalysis.supplyZones}
-            demandZones={deepAnalysis.demandZones}
-            decimals={instrument.decimalPlaces}
-          />
-
-          {/* Confluence Levels */}
-          <ConfluenceLevelsList
-            levels={deepAnalysis.confluenceLevels}
-            currentPrice={deepAnalysis.currentPrice}
-            decimals={instrument.decimalPlaces}
-          />
+          {deepAnalysis && (
+            <>
+              <ZoneSummary
+                supplyZones={deepAnalysis.supplyZones}
+                demandZones={deepAnalysis.demandZones}
+                decimals={instrument.decimalPlaces}
+              />
+              <ConfluenceLevelsList
+                levels={deepAnalysis.confluenceLevels}
+                currentPrice={deepAnalysis.currentPrice}
+                decimals={instrument.decimalPlaces}
+              />
+            </>
+          )}
         </>
       )}
 

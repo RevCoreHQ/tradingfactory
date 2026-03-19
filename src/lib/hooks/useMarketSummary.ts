@@ -64,7 +64,6 @@ export function useMarketSummary() {
   const biasTimeframe = useMarketStore((s) => s.biasTimeframe);
   const currentResults = allBiasResults[biasTimeframe];
 
-  const hasData = !!fearGreedData;
   const cachedRef = useRef<MarketSummaryResult | null>(null);
 
   // Load from localStorage on first render
@@ -82,14 +81,15 @@ export function useMarketSummary() {
     };
   });
 
-  // Only fetch if we don't have a valid cached summary
+  // Build request body if any data is available and no valid cache
   const hasCached = !!getCachedSummary();
+  const hasAnyData = !!(fearGreedData || bondData || newsData);
 
-  const requestBody = hasData && !hasCached
+  const requestBody = hasAnyData && !hasCached
     ? {
         fearGreed: {
-          value: fearGreedData.current?.value ?? 50,
-          label: fearGreedData.current?.label ?? "Neutral",
+          value: fearGreedData?.current?.value ?? 50,
+          label: fearGreedData?.current?.label ?? "Neutral",
         },
         dxy: {
           value: bondData?.dxy?.value ?? 0,
@@ -119,9 +119,11 @@ export function useMarketSummary() {
     requestBody ? ["/api/analysis/market-summary", requestBody] : null,
     postFetcher,
     {
-      refreshInterval: CACHE_TTL_MS, // only refetch after 4 hours
+      refreshInterval: CACHE_TTL_MS,
       revalidateOnFocus: false,
-      dedupingInterval: CACHE_TTL_MS,
+      dedupingInterval: 60_000, // retry after 1 min if failed (not 4 hours)
+      shouldRetryOnError: true,
+      errorRetryCount: 2,
     }
   );
 
