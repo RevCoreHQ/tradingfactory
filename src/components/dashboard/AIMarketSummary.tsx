@@ -12,9 +12,9 @@ function OutlookBadge({ outlook }: { outlook: "bullish" | "bearish" | "neutral" 
     <span
       className={cn(
         "inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider",
-        outlook === "bullish" && "bg-bullish/15 text-bullish",
-        outlook === "bearish" && "bg-bearish/15 text-bearish",
-        outlook === "neutral" && "bg-neutral-accent/15 text-neutral-accent"
+        outlook === "bullish" && "bg-bullish/15 text-bullish glow-bullish",
+        outlook === "bearish" && "bg-bearish/15 text-bearish glow-bearish",
+        outlook === "neutral" && "bg-neutral-accent/15 text-neutral-accent glow-primary"
       )}
     >
       {outlook}

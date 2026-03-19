@@ -51,7 +51,7 @@ export function MarketPulse() {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       {/* Fear & Greed */}
-      <div className="section-card p-4">
+      <div className="glass-card p-4">
         <div className="flex items-center gap-2 mb-3">
           <div className="h-6 w-6 rounded-md flex items-center justify-center" style={{ background: `${fgColor}20` }}>
             <Activity className="h-3.5 w-3.5" style={{ color: fgColor }} />
@@ -62,7 +62,7 @@ export function MarketPulse() {
           <AnimatedNumber
             value={fg.value}
             format={(n) => Math.round(n).toString()}
-            className="text-2xl font-bold font-mono"
+            className={cn("text-2xl font-bold font-mono rounded-md px-1.5 py-0.5 -mx-1.5", fg.value >= 60 ? "glow-bullish" : fg.value <= 40 ? "glow-bearish" : "glow-amber")}
           />
           <span className="text-xs font-semibold" style={{ color: fgColor }}>{fg.label || "Neutral"}</span>
         </div>
@@ -87,7 +87,7 @@ export function MarketPulse() {
       </div>
 
       {/* DXY */}
-      <div className="section-card p-4">
+      <div className="glass-card p-4">
         <div className="flex items-center gap-2 mb-3">
           <div className="h-6 w-6 rounded-md flex items-center justify-center bg-neutral-accent/15">
             <DollarSign className="h-3.5 w-3.5 text-neutral-accent" />
@@ -110,7 +110,7 @@ export function MarketPulse() {
       </div>
 
       {/* Market Bias */}
-      <div className="section-card p-4">
+      <div className="glass-card p-4">
         <div className="flex items-center gap-2 mb-3">
           <div className="h-6 w-6 rounded-md flex items-center justify-center bg-bullish/15">
             <BarChart3 className="h-3.5 w-3.5 text-bullish" />
@@ -134,7 +134,7 @@ export function MarketPulse() {
       </div>
 
       {/* Active Sessions */}
-      <div className="section-card p-4">
+      <div className="glass-card p-4">
         <div className="flex items-center gap-2 mb-3">
           <div className="h-6 w-6 rounded-md flex items-center justify-center bg-amber/15">
             <Activity className="h-3.5 w-3.5 text-[var(--amber)]" />

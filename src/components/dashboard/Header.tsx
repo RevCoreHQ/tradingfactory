@@ -15,7 +15,7 @@ export function Header({ mode = "analysis" }: HeaderProps) {
   const wsConnected = useMarketStore((s) => s.wsConnected);
 
   return (
-    <header className="h-12 sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/30">
+    <header className="h-12 sticky top-0 z-50 bg-background/70 backdrop-blur-xl border-b border-border/30 shadow-[0_1px_3px_oklch(0_0_0/0.04)]  dark:shadow-[0_1px_6px_oklch(0_0_0/0.3)]">
       <div className="h-full px-8 flex items-center justify-between">
         {/* Left: Logo */}
         <Link href="/" className="flex items-baseline gap-1.5 shrink-0">

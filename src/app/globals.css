@@ -159,31 +159,129 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Gradient backgrounds — soft color wash for visual depth */
+    background-image:
+      radial-gradient(ellipse at 20% 0%, oklch(0.90 0.03 250 / 0.4) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 100%, oklch(0.92 0.02 280 / 0.3) 0%, transparent 50%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  .dark body {
+    background-image:
+      radial-gradient(ellipse at 20% 0%, oklch(0.15 0.04 260 / 0.6) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 100%, oklch(0.12 0.05 290 / 0.4) 0%, transparent 50%);
   }
   html {
     @apply font-sans;
   }
 }
 
-/* Panel system — solid surfaces with elevation */
+/* Panel system — solid surfaces with elevation + shadows */
 .panel {
   background: var(--surface-1);
   border: 1px solid var(--border);
   border-radius: 0.75rem;
+  box-shadow: 0 1px 3px oklch(0 0 0 / 0.04), 0 1px 2px oklch(0 0 0 / 0.02);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.panel:hover {
+  box-shadow: 0 4px 12px oklch(0 0 0 / 0.06), 0 2px 4px oklch(0 0 0 / 0.04);
+}
+
+.dark .panel {
+  box-shadow: 0 1px 3px oklch(0 0 0 / 0.3), 0 1px 2px oklch(0 0 0 / 0.2);
+}
+
+.dark .panel:hover {
+  box-shadow: 0 4px 12px oklch(0 0 0 / 0.4), 0 2px 4px oklch(0 0 0 / 0.3);
 }
 
 .panel-raised {
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: 0.75rem;
+  box-shadow: 0 2px 6px oklch(0 0 0 / 0.05), 0 1px 3px oklch(0 0 0 / 0.03);
 }
 
-/* Section wrapper with gradient accent strip */
+/* Section wrapper — shadow + hover elevation */
 .section-card {
   background: var(--surface-1);
   border: 1px solid var(--border);
   border-radius: 0.75rem;
   overflow: hidden;
+  box-shadow: 0 1px 3px oklch(0 0 0 / 0.04), 0 1px 2px oklch(0 0 0 / 0.02);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.section-card:hover {
+  box-shadow: 0 4px 12px oklch(0 0 0 / 0.07), 0 2px 4px oklch(0 0 0 / 0.04);
+  border-color: var(--border-bright);
+}
+
+.dark .section-card {
+  box-shadow: 0 1px 3px oklch(0 0 0 / 0.3), 0 1px 2px oklch(0 0 0 / 0.2);
+}
+
+.dark .section-card:hover {
+  box-shadow: 0 4px 16px oklch(0 0 0 / 0.5), 0 2px 6px oklch(0 0 0 / 0.3);
+  border-color: var(--border-bright);
+}
+
+/* Glass-morphism card — frosted translucent surface */
+.glass-card {
+  background: oklch(1.00 0 0 / 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid oklch(1.00 0 0 / 0.2);
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 16px oklch(0 0 0 / 0.06), 0 1px 3px oklch(0 0 0 / 0.04);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.glass-card:hover {
+  box-shadow: 0 8px 24px oklch(0 0 0 / 0.08), 0 2px 6px oklch(0 0 0 / 0.05);
+  border-color: oklch(1.00 0 0 / 0.35);
+}
+
+.dark .glass-card {
+  background: oklch(0.14 0.014 255 / 0.6);
+  border-color: oklch(0.40 0.02 255 / 0.15);
+  box-shadow: 0 4px 16px oklch(0 0 0 / 0.4), 0 1px 3px oklch(0 0 0 / 0.3);
+}
+
+.dark .glass-card:hover {
+  box-shadow: 0 8px 24px oklch(0 0 0 / 0.5), 0 2px 6px oklch(0 0 0 / 0.35);
+  border-color: oklch(0.50 0.03 255 / 0.2);
+}
+
+/* Accent glow rings for key metrics */
+.glow-bullish {
+  box-shadow: 0 0 0 1px oklch(0.52 0.17 145 / 0.2), 0 0 12px oklch(0.52 0.17 145 / 0.1);
+}
+.dark .glow-bullish {
+  box-shadow: 0 0 0 1px oklch(0.72 0.20 142 / 0.25), 0 0 16px oklch(0.72 0.20 142 / 0.12);
+}
+
+.glow-bearish {
+  box-shadow: 0 0 0 1px oklch(0.52 0.20 25 / 0.2), 0 0 12px oklch(0.52 0.20 25 / 0.1);
+}
+.dark .glow-bearish {
+  box-shadow: 0 0 0 1px oklch(0.68 0.22 25 / 0.25), 0 0 16px oklch(0.68 0.22 25 / 0.12);
+}
+
+.glow-amber {
+  box-shadow: 0 0 0 1px oklch(0.60 0.16 85 / 0.2), 0 0 12px oklch(0.60 0.16 85 / 0.1);
+}
+.dark .glow-amber {
+  box-shadow: 0 0 0 1px oklch(0.78 0.16 85 / 0.25), 0 0 16px oklch(0.78 0.16 85 / 0.12);
+}
+
+.glow-primary {
+  box-shadow: 0 0 0 1px oklch(0.35 0.12 255 / 0.2), 0 0 12px oklch(0.35 0.12 255 / 0.1);
+}
+.dark .glow-primary {
+  box-shadow: 0 0 0 1px oklch(0.70 0.15 250 / 0.25), 0 0 16px oklch(0.70 0.15 250 / 0.12);
 }
 
 .section-header {

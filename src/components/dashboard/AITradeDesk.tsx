@@ -153,8 +153,8 @@ function ImpulseBadge({ color }: { color: ImpulseColor }) {
 
 function ConvictionBadge({ tier }: { tier: ConvictionTier }) {
   const config: Record<ConvictionTier, { cls: string }> = {
-    "A+": { cls: "bg-bullish/20 text-bullish ring-1 ring-bullish/30" },
-    "A": { cls: "bg-bullish/15 text-bullish" },
+    "A+": { cls: "bg-bullish/20 text-bullish ring-1 ring-bullish/30 glow-bullish" },
+    "A": { cls: "bg-bullish/15 text-bullish ring-1 ring-bullish/20" },
     "B": { cls: "bg-neutral-accent/15 text-neutral-accent" },
     "C": { cls: "bg-amber/15 text-[var(--amber)]" },
     "D": { cls: "bg-muted/20 text-muted-foreground" },
@@ -547,7 +547,7 @@ function StatsRow({
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-      <div className="section-card p-3">
+      <div className="glass-card p-3">
         <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
           Market Regime
         </div>
@@ -557,7 +557,7 @@ function StatsRow({
         </div>
       </div>
 
-      <div className="section-card p-3">
+      <div className="glass-card p-3">
         <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
           System Consensus
         </div>
@@ -576,7 +576,7 @@ function StatsRow({
         )}
       </div>
 
-      <div className="section-card p-3">
+      <div className="glass-card p-3">
         <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
           Impulse Distribution
         </div>
@@ -596,7 +596,7 @@ function StatsRow({
         </div>
       </div>
 
-      <div className="section-card p-3">
+      <div className="glass-card p-3">
         <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
           Risk Per Trade
         </div>
