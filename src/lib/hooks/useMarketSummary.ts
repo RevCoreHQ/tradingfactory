@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import { useFearGreed, useBondYields, useCentralBanks } from "./useMarketData";
 import { useMarketStore } from "@/lib/store/market-store";
-import { REFRESH_INTERVALS, INSTRUMENTS } from "@/lib/utils/constants";
+import { INSTRUMENTS } from "@/lib/utils/constants";
 import type { MarketSummaryResult } from "@/lib/types/llm";
 
 const CACHE_KEY = "tf_market_summary";
@@ -36,22 +36,13 @@ function setCachedSummary(summary: MarketSummaryResult) {
   }
 }
 
-const postFetcher = async ([url, body]: [string, unknown]) => {
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  return res.json();
-};
-
 // Fetch general news (no instrument filter)
 function useGeneralNews() {
   const fetcher = (url: string) => fetch(url).then((r) => r.json());
   return useSWR<{ items: { headline: string; sentimentLabel: string; sentimentScore: number }[] }>(
     "/api/fundamentals/news",
     fetcher,
-    { refreshInterval: REFRESH_INTERVALS.NEWS, revalidateOnFocus: false }
+    { revalidateOnFocus: false }
   );
 }
 
@@ -71,6 +62,14 @@ export function useMarketSummary() {
     cachedRef.current = getCachedSummary() ?? undefined as unknown as null;
   }
 
+  // Fire when any upstream data arrives, OR after 6s timeout (whichever first)
+  const hasAnyData = !!(fearGreedData || bondData || newsData || bankData);
+  const [timerReady, setTimerReady] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setTimerReady(true), 6000);
+    return () => clearTimeout(timer);
+  }, []);
+
   const instrumentBiases = Object.entries(currentResults).map(([id, result]) => {
     const inst = INSTRUMENTS.find((i) => i.id === id);
     return {
@@ -81,47 +80,57 @@ export function useMarketSummary() {
     };
   });
 
-  // Build request body if any data is available and no valid cache
-  const hasCached = !!getCachedSummary();
-  const hasAnyData = !!(fearGreedData || bondData || newsData);
+  // Always build request body with defaults for missing data
+  const requestBody = {
+    fearGreed: {
+      value: fearGreedData?.current?.value ?? 50,
+      label: fearGreedData?.current?.label ?? "Neutral",
+    },
+    dxy: {
+      value: bondData?.dxy?.value ?? 0,
+      change: bondData?.dxy?.change ?? 0,
+    },
+    bondYields: (bondData?.yields || []).map((y: { maturity: string; yield: number; change: number }) => ({
+      maturity: y.maturity,
+      yield: y.yield,
+      change: y.change,
+    })),
+    centralBanks: (bankData?.banks || []).map((b: { bank: string; currentRate: number; rateDirection: string; policyStance: string }) => ({
+      bank: b.bank,
+      rate: b.currentRate,
+      direction: b.rateDirection,
+      stance: b.policyStance,
+    })),
+    newsHeadlines: (newsData?.items || []).slice(0, 10).map((n) => ({
+      headline: n.headline,
+      sentiment: n.sentimentLabel,
+      score: n.sentimentScore,
+    })),
+    instrumentBiases: instrumentBiases.length > 0 ? instrumentBiases : undefined,
+  };
 
-  const requestBody = hasAnyData && !hasCached
-    ? {
-        fearGreed: {
-          value: fearGreedData?.current?.value ?? 50,
-          label: fearGreedData?.current?.label ?? "Neutral",
-        },
-        dxy: {
-          value: bondData?.dxy?.value ?? 0,
-          change: bondData?.dxy?.change ?? 0,
-        },
-        bondYields: (bondData?.yields || []).map((y: { maturity: string; yield: number; change: number }) => ({
-          maturity: y.maturity,
-          yield: y.yield,
-          change: y.change,
-        })),
-        centralBanks: (bankData?.banks || []).map((b: { bank: string; currentRate: number; rateDirection: string; policyStance: string }) => ({
-          bank: b.bank,
-          rate: b.currentRate,
-          direction: b.rateDirection,
-          stance: b.policyStance,
-        })),
-        newsHeadlines: (newsData?.items || []).slice(0, 10).map((n) => ({
-          headline: n.headline,
-          sentiment: n.sentimentLabel,
-          score: n.sentimentScore,
-        })),
-        instrumentBiases: instrumentBiases.length > 0 ? instrumentBiases : undefined,
-      }
-    : null;
+  // Stable ref so SWR fetcher always uses latest data
+  const bodyRef = useRef(requestBody);
+  bodyRef.current = requestBody;
+
+  const hasCached = !!getCachedSummary();
+  const shouldFetch = (hasAnyData || timerReady) && !hasCached;
 
   const { data, error, isLoading } = useSWR<{ summary: MarketSummaryResult | null }>(
-    requestBody ? ["/api/analysis/market-summary", requestBody] : null,
-    postFetcher,
+    shouldFetch ? "market-summary" : null,
+    async () => {
+      const body = bodyRef.current;
+      const res = await fetch("/api/analysis/market-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      return res.json();
+    },
     {
       refreshInterval: CACHE_TTL_MS,
       revalidateOnFocus: false,
-      dedupingInterval: 60_000, // retry after 1 min if failed (not 4 hours)
+      dedupingInterval: 60_000,
       shouldRetryOnError: true,
       errorRetryCount: 2,
     }

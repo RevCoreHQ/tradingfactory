@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import { useMarketStore } from "@/lib/store/market-store";
 import { useMarketNews, useFearGreed, useBondYields, useCentralBanks } from "./useMarketData";
@@ -42,26 +42,7 @@ function setCachedBatch(results: Record<string, LLMAnalysisResult>) {
 }
 
 // ---------------------------------------------------------------------------
-// Fetchers
-// ---------------------------------------------------------------------------
-
-const postFetcher = async ([url, body]: [string, unknown]) => {
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  return res.json();
-};
-
-// Delayed fetcher — short delay to let market summary start first
-const delayedPostFetcher = async ([url, body]: [string, unknown]) => {
-  await new Promise((r) => setTimeout(r, 3_000));
-  return postFetcher([url, body]);
-};
-
-// ---------------------------------------------------------------------------
-// Request builder
+// Request builder — handles missing data with sensible defaults
 // ---------------------------------------------------------------------------
 
 function buildLLMRequest(
@@ -131,12 +112,18 @@ export function useLLMAnalysis() {
   const { data: bankData } = useCentralBanks();
   const { indicators, candles } = useTechnicalData();
 
-  const hasData = !!fearGreedData;
+  // Fire when any data arrives, or after 6s timeout
+  const hasAnyData = !!(fearGreedData || bondData || newsData || bankData);
+  const [timerReady, setTimerReady] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setTimerReady(true), 6000);
+    return () => clearTimeout(timer);
+  }, []);
+  const ready = hasAnyData || timerReady;
 
   // Read storedBias non-reactively to avoid re-render loops.
-  // useBiasScore writes to biasResults; subscribing here would create a cycle.
   const bodyRef = useRef<LLMAnalysisRequest | null>(null);
-  if (hasData) {
+  if (ready) {
     const storedBias = useMarketStore.getState().biasResults[instrument.id];
     bodyRef.current = buildLLMRequest(
       instrument.id, instrument.category,
@@ -146,7 +133,7 @@ export function useLLMAnalysis() {
   }
 
   const { data, error, isLoading } = useSWR<{ analysis: LLMAnalysisResult | null }>(
-    hasData ? `llm-single-${instrument.id}` : null,
+    ready ? `llm-single-${instrument.id}` : null,
     async () => {
       const body = bodyRef.current;
       if (!body) return { analysis: null };
@@ -181,31 +168,36 @@ export function useLLMBatchAnalysis(allBiasResults: Record<string, BiasResult>) 
   const { data: bondData } = useBondYields();
   const { data: bankData } = useCentralBanks();
 
-  const hasData = !!fearGreedData;
+  // Fire when any upstream data arrives, or after 6s timeout
+  const hasAnyData = !!(fearGreedData || bondData || newsData || bankData);
+  const [timerReady, setTimerReady] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setTimerReady(true), 6000);
+    return () => clearTimeout(timer);
+  }, []);
+  const ready = hasAnyData || timerReady;
 
   // Skip API call if we have a valid cached batch
   const hasCached = typeof window !== "undefined" ? !!getCachedBatch() : false;
 
-  // Build request body (changes as data updates)
-  const requestBody = hasData ? {
+  // Always build request body — uses defaults for any missing data
+  const requestBody = {
     instruments: INSTRUMENTS.map(inst => buildLLMRequest(
       inst.id, inst.category,
       newsData, fearGreedData, bondData, bankData,
       null, [],
       allBiasResults[inst.id],
     )),
-  } : null;
+  };
 
-  // Keep latest body in a ref so the fetcher always uses current data
-  // without changing the SWR key (which would reset data/loading state)
+  // Stable ref so SWR fetcher always uses latest data
   const bodyRef = useRef(requestBody);
   bodyRef.current = requestBody;
 
   // Track whether batch has been attempted (success or failure)
   const attemptedRef = useRef(false);
 
-  // Stable SWR key — only null when cache exists or data not ready
-  const shouldFetch = hasData && !hasCached;
+  const shouldFetch = ready && !hasCached;
 
   const { data, error, isLoading } = useSWR<{ batch: { results: Record<string, LLMAnalysisResult> } | null }>(
     shouldFetch ? "llm-batch" : null,
@@ -213,7 +205,6 @@ export function useLLMBatchAnalysis(allBiasResults: Record<string, BiasResult>) 
       // Short delay to let market summary start first
       await new Promise((r) => setTimeout(r, 3_000));
       const body = bodyRef.current;
-      if (!body) return { batch: null };
       const res = await fetch("/api/analysis/llm-batch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -225,7 +216,7 @@ export function useLLMBatchAnalysis(allBiasResults: Record<string, BiasResult>) 
     {
       refreshInterval: BATCH_CACHE_TTL_MS,
       revalidateOnFocus: false,
-      dedupingInterval: 60_000, // retry after 1 min if failed (not 4 hours)
+      dedupingInterval: 60_000,
       shouldRetryOnError: true,
       errorRetryCount: 2,
     }

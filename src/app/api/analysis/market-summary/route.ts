@@ -8,14 +8,25 @@ export const maxDuration = 60;
 export async function POST(req: NextRequest) {
   try {
     const body: MarketSummaryRequest = await req.json();
+    console.log("[Market Summary] Request received, calling LLM...");
     const result = await generateMarketSummary(body);
+
+    if (!result) {
+      console.warn("[Market Summary] LLM returned null — all providers failed");
+      return NextResponse.json(
+        { summary: null, error: "All LLM providers failed — check Vercel logs", timestamp: Date.now() },
+        { status: 200 }
+      );
+    }
+
+    console.log(`[Market Summary] Success via ${result.provider}`);
     return NextResponse.json(
       { summary: result, timestamp: Date.now() },
       { headers: { "Cache-Control": "s-maxage=600, stale-while-revalidate=120" } }
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("Market summary error:", message, error);
+    console.error("[Market Summary] Exception:", message, error);
     return NextResponse.json(
       { summary: null, error: message, timestamp: Date.now() },
       { status: 200 }
