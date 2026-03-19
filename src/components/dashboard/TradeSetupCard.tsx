@@ -1,35 +1,103 @@
 "use client";
 
-import { useMarketStore } from "@/lib/store/market-store";
-import { useBiasScore } from "@/lib/hooks/useBiasScore";
-import { getBiasColor, getBiasLabel } from "@/lib/utils/formatters";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Target, Shield, Zap, AlertTriangle, TrendingUp, TrendingDown, Crosshair } from "lucide-react";
-import type { RiskSizing } from "@/lib/types/bias";
+import type { TradeDeskSetup, ConvictionTier, ImpulseColor, MarketRegime } from "@/lib/types/signals";
+import {
+  Target,
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  AlertTriangle,
+  Minus,
+  Check,
+  Copy,
+} from "lucide-react";
 
-function RiskBadge({ sizing }: { sizing: RiskSizing }) {
-  const config = {
-    size_up: { label: "SIZE UP", icon: Zap, cls: "bg-bullish/15 text-bullish border-bullish/20" },
-    normal: { label: "NORMAL SIZE", icon: Shield, cls: "bg-neutral-accent/15 text-neutral-accent border-neutral-accent/20" },
-    size_down: { label: "SIZE DOWN", icon: AlertTriangle, cls: "bg-amber/15 text-[var(--amber)] border-[var(--amber)]/20" },
-  }[sizing];
-  const Icon = config.icon;
+// ── Copy Price ──
 
+function CopyPrice({ value, className }: { value: string; className?: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
   return (
-    <div className={cn("flex items-center gap-2 px-3 py-2 rounded-lg border", config.cls)}>
-      <Icon className="h-4 w-4" />
-      <span className="text-sm font-bold uppercase tracking-wider">{config.label}</span>
-    </div>
+    <button
+      onClick={handleCopy}
+      className={cn(
+        "inline-flex items-center gap-1 font-mono cursor-pointer rounded px-1 -mx-1 transition-colors hover:bg-foreground/5 active:bg-foreground/10 group",
+        className
+      )}
+      title={`Copy ${value}`}
+    >
+      {value}
+      {copied ? (
+        <Check className="h-2.5 w-2.5 text-bullish shrink-0" />
+      ) : (
+        <Copy className="h-2.5 w-2.5 opacity-0 group-hover:opacity-40 shrink-0 transition-opacity" />
+      )}
+    </button>
   );
 }
 
-export function TradeSetupCard() {
-  const instrument = useMarketStore((s) => s.selectedInstrument);
-  const batchLLMResults = useMarketStore((s) => s.batchLLMResults);
-  const { biasResult } = useBiasScore();
+// ── Sub-badges ──
 
-  if (!biasResult?.tradeSetup) {
-    const hasBias = biasResult && Math.abs(biasResult.overallBias) > 2;
+function ConvictionBadgeLg({ tier }: { tier: ConvictionTier }) {
+  const config: Record<ConvictionTier, { cls: string }> = {
+    "A+": { cls: "bg-bullish/20 text-bullish ring-1 ring-bullish/30" },
+    "A": { cls: "bg-bullish/15 text-bullish" },
+    "B": { cls: "bg-neutral-accent/15 text-neutral-accent" },
+    "C": { cls: "bg-amber/15 text-[var(--amber)]" },
+    "D": { cls: "bg-muted/20 text-muted-foreground" },
+  };
+  return (
+    <span className={cn("inline-flex items-center justify-center h-10 min-w-[44px] px-2 rounded text-lg font-black tracking-wider", config[tier].cls)}>
+      {tier}
+    </span>
+  );
+}
+
+function RegimeBadge({ regime, adx }: { regime: MarketRegime; adx: number }) {
+  const config: Record<MarketRegime, { label: string; cls: string; icon: typeof Activity }> = {
+    trending_up: { label: "Trending Up", cls: "bg-bullish/15 text-bullish", icon: TrendingUp },
+    trending_down: { label: "Trending Down", cls: "bg-bearish/15 text-bearish", icon: TrendingDown },
+    ranging: { label: "Ranging", cls: "bg-neutral-accent/15 text-neutral-accent", icon: Activity },
+    volatile: { label: "Volatile", cls: "bg-amber/15 text-[var(--amber)]", icon: AlertTriangle },
+  };
+  const c = config[regime];
+  const Icon = c.icon;
+  return (
+    <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider", c.cls)}>
+      <Icon className="h-3 w-3" />
+      {c.label}
+      {adx > 0 && <span className="opacity-60 ml-0.5">ADX {adx.toFixed(0)}</span>}
+    </span>
+  );
+}
+
+function ImpulseBadge({ color }: { color: ImpulseColor }) {
+  const config: Record<ImpulseColor, { label: string; cls: string; dot: string; tooltip: string }> = {
+    green: { label: "GREEN", cls: "text-bullish", dot: "bg-bullish", tooltip: "GREEN — Buying pressure. MACD histogram rising + EMA slope up. Favorable for longs." },
+    red: { label: "RED", cls: "text-bearish", dot: "bg-bearish", tooltip: "RED — Selling pressure. MACD histogram falling + EMA slope down. Favorable for shorts." },
+    blue: { label: "BLUE", cls: "text-neutral-accent", dot: "bg-neutral-accent", tooltip: "BLUE — Mixed momentum. MACD and EMA disagree. Exercise caution." },
+  };
+  const c = config[color];
+  return (
+    <span className={cn("inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider cursor-help", c.cls)} title={c.tooltip}>
+      <span className={cn("h-2 w-2 rounded-full animate-pulse", c.dot)} />
+      {c.label}
+    </span>
+  );
+}
+
+// ── Main Component ──
+
+export function TradeSetupCard({ setup, decimals = 5 }: { setup: TradeDeskSetup | null; decimals?: number }) {
+  if (!setup) {
     return (
       <div className="panel rounded-lg p-4 min-h-[280px]">
         <div className="flex items-center gap-2 mb-3">
@@ -38,29 +106,21 @@ export function TradeSetupCard() {
             Trade Setup
           </h3>
         </div>
-        {hasBias ? (
-          <p className="text-[11px] text-muted-foreground/60 py-4 text-center">
-            Waiting for price data to calculate entry levels...
+        <div className="flex flex-col items-center py-8 text-center">
+          <Minus className="h-6 w-6 text-muted-foreground/30 mb-2" />
+          <p className="text-xs text-muted-foreground/50">
+            No qualifying setup. Conviction below B tier or signals neutral.
           </p>
-        ) : (
-          <div className="space-y-3 py-2">
-            <div className="h-5 w-1/3 shimmer rounded" />
-            <div className="h-3 w-2/3 shimmer rounded" />
-            <div className="h-3 w-1/2 shimmer rounded" />
-            <div className="h-3 w-3/4 shimmer rounded" />
-            <div className="h-3 w-2/3 shimmer rounded" />
-            <div className="h-3 w-1/2 shimmer rounded" />
-          </div>
-        )}
+          <p className="text-[10px] text-muted-foreground/30 mt-1">
+            Wait for higher confluence — quality over quantity.
+          </p>
+        </div>
       </div>
     );
   }
 
-  const { tradeSetup, overallBias, direction, confidence, adr, aiBias } = biasResult;
-  const color = getBiasColor(direction);
-  const isBullish = direction.includes("bullish");
-  const dec = instrument.decimalPlaces;
-  const llm = batchLLMResults?.[instrument.id];
+  const isBullish = setup.direction === "bullish";
+  const dec = decimals;
 
   return (
     <div className="panel rounded-lg p-4 space-y-4">
@@ -73,117 +133,112 @@ export function TradeSetupCard() {
           </h3>
         </div>
         <span className="text-[9px] font-mono text-muted-foreground/40">
-          Score: {tradeSetup.tradeScore.toFixed(0)}
+          Score: {setup.convictionScore.toFixed(0)}/100
         </span>
       </div>
 
-      {/* Direction + Risk Sizing */}
+      {/* Direction + Conviction */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
+          <ConvictionBadgeLg tier={setup.conviction} />
           <div className="flex items-center gap-2">
             {isBullish ? (
-              <TrendingUp className="h-5 w-5" style={{ color }} />
+              <TrendingUp className="h-5 w-5 text-bullish" />
             ) : (
-              <TrendingDown className="h-5 w-5" style={{ color }} />
+              <TrendingDown className="h-5 w-5 text-bearish" />
             )}
-            <span className="text-lg font-bold uppercase" style={{ color }}>
-              {getBiasLabel(direction)}
+            <span className={cn("text-lg font-bold uppercase", isBullish ? "text-bullish" : "text-bearish")}>
+              {isBullish ? "LONG" : "SHORT"}
             </span>
           </div>
-          <span className="text-sm font-mono text-muted-foreground">
-            Conf: {Math.round(confidence)}%
-          </span>
         </div>
-        <RiskBadge sizing={tradeSetup.riskSizing} />
+        <div className="flex items-center gap-2">
+          <ImpulseBadge color={setup.impulse} />
+        </div>
       </div>
 
-      {/* Scores Row */}
-      <div className="grid grid-cols-4 gap-2">
-        <div className="bg-[var(--surface-2)] rounded px-2 py-1.5 text-center">
-          <div className="text-[9px] text-muted-foreground/60 uppercase">Fundamental</div>
-          <div className="text-sm font-mono font-bold text-foreground">{Math.round(biasResult.fundamentalScore.total)}</div>
+      {/* Regime */}
+      <div className="flex items-center gap-2">
+        <RegimeBadge regime={setup.regime} adx={setup.adx} />
+      </div>
+
+      {/* 8 Mechanical Systems */}
+      <div>
+        <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1.5">
+          Mechanical Systems
         </div>
-        <div className="bg-[var(--surface-2)] rounded px-2 py-1.5 text-center">
-          <div className="text-[9px] text-muted-foreground/60 uppercase">Technical</div>
-          <div className="text-sm font-mono font-bold text-foreground">{Math.round(biasResult.technicalScore.total)}</div>
-        </div>
-        <div className="bg-[var(--surface-2)] rounded px-2 py-1.5 text-center">
-          <div className="text-[9px] text-muted-foreground/60 uppercase">AI Bias</div>
-          <div className="text-sm font-mono font-bold text-neutral-accent">
-            {aiBias > 0 ? "+" : ""}{Math.round(aiBias)}
-          </div>
-        </div>
-        <div className="bg-[var(--surface-2)] rounded px-2 py-1.5 text-center">
-          <div className="text-[9px] text-muted-foreground/60 uppercase">ADR</div>
-          <div className="text-sm font-mono font-bold text-foreground">
-            {adr ? `${adr.pips}p` : "—"}
-          </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5">
+          {setup.signals.map((sig, i) => (
+            <div
+              key={i}
+              className={cn(
+                "px-2 py-1.5 rounded-md text-[10px] border",
+                sig.direction === "bullish" && "bg-bullish/8 border-bullish/20 text-bullish",
+                sig.direction === "bearish" && "bg-bearish/8 border-bearish/20 text-bearish",
+                sig.direction === "neutral" && "bg-muted/10 border-border/30 text-muted-foreground/60"
+              )}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-semibold">{sig.system}</span>
+                {sig.regimeMatch && <span className="text-[8px] opacity-60">MATCH</span>}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* Price Levels */}
       <div className="space-y-1.5">
-        <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50 mb-1">
-          <Crosshair className="h-3 w-3 inline mr-1" />
-          Price Levels
-        </div>
-
-        {/* Entry Zone */}
         <div className="flex items-center justify-between bg-[var(--surface-2)] rounded px-3 py-2">
           <span className="text-[11px] font-medium text-muted-foreground">Entry Zone</span>
-          <span className="text-[12px] font-mono font-bold text-foreground">
-            {tradeSetup.entryZone[0].toFixed(dec)} – {tradeSetup.entryZone[1].toFixed(dec)}
+          <span className="text-[12px] font-mono font-bold text-foreground flex items-center gap-1">
+            <CopyPrice value={setup.entry[0].toFixed(dec)} />
+            <span className="text-muted-foreground/40">–</span>
+            <CopyPrice value={setup.entry[1].toFixed(dec)} />
           </span>
         </div>
 
-        {/* Stop Loss */}
         <div className="flex items-center justify-between bg-bearish/5 rounded px-3 py-2 border border-bearish/10">
           <span className="text-[11px] font-medium text-bearish">Stop Loss</span>
-          <span className="text-[12px] font-mono font-bold text-bearish">
-            {tradeSetup.stopLoss.toFixed(dec)}
-          </span>
+          <CopyPrice value={setup.stopLoss.toFixed(dec)} className="text-[12px] font-bold text-bearish" />
         </div>
 
-        {/* Take Profit Levels */}
-        {tradeSetup.takeProfit.map((tp, i) => (
+        {setup.takeProfit.map((tp, i) => (
           <div key={i} className="flex items-center justify-between bg-bullish/5 rounded px-3 py-2 border border-bullish/10">
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-medium text-bullish">TP{i + 1}</span>
-              <span className="text-[10px] font-mono text-bullish/60">{tradeSetup.riskReward[i]}R</span>
+              <span className="text-[10px] font-mono text-bullish/60">1:{setup.riskReward[i]}</span>
             </div>
-            <span className="text-[12px] font-mono font-bold text-bullish">
-              {tp.toFixed(dec)}
-            </span>
+            <CopyPrice value={tp.toFixed(dec)} className="text-[12px] font-bold text-bullish" />
           </div>
         ))}
       </div>
 
-      {/* Projected Move */}
+      {/* Position Sizing */}
       <div className="flex items-center justify-between bg-[var(--surface-2)] rounded px-3 py-2">
-        <span className="text-[11px] font-medium text-muted-foreground">Projected Move</span>
-        <span className="text-sm font-mono font-bold" style={{ color }}>
-          {isBullish ? "+" : "-"}{tradeSetup.projectedMove.pips} pips ({tradeSetup.projectedMove.percent}%)
-        </span>
+        <span className="text-[11px] font-medium text-muted-foreground">Position Size</span>
+        <div className="text-[12px] font-mono">
+          <span className="font-bold text-foreground">{setup.positionSizeLots} lots</span>
+          <span className="text-muted-foreground/60 ml-2">Risk: ${setup.riskAmount}</span>
+        </div>
       </div>
 
-      {/* AI Key Levels */}
-      {llm?.keyLevels && llm.keyLevels.support > 0 && (
-        <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground/50">
-          <span>AI Support: {llm.keyLevels.support.toFixed(dec)}</span>
-          <span>AI Resistance: {llm.keyLevels.resistance.toFixed(dec)}</span>
+      {/* Reasons to Exit */}
+      {setup.reasonsToExit.length > 0 && (
+        <div className="border-t border-border/50 pt-2">
+          <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
+            Reasons to Exit
+          </div>
+          <div className="space-y-0.5">
+            {setup.reasonsToExit.map((reason, i) => (
+              <div key={i} className="text-[10px] text-muted-foreground/70 flex items-start gap-1">
+                <span className="text-[8px] mt-0.5 text-[var(--amber)] shrink-0">●</span>
+                {reason}
+              </div>
+            ))}
+          </div>
         </div>
       )}
-
-      {/* Risk Reason + Catalysts */}
-      <div className="border-t border-border/50 pt-2 space-y-1.5">
-        <p className="text-[10px] text-muted-foreground/50">{tradeSetup.riskReason}</p>
-        {llm?.catalysts && llm.catalysts.length > 0 && (
-          <div>
-            <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-wider">Catalysts: </span>
-            <span className="text-[10px] text-muted-foreground/50">{llm.catalysts.join(" · ")}</span>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
