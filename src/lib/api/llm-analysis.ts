@@ -669,7 +669,7 @@ export async function generateMarketSummary(
   }
 
   const userPrompt = buildMarketSummaryPrompt(req);
-  const response = await callLLM(MARKET_SUMMARY_SYSTEM_PROMPT, userPrompt, 1024);
+  const response = await callLLM(MARKET_SUMMARY_SYSTEM_PROMPT, userPrompt, 1536);
   if (!response) return null;
 
   const result = parseMarketSummary(response.text, response.provider);
