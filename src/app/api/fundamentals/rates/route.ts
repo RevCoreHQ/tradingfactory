@@ -19,13 +19,15 @@ export async function GET(req: NextRequest) {
       // Try Twelve Data first — fetch each pair individually (fast, paid tier)
       const twelveResults = await Promise.allSettled(
         forexInstruments.map(async (inst) => {
-          const price = await fetchTwelveDataPrice(inst.symbol);
+          const tdSymbol = inst.twelveDataSymbol || inst.symbol;
+          const price = await fetchTwelveDataPrice(tdSymbol);
           return { inst, price };
         })
       );
 
       const missingInstruments: typeof forexInstruments = [];
-      for (const result of twelveResults) {
+      for (let i = 0; i < twelveResults.length; i++) {
+        const result = twelveResults[i];
         if (result.status === "fulfilled" && result.value.price && result.value.price > 0) {
           const { inst, price: mid } = result.value;
           quotes[inst.id] = {
@@ -39,8 +41,10 @@ export async function GET(req: NextRequest) {
             high24h: mid,
             low24h: mid,
           };
-        } else if (result.status === "fulfilled") {
-          missingInstruments.push(result.value.inst);
+        } else {
+          // Both fulfilled-without-price AND rejected promises need fallback
+          const inst = result.status === "fulfilled" ? result.value.inst : forexInstruments[i];
+          missingInstruments.push(inst);
         }
       }
 
@@ -73,8 +77,8 @@ export async function GET(req: NextRequest) {
               };
             }
           }
-        } catch {
-          // Both providers failed
+        } catch (err) {
+          console.warn("[Rates] Finnhub fallback also failed:", err);
         }
       }
     }
@@ -97,7 +101,8 @@ export async function GET(req: NextRequest) {
     );
     for (const inst of commodityInstruments) {
       try {
-        const tdCandles = await fetchTwelveDataCandles(inst.symbol, "1h", 24);
+        const tdSymbol = inst.twelveDataSymbol || inst.symbol;
+        const tdCandles = await fetchTwelveDataCandles(tdSymbol, "1h", 24);
         if (tdCandles.length > 0) {
           const latest = tdCandles[tdCandles.length - 1];
           const first = tdCandles[0];

@@ -63,8 +63,10 @@ export async function GET(req: NextRequest) {
       // Primary: Twelve Data (paid, 55 req/min)
       try {
         const tdInterval = TWELVE_DATA_INTERVALS[timeframe] || "1h";
-        candles = await fetchTwelveDataCandles(instrument.symbol, tdInterval);
-      } catch {
+        const tdSymbol = instrument.twelveDataSymbol || instrument.symbol;
+        candles = await fetchTwelveDataCandles(tdSymbol, tdInterval);
+      } catch (err) {
+        console.warn(`[PriceData] TwelveData failed for ${instrument.symbol}:`, err);
         candles = [];
       }
 
@@ -74,7 +76,8 @@ export async function GET(req: NextRequest) {
         const resolution = RESOLUTION_MAP[timeframe] || "60";
         try {
           candles = await fetchForexCandleData(finnhubSym, resolution, from, now);
-        } catch {
+        } catch (err) {
+          console.warn(`[PriceData] Finnhub failed for ${finnhubSym}:`, err);
           candles = [];
         }
       }
@@ -97,7 +100,8 @@ export async function GET(req: NextRequest) {
               candles = aggregateCandles(candles, 4);
             }
           }
-        } catch {
+        } catch (err) {
+          console.warn(`[PriceData] AlphaVantage failed for ${instrument.alphavantageSymbol}:`, err);
           candles = [];
         }
       }
@@ -105,15 +109,18 @@ export async function GET(req: NextRequest) {
       // Index — try Twelve Data first, then Finnhub
       try {
         const tdInterval = TWELVE_DATA_INTERVALS[timeframe] || "1h";
-        candles = await fetchTwelveDataCandles(instrument.symbol, tdInterval);
-      } catch {
+        const tdSymbol = instrument.twelveDataSymbol || instrument.symbol;
+        candles = await fetchTwelveDataCandles(tdSymbol, tdInterval);
+      } catch (err) {
+        console.warn(`[PriceData] TwelveData failed for index ${instrument.symbol}:`, err);
         candles = [];
       }
       if (candles.length === 0) {
         try {
           const resolution = RESOLUTION_MAP[timeframe] || "D";
           candles = await fetchForexCandles(instrument.finnhubSymbol || "", resolution, from, now);
-        } catch {
+        } catch (err) {
+          console.warn(`[PriceData] Finnhub failed for index ${instrument.finnhubSymbol}:`, err);
           candles = [];
         }
       }

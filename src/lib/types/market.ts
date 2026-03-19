@@ -8,6 +8,7 @@ export interface Instrument {
   alphavantageSymbol: string;
   alphavantageToSymbol?: string;
   finnhubSymbol?: string;
+  twelveDataSymbol?: string;
   coingeckoId?: string;
   fredSeriesIds?: string[];
   pipSize: number;

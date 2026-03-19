@@ -64,7 +64,8 @@ export async function GET() {
       forexCommodity
         .filter((inst) => !results[inst.id])
         .map(async (inst) => {
-          const candles = await fetchTwelveDataCandles(inst.symbol, "1day", 30);
+          const tdSymbol = inst.twelveDataSymbol || inst.symbol;
+          const candles = await fetchTwelveDataCandles(tdSymbol, "1day", 30);
           const adr = computeADR(candles, inst.pipSize);
           if (adr) results[inst.id] = adr;
           return { id: inst.id, success: !!adr };
@@ -98,7 +99,8 @@ export async function GET() {
         if (results[inst.id]) return;
         // Try Twelve Data first
         try {
-          const candles = await fetchTwelveDataCandles(inst.symbol, "1day", 30);
+          const tdSymbol = inst.twelveDataSymbol || inst.symbol;
+          const candles = await fetchTwelveDataCandles(tdSymbol, "1day", 30);
           const adr = computeADR(candles, inst.pipSize);
           if (adr) { results[inst.id] = adr; return; }
         } catch {

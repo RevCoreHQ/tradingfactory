@@ -8,7 +8,7 @@ function getApiKey(): string {
 }
 
 /**
- * Twelve Data forex candles. Free tier: 800 calls/day, 8/min.
+ * Twelve Data forex candles. Paid tier: 55 req/min.
  * Symbols use format "EUR/USD", "XAU/USD", etc.
  */
 export async function fetchTwelveDataCandles(
@@ -17,10 +17,16 @@ export async function fetchTwelveDataCandles(
   outputsize: number = 200
 ): Promise<OHLCV[]> {
   const apiKey = getApiKey();
-  if (!apiKey) return [];
+  if (!apiKey) {
+    console.warn("[TwelveData] No API key — skipping candles for", symbol);
+    return [];
+  }
 
   const { allowed } = checkRateLimit("twelvedata");
-  if (!allowed) return [];
+  if (!allowed) {
+    console.warn("[TwelveData] Rate limited — skipping candles for", symbol);
+    return [];
+  }
 
   const url = new URL(`${BASE_URL}/time_series`);
   url.searchParams.set("symbol", symbol);
@@ -29,11 +35,17 @@ export async function fetchTwelveDataCandles(
   url.searchParams.set("apikey", apiKey);
 
   const res = await fetch(url.toString(), { next: { revalidate: 300 } });
-  if (!res.ok) return [];
+  if (!res.ok) {
+    console.warn(`[TwelveData] HTTP ${res.status} for candles ${symbol}`);
+    return [];
+  }
 
   const data = await res.json();
 
-  if (data.status === "error" || !data.values) return [];
+  if (data.status === "error" || !data.values) {
+    console.warn(`[TwelveData] API error for ${symbol}:`, data.message || data.status || "no values");
+    return [];
+  }
 
   return data.values
     .map((v: { datetime: string; open: string; high: string; low: string; close: string; volume: string }) => ({
@@ -53,10 +65,16 @@ export async function fetchTwelveDataCandles(
  */
 export async function fetchTwelveDataPrice(symbol: string): Promise<number | null> {
   const apiKey = getApiKey();
-  if (!apiKey) return null;
+  if (!apiKey) {
+    console.warn("[TwelveData] No API key — skipping price for", symbol);
+    return null;
+  }
 
   const { allowed } = checkRateLimit("twelvedata");
-  if (!allowed) return null;
+  if (!allowed) {
+    console.warn("[TwelveData] Rate limited — skipping price for", symbol);
+    return null;
+  }
 
   const url = new URL(`${BASE_URL}/price`);
   url.searchParams.set("symbol", symbol);
@@ -64,11 +82,16 @@ export async function fetchTwelveDataPrice(symbol: string): Promise<number | nul
 
   try {
     const res = await fetch(url.toString(), { next: { revalidate: 60 } });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn(`[TwelveData] HTTP ${res.status} for price ${symbol}`);
+      return null;
+    }
     const data = await res.json();
     if (data.price) return parseFloat(data.price);
+    console.warn(`[TwelveData] No price data for ${symbol}:`, data.message || "empty");
     return null;
-  } catch {
+  } catch (err) {
+    console.warn(`[TwelveData] Price fetch failed for ${symbol}:`, err);
     return null;
   }
 }
