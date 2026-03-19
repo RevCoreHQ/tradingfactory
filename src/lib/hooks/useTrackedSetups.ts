@@ -67,6 +67,40 @@ export function useTrackedSetups(
         const isStillActionable =
           existing.status === "pending" || existing.status === "active";
 
+        // If conviction dropped below A on an actionable setup, invalidate — no longer tradeable
+        const isBelowA = fresh.conviction === "B" || fresh.conviction === "C" || fresh.conviction === "D";
+        if (isStillActionable && isBelowA) {
+          changed = true;
+          const invalidated: TrackedSetup = {
+            ...existing,
+            status: "invalidated",
+            closedAt: Date.now(),
+            outcome: "breakeven",
+            pnlPercent: 0,
+          };
+          terminalList.push(invalidated);
+          activeMap.delete(fresh.instrumentId);
+          continue;
+        }
+
+        // If impulse conflicts on an actionable setup, invalidate — hard gate violated
+        const impulseConflict =
+          (fresh.direction === "bullish" && fresh.impulse === "red") ||
+          (fresh.direction === "bearish" && fresh.impulse === "green");
+        if (isStillActionable && impulseConflict) {
+          changed = true;
+          const invalidated: TrackedSetup = {
+            ...existing,
+            status: "invalidated",
+            closedAt: Date.now(),
+            outcome: "breakeven",
+            pnlPercent: 0,
+          };
+          terminalList.push(invalidated);
+          activeMap.delete(fresh.instrumentId);
+          continue;
+        }
+
         // If direction flipped on an actionable setup, invalidate — thesis changed
         if (isStillActionable && fresh.direction !== existing.setup.direction) {
           changed = true;

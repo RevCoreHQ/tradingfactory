@@ -34,11 +34,18 @@ function setClientCache(data: TradingAdvisorResult, hash: string): void {
   } catch {}
 }
 
-function buildSetupHash(setups: TradeDeskSetup[]): string {
-  return setups
-    .slice(0, 5)
-    .map((s) => `${s.instrumentId}:${s.conviction}:${s.direction}:${s.impulse}:${s.regime}`)
+function buildSetupHash(
+  setups: TradeDeskSetup[],
+  trackedStatuses?: Record<string, string>
+): string {
+  const setupPart = setups
+    .slice(0, 6)
+    .map((s) => {
+      const status = trackedStatuses?.[s.instrumentId] ?? "new";
+      return `${s.instrumentId}:${s.conviction}:${s.direction}:${s.impulse}:${status}`;
+    })
     .join("|");
+  return setupPart;
 }
 
 async function fetchAdvisor(
@@ -66,7 +73,7 @@ interface UseTradingAdvisorParams {
 }
 
 export function useTradingAdvisor(params: UseTradingAdvisorParams | null) {
-  const hash = params && params.setups.length > 0 ? buildSetupHash(params.setups) : null;
+  const hash = params && params.setups.length > 0 ? buildSetupHash(params.setups, params.trackedStatuses) : null;
 
   const { data, error, isLoading, mutate } = useSWR(
     hash ? `trade-advisor:${hash}` : null,

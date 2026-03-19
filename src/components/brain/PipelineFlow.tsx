@@ -308,8 +308,9 @@ export function PipelineFlow() {
       >
         <p>
           Every trade setup is tracked through its lifecycle: <strong>pending → active → breakeven → TP/SL/expired</strong>.
-          Outcomes are stored with a confluence pattern key built from the agreeing system names + regime +
-          impulse color + trading style.
+          Pending/active setups are continuously re-evaluated — if conviction drops below A or impulse conflicts,
+          the setup is <strong>invalidated</strong> (thesis changed). Outcomes are stored with a confluence pattern
+          key built from the agreeing system names + regime + impulse color + trading style.
         </p>
         <p>
           After 5+ trades on a pattern, the system adjusts risk multipliers based on win rate: ≥75% → 1.5x,
