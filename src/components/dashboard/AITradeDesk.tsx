@@ -19,7 +19,41 @@ import {
   Zap,
   Target,
   Minus,
+  Check,
+  Copy,
 } from "lucide-react";
+
+// ==================== Copy Price ====================
+
+function CopyPrice({ value, className }: { value: string; className?: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className={cn(
+        "inline-flex items-center gap-1 font-mono cursor-pointer rounded px-1 -mx-1 transition-colors hover:bg-foreground/5 active:bg-foreground/10 group",
+        className
+      )}
+      title={`Copy ${value}`}
+    >
+      {value}
+      {copied ? (
+        <Check className="h-2.5 w-2.5 text-bullish shrink-0" />
+      ) : (
+        <Copy className="h-2.5 w-2.5 opacity-0 group-hover:opacity-40 shrink-0 transition-opacity" />
+      )}
+    </button>
+  );
+}
 
 // ==================== Sub-components ====================
 
@@ -196,31 +230,35 @@ function SetupCard({ setup, rank }: { setup: TradeDeskSetup; rank: number }) {
             </div>
           </div>
 
-          {/* Trade Levels */}
+          {/* Trade Levels — click to copy */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
               <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
                 Entry Zone
               </div>
-              <div className="text-xs font-mono text-foreground">
-                {setup.entry[0].toFixed(decimals)} – {setup.entry[1].toFixed(decimals)}
+              <div className="text-xs text-foreground flex items-center gap-1">
+                <CopyPrice value={setup.entry[0].toFixed(decimals)} />
+                <span className="text-muted-foreground/40">–</span>
+                <CopyPrice value={setup.entry[1].toFixed(decimals)} />
               </div>
             </div>
             <div>
               <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
                 Stop Loss
               </div>
-              <div className="text-xs font-mono text-bearish">
-                {setup.stopLoss.toFixed(decimals)}
-              </div>
+              <CopyPrice value={setup.stopLoss.toFixed(decimals)} className="text-xs text-bearish" />
             </div>
             <div>
               <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
                 Take Profit
               </div>
-              <div className="text-xs font-mono text-bullish space-x-2">
-                <span>TP1: {setup.takeProfit[0].toFixed(decimals)}</span>
-                <span className="opacity-60">TP2: {setup.takeProfit[1].toFixed(decimals)}</span>
+              <div className="text-xs flex items-center gap-2">
+                <span className="text-muted-foreground/50 text-[9px]">TP1</span>
+                <CopyPrice value={setup.takeProfit[0].toFixed(decimals)} className="text-bullish" />
+                <span className="text-muted-foreground/50 text-[9px]">TP2</span>
+                <CopyPrice value={setup.takeProfit[1].toFixed(decimals)} className="text-bullish opacity-60" />
+                <span className="text-muted-foreground/50 text-[9px]">TP3</span>
+                <CopyPrice value={setup.takeProfit[2].toFixed(decimals)} className="text-bullish opacity-40" />
               </div>
             </div>
             <div>
