@@ -59,18 +59,17 @@ export async function GET() {
       (i) => i.category === "forex" || i.category === "commodity"
     );
 
-    // Fetch from Twelve Data in parallel (paid tier, 55/min)
-    const tdResults = await Promise.allSettled(
-      forexCommodity
-        .filter((inst) => !results[inst.id])
-        .map(async (inst) => {
-          const tdSymbol = inst.twelveDataSymbol || inst.symbol;
-          const candles = await fetchTwelveDataCandles(tdSymbol, "1day", 30);
-          const adr = computeADR(candles, inst.pipSize);
-          if (adr) results[inst.id] = adr;
-          return { id: inst.id, success: !!adr };
-        })
-    );
+    // Fetch from Twelve Data sequentially to avoid rate limit bursts
+    for (const inst of forexCommodity.filter((i) => !results[i.id])) {
+      try {
+        const tdSymbol = inst.twelveDataSymbol || inst.symbol;
+        const candles = await fetchTwelveDataCandles(tdSymbol, "1day", 30);
+        const adr = computeADR(candles, inst.pipSize);
+        if (adr) results[inst.id] = adr;
+      } catch {
+        // continue to next instrument
+      }
+    }
 
     // Fallback: Alpha Vantage for anything Twelve Data missed
     const missingForex = forexCommodity.filter((inst) => !results[inst.id]);
@@ -92,30 +91,28 @@ export async function GET() {
       }
     }
 
-    // 3. Indices — Twelve Data primary, Finnhub fallback
+    // 3. Indices — Twelve Data primary, Finnhub fallback (sequential)
     const indices = INSTRUMENTS.filter((i) => i.category === "index");
-    await Promise.allSettled(
-      indices.map(async (inst) => {
-        if (results[inst.id]) return;
-        // Try Twelve Data first
-        try {
-          const tdSymbol = inst.twelveDataSymbol || inst.symbol;
-          const candles = await fetchTwelveDataCandles(tdSymbol, "1day", 30);
-          const adr = computeADR(candles, inst.pipSize);
-          if (adr) { results[inst.id] = adr; return; }
-        } catch {
-          // fall through
-        }
-        // Fallback: Finnhub
-        try {
-          const candles = await fetchForexCandles(inst.finnhubSymbol || "", "D", from, now);
-          const adr = computeADR(candles, inst.pipSize);
-          if (adr) results[inst.id] = adr;
-        } catch {
-          // Both failed
-        }
-      })
-    );
+    for (const inst of indices) {
+      if (results[inst.id]) continue;
+      // Try Twelve Data first
+      try {
+        const tdSymbol = inst.twelveDataSymbol || inst.symbol;
+        const candles = await fetchTwelveDataCandles(tdSymbol, "1day", 30);
+        const adr = computeADR(candles, inst.pipSize);
+        if (adr) { results[inst.id] = adr; continue; }
+      } catch {
+        // fall through
+      }
+      // Fallback: Finnhub
+      try {
+        const candles = await fetchForexCandles(inst.finnhubSymbol || "", "D", from, now);
+        const adr = computeADR(candles, inst.pipSize);
+        if (adr) results[inst.id] = adr;
+      } catch {
+        // Both failed
+      }
+    }
 
     cache = { data: results, timestamp: Date.now() };
 

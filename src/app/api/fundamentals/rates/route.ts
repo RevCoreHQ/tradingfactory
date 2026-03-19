@@ -16,34 +16,28 @@ export async function GET(req: NextRequest) {
       (i) => i.category === "forex" && requestedIds.includes(i.id)
     );
     if (forexInstruments.length > 0) {
-      // Try Twelve Data first — fetch each pair individually (fast, paid tier)
-      const twelveResults = await Promise.allSettled(
-        forexInstruments.map(async (inst) => {
+      // Try Twelve Data first — fetch sequentially to avoid rate limit bursts
+      const missingInstruments: typeof forexInstruments = [];
+      for (const inst of forexInstruments) {
+        try {
           const tdSymbol = inst.twelveDataSymbol || inst.symbol;
           const price = await fetchTwelveDataPrice(tdSymbol);
-          return { inst, price };
-        })
-      );
-
-      const missingInstruments: typeof forexInstruments = [];
-      for (let i = 0; i < twelveResults.length; i++) {
-        const result = twelveResults[i];
-        if (result.status === "fulfilled" && result.value.price && result.value.price > 0) {
-          const { inst, price: mid } = result.value;
-          quotes[inst.id] = {
-            instrument: inst.id,
-            bid: mid - inst.pipSize,
-            ask: mid + inst.pipSize,
-            mid,
-            timestamp: Date.now(),
-            change: 0,
-            changePercent: 0,
-            high24h: mid,
-            low24h: mid,
-          };
-        } else {
-          // Both fulfilled-without-price AND rejected promises need fallback
-          const inst = result.status === "fulfilled" ? result.value.inst : forexInstruments[i];
+          if (price && price > 0) {
+            quotes[inst.id] = {
+              instrument: inst.id,
+              bid: price - inst.pipSize,
+              ask: price + inst.pipSize,
+              mid: price,
+              timestamp: Date.now(),
+              change: 0,
+              changePercent: 0,
+              high24h: price,
+              low24h: price,
+            };
+          } else {
+            missingInstruments.push(inst);
+          }
+        } catch {
           missingInstruments.push(inst);
         }
       }

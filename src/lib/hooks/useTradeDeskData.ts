@@ -26,28 +26,41 @@ interface DualCandles {
   candles4h: OHLCV[];
 }
 
+const BATCH_SIZE = 4; // Process 4 instruments at a time to stay under 55 req/min
+const BATCH_DELAY_MS = 2000; // 2s between batches
+
 async function fetchAllCandles(): Promise<Record<string, DualCandles>> {
   const results: Record<string, DualCandles> = {};
-  const promises = INSTRUMENTS.map(async (inst) => {
-    try {
-      const [res1h, res4h] = await Promise.all([
-        fetch(`/api/technicals/price-data?instrument=${inst.id}&timeframe=1h`),
-        fetch(`/api/technicals/price-data?instrument=${inst.id}&timeframe=4h`),
-      ]);
 
-      const data1h = res1h.ok ? await res1h.json() : { candles: [] };
-      const data4h = res4h.ok ? await res4h.json() : { candles: [] };
+  // Process instruments in batches to avoid blowing Twelve Data rate limit
+  for (let i = 0; i < INSTRUMENTS.length; i += BATCH_SIZE) {
+    const batch = INSTRUMENTS.slice(i, i + BATCH_SIZE);
+    await Promise.all(
+      batch.map(async (inst) => {
+        try {
+          const [res1h, res4h] = await Promise.all([
+            fetch(`/api/technicals/price-data?instrument=${inst.id}&timeframe=1h`),
+            fetch(`/api/technicals/price-data?instrument=${inst.id}&timeframe=4h`),
+          ]);
 
-      // Need at least 4h data; 1h is optional (fallback to swing)
-      if (data4h.candles?.length > 20) {
-        results[inst.id] = {
-          candles1h: data1h.candles?.length > 20 ? data1h.candles : [],
-          candles4h: data4h.candles,
-        };
-      }
-    } catch {}
-  });
-  await Promise.all(promises);
+          const data1h = res1h.ok ? await res1h.json() : { candles: [] };
+          const data4h = res4h.ok ? await res4h.json() : { candles: [] };
+
+          // Need at least 4h data; 1h is optional (fallback to swing)
+          if (data4h.candles?.length > 20) {
+            results[inst.id] = {
+              candles1h: data1h.candles?.length > 20 ? data1h.candles : [],
+              candles4h: data4h.candles,
+            };
+          }
+        } catch {}
+      })
+    );
+    // Wait between batches (skip delay after last batch)
+    if (i + BATCH_SIZE < INSTRUMENTS.length) {
+      await new Promise((r) => setTimeout(r, BATCH_DELAY_MS));
+    }
+  }
   return results;
 }
 
