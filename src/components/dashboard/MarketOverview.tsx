@@ -20,7 +20,8 @@ import { useMarketStore } from "@/lib/store/market-store";
 import { useSmartAlerts } from "@/lib/hooks/useSmartAlerts";
 import { useRealtimePrices } from "@/lib/hooks/useRealtimePrices";
 import { AITradeDesk } from "./AITradeDesk";
-import { Activity, Sparkles, Target, AlertTriangle, BarChart3, Shield, Brain } from "lucide-react";
+import { TradingAdvisor } from "./TradingAdvisor";
+import { Activity, Sparkles, Target, AlertTriangle, BarChart3, Shield, Brain, MessageSquare } from "lucide-react";
 
 export function MarketOverview() {
   useAllBiasScores();
@@ -69,7 +70,7 @@ export function MarketOverview() {
             <AIMarketSummary />
           </section>
 
-          {/* Section 3: AI Trade Desk */}
+          {/* Section 3: Trading Advisor + AI Trade Desk */}
           <section>
             <SectionHeader
               title="AI Trade Desk"
@@ -77,7 +78,14 @@ export function MarketOverview() {
               icon={<Brain className="h-3.5 w-3.5" />}
               accentColor="green"
             />
-            <AITradeDesk />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
+              <div className="lg:col-span-5">
+                <TradingAdvisor />
+              </div>
+              <div className="lg:col-span-7">
+                <AITradeDesk />
+              </div>
+            </div>
           </section>
 
           {/* Section 4: Top Opportunities */}

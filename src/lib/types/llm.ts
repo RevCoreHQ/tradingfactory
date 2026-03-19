@@ -79,3 +79,55 @@ export interface MarketSummaryResult {
   timestamp: number;
   provider: LLMProvider;
 }
+
+// ==================== Trading Advisor ====================
+
+export interface TradingAdvisorSetupInput {
+  instrument: string;
+  symbol: string;
+  category: string;
+  direction: string;
+  conviction: string;
+  convictionScore: number;
+  regime: string;
+  adx: number;
+  impulse: string;
+  signalsSummary: string; // e.g. "5 bullish, 1 bearish, 2 neutral"
+  systemsAgreeing: string[]; // names of bullish/bearish systems
+  entry: string;
+  stopLoss: string;
+  takeProfit: string;
+  riskReward: string;
+  positionSize: string;
+  currentPrice: number;
+}
+
+export interface TradingAdvisorRequest {
+  setups: TradingAdvisorSetupInput[];
+  regimeSummary: string;
+  consensusSummary: string;
+  impulseSummary: string;
+  fearGreed: { value: number; label: string };
+  dxy: { value: number; change: number };
+  bondYields: { maturity: string; yield: number; change: number }[];
+  accountEquity: number;
+  riskPercent: number;
+}
+
+export interface TradingAdvisorResult {
+  greeting: string;
+  marketRegime: string;
+  topPick: {
+    instrument: string;
+    action: string;
+    conviction: string;
+    reasoning: string;
+    levels: string;
+  } | null;
+  otherSetups: string[];
+  avoidList: string[];
+  riskWarning: string;
+  deskNote: string;
+  timestamp: number;
+  provider: LLMProvider;
+}

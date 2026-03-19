@@ -348,9 +348,6 @@ export function TopPairs() {
         <span className="text-[10px] font-mono text-muted-foreground/40">
           {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
         </span>
-        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-          Intraday
-        </span>
       </div>
 
       {!hasAnyBias ? (

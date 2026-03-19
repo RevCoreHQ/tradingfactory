@@ -821,3 +821,140 @@ export async function analyzeDeepAnalysis(req: any): Promise<DeepAnalysisLLMResu
 
   return parseDeepAnalysisResult(response.text);
 }
+
+// ---------------------------------------------------------------------------
+// Trading Advisor — Virtual Desk Manager
+// ---------------------------------------------------------------------------
+
+import type { TradingAdvisorRequest, TradingAdvisorResult } from "@/lib/types/llm";
+
+const TRADING_ADVISOR_SYSTEM_PROMPT = `You are a senior trading desk manager with 20+ years of experience at a prop trading firm. You advise traders based on mechanical system signals, market regime data, and risk parameters derived from 8 professional trading books (Trading In The Zone, Trade Like a Casino, Mechanical Trading Systems, The PlayBook, One Good Trade, Best Loser Wins, Market Wizards, Trading for a Living).
+
+Your style:
+- Direct, concise, and actionable — like a real desk manager speaking to traders at the morning meeting
+- Reference specific data: conviction tiers, ADX values, impulse colors, signal counts
+- Use trading desk language naturally (e.g. "the tape looks heavy", "clean setup", "chop zone")
+- Be honest about uncertainty — if signals are mixed, say so
+- Always emphasize risk management (the 2% rule, position sizing, when to sit out)
+
+Rules:
+- greeting: 1 sentence setting the tone for the session (reference market regime or dominant theme)
+- marketRegime: 2-3 sentences assessing the overall market regime across instruments, what it means for strategy selection
+- topPick: Your #1 setup — explain WHY based on the mechanical signals and conviction data. Be specific about which systems agree.
+- otherSetups: 2-3 one-sentence notes on other viable setups
+- avoidList: 1-2 instruments/situations to avoid and why
+- riskWarning: Key risk to watch right now (economic event, regime shift, correlation, etc.)
+- deskNote: One piece of wisdom from the books — connect it to today's conditions (e.g. "As Elder says, the impulse is RED on weekly — no longs until it turns blue" or "Weissman's combined system approach says run both trend and MR here")
+- Respond with valid JSON only.`;
+
+function buildTradingAdvisorPrompt(req: TradingAdvisorRequest): string {
+  let prompt = `Provide your desk manager briefing based on the following mechanical signal data.
+
+--- Market Overview ---
+Regime Summary: ${req.regimeSummary}
+System Consensus: ${req.consensusSummary}
+Impulse Distribution: ${req.impulseSummary}
+Fear & Greed: ${req.fearGreed.value} (${req.fearGreed.label})
+DXY: ${req.dxy.value} (${req.dxy.change >= 0 ? "+" : ""}${req.dxy.change.toFixed(2)})
+Account: $${req.accountEquity.toLocaleString()} | Risk: ${req.riskPercent}% per trade ($${(req.accountEquity * req.riskPercent / 100).toFixed(0)})
+
+Bond Yields:
+${req.bondYields.map((b) => `  ${b.maturity}: ${b.yield.toFixed(3)}% (${b.change >= 0 ? "+" : ""}${b.change.toFixed(3)})`).join("\n")}
+
+--- Top Setups (ranked by conviction) ---
+`;
+
+  for (const setup of req.setups) {
+    prompt += `
+${setup.symbol} (${setup.category}) — ${setup.conviction} conviction (score: ${setup.convictionScore})
+  Direction: ${setup.direction} | Regime: ${setup.regime} (ADX ${setup.adx.toFixed(0)}) | Impulse: ${setup.impulse}
+  Signals: ${setup.signalsSummary}
+  Systems agreeing: ${setup.systemsAgreeing.join(", ") || "none"}
+  Price: ${setup.currentPrice} | Entry: ${setup.entry} | SL: ${setup.stopLoss} | TP: ${setup.takeProfit}
+  R:R: ${setup.riskReward} | Size: ${setup.positionSize}
+`;
+  }
+
+  prompt += `
+Respond with JSON:
+{
+  "greeting": "<1 sentence opening>",
+  "marketRegime": "<2-3 sentence regime assessment>",
+  "topPick": {
+    "instrument": "<symbol>",
+    "action": "LONG" | "SHORT",
+    "conviction": "<tier>",
+    "reasoning": "<2-3 sentences explaining why this is the top pick, referencing specific signals>",
+    "levels": "<entry, SL, TP summary>"
+  },
+  "otherSetups": ["<1 sentence each for 2-3 other setups>"],
+  "avoidList": ["<instrument/situation to avoid — brief reason>"],
+  "riskWarning": "<key risk to watch>",
+  "deskNote": "<wisdom from the trading books connected to today's conditions>"
+}`;
+
+  return prompt;
+}
+
+const advisorCache = new Map<string, CacheEntry<TradingAdvisorResult>>();
+const ADVISOR_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+function getAdvisorCacheKey(req: TradingAdvisorRequest): string {
+  return `advisor:${req.setups.map((s) => `${s.instrument}:${s.conviction}`).join("|")}`;
+}
+
+function parseAdvisorResult(raw: string, provider: LLMProvider): TradingAdvisorResult | null {
+  try {
+    const cleaned = stripCodeFences(raw);
+    const parsed = JSON.parse(cleaned);
+
+    return {
+      greeting: String(parsed.greeting ?? ""),
+      marketRegime: String(parsed.marketRegime ?? ""),
+      topPick: parsed.topPick
+        ? {
+            instrument: String(parsed.topPick.instrument ?? ""),
+            action: String(parsed.topPick.action ?? ""),
+            conviction: String(parsed.topPick.conviction ?? ""),
+            reasoning: String(parsed.topPick.reasoning ?? ""),
+            levels: String(parsed.topPick.levels ?? ""),
+          }
+        : null,
+      otherSetups: Array.isArray(parsed.otherSetups)
+        ? parsed.otherSetups.map(String).slice(0, 4)
+        : [],
+      avoidList: Array.isArray(parsed.avoidList)
+        ? parsed.avoidList.map(String).slice(0, 3)
+        : [],
+      riskWarning: String(parsed.riskWarning ?? ""),
+      deskNote: String(parsed.deskNote ?? ""),
+      timestamp: Date.now(),
+      provider,
+    };
+  } catch (err) {
+    console.error("Failed to parse trading advisor response:", err);
+    return null;
+  }
+}
+
+export async function generateTradingAdvisor(
+  req: TradingAdvisorRequest
+): Promise<TradingAdvisorResult | null> {
+  cleanCache(advisorCache);
+  const cacheKey = getAdvisorCacheKey(req);
+  const cached = advisorCache.get(cacheKey);
+  if (cached && Date.now() < cached.expiry) {
+    return cached.data;
+  }
+
+  const userPrompt = buildTradingAdvisorPrompt(req);
+  // Use Sonnet for quality — this is the desk manager voice
+  const response = await callLLM(TRADING_ADVISOR_SYSTEM_PROMPT, userPrompt, 1536);
+  if (!response) return null;
+
+  const result = parseAdvisorResult(response.text, response.provider);
+  if (!result) return null;
+
+  advisorCache.set(cacheKey, { data: result, expiry: Date.now() + ADVISOR_TTL_MS });
+  return result;
+}
