@@ -1064,7 +1064,7 @@ function useTimeAgo(deps: unknown[]) {
 export function AITradeDesk() {
   const [activeTab, setActiveTab] = useState<TabId>("active");
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const { setups, portfolioRisk: baseRisk, isLoading, error, refresh } = useTradeDeskData();
+  const { setups, portfolioRisk: baseRisk, isLoading, error, refresh, instrumentsWithData, allInstrumentCount } = useTradeDeskData();
   const { activeSetups, historySetups, confluencePatterns } = useTrackedSetups(setups);
   const timeAgo = useTimeAgo([setups]);
   const { alerts: setupAlerts, dismiss: dismissAlert } = useSetupAlerts(setups);
@@ -1085,11 +1085,19 @@ export function AITradeDesk() {
   }
 
   if (error || setups.length === 0) {
+    const dataOk = instrumentsWithData > 0;
     return (
       <div className="section-card p-6 text-center">
         <BarChart3 className="h-6 w-6 text-muted-foreground/30 mx-auto mb-2" />
         <p className="text-xs text-muted-foreground/60">
-          {error ? "Failed to load trade desk data" : "No qualifying setups found — all instruments show D conviction"}
+          {error
+            ? "Failed to load trade desk data"
+            : dataOk
+              ? "No qualifying setups — no instruments meet A+/A conviction right now"
+              : "No candle data received — check data provider status (Finnhub, Twelve Data)"}
+        </p>
+        <p className="text-[10px] text-muted-foreground/40 mt-1 font-mono">
+          Data: {instrumentsWithData}/{allInstrumentCount} instruments
         </p>
       </div>
     );

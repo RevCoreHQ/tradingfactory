@@ -131,12 +131,14 @@ export function useTradeDeskData(confluencePatterns?: Record<string, ConfluenceP
       warning: null,
     };
 
-    return { setups: ranked, portfolioRisk };
+    const instrumentsWithData = Object.keys(candleMap).length;
+    return { setups: ranked, portfolioRisk, instrumentsWithData };
   }, [candleMap, accountEquity, riskPercent, confluencePatterns]);
 
   return {
     setups,
     portfolioRisk,
+    instrumentsWithData: setups.length > 0 ? INSTRUMENTS.length : (candleMap ? Object.keys(candleMap).length : 0),
     isLoading,
     error,
     allInstrumentCount: INSTRUMENTS.length,
