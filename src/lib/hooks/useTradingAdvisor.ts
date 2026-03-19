@@ -5,7 +5,7 @@ import type { TradeDeskSetup } from "@/lib/types/signals";
 import type { TradingAdvisorRequest, TradingAdvisorResult } from "@/lib/types/llm";
 
 const CACHE_KEY = "tradingfactory_advisor_cache";
-const CACHE_TTL = 60 * 60 * 1000; // 1 hour client-side
+const CACHE_TTL = 15 * 60 * 1000; // 15 min client-side
 
 interface CachedAdvisor {
   data: TradingAdvisorResult;
@@ -37,7 +37,7 @@ function setClientCache(data: TradingAdvisorResult, hash: string): void {
 function buildSetupHash(setups: TradeDeskSetup[]): string {
   return setups
     .slice(0, 5)
-    .map((s) => `${s.instrumentId}:${s.conviction}:${s.direction}`)
+    .map((s) => `${s.instrumentId}:${s.conviction}:${s.direction}:${s.impulse}:${s.regime}`)
     .join("|");
 }
 
