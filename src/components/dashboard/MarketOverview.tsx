@@ -13,13 +13,12 @@ import { useAllBiasScores } from "@/lib/hooks/useAllBiasScores";
 import { BiasAccuracySummary } from "@/components/bias/BiasAccuracy";
 import { RiskCorrelation } from "@/components/bias/RiskCorrelation";
 import { COTPositioning } from "@/components/fundamentals/COTPositioning";
-import { useSmartAlerts } from "@/lib/hooks/useSmartAlerts";
 import { useRealtimePrices } from "@/lib/hooks/useRealtimePrices";
 import { Activity, Sparkles, AlertTriangle, BarChart3, Shield } from "lucide-react";
 
 export function MarketOverview() {
   useAllBiasScores();
-  useSmartAlerts();
+  // Alerts now fire from AITradeDesk's mechanical signal engine (single brain)
   useRealtimePrices();
 
   return (

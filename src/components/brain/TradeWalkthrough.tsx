@@ -281,14 +281,17 @@ const steps: Step[] = [
     badgeColor: "bg-bullish/12 text-bullish border-bullish/20",
     content: (
       <div className="space-y-2">
-        <p>The setup enters the tracking lifecycle and is presented on the trade desk:</p>
+        <p>The setup enters the tracking lifecycle — core trades run until a true terminal state:</p>
         <div className="space-y-1.5">
           {[
             { status: "Pending", desc: "Waiting for price to enter entry zone", active: true },
             { status: "Active", desc: "Price entered zone, trade is live", active: false },
-            { status: "Breakeven", desc: "Price moved 1 ATR in direction, SL moved to entry", active: false },
-            { status: "TP1/TP2/TP3 Hit", desc: "Take profit targets reached", active: false },
-            { status: "SL Hit / Expired", desc: "Terminal — trade closed", active: false },
+            { status: "Breakeven", desc: "Price moved 1 ATR, SL moved to entry — trade is now running", active: false },
+            { status: "TP1 Hit", desc: "First target reached — trade keeps running toward TP2", active: false },
+            { status: "TP2 Hit", desc: "Second target reached — trade keeps running toward TP3", active: false },
+            { status: "TP3 Hit", desc: "Terminal — full win, trade closed", active: false },
+            { status: "SL Hit", desc: "Terminal — stop loss hit (breakeven stop after BE)", active: false },
+            { status: "Expired / Invalidated", desc: "Terminal — conviction dropped, time expired, or direction flipped", active: false },
           ].map((s) => (
             <div key={s.status} className="flex items-center gap-2 text-[10px]">
               <span className={cn("h-2 w-2 rounded-full shrink-0", s.active ? "bg-bullish animate-pulse" : "bg-muted-foreground/20")} />
@@ -297,8 +300,42 @@ const steps: Step[] = [
             </div>
           ))}
         </div>
+        <p className="text-[10px] text-muted-foreground/60 font-semibold mt-2">
+          Scale-in detection: While a trade is running (BE/TP1/TP2), the system detects pullback
+          opportunities. Conditions: 30-70% pullback, 3+ agreeing signals, R:R ≥ 1.5, max 2 per trade,
+          50% position size.
+        </p>
         <p className="text-[10px] text-muted-foreground/60">
           Outcomes feed back into the confluence learning engine, closing the loop.
+        </p>
+      </div>
+    ),
+  },
+  {
+    title: "Unified Alerts",
+    badge: "SINGLE BRAIN",
+    badgeColor: "bg-[var(--amber)]/12 text-[var(--amber)] border-[var(--amber)]/20",
+    content: (
+      <div className="space-y-2">
+        <p>All alerts fire from <strong>one centralized engine</strong> — the mechanical signal pipeline. No separate brains.</p>
+        <div className="space-y-1.5">
+          {[
+            { trigger: "New A+/A Setup", desc: "Bell icon + inline banner + sound when mechanical signals produce a qualifying setup" },
+            { trigger: "TP Milestone", desc: "Bell notification when running trade hits Breakeven, TP1, TP2, or TP3" },
+            { trigger: "SL Hit", desc: "Bell notification when a trade is stopped out" },
+          ].map((a) => (
+            <div key={a.trigger} className="flex items-start gap-2 text-[10px]">
+              <span className="h-2 w-2 rounded-full shrink-0 bg-[var(--amber)]/40 mt-1" />
+              <div>
+                <span className="font-semibold text-foreground">{a.trigger}</span>
+                <span className="text-muted-foreground/40"> — {a.desc}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="text-[10px] text-muted-foreground/60 font-semibold mt-2">
+          Pipeline: Mechanical signals → Conviction filter (A+/A only) → Setup tracked → Alert + sound.
+          The Desk Manager, Trade Setups, and Header bell all consume the same signal engine output.
         </p>
       </div>
     ),

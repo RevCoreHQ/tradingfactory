@@ -6,7 +6,8 @@ import { useTradeDeskData } from "@/lib/hooks/useTradeDeskData";
 import { useTrackedSetups } from "@/lib/hooks/useTrackedSetups";
 import { useMarketStore } from "@/lib/store/market-store";
 import { INSTRUMENTS } from "@/lib/utils/constants";
-import { getStatusLabel, isActionable } from "@/lib/calculations/setup-tracker";
+import { getStatusLabel, isActionable, isRunning as isRunningStatus } from "@/lib/calculations/setup-tracker";
+import { getScaleInSize } from "@/lib/calculations/scale-in-detector";
 import { computePortfolioRisk } from "@/lib/calculations/risk-engine";
 import { cn } from "@/lib/utils";
 import type {
@@ -17,6 +18,7 @@ import type {
   MarketRegime,
   SetupStatus,
   ConfluencePattern,
+  ScaleInOpportunity,
 } from "@/lib/types/signals";
 import {
   TrendingUp,
@@ -35,6 +37,8 @@ import {
   RefreshCw,
   X,
   Zap,
+  Clock,
+  Layers,
 } from "lucide-react";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
 
@@ -276,13 +280,31 @@ function SetupProgress({ tracked }: { tracked: TrackedSetup }) {
 
   const priceDist = isBullish ? price - entryMid : entryMid - price;
   const clamped = Math.max(0, Math.min(100, ((priceDist + slDist) / totalRange) * 100));
+  const pnlPercent = entryMid > 0 ? ((isBullish ? price - entryMid : entryMid - price) / entryMid) * 100 : 0;
 
   const entryPos = (slDist / totalRange) * 100;
   const tp1Pos = ((Math.abs(setup.takeProfit[0] - entryMid) + slDist) / totalRange) * 100;
   const tp2Pos = ((Math.abs(setup.takeProfit[1] - entryMid) + slDist) / totalRange) * 100;
 
+  const milestones = [
+    { pos: tp1Pos, label: "TP1", hit: tracked.highestTpHit >= 1 },
+    { pos: tp2Pos, label: "TP2", hit: tracked.highestTpHit >= 2 },
+  ];
+
   return (
     <div className="mt-2">
+      {/* P&L display for running trades */}
+      {isRunningStatus(tracked.status) && (
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Progress</span>
+          <span className={cn(
+            "text-[10px] font-bold font-mono",
+            pnlPercent >= 0 ? "text-bullish" : "text-bearish"
+          )}>
+            {pnlPercent >= 0 ? "+" : ""}{pnlPercent.toFixed(2)}%
+          </span>
+        </div>
+      )}
       <div className="relative h-2 rounded-full bg-muted/20 overflow-hidden">
         <div
           className="absolute inset-y-0 left-0 bg-bearish/20 rounded-l-full"
@@ -295,24 +317,99 @@ function SetupProgress({ tracked }: { tracked: TrackedSetup }) {
           )}
           style={{ width: `${clamped}%` }}
         />
-        {[tp1Pos, tp2Pos].map((pos, i) => (
+        {/* TP milestone markers */}
+        {milestones.map((m) => (
           <div
-            key={i}
-            className="absolute top-0 bottom-0 w-px bg-bullish/40"
-            style={{ left: `${pos}%` }}
-          />
+            key={m.label}
+            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
+            style={{ left: `${m.pos}%` }}
+          >
+            <div className={cn(
+              "h-2.5 w-2.5 rounded-full border-2",
+              m.hit
+                ? "bg-bullish border-bullish"
+                : "bg-background border-bullish/40"
+            )} />
+          </div>
         ))}
         <div
           className="absolute top-0 bottom-0 w-0.5 bg-foreground/30"
           style={{ left: `${entryPos}%` }}
         />
       </div>
-      <div className="flex justify-between mt-0.5 text-[8px] text-muted-foreground/40 font-mono">
+      <div className="flex justify-between mt-1 text-[8px] text-muted-foreground/40 font-mono">
         <span>SL</span>
         <span>Entry</span>
-        <span>TP1</span>
-        <span>TP2</span>
+        <span className={tracked.highestTpHit >= 1 ? "text-bullish font-bold" : ""}>TP1</span>
+        <span className={tracked.highestTpHit >= 2 ? "text-bullish font-bold" : ""}>TP2</span>
         <span>TP3</span>
+      </div>
+    </div>
+  );
+}
+
+// ==================== Time Elapsed ====================
+
+function formatElapsed(ms: number): string {
+  const minutes = Math.floor(ms / 60_000);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hours < 24) return `${hours}h ${mins}m`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ${hours % 24}h`;
+}
+
+// ==================== Scale-In Banner ====================
+
+function ScaleInBanner({
+  scaleIn,
+  setup,
+  onDismiss,
+}: {
+  scaleIn: ScaleInOpportunity;
+  setup: TradeDeskSetup;
+  onDismiss: () => void;
+}) {
+  const inst = INSTRUMENTS.find((i) => i.id === setup.instrumentId);
+  const decimals = inst?.decimalPlaces ?? 4;
+  const scaleInLots = getScaleInSize(setup.positionSizeLots);
+
+  return (
+    <div className="mt-2 p-2.5 rounded-lg bg-neutral-accent/8 border border-neutral-accent/20">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Layers className="h-3.5 w-3.5 text-neutral-accent" />
+          <span className="text-[10px] font-bold text-neutral-accent uppercase tracking-wider">
+            Scale-In Window
+          </span>
+        </div>
+        <button
+          onClick={(e) => { e.stopPropagation(); onDismiss(); }}
+          className="p-0.5 rounded hover:bg-foreground/5 text-muted-foreground/40"
+        >
+          <X className="h-2.5 w-2.5" />
+        </button>
+      </div>
+      <div className="grid grid-cols-4 gap-2 mt-2 text-[10px]">
+        <div>
+          <span className="text-muted-foreground/50">Pullback</span>
+          <div className="font-mono font-semibold text-foreground">{scaleIn.pullbackPercent}%</div>
+        </div>
+        <div>
+          <span className="text-muted-foreground/50">Entry</span>
+          <div className="font-mono font-semibold text-foreground">
+            {scaleIn.suggestedEntry[0].toFixed(decimals)}
+          </div>
+        </div>
+        <div>
+          <span className="text-muted-foreground/50">R:R</span>
+          <div className="font-mono font-semibold text-bullish">1:{scaleIn.riskReward}</div>
+        </div>
+        <div>
+          <span className="text-muted-foreground/50">Size</span>
+          <div className="font-mono font-semibold text-foreground">{scaleInLots} lots</div>
+        </div>
       </div>
     </div>
   );
@@ -320,7 +417,15 @@ function SetupProgress({ tracked }: { tracked: TrackedSetup }) {
 
 // ==================== Setup Card ====================
 
-function SetupCard({ tracked, rank }: { tracked: TrackedSetup; rank: number }) {
+function SetupCard({
+  tracked,
+  rank,
+  onDismissScaleIn,
+}: {
+  tracked: TrackedSetup;
+  rank: number;
+  onDismissScaleIn?: (setupId: string, index: number) => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   const router = useRouter();
   const setSelectedInstrument = useMarketStore((s) => s.setSelectedInstrument);
@@ -329,6 +434,9 @@ function SetupCard({ tracked, rank }: { tracked: TrackedSetup; rank: number }) {
   const inst = INSTRUMENTS.find((i) => i.id === setup.instrumentId);
   const decimals = inst?.decimalPlaces ?? 4;
   const isBullish = setup.direction === "bullish";
+  const running = isRunningStatus(status);
+  const activeScaleIns = (tracked.scaleIns ?? []).filter((s) => !s.dismissed);
+  const elapsedMs = tracked.activatedAt ? Date.now() - tracked.activatedAt : 0;
 
   const handleNavigate = () => {
     if (inst) {
@@ -338,14 +446,19 @@ function SetupCard({ tracked, rank }: { tracked: TrackedSetup; rank: number }) {
   };
 
   return (
-    <div className="relative section-card overflow-hidden">
+    <div className={cn(
+      "relative section-card overflow-hidden",
+      running && "border-l-2",
+      running && isBullish && "border-l-bullish",
+      running && !isBullish && "border-l-bearish"
+    )}>
       <GlowingEffect
-        spread={setup.conviction === "A+" ? 50 : 35}
+        spread={running ? 60 : setup.conviction === "A+" ? 50 : 35}
         glow={true}
         disabled={false}
-        proximity={setup.conviction === "A+" ? 80 : 50}
+        proximity={running ? 100 : setup.conviction === "A+" ? 80 : 50}
         inactiveZone={0.01}
-        borderWidth={setup.conviction === "A+" ? 2 : 1}
+        borderWidth={running ? 2 : setup.conviction === "A+" ? 2 : 1}
       />
       <button
         onClick={() => setExpanded(!expanded)}
@@ -378,6 +491,30 @@ function SetupCard({ tracked, rank }: { tracked: TrackedSetup; rank: number }) {
         </span>
 
         <StatusBadge status={status} />
+
+        {/* Running indicator with elapsed time */}
+        {running && (
+          <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-bullish/10 text-bullish">
+            <Clock className="h-2.5 w-2.5" />
+            {formatElapsed(elapsedMs)}
+          </span>
+        )}
+
+        {/* Missed entry badge */}
+        {tracked.missedEntry && (
+          <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber/15 text-[var(--amber)]">
+            Missed
+          </span>
+        )}
+
+        {/* Scale-in indicator */}
+        {activeScaleIns.length > 0 && (
+          <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-neutral-accent/10 text-neutral-accent">
+            <Layers className="h-2.5 w-2.5" />
+            Scale-In
+          </span>
+        )}
+
         <span className={cn(
           "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border",
           setup.tradingStyle === "intraday"
@@ -407,6 +544,19 @@ function SetupCard({ tracked, rank }: { tracked: TrackedSetup; rank: number }) {
       {expanded && (
         <div className="border-t border-border/50 px-4 py-3 space-y-3">
           <SetupProgress tracked={tracked} />
+
+          {/* Scale-in banners */}
+          {activeScaleIns.map((si, idx) => {
+            const realIdx = (tracked.scaleIns ?? []).indexOf(si);
+            return (
+              <ScaleInBanner
+                key={si.detectedAt}
+                scaleIn={si}
+                setup={setup}
+                onDismiss={() => onDismissScaleIn?.(tracked.id, realIdx)}
+              />
+            );
+          })}
 
           <div>
             <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1.5">
@@ -662,26 +812,41 @@ function HistoryTab({ history }: { history: TrackedSetup[] }) {
       </div>
 
       <div className="section-card overflow-hidden">
-        <div className="px-4 py-2 border-b border-border/30 grid grid-cols-7 text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-wider">
+        <div className="px-4 py-2 border-b border-border/30 grid grid-cols-8 text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-wider">
           <span>Instrument</span>
           <span>Direction</span>
-          <span>Status</span>
           <span>Outcome</span>
           <span>P&L</span>
-          <span>TP Hit</span>
+          <span>TP Path</span>
+          <span>Duration</span>
+          <span>Scale-Ins</span>
           <span>Date</span>
         </div>
         <div className="divide-y divide-border/20 max-h-[320px] overflow-y-auto">
           {history.slice(0, 50).map((h) => {
             const isBull = h.setup.direction === "bullish";
             const date = h.closedAt ? new Date(h.closedAt) : null;
+            const duration = h.activatedAt && h.closedAt ? h.closedAt - h.activatedAt : 0;
+            const scaleInCount = (h.scaleIns ?? []).length;
+
+            // Build TP progression path
+            const tpPath = h.highestTpHit > 0
+              ? Array.from({ length: h.highestTpHit }, (_, i) => `TP${i + 1}`).join(" → ")
+              : "—";
+
             return (
-              <div key={h.id} className="px-4 py-2 grid grid-cols-7 items-center text-[11px] hover:bg-surface-2/30">
+              <div
+                key={h.id}
+                className={cn(
+                  "px-4 py-2 grid grid-cols-8 items-center text-[11px] hover:bg-surface-2/30",
+                  h.outcome === "win" && "bg-bullish/[0.02]",
+                  h.outcome === "loss" && "bg-bearish/[0.02]"
+                )}
+              >
                 <span className="font-semibold text-foreground">{h.setup.symbol}</span>
                 <span className={cn("font-bold uppercase text-[9px]", isBull ? "text-bullish" : "text-bearish")}>
                   {isBull ? "LONG" : "SHORT"}
                 </span>
-                <StatusBadge status={h.status} />
                 <span
                   className={cn(
                     "font-bold uppercase text-[9px] px-1.5 py-0.5 rounded w-fit",
@@ -695,8 +860,19 @@ function HistoryTab({ history }: { history: TrackedSetup[] }) {
                 <span className={cn("font-mono", (h.pnlPercent ?? 0) >= 0 ? "text-bullish" : "text-bearish")}>
                   {h.pnlPercent !== null ? `${h.pnlPercent >= 0 ? "+" : ""}${h.pnlPercent.toFixed(2)}%` : "—"}
                 </span>
-                <span className="text-muted-foreground/60">
-                  {h.highestTpHit > 0 ? `TP${h.highestTpHit}` : "—"}
+                <span className="text-muted-foreground/60 text-[10px] font-mono">
+                  {tpPath}
+                </span>
+                <span className="text-muted-foreground/50 text-[10px] font-mono">
+                  {duration > 0 ? formatElapsed(duration) : "—"}
+                </span>
+                <span className="text-muted-foreground/50 text-[10px]">
+                  {scaleInCount > 0 ? (
+                    <span className="flex items-center gap-1">
+                      <Layers className="h-2.5 w-2.5 text-neutral-accent" />
+                      {scaleInCount}
+                    </span>
+                  ) : "—"}
                 </span>
                 <span className="text-muted-foreground/40 text-[10px]">
                   {date ? `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, "0")}` : "—"}
@@ -873,11 +1049,41 @@ function TradeDeskSkeleton() {
 
 // ==================== Alert Sound ====================
 
-function playAlertTone() {
-  try {
-    const ctx = new AudioContext();
-    const now = ctx.currentTime;
+// Persistent AudioContext — created on first user interaction to satisfy browser policy
+let _audioCtx: AudioContext | null = null;
 
+function getAudioContext(): AudioContext | null {
+  try {
+    if (!_audioCtx) {
+      _audioCtx = new AudioContext();
+    }
+    // Resume if suspended (browser autoplay policy)
+    if (_audioCtx.state === "suspended") {
+      _audioCtx.resume();
+    }
+    return _audioCtx;
+  } catch {
+    return null;
+  }
+}
+
+// Warm up AudioContext on first click anywhere — required by browser autoplay policy
+if (typeof window !== "undefined") {
+  const warmUp = () => {
+    getAudioContext();
+    document.removeEventListener("click", warmUp);
+    document.removeEventListener("keydown", warmUp);
+  };
+  document.addEventListener("click", warmUp, { once: true });
+  document.addEventListener("keydown", warmUp, { once: true });
+}
+
+function playAlertTone() {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  try {
+    const now = ctx.currentTime;
     // Two-tone chime: C5 → E5
     const frequencies = [523.25, 659.25];
     for (let i = 0; i < frequencies.length; i++) {
@@ -893,15 +1099,12 @@ function playAlertTone() {
       osc.start(now + i * 0.15);
       osc.stop(now + i * 0.15 + 0.3);
     }
-
-    // Clean up after sound finishes
-    setTimeout(() => ctx.close(), 1000);
   } catch {
-    // AudioContext not available (SSR or browser restriction)
+    // AudioContext play failed
   }
 }
 
-// ==================== Setup Alert Banner ====================
+// ==================== Setup Alert Banner (Unified — Single Brain) ====================
 
 interface SetupAlert {
   id: string;
@@ -917,6 +1120,7 @@ function useSetupAlerts(setups: TradeDeskSetup[]) {
   const [alerts, setAlerts] = useState<SetupAlert[]>([]);
   const seenRef = useRef<Set<string>>(new Set());
   const initializedRef = useRef(false);
+  const addStoreAlerts = useMarketStore((s) => s.addAlerts);
 
   useEffect(() => {
     if (setups.length === 0) return;
@@ -930,7 +1134,10 @@ function useSetupAlerts(setups: TradeDeskSetup[]) {
       return;
     }
 
-    const newAlerts: SetupAlert[] = [];
+    const newBannerAlerts: SetupAlert[] = [];
+    const newStoreAlerts: import("@/lib/types/alerts").SmartAlert[] = [];
+    const now = Date.now();
+
     for (const s of setups) {
       const key = `${s.instrumentId}:${s.direction}`;
       if (seenRef.current.has(key)) continue;
@@ -941,20 +1148,41 @@ function useSetupAlerts(setups: TradeDeskSetup[]) {
       if (s.direction === "neutral") continue;
 
       const { name } = getStrategyLabel(s);
-      newAlerts.push({
-        id: `${key}:${Date.now()}`,
+      const dir = s.direction === "bullish" ? "LONG" : "SHORT";
+
+      // Banner alert (inline, auto-dismiss after 30s)
+      newBannerAlerts.push({
+        id: `${key}:${now}`,
         symbol: s.symbol,
         direction: s.direction,
         conviction: s.conviction,
         score: s.convictionScore,
         strategy: name,
-        timestamp: Date.now(),
+        timestamp: now,
+      });
+
+      // Zustand store alert (header bell, persists 4h)
+      newStoreAlerts.push({
+        id: `${key}:${now}`,
+        type: "setup_detected",
+        instrumentId: s.instrumentId,
+        title: `${s.conviction} ${dir} ${s.symbol}`,
+        message: `${s.conviction} conviction (${s.convictionScore}pts) — ${name}. R:R ${s.riskReward[0].toFixed(1)}`,
+        severity: s.conviction === "A+" ? "danger" : "warning",
+        createdAt: now,
+        dismissed: false,
+        expiresAt: now + 4 * 60 * 60 * 1000,
       });
     }
 
-    if (newAlerts.length > 0) {
-      setAlerts((prev) => [...newAlerts, ...prev].slice(0, 5));
+    if (newBannerAlerts.length > 0) {
+      setAlerts((prev) => [...newBannerAlerts, ...prev].slice(0, 5));
       playAlertTone();
+    }
+
+    // Push to Zustand store → header bell (single brain: same alerts everywhere)
+    if (newStoreAlerts.length > 0) {
+      addStoreAlerts(newStoreAlerts);
     }
 
     // Clean up stale keys from setups that no longer exist
@@ -962,7 +1190,7 @@ function useSetupAlerts(setups: TradeDeskSetup[]) {
     for (const key of seenRef.current) {
       if (!currentKeys.has(key)) seenRef.current.delete(key);
     }
-  }, [setups]);
+  }, [setups, addStoreAlerts]);
 
   const dismiss = (id: string) => setAlerts((prev) => prev.filter((a) => a.id !== id));
   const dismissAll = () => setAlerts([]);
@@ -1059,7 +1287,7 @@ export function AITradeDesk() {
   const [activeTab, setActiveTab] = useState<TabId>("active");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { setups, portfolioRisk: baseRisk, isLoading, error, refresh, instrumentsWithData, allInstrumentCount } = useTradeDeskData();
-  const { activeSetups, historySetups, confluencePatterns } = useTrackedSetups(setups);
+  const { activeSetups, historySetups, confluencePatterns, dismissScaleIn } = useTrackedSetups(setups);
   const timeAgo = useTimeAgo([setups]);
   const { alerts: setupAlerts, dismiss: dismissAlert } = useSetupAlerts(setups);
 
@@ -1130,20 +1358,54 @@ export function AITradeDesk() {
       <SetupAlertBanner alerts={setupAlerts} onDismiss={dismissAlert} />
 
       {activeTab === "active" && (() => {
+        const running = activeSetups.filter((t) => isRunningStatus(t.status));
         const actionable = activeSetups.filter((t) => isActionable(t.status));
         return (
           <>
             <StatsRow setups={setups} portfolioRisk={portfolioRisk} />
 
-            {actionable.length > 0 && (
-              <div className="space-y-1.5">
-                {actionable.slice(0, 8).map((tracked, i) => (
-                  <SetupCard key={tracked.id} tracked={tracked} rank={i + 1} />
-                ))}
+            {/* Running trades section */}
+            {running.length > 0 && (
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[10px] font-bold text-bullish uppercase tracking-wider">
+                    Core Trades Running
+                  </span>
+                  <span className="text-[9px] text-muted-foreground/40">{running.length}</span>
+                </div>
+                <div className="space-y-1.5">
+                  {running.map((tracked, i) => (
+                    <SetupCard
+                      key={tracked.id}
+                      tracked={tracked}
+                      rank={i + 1}
+                      onDismissScaleIn={dismissScaleIn}
+                    />
+                  ))}
+                </div>
               </div>
             )}
 
-            {actionable.length === 0 && (
+            {/* Actionable setups section */}
+            {actionable.length > 0 && (
+              <div>
+                {running.length > 0 && (
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                      New Setups
+                    </span>
+                    <span className="text-[9px] text-muted-foreground/40">{actionable.length}</span>
+                  </div>
+                )}
+                <div className="space-y-1.5">
+                  {actionable.slice(0, 8).map((tracked, i) => (
+                    <SetupCard key={tracked.id} tracked={tracked} rank={i + 1} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {running.length === 0 && actionable.length === 0 && (
               <div className="text-center py-6">
                 <p className="text-xs text-muted-foreground/50">
                   No actionable setups right now. Waiting for new entry signals.

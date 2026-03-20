@@ -7,13 +7,12 @@ import { TradingAdvisor } from "./TradingAdvisor";
 import { MarketHoursStrip } from "@/components/common/MarketHours";
 import { EtheralShadow } from "@/components/ui/etheral-shadow";
 import { useAllBiasScores } from "@/lib/hooks/useAllBiasScores";
-import { useSmartAlerts } from "@/lib/hooks/useSmartAlerts";
 import { useRealtimePrices } from "@/lib/hooks/useRealtimePrices";
 import { Brain, LayoutList } from "lucide-react";
 
 export function TradingDeskPage() {
   useAllBiasScores();
-  useSmartAlerts();
+  // Alerts now fire from AITradeDesk's mechanical signal engine (single brain)
   useRealtimePrices();
 
   return (

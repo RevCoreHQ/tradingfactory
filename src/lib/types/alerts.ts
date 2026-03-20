@@ -1,4 +1,8 @@
 export type AlertType =
+  | "setup_detected"
+  | "tp_milestone"
+  | "setup_invalidated"
+  // Legacy types (no longer generated, kept for backward compat)
   | "confluence_approach"
   | "zone_approach"
   | "bias_shift"
