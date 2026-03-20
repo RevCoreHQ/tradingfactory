@@ -122,11 +122,18 @@ export function useTrackedSetups(
           };
           terminalList.push(invalidated);
           activeMap.delete(fresh.instrumentId);
-          // Let the "no existing" branch below create a new tracked setup
-          const confKey = buildConfluenceKey(fresh);
-          const newTracked = createTrackedSetup(fresh);
-          const checked = updateSetupStatus(newTracked, fresh.currentPrice);
-          updatedActive.push(checked);
+          // Only create replacement if it qualifies (A+/A with valid gates)
+          const newQualified =
+            (fresh.conviction === "A+" || fresh.conviction === "A") &&
+            fresh.direction !== "neutral" &&
+            fresh.riskReward[0] >= 1.5 &&
+            !(fresh.direction === "bullish" && fresh.impulse === "red") &&
+            !(fresh.direction === "bearish" && fresh.impulse === "green");
+          if (newQualified) {
+            const newTracked = createTrackedSetup(fresh);
+            const checked = updateSetupStatus(newTracked, fresh.currentPrice);
+            updatedActive.push(checked);
+          }
           continue;
         }
 
@@ -204,6 +211,17 @@ export function useTrackedSetups(
         updatedActive.push(updated);
         activeMap.delete(fresh.instrumentId);
       } else {
+        // Only create NEW tracked setups for A+/A conviction with valid impulse and R:R
+        // (same hard filters as rankSetupsByConviction)
+        const isQualified =
+          (fresh.conviction === "A+" || fresh.conviction === "A") &&
+          fresh.direction !== "neutral" &&
+          fresh.riskReward[0] >= 1.5 &&
+          !(fresh.direction === "bullish" && fresh.impulse === "red") &&
+          !(fresh.direction === "bearish" && fresh.impulse === "green");
+
+        if (!isQualified) continue;
+
         const confKey = buildConfluenceKey(fresh);
         const recentTerminal = terminalList.find(
           (t) =>

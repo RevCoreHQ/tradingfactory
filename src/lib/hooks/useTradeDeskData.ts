@@ -77,10 +77,11 @@ export function useTradeDeskData(confluencePatterns?: Record<string, ConfluenceP
     }
   );
 
-  const { setups, portfolioRisk } = useMemo(() => {
+  const { setups, allSetups, portfolioRisk } = useMemo(() => {
     if (!candleMap || Object.keys(candleMap).length === 0) {
       return {
         setups: [] as TradeDeskSetup[],
+        allSetups: [] as TradeDeskSetup[],
         portfolioRisk: {
           accountEquity,
           riskPerTrade: accountEquity * (riskPercent / 100),
@@ -145,11 +146,12 @@ export function useTradeDeskData(confluencePatterns?: Record<string, ConfluenceP
     };
 
     const instrumentsWithData = Object.keys(candleMap).length;
-    return { setups: ranked, portfolioRisk, instrumentsWithData };
+    return { setups: ranked, allSetups, portfolioRisk, instrumentsWithData };
   }, [candleMap, accountEquity, riskPercent, confluencePatterns]);
 
   return {
     setups,
+    allSetups,
     portfolioRisk,
     instrumentsWithData: setups.length > 0 ? INSTRUMENTS.length : (candleMap ? Object.keys(candleMap).length : 0),
     isLoading,

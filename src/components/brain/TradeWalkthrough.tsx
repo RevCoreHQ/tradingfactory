@@ -19,13 +19,14 @@ const steps: Step[] = [
     badgeColor: "bg-neutral-accent/12 text-neutral-accent border-neutral-accent/20",
     content: (
       <div className="space-y-2">
-        <p>The system fetches 1H and 4H OHLCV candles for <strong>EUR/USD</strong> from Twelve Data (primary) with Finnhub fallback.</p>
+        <p>The system fetches <strong>both</strong> 1H and 4H OHLCV candles for every instrument from Twelve Data (primary) with Finnhub fallback.</p>
         <div className="bg-surface-2/30 rounded-md px-3 py-2 font-mono text-[9px] text-muted-foreground/60 space-y-0.5">
           <div>Instrument: EUR_USD</div>
           <div>Timeframes: 1H (300 candles), 4H (300 candles)</div>
           <div>Latest close: 1.0845</div>
           <div>Session: London-NY overlap (score: 100)</div>
         </div>
+        <p className="text-[10px] text-muted-foreground/60">Both timeframes are always fetched. The system picks which one to use in the next step.</p>
       </div>
     ),
   },
@@ -35,7 +36,7 @@ const steps: Step[] = [
     badgeColor: "bg-neutral-accent/12 text-neutral-accent border-neutral-accent/20",
     content: (
       <div className="space-y-2">
-        <p>20+ technical indicators are computed locally from the candles.</p>
+        <p>4H indicators are <strong>always</strong> computed first (for ADX-based style selection). 1H indicators are computed only if intraday style is chosen.</p>
         <div className="grid grid-cols-2 gap-1.5">
           {[
             { name: "RSI(14)", value: "28.3 (Oversold)" },
@@ -55,19 +56,54 @@ const steps: Step[] = [
     ),
   },
   {
+    title: "Style Selected",
+    badge: "MECHANICAL",
+    badgeColor: "bg-bullish/12 text-bullish border-bullish/20",
+    content: (
+      <div className="space-y-2">
+        <p>The 4H ADX and session score determine whether the instrument trades as <strong>1H Intraday</strong> or <strong>4H Swing</strong>. This picks which candles the rest of the pipeline uses.</p>
+        <div className="space-y-1.5">
+          {[
+            { rule: "Session score < 30", result: "Swing", desc: "Off-hours: wider stops = less noise", matched: false },
+            { rule: "ADX > 50", result: "Intraday", desc: "Volatile: shorter exposure", matched: false },
+            { rule: "ADX > 20", result: "Swing", desc: "Trending: ride the move", matched: true },
+            { rule: "Else (low ADX)", result: "Intraday", desc: "Ranging: mean reversion", matched: false },
+          ].map((r) => (
+            <div key={r.rule} className="flex items-center gap-2 text-[10px]">
+              <span className={cn("h-2 w-2 rounded-full shrink-0", r.matched ? "bg-bullish" : "bg-muted-foreground/20")} />
+              <span className={cn("w-28 shrink-0 font-mono", r.matched ? "text-foreground font-semibold" : "text-muted-foreground/50")}>{r.rule}</span>
+              <span className={cn("w-16 shrink-0 font-semibold", r.result === "Swing" ? "text-neutral-accent" : "text-amber-500")}>{r.result}</span>
+              <span className="text-muted-foreground/40">{r.desc}</span>
+            </div>
+          ))}
+        </div>
+        <div className="bg-surface-2/30 rounded-md px-3 py-2 font-mono text-[10px] space-y-1 mt-2">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground/50">Selected:</span>
+            <span className="text-foreground font-bold">4H Swing</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground/50">Params:</span>
+            <span className="text-muted-foreground/70">SL 2.0 ATR | TPs 3.0/5.0/7.0 ATR | Expiry 24h</span>
+          </div>
+        </div>
+      </div>
+    ),
+  },
+  {
     title: "8 Systems Fire",
     badge: "MECHANICAL",
     badgeColor: "bg-bullish/12 text-bullish border-bullish/20",
     content: (
       <div className="space-y-2">
-        <p>Each of the 8 mechanical systems independently produces a direction and strength.</p>
+        <p>Each of the 8 mechanical systems independently produces a direction and strength on the <strong>selected timeframe</strong> candles.</p>
         <div className="space-y-1">
           {[
             { name: "MA Crossover", dir: "Bullish", str: 72, match: true },
             { name: "MACD", dir: "Bullish", str: 85, match: true },
             { name: "BB Breakout", dir: "Neutral", str: 30, match: false },
             { name: "RSI Extremes", dir: "Bullish", str: 78, match: false },
-            { name: "BB Mean Rev", dir: "Bullish", str: 82, match: false },
+            { name: "BB MR", dir: "Bullish", str: 82, match: false },
             { name: "Elder Impulse", dir: "Bullish", str: 90, match: true },
             { name: "Elder-Ray", dir: "Bullish", str: 68, match: true },
             { name: "Trend Stack", dir: "Bullish", str: 75, match: true },
@@ -100,21 +136,22 @@ const steps: Step[] = [
           {[
             { factor: "Agreement", calc: "7/7 non-neutral = 100%", pts: 40, max: 40 },
             { factor: "Regime Match", calc: "5 match trending (≥3 = max)", pts: 25, max: 25 },
-            { factor: "Impulse", calc: "GREEN + bullish", pts: 20, max: 20 },
-            { factor: "Strong Signals", calc: "5 signals ≥ 70", pts: 10, max: 15 },
+            { factor: "Impulse", calc: "GREEN + bullish = aligned", pts: 20, max: 20 },
+            { factor: "Strong Signals", calc: "5 signals ≥ 70 (×5 pts each)", pts: 15, max: 15 },
+            { factor: "ADX Exhaustion", calc: "ADX 35 (< 50, no penalty)", pts: 0, max: -10 },
           ].map((f) => (
             <div key={f.factor} className="flex items-center gap-2">
-              <span className="w-24 text-[10px] font-semibold text-foreground/70">{f.factor}</span>
+              <span className="w-28 text-[10px] font-semibold text-foreground/70">{f.factor}</span>
               <span className="flex-1 text-[9px] text-muted-foreground/50">{f.calc}</span>
-              <span className="text-[10px] font-mono text-bullish font-bold">{f.pts}/{f.max}</span>
+              <span className={cn("text-[10px] font-mono font-bold", f.max < 0 ? "text-muted-foreground/40" : "text-bullish")}>{f.pts}{f.max < 0 ? "" : `/${f.max}`}</span>
             </div>
           ))}
         </div>
         <div className="flex items-center gap-3 mt-2 bg-bullish/10 rounded-md px-3 py-2">
           <span className="text-2xl font-black text-bullish">A+</span>
           <div>
-            <div className="text-[10px] font-mono text-foreground/70">Score: 95/100</div>
-            <div className="text-[9px] text-muted-foreground/50">7 agreeing signals (need 5+ for A+)</div>
+            <div className="text-[10px] font-mono text-foreground/70">Score: 95/100 (clamped 0-100)</div>
+            <div className="text-[9px] text-muted-foreground/50">≥75 score AND ≥5 agreeing = A+ | ≥60 AND ≥4 = A</div>
           </div>
         </div>
       </div>
@@ -153,7 +190,7 @@ const steps: Step[] = [
     badgeColor: "bg-neutral-accent/12 text-neutral-accent border-neutral-accent/20",
     content: (
       <div className="space-y-2">
-        <p>Raw ATR-based levels are snapped to nearby structural S/R zones:</p>
+        <p>Raw ATR-based levels (computed from the style params) are snapped to nearby structural S/R zones:</p>
         <div className="bg-surface-2/30 rounded-md px-3 py-2 font-mono text-[10px] space-y-1">
           <div className="flex justify-between">
             <span className="text-muted-foreground/50">Raw SL (2.0 ATR):</span>
@@ -181,38 +218,6 @@ const steps: Step[] = [
             <span className="text-bullish">1.1025</span>
           </div>
         </div>
-      </div>
-    ),
-  },
-  {
-    title: "Style Selected",
-    badge: "MECHANICAL",
-    badgeColor: "bg-bullish/12 text-bullish border-bullish/20",
-    content: (
-      <div className="space-y-2">
-        <p>The system evaluates ADX and session score to choose a trading style:</p>
-        <div className="bg-surface-2/30 rounded-md px-3 py-2 font-mono text-[10px] space-y-1">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground/50">ADX:</span>
-            <span className="text-foreground">35.2 (Trending)</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground/50">Session Score:</span>
-            <span className="text-foreground">100 (London-NY overlap)</span>
-          </div>
-          <div className="border-t border-border/20 my-1" />
-          <div className="flex justify-between">
-            <span className="text-muted-foreground/50">Rule matched:</span>
-            <span className="text-foreground">ADX &gt; 20 → Swing</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground/50">Selected:</span>
-            <span className="text-foreground font-bold">4H Swing</span>
-          </div>
-        </div>
-        <p className="text-[10px] text-muted-foreground/60">
-          SL: 2.0 ATR | TPs: 3.0/5.0/7.0 ATR | Expiry: 24h
-        </p>
       </div>
     ),
   },
@@ -281,7 +286,7 @@ const steps: Step[] = [
     badgeColor: "bg-bullish/12 text-bullish border-bullish/20",
     content: (
       <div className="space-y-2">
-        <p>The setup enters the tracking lifecycle — core trades run until a true terminal state:</p>
+        <p>The setup enters the tracking lifecycle. <strong>All 13 instruments</strong> feed live prices to the tracker every cycle, so SL/TP hits are never missed — even if conviction drops.</p>
         <div className="space-y-1.5">
           {[
             { status: "Pending", desc: "Waiting for price to enter entry zone", active: true },
@@ -312,17 +317,18 @@ const steps: Step[] = [
     ),
   },
   {
-    title: "Unified Alerts",
+    title: "Single Brain Enforcement",
     badge: "SINGLE BRAIN",
     badgeColor: "bg-[var(--amber)]/12 text-[var(--amber)] border-[var(--amber)]/20",
     content: (
       <div className="space-y-2">
-        <p>All alerts fire from <strong>one centralized engine</strong> — the mechanical signal pipeline. No separate brains.</p>
+        <p>Every dashboard section is <strong>overridden by the mechanical bias engine</strong>. The AI (LLM) narrates, but the bias engine is the single source of truth.</p>
         <div className="space-y-1.5">
           {[
-            { trigger: "New A+/A Setup", desc: "Bell icon + inline banner + sound when mechanical signals produce a qualifying setup" },
-            { trigger: "TP Milestone", desc: "Bell notification when running trade hits Breakeven, TP1, TP2, or TP3" },
-            { trigger: "SL Hit", desc: "Bell notification when a trade is stopped out" },
+            { trigger: "Alerts", desc: "All fire from the mechanical signal pipeline — new A+/A setups, TP milestones, SL hits" },
+            { trigger: "Focus Today", desc: "LLM picks focus pairs, then strong conviction instruments (|bias| ≥ 45) are auto-injected if missing" },
+            { trigger: "Sit Out", desc: "Strong conviction instruments are removed from Sit Out — they can't be both focus AND avoid" },
+            { trigger: "Sector Outlook", desc: "If any instrument in a sector has strong conviction, the sector badge is driven by those instruments alone, not diluted by neutral peers" },
           ].map((a) => (
             <div key={a.trigger} className="flex items-start gap-2 text-[10px]">
               <span className="h-2 w-2 rounded-full shrink-0 bg-[var(--amber)]/40 mt-1" />
@@ -334,8 +340,8 @@ const steps: Step[] = [
           ))}
         </div>
         <p className="text-[10px] text-muted-foreground/60 font-semibold mt-2">
-          Pipeline: Mechanical signals → Conviction filter (A+/A only) → Setup tracked → Alert + sound.
-          The Desk Manager, Trade Setups, and Header bell all consume the same signal engine output.
+          Pipeline: Bias engine scores → Post-process LLM summary → Override focusToday, sitOut, sector badges.
+          The LLM provides narrative color; the bias engine provides the numbers that drive every badge and list.
         </p>
       </div>
     ),

@@ -1291,8 +1291,8 @@ function useTimeAgo(deps: unknown[]) {
 export function AITradeDesk() {
   const [activeTab, setActiveTab] = useState<TabId>("active");
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const { setups, portfolioRisk: baseRisk, isLoading, error, refresh, instrumentsWithData, allInstrumentCount } = useTradeDeskData();
-  const { activeSetups, historySetups, confluencePatterns, dismissScaleIn } = useTrackedSetups(setups);
+  const { setups, allSetups, portfolioRisk: baseRisk, isLoading, error, refresh, instrumentsWithData, allInstrumentCount } = useTradeDeskData();
+  const { activeSetups, historySetups, confluencePatterns, dismissScaleIn } = useTrackedSetups(allSetups);
   const timeAgo = useTimeAgo([setups]);
   const { alerts: setupAlerts, dismiss: dismissAlert } = useSetupAlerts(setups);
 

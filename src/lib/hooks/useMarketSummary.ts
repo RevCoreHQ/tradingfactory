@@ -8,25 +8,43 @@ import { INSTRUMENTS } from "@/lib/utils/constants";
 import type { BiasResult } from "@/lib/types/bias";
 import type { MarketSummaryResult, SectorOutlook } from "@/lib/types/llm";
 
+const STRONG_CONVICTION_THRESHOLD = 45;
+
 /**
- * Correct the LLM's sector outlook badges using actual bias results,
- * but keep the LLM's rich keyAssets descriptions intact.
+ * Correct the LLM's sector outlook badges using actual bias results.
+ * Strong conviction instruments (|bias| >= 45) dominate: if any exist
+ * in a sector, the outlook is driven by those instruments alone.
+ * Otherwise falls back to the average of all instruments in the sector.
  */
 function correctSectorOutlooks(
   llmSectors: SectorOutlook[],
   results: Record<string, BiasResult>
 ): SectorOutlook[] {
-  // Compute average bias per sector from actual scores
   const sectorBiases: Record<string, number[]> = {};
+  const sectorStrongBiases: Record<string, number[]> = {};
+
   for (const [id, result] of Object.entries(results)) {
     const inst = INSTRUMENTS.find((i) => i.id === id);
     if (!inst) continue;
     const key =
       inst.category === "index" ? "indices" : inst.category === "commodity" ? "commodities" : inst.category;
     (sectorBiases[key] ??= []).push(result.overallBias);
+    if (Math.abs(result.overallBias) >= STRONG_CONVICTION_THRESHOLD) {
+      (sectorStrongBiases[key] ??= []).push(result.overallBias);
+    }
   }
 
   return llmSectors.map((sector) => {
+    // If ANY strong conviction instruments exist in this sector,
+    // derive outlook from those alone — don't let neutral peers dilute it
+    const strong = sectorStrongBiases[sector.sector];
+    if (strong && strong.length > 0) {
+      const strongAvg = strong.reduce((a, b) => a + b, 0) / strong.length;
+      const correctedOutlook: "bullish" | "bearish" | "neutral" =
+        strongAvg > 0 ? "bullish" : strongAvg < 0 ? "bearish" : "neutral";
+      return { ...sector, outlook: correctedOutlook };
+    }
+    // No strong conviction — use sector-wide average
     const biases = sectorBiases[sector.sector];
     if (!biases || biases.length === 0) return sector;
     const avg = biases.reduce((a, b) => a + b, 0) / biases.length;
@@ -34,6 +52,44 @@ function correctSectorOutlooks(
       avg > 10 ? "bullish" : avg < -10 ? "bearish" : "neutral";
     return { ...sector, outlook: correctedOutlook };
   });
+}
+
+/**
+ * Ensure Focus Today includes ALL strong conviction instruments from the
+ * bias engine, regardless of what the LLM chose. Also remove any strong
+ * conviction instruments from Sit Out (contradicts the mechanical brain).
+ */
+function enforceFocusToday(
+  llmFocus: string[],
+  llmSitOut: string[],
+  results: Record<string, BiasResult>
+): { focusToday: string[]; sitOutToday: string[] } {
+  const strongInstruments: { symbol: string; id: string }[] = [];
+  for (const [id, result] of Object.entries(results)) {
+    if (Math.abs(result.overallBias) >= STRONG_CONVICTION_THRESHOLD) {
+      const inst = INSTRUMENTS.find((i) => i.id === id);
+      if (inst) strongInstruments.push({ symbol: inst.symbol, id });
+    }
+  }
+
+  // Helper: check if a symbol is already in a list (fuzzy match on symbol format)
+  const symbolInList = (sym: string, list: string[]) =>
+    list.some((item) => item === sym || item.includes(sym) || sym.includes(item) || item.replace("/", "") === sym.replace("/", ""));
+
+  // Inject missing strong conviction instruments into Focus Today
+  const focusToday = [...llmFocus];
+  for (const sc of strongInstruments) {
+    if (!symbolInList(sc.symbol, focusToday)) {
+      focusToday.push(sc.symbol);
+    }
+  }
+
+  // Remove strong conviction instruments from Sit Out (they should be focused, not avoided)
+  const sitOutToday = llmSitOut.filter(
+    (item) => !strongInstruments.some((sc) => symbolInList(sc.symbol, [item]))
+  );
+
+  return { focusToday, sitOutToday };
 }
 
 const CACHE_KEY = "tf_market_summary";
@@ -179,12 +235,30 @@ export function useMarketSummary() {
   const cached = getCachedSummary();
   const baseSummary = freshSummary || cached || cachedRef.current;
 
-  // Correct the LLM's sector outlook badges using actual bias scores
-  // so the badges always agree with Top Opportunities, while keeping the LLM's descriptions
+  // ── Single Brain Corrections ──
+  // Override LLM outputs with mechanical bias truth so every section of
+  // the dashboard agrees with the one centralized bias engine.
   const hasBiasData = Object.keys(currentResults).length > 0;
-  const summary = baseSummary && hasBiasData && baseSummary.sectorOutlook?.length
-    ? { ...baseSummary, sectorOutlook: correctSectorOutlooks(baseSummary.sectorOutlook, currentResults) }
-    : baseSummary;
+  let summary = baseSummary;
+  if (baseSummary && hasBiasData) {
+    const corrected: Partial<MarketSummaryResult> = {};
+
+    // 1. Sector outlooks: strong conviction instruments dominate their sector
+    if (baseSummary.sectorOutlook?.length) {
+      corrected.sectorOutlook = correctSectorOutlooks(baseSummary.sectorOutlook, currentResults);
+    }
+
+    // 2. Focus Today / Sit Out: inject missing strong conviction, remove contradictions
+    const { focusToday, sitOutToday } = enforceFocusToday(
+      baseSummary.focusToday || [],
+      baseSummary.sitOutToday || [],
+      currentResults
+    );
+    corrected.focusToday = focusToday;
+    corrected.sitOutToday = sitOutToday;
+
+    summary = { ...baseSummary, ...corrected };
+  }
 
   // Surface API-level error (returned as { summary: null, error: "..." })
   const apiError = data && !data.summary
