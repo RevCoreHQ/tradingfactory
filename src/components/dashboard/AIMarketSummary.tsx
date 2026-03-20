@@ -4,8 +4,10 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMarketSummary } from "@/lib/hooks/useMarketSummary";
 import { cn } from "@/lib/utils";
-import { Sparkles, AlertTriangle, Zap, ChevronDown, RefreshCw, Target, Ban } from "lucide-react";
+import { Sparkles, AlertTriangle, Zap, ChevronDown, RefreshCw, Target, Ban, Star, TrendingUp, TrendingDown } from "lucide-react";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
+import { useMarketStore } from "@/lib/store/market-store";
+import { INSTRUMENTS } from "@/lib/utils/constants";
 
 function OutlookBadge({ outlook }: { outlook: "bullish" | "bearish" | "neutral" }) {
   return (
@@ -72,7 +74,7 @@ function SectorCard({ sector }: { sector: { sector: string; outlook: "bullish" |
                   initial={{ opacity: 0, x: -4 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.05, duration: 0.2 }}
-                  className="text-[10px] text-muted-foreground leading-snug"
+                  className="text-[11px] text-muted-foreground leading-snug"
                 >
                   <span className="text-muted-foreground/30 mr-1.5">•</span>
                   {asset}
@@ -119,6 +121,7 @@ function SectorBreakdown({ sectors }: { sectors: { sector: string; outlook: "bul
 
 export function AIMarketSummary() {
   const { summary, isLoading, isRefreshing, apiError, refresh } = useMarketSummary();
+  const currentResults = useMarketStore((s) => s.allBiasResults.intraday);
 
   if (isLoading) {
     return (
@@ -197,17 +200,17 @@ export function AIMarketSummary() {
       </div>
 
       {/* Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:divide-x lg:divide-border/30">
         {/* Overview + Outlook */}
         <div className="lg:col-span-7">
-          <p className="text-[13px] text-foreground/85 leading-relaxed mb-4">
+          <p className="text-sm text-foreground/85 leading-[1.7] mb-4">
             {summary.overview}
           </p>
           <OutlookBadge outlook={summary.outlook} />
         </div>
 
         {/* Risks + Opportunities */}
-        <div className="lg:col-span-5 space-y-4">
+        <div className="lg:col-span-5 lg:pl-6 space-y-4">
           {summary.risks.length > 0 && (
             <div className="bg-bearish/5 rounded-lg p-3 border border-bearish/10">
               <div className="flex items-center gap-1.5 mb-2">
@@ -216,7 +219,7 @@ export function AIMarketSummary() {
               </div>
               <ul className="space-y-1.5">
                 {summary.risks.map((risk, i) => (
-                  <li key={i} className="text-[11px] text-foreground/70 leading-snug pl-3 relative before:absolute before:left-0 before:top-[6px] before:h-1.5 before:w-1.5 before:rounded-full before:bg-bearish/30">
+                  <li key={i} className="text-xs text-foreground/80 leading-snug pl-3 relative before:absolute before:left-0 before:top-[6px] before:h-1.5 before:w-1.5 before:rounded-full before:bg-bearish/30">
                     {risk}
                   </li>
                 ))}
@@ -232,7 +235,7 @@ export function AIMarketSummary() {
               </div>
               <ul className="space-y-1.5">
                 {summary.opportunities.map((opp, i) => (
-                  <li key={i} className="text-[11px] text-foreground/70 leading-snug pl-3 relative before:absolute before:left-0 before:top-[6px] before:h-1.5 before:w-1.5 before:rounded-full before:bg-bullish/30">
+                  <li key={i} className="text-xs text-foreground/80 leading-snug pl-3 relative before:absolute before:left-0 before:top-[6px] before:h-1.5 before:w-1.5 before:rounded-full before:bg-bullish/30">
                     {opp}
                   </li>
                 ))}
@@ -249,18 +252,48 @@ export function AIMarketSummary() {
 
       {/* Focus Today / Sit Out */}
       {(summary.focusToday?.length || summary.sitOutToday?.length) ? (
-        <div className="mt-5 pt-4 border-t border-border/50">
+        <div className="mt-6 pt-5 border-t border-border/50">
           {summary.focusToday && summary.focusToday.length > 0 && (
             <div className="flex items-center gap-3 flex-wrap">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-bullish flex items-center gap-1.5">
-                <Target className="h-3 w-3" />
+              <div className="text-[10px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                <Target className="h-3 w-3 text-neutral-accent" />
                 Focus Today
               </div>
-              {summary.focusToday.map((pair, i) => (
-                <span key={i} className="text-[11px] font-medium text-foreground bg-bullish/10 px-2.5 py-1 rounded-md border border-bullish/20">
-                  {pair}
-                </span>
-              ))}
+              {summary.focusToday.map((pair, i) => {
+                const inst = INSTRUMENTS.find(
+                  (instr) => instr.symbol === pair || pair.includes(instr.symbol) || instr.symbol.replace("/", "") === pair.replace("/", "")
+                );
+                const bias = inst ? currentResults[inst.id] : null;
+                const isLong = bias ? bias.overallBias > 0 : true;
+                const isShort = bias ? bias.overallBias < 0 : false;
+                const isStrong = bias ? Math.abs(bias.overallBias) >= 45 : false;
+
+                return (
+                  <span
+                    key={i}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 text-[11px] font-medium text-foreground px-2.5 py-1 rounded-md border",
+                      isShort
+                        ? "bg-bearish/10 border-bearish/20"
+                        : "bg-bullish/10 border-bullish/20"
+                    )}
+                  >
+                    {isStrong && <Star className="h-3 w-3 fill-[#FFD700] text-[#FFD700]" />}
+                    {isShort ? (
+                      <TrendingDown className="h-3 w-3 text-bearish" />
+                    ) : (
+                      <TrendingUp className="h-3 w-3 text-bullish" />
+                    )}
+                    <span className={cn(
+                      "text-[9px] font-bold uppercase tracking-wider",
+                      isShort ? "text-bearish" : "text-bullish"
+                    )}>
+                      {isLong ? "LONG" : "SHORT"}
+                    </span>
+                    {pair}
+                  </span>
+                );
+              })}
             </div>
           )}
 

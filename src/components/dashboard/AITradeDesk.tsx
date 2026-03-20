@@ -39,6 +39,7 @@ import {
   Zap,
   Clock,
   Layers,
+  Star,
 } from "lucide-react";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
 
@@ -437,6 +438,9 @@ function SetupCard({
   const running = isRunningStatus(status);
   const activeScaleIns = (tracked.scaleIns ?? []).filter((s) => !s.dismissed);
   const elapsedMs = tracked.activatedAt ? Date.now() - tracked.activatedAt : 0;
+  const allBiasResults = useMarketStore((s) => s.allBiasResults.intraday);
+  const biasResult = allBiasResults[setup.instrumentId];
+  const isStrongConviction = biasResult ? Math.abs(biasResult.overallBias) >= 45 : false;
 
   const handleNavigate = () => {
     if (inst) {
@@ -470,6 +474,7 @@ function SetupCard({
 
         <div className="flex items-center gap-1 shrink-0">
           <ConvictionBadge tier={setup.conviction} />
+          {isStrongConviction && <Star className="h-3 w-3 fill-[#FFD700] text-[#FFD700]" />}
           <span className="text-[9px] font-mono text-muted-foreground/40">{setup.convictionScore}</span>
         </div>
 
