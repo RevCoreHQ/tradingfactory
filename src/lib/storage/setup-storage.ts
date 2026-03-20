@@ -12,6 +12,13 @@ export function loadTrackedSetups(): TrackedSetup[] {
     const raw = localStorage.getItem(TRACKED_KEY);
     if (!raw) return [];
     const setups = JSON.parse(raw) as TrackedSetup[];
+    // Migrate: add new fields for backward compat
+    for (const s of setups) {
+      if (!s.scaleIns) s.scaleIns = [];
+      if (s.peakPrice === undefined) s.peakPrice = null;
+      if (!s.timeline) s.timeline = [];
+      if (s.missedEntry === undefined) s.missedEntry = false;
+    }
     // Dedup: keep only the latest entry per instrument+status combo for terminals
     return dedup(setups);
   } catch {
@@ -89,7 +96,7 @@ export function saveConfluencePatterns(
 // ==================== HELPERS ====================
 
 function isTerminalStatus(status: string): boolean {
-  return ["tp1_hit", "tp2_hit", "tp3_hit", "sl_hit", "expired", "invalidated"].includes(status);
+  return ["tp3_hit", "sl_hit", "expired", "invalidated"].includes(status);
 }
 
 export function clearAllTrackingData(): void {

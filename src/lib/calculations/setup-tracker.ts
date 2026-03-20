@@ -32,13 +32,17 @@ export function createTrackedSetup(setup: TradeDeskSetup): TrackedSetup {
     pnlPercent: null,
     highestTpHit: 0,
     confluenceKey: buildConfluenceKey(setup),
+    scaleIns: [],
+    peakPrice: null,
+    timeline: [{ status: "pending", timestamp: now, price: setup.currentPrice }],
+    missedEntry: false,
   };
 }
 
 // ==================== STATE MACHINE ====================
 
 function isTerminal(status: SetupStatus): boolean {
-  return ["tp1_hit", "tp2_hit", "tp3_hit", "sl_hit", "expired", "invalidated"].includes(status);
+  return ["tp3_hit", "sl_hit", "expired", "invalidated"].includes(status);
 }
 
 function priceInEntryZone(price: number, entry: [number, number]): boolean {
@@ -65,11 +69,22 @@ export function updateSetupStatus(
   const { setup, status } = tracked;
   const now = Date.now();
   const entryMid = (setup.entry[0] + setup.entry[1]) / 2;
+  const isBullish = setup.direction === "bullish";
+
+  // Track peak price for running setups (used by scale-in detector)
+  let updatedPeak = tracked.peakPrice;
+  if (status !== "pending") {
+    if (isBullish) {
+      updatedPeak = Math.max(updatedPeak ?? currentPrice, currentPrice);
+    } else {
+      updatedPeak = Math.min(updatedPeak ?? currentPrice, currentPrice);
+    }
+  }
 
   // Check expiry (pending only) — style-specific window
   const expiryMs = STYLE_PARAMS[setup.tradingStyle ?? "swing"].expiryMs;
   if (status === "pending" && now - tracked.createdAt > expiryMs) {
-    return finalize(tracked, "expired", currentPrice);
+    return withTimeline(finalize(tracked, "expired", currentPrice), currentPrice);
   }
 
   // Check SL hit (any non-terminal active state)
@@ -79,67 +94,85 @@ export function updateSetupStatus(
         ? entryMid // SL moved to breakeven
         : setup.stopLoss;
 
-    if (priceCrossed(currentPrice, effectiveSL, setup.direction === "bullish" ? "bearish" : "bullish")) {
-      return finalize(tracked, "sl_hit", currentPrice);
+    if (priceCrossed(currentPrice, effectiveSL, isBullish ? "bearish" : "bullish")) {
+      return withTimeline(finalize({ ...tracked, peakPrice: updatedPeak }, "sl_hit", currentPrice), currentPrice);
     }
   }
 
   // State transitions
+  let result: TrackedSetup;
   switch (status) {
     case "pending": {
       if (priceInEntryZone(currentPrice, setup.entry)) {
-        return { ...tracked, status: "active", activatedAt: now };
+        result = { ...tracked, status: "active", activatedAt: now, peakPrice: currentPrice };
+        return withTimeline(result, currentPrice);
       }
-      // Also activate if price has moved past entry zone in trade direction
       if (priceCrossed(currentPrice, entryMid, setup.direction)) {
-        return { ...tracked, status: "active", activatedAt: now };
+        result = { ...tracked, status: "active", activatedAt: now, peakPrice: currentPrice };
+        return withTimeline(result, currentPrice);
       }
       return tracked;
     }
 
     case "active": {
-      // Check breakeven: price moved 1 ATR in direction
-      const beLevel = setup.direction === "bullish"
+      const beLevel = isBullish
         ? entryMid + setup.atr
         : entryMid - setup.atr;
       if (priceCrossed(currentPrice, beLevel, setup.direction)) {
-        // Check TP1 (might skip straight to it)
         if (priceCrossed(currentPrice, setup.takeProfit[0], setup.direction)) {
-          return finalize({ ...tracked, status: "tp1_hit", highestTpHit: 1 }, "tp1_hit", currentPrice);
+          result = { ...tracked, status: "tp1_hit", highestTpHit: 1, peakPrice: updatedPeak };
+          return withTimeline(result, currentPrice);
         }
-        return { ...tracked, status: "breakeven" };
+        result = { ...tracked, status: "breakeven", peakPrice: updatedPeak };
+        return withTimeline(result, currentPrice);
       }
-      // Check SL from original level
-      if (priceCrossed(currentPrice, setup.stopLoss, setup.direction === "bullish" ? "bearish" : "bullish")) {
-        return finalize(tracked, "sl_hit", currentPrice);
+      if (priceCrossed(currentPrice, setup.stopLoss, isBullish ? "bearish" : "bullish")) {
+        return withTimeline(finalize({ ...tracked, peakPrice: updatedPeak }, "sl_hit", currentPrice), currentPrice);
       }
-      return tracked;
+      return { ...tracked, peakPrice: updatedPeak };
     }
 
     case "breakeven": {
       if (priceCrossed(currentPrice, setup.takeProfit[0], setup.direction)) {
-        return { ...tracked, status: "tp1_hit", highestTpHit: 1 };
+        result = { ...tracked, status: "tp1_hit", highestTpHit: 1, peakPrice: updatedPeak };
+        return withTimeline(result, currentPrice);
       }
-      return tracked;
+      return { ...tracked, peakPrice: updatedPeak };
     }
 
     case "tp1_hit": {
       if (priceCrossed(currentPrice, setup.takeProfit[1], setup.direction)) {
-        return { ...tracked, status: "tp2_hit", highestTpHit: 2 };
+        result = { ...tracked, status: "tp2_hit", highestTpHit: 2, peakPrice: updatedPeak };
+        return withTimeline(result, currentPrice);
       }
-      return tracked;
+      return { ...tracked, peakPrice: updatedPeak };
     }
 
     case "tp2_hit": {
       if (priceCrossed(currentPrice, setup.takeProfit[2], setup.direction)) {
-        return finalize({ ...tracked, highestTpHit: 3 }, "tp3_hit", currentPrice);
+        return withTimeline(
+          finalize({ ...tracked, highestTpHit: 3, peakPrice: updatedPeak }, "tp3_hit", currentPrice),
+          currentPrice
+        );
       }
-      return tracked;
+      return { ...tracked, peakPrice: updatedPeak };
     }
 
     default:
-      return tracked;
+      return { ...tracked, peakPrice: updatedPeak };
   }
+}
+
+/** Append timeline entry on status change */
+function withTimeline(tracked: TrackedSetup, price: number): TrackedSetup {
+  const timeline = tracked.timeline ?? [];
+  const last = timeline[timeline.length - 1];
+  // Only append if status actually changed
+  if (last && last.status === tracked.status) return tracked;
+  return {
+    ...tracked,
+    timeline: [...timeline, { status: tracked.status, timestamp: Date.now(), price }],
+  };
 }
 
 // ==================== FINALIZE ====================
@@ -211,4 +244,9 @@ export function getStatusLabel(status: SetupStatus): string {
 /** Returns true if the setup is still actionable (can be entered) */
 export function isActionable(status: SetupStatus): boolean {
   return status === "pending" || status === "active";
+}
+
+/** Returns true if the setup is running in profit (past breakeven) */
+export function isRunning(status: SetupStatus): boolean {
+  return status === "breakeven" || status === "tp1_hit" || status === "tp2_hit";
 }

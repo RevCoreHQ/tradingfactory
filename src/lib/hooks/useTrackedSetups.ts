@@ -7,8 +7,12 @@ import {
   updateSetupStatus,
   buildConfluenceKey,
   isSetupActive,
+  isRunning,
 } from "@/lib/calculations/setup-tracker";
 import { recordOutcome } from "@/lib/calculations/confluence-learning";
+import { detectScaleIn, detectMissedEntry } from "@/lib/calculations/scale-in-detector";
+import { createMilestoneAlert } from "@/lib/calculations/alert-engine";
+import { useMarketStore } from "@/lib/store/market-store";
 import {
   loadTrackedSetups,
   saveTrackedSetups,
@@ -16,12 +20,14 @@ import {
   saveConfluencePatterns,
   clearAllTrackingData,
 } from "@/lib/storage/setup-storage";
+import type { SmartAlert } from "@/lib/types/alerts";
 
 interface UseTrackedSetupsResult {
   activeSetups: TrackedSetup[];
   historySetups: TrackedSetup[];
   confluencePatterns: Record<string, ConfluencePattern>;
   clearHistory: () => void;
+  dismissScaleIn: (setupId: string, scaleInIndex: number) => void;
 }
 
 export function useTrackedSetups(
@@ -30,6 +36,8 @@ export function useTrackedSetups(
   const patternsRef = useRef<Record<string, ConfluencePattern>>({});
   const trackedRef = useRef<TrackedSetup[]>([]);
   const initializedRef = useRef(false);
+  const milestoneAlertsRef = useRef<SmartAlert[]>([]);
+  const addStoreAlerts = useMarketStore((s) => s.addAlerts);
 
   // Load from localStorage once on mount (ref-based, no SWR)
   if (!initializedRef.current && typeof window !== "undefined") {
@@ -46,6 +54,7 @@ export function useTrackedSetups(
     const currentTracked = trackedRef.current;
     const patterns = { ...patternsRef.current };
     let changed = false;
+    const milestoneAlerts: SmartAlert[] = [];
 
     const activeMap = new Map<string, TrackedSetup>();
     const terminalList: TrackedSetup[] = [];
@@ -159,12 +168,31 @@ export function useTrackedSetups(
           updated.confluenceKey = buildConfluenceKey(fresh);
           changed = true;
         } else if (updated.setup.currentPrice !== fresh.currentPrice) {
-          // Running setups: only sync price
+          // Running setups: sync price + detect scale-ins
           updated.setup = { ...updated.setup, currentPrice: fresh.currentPrice };
+
+          // Detect scale-in opportunities on running trades
+          if (isRunning(updated.status)) {
+            const scaleIn = detectScaleIn(updated, fresh.signals);
+            if (scaleIn) {
+              updated.scaleIns = [...(updated.scaleIns ?? []), scaleIn];
+              changed = true;
+            }
+          }
+
+          // Detect missed entries (rapid activation + price already ran)
+          if (!updated.missedEntry && detectMissedEntry(updated)) {
+            updated.missedEntry = true;
+            changed = true;
+          }
         }
 
         if (updated.status !== existing.status) {
           changed = true;
+          // Generate milestone alert for TP/SL transitions (single brain)
+          const milestoneAlert = createMilestoneAlert(updated, existing.status);
+          if (milestoneAlert) milestoneAlerts.push(milestoneAlert);
+
           if (!isSetupActive(updated.status)) {
             const key = updated.confluenceKey;
             patterns[key] = recordOutcome(patterns[key] ?? null, updated);
@@ -237,15 +265,31 @@ export function useTrackedSetups(
       saveConfluencePatterns(patterns);
     }
 
+    // Store milestone alerts for flushing after render
+    milestoneAlertsRef.current = milestoneAlerts;
+
     return {
-      activeSetups: updatedActive.sort(
-        (a, b) => b.setup.convictionScore - a.setup.convictionScore
-      ),
+      activeSetups: updatedActive.sort((a, b) => {
+        // Running setups first (breakeven/tp1/tp2), sorted by TP progression
+        const aRun = isRunning(a.status) ? 1 : 0;
+        const bRun = isRunning(b.status) ? 1 : 0;
+        if (aRun !== bRun) return bRun - aRun;
+        if (aRun && bRun) return b.highestTpHit - a.highestTpHit;
+        return b.setup.convictionScore - a.setup.convictionScore;
+      }),
       historySetups: terminalList.sort(
         (a, b) => (b.closedAt ?? 0) - (a.closedAt ?? 0)
       ),
     };
   }, [freshSetups]);
+
+  // Flush milestone alerts to Zustand store after render (single brain)
+  useEffect(() => {
+    if (milestoneAlertsRef.current.length > 0) {
+      addStoreAlerts(milestoneAlertsRef.current);
+      milestoneAlertsRef.current = [];
+    }
+  }, [activeSetups, historySetups, addStoreAlerts]);
 
   const clearHistory = useCallback(() => {
     clearAllTrackingData();
@@ -254,10 +298,24 @@ export function useTrackedSetups(
     setTick((t) => t + 1);
   }, []);
 
+  const dismissScaleIn = useCallback((setupId: string, scaleInIndex: number) => {
+    const idx = trackedRef.current.findIndex((t) => t.id === setupId);
+    if (idx === -1) return;
+    const tracked = trackedRef.current[idx];
+    const scaleIns = [...(tracked.scaleIns ?? [])];
+    if (scaleIns[scaleInIndex]) {
+      scaleIns[scaleInIndex] = { ...scaleIns[scaleInIndex], dismissed: true };
+      trackedRef.current[idx] = { ...tracked, scaleIns };
+      saveTrackedSetups(trackedRef.current);
+      setTick((t) => t + 1);
+    }
+  }, []);
+
   return {
     activeSetups,
     historySetups,
     confluencePatterns: patternsRef.current,
     clearHistory,
+    dismissScaleIn,
   };
 }

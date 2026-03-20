@@ -70,8 +70,29 @@ export type SetupStatus =
 export type SetupOutcome = "win" | "loss" | "breakeven";
 
 export const TERMINAL_STATUSES: SetupStatus[] = [
-  "tp1_hit", "tp2_hit", "tp3_hit", "sl_hit", "expired", "invalidated",
+  "tp3_hit", "sl_hit", "expired", "invalidated",
 ];
+
+/** Setup is running in profit (past breakeven, TP progression underway) */
+export function isRunning(status: SetupStatus): boolean {
+  return status === "breakeven" || status === "tp1_hit" || status === "tp2_hit";
+}
+
+export interface StatusTimelineEntry {
+  status: SetupStatus;
+  timestamp: number;
+  price: number;
+}
+
+export interface ScaleInOpportunity {
+  detectedAt: number;
+  pullbackPercent: number;       // how much of the move retraced (30-70%)
+  suggestedEntry: [number, number];
+  targetTP: number;              // next TP level price
+  riskReward: number;
+  agreeingSignals: number;
+  dismissed: boolean;
+}
 
 export interface TrackedSetup {
   id: string;
@@ -84,6 +105,11 @@ export interface TrackedSetup {
   pnlPercent: number | null;
   highestTpHit: 0 | 1 | 2 | 3;
   confluenceKey: string;
+  // Core trade management fields
+  scaleIns: ScaleInOpportunity[];
+  peakPrice: number | null;
+  timeline: StatusTimelineEntry[];
+  missedEntry: boolean;
 }
 
 // ==================== Confluence Learning ====================
