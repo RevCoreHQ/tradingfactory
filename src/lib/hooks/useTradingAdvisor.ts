@@ -3,6 +3,7 @@
 import useSWR from "swr";
 import type { TradeDeskSetup } from "@/lib/types/signals";
 import type { TradingAdvisorRequest, TradingAdvisorResult } from "@/lib/types/llm";
+import { INSTRUMENTS } from "@/lib/utils/constants";
 
 const CACHE_KEY = "tradingfactory_advisor_cache";
 const CACHE_TTL = 2 * 60 * 1000; // 2 min client-side — keep desk manager near-real-time
@@ -69,6 +70,68 @@ async function fetchAdvisor(
   return data.advisor ?? null;
 }
 
+/**
+ * Validate and fix the LLM advisor response against actual mechanical setups.
+ * LLMs can hallucinate instrument names (e.g. "XAG/USD" instead of "XAU/USD")
+ * or levels. Override with mechanical truth.
+ */
+function validateAdvisorResult(
+  result: TradingAdvisorResult,
+  setups: TradeDeskSetup[],
+  trackedStatuses: Record<string, string>
+): TradingAdvisorResult {
+  if (!result.topPick || setups.length === 0) return result;
+
+  const validSymbols = new Set(INSTRUMENTS.map((i) => i.symbol));
+  const setupSymbols = new Set(setups.map((s) => s.symbol));
+
+  // Check if the top pick instrument exists in our system
+  const topInstrument = result.topPick.instrument;
+  const matchedSetup = setups.find(
+    (s) =>
+      s.symbol === topInstrument ||
+      s.instrumentId === topInstrument ||
+      s.symbol.replace("/", "") === topInstrument.replace("/", "") ||
+      topInstrument.includes(s.symbol) ||
+      s.symbol.includes(topInstrument)
+  );
+
+  if (matchedSetup) {
+    // Found a match — override levels with mechanical data
+    const status = trackedStatuses[matchedSetup.instrumentId];
+    const isRunning = status && (status.includes("Running") || status.includes("TP"));
+
+    return {
+      ...result,
+      topPick: {
+        ...result.topPick,
+        instrument: matchedSetup.symbol,
+        action: matchedSetup.direction === "bullish" ? "LONG" : "SHORT",
+        conviction: matchedSetup.conviction,
+        levels: `Entry: ${matchedSetup.entry[0].toFixed(4)} – ${matchedSetup.entry[1].toFixed(4)} | SL: ${matchedSetup.stopLoss.toFixed(4)} | TP1: ${matchedSetup.takeProfit[0].toFixed(4)}, TP2: ${matchedSetup.takeProfit[1].toFixed(4)}, TP3: ${matchedSetup.takeProfit[2].toFixed(4)} | R:R 1:${matchedSetup.riskReward[0]}`,
+        // Keep the LLM's reasoning — that's the value-add
+      },
+    };
+  }
+
+  // No match — LLM hallucinated an instrument. Use the #1 ranked actionable setup.
+  const actionableSetup = setups.find((s) => {
+    const status = trackedStatuses[s.instrumentId];
+    return !status || status.includes("Await") || status.includes("Entry");
+  }) || setups[0];
+
+  return {
+    ...result,
+    topPick: {
+      instrument: actionableSetup.symbol,
+      action: actionableSetup.direction === "bullish" ? "LONG" : "SHORT",
+      conviction: actionableSetup.conviction,
+      reasoning: result.topPick.reasoning || `Highest conviction ${actionableSetup.conviction} setup with ${actionableSetup.consensus.bullish + actionableSetup.consensus.bearish} systems aligned.`,
+      levels: `Entry: ${actionableSetup.entry[0].toFixed(4)} – ${actionableSetup.entry[1].toFixed(4)} | SL: ${actionableSetup.stopLoss.toFixed(4)} | TP1: ${actionableSetup.takeProfit[0].toFixed(4)}, TP2: ${actionableSetup.takeProfit[1].toFixed(4)}, TP3: ${actionableSetup.takeProfit[2].toFixed(4)} | R:R 1:${actionableSetup.riskReward[0]}`,
+    },
+  };
+}
+
 interface UseTradingAdvisorParams {
   setups: TradeDeskSetup[];
   fearGreed: { value: number; label: string };
@@ -87,9 +150,9 @@ export function useTradingAdvisor(params: UseTradingAdvisorParams | null) {
     async () => {
       if (!params || params.setups.length === 0) return null;
 
-      // Check client cache first
+      // Check client cache first — still validate against current setups
       const cached = getClientCache(hash!);
-      if (cached) return cached;
+      if (cached) return validateAdvisorResult(cached, params.setups, params.trackedStatuses ?? {});
 
       // Build request from setups
       const topSetups = params.setups; // Send all A+/A setups (max 13 instruments)
@@ -147,10 +210,12 @@ export function useTradingAdvisor(params: UseTradingAdvisorParams | null) {
         riskPercent: params.riskPercent,
       };
 
-      const result = await fetchAdvisor("", { arg: request });
-      if (result) {
-        setClientCache(result, hash!);
-      }
+      const raw = await fetchAdvisor("", { arg: request });
+      if (!raw) return null;
+
+      // Validate LLM output against mechanical setups — fix hallucinated instruments/levels
+      const result = validateAdvisorResult(raw, params.setups, trackedStatuses);
+      setClientCache(result, hash!);
       return result;
     },
     {
