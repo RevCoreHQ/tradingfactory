@@ -328,7 +328,7 @@ const steps: Step[] = [
     badgeColor: "bg-bullish/12 text-bullish border-bullish/20",
     content: (
       <div className="space-y-2">
-        <p>The setup enters the tracking lifecycle. <strong>All 13 instruments</strong> feed live prices to the tracker every cycle, so SL/TP hits are never missed — even if conviction drops.</p>
+        <p>The setup enters the tracking lifecycle. <strong>All 16 instruments</strong> feed live prices to the tracker every cycle, so SL/TP hits are never missed — even if conviction drops.</p>
         <div className="space-y-1.5">
           {[
             { status: "Pending", desc: "Waiting for price to enter entry zone", active: true },

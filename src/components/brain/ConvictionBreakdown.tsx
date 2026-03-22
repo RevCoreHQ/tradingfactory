@@ -26,6 +26,7 @@ export function ConvictionBreakdown() {
               { name: "Regime Match", range: "0-25 pts", pct: 25, color: "bg-bullish/50", desc: "Regime-matched signals: ≥3 = 25 pts, ≥2 = 15 pts, ≥1 = 8 pts" },
               { name: "Impulse Alignment", range: "-15 to +20", pct: 35, color: "bg-amber-500/50", desc: "GREEN+bullish = +20, RED+bearish = +20, conflict = -15" },
               { name: "Strong Signal Bonus", range: "0-15 pts", pct: 15, color: "bg-foreground/20", desc: "5 pts per agreeing signal with strength ≥ 70 (max 15)" },
+              { name: "MTF Alignment", range: "-10 to +10", pct: 20, color: "bg-neutral-accent/40", desc: "Daily/4H/1H/15M EMA stack alignment: +10 full, +5 strong, 0 partial, -10 against" },
             ].map((f, i) => (
               <motion.div
                 key={f.name}

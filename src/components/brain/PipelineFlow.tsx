@@ -12,6 +12,7 @@ import {
   Scale,
   Sparkles,
   RefreshCw,
+  TrendingUp,
 } from "lucide-react";
 
 export function PipelineFlow() {
@@ -30,8 +31,8 @@ export function PipelineFlow() {
       >
         <p>
           Every signal starts with raw data. The system fetches OHLCV candles from Twelve Data (primary, paid tier)
-          with Finnhub and Alpha Vantage as fallbacks, across multiple timeframes — <strong>1H and 4H in parallel</strong> for
-          all 16 instruments. Candles are the sole input to the 8 mechanical systems below.
+          with Finnhub and Alpha Vantage as fallbacks, across <strong>4 timeframes — 15M, 1H, 4H, and Daily</strong> for
+          all 16 instruments. 1H and 4H feed the signal engine; 15M and Daily add MTF trend alignment context.
         </p>
         <p>
           In parallel (but on a <strong>separate track</strong>), fundamental data streams from 7 sources: news
@@ -84,6 +85,41 @@ export function PipelineFlow() {
 
       <PipelineStageCard
         number={3}
+        title="Trading Style Selection"
+        subtitle="ADX regime + session score → intraday vs swing"
+        icon={<Clock className="h-3.5 w-3.5" />}
+        badge="mechanical"
+        accentColor="amber"
+      >
+        <p>
+          Each instrument gets its own trading style based on 4H ADX and session conditions.
+          This determines which candles the signal engine uses.
+        </p>
+        <div className="space-y-1 mt-2">
+          {[
+            { condition: "Session score < 30", result: "Swing", reason: "Off-hours = low liquidity, wider stops" },
+            { condition: "ADX > 50", result: "Intraday", reason: "Very volatile = shorter exposure" },
+            { condition: "ADX > 20", result: "Swing", reason: "Trending = ride the move" },
+            { condition: "ADX ≤ 20", result: "Intraday", reason: "Ranging = mean reversion works" },
+          ].map((r) => (
+            <div key={r.condition} className="flex items-center gap-2 text-[10px]">
+              <span className="font-mono text-muted-foreground/60 w-32 shrink-0">{r.condition}</span>
+              <span className="text-[8px] font-bold text-foreground/60">→</span>
+              <span className={r.result === "Intraday" ? "text-neutral-accent font-semibold w-14" : "text-muted-foreground font-semibold w-14"}>
+                {r.result}
+              </span>
+              <span className="text-muted-foreground/50">{r.reason}</span>
+            </div>
+          ))}
+        </div>
+        <p className="mt-2">
+          <strong>Intraday</strong>: 1H candles, 1.5 ATR stop, 8h expiry.{" "}
+          <strong>Swing</strong>: 4H candles, 2.0 ATR stop, 24h expiry.
+        </p>
+      </PipelineStageCard>
+
+      <PipelineStageCard
+        number={4}
         title="8 Mechanical Signal Systems"
         subtitle="Book-sourced strategies fire independently"
         icon={<Cog className="h-3.5 w-3.5" />}
@@ -109,14 +145,46 @@ export function PipelineFlow() {
       </PipelineStageCard>
 
       <PipelineStageCard
-        number={4}
+        number={5}
+        title="MTF Trend Alignment"
+        subtitle="Daily/4H/1H/15M EMA stack → alignment score"
+        icon={<TrendingUp className="h-3.5 w-3.5" />}
+        badge="mechanical"
+        accentColor="green"
+      >
+        <p>
+          The EMA stack (EMA 9/21/50 + SMA 200) is computed on <strong>all 4 timeframes</strong>. Bullish stack:
+          EMA9 &gt; EMA21 &gt; EMA50 &gt; SMA200. Bearish: reversed. Otherwise: mixed.
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mt-2">
+          {[
+            { label: "Full (4/4)", mod: "+10", color: "bg-bullish/10 border-bullish/20 text-bullish" },
+            { label: "Strong (3/4)", mod: "+5", color: "bg-bullish/8 border-bullish/15 text-bullish/70" },
+            { label: "Partial (2/4)", mod: "0", color: "bg-muted/10 border-border/20 text-muted-foreground/60" },
+            { label: "Against (<2)", mod: "-10", color: "bg-bearish/8 border-bearish/15 text-bearish/70" },
+          ].map((a) => (
+            <div key={a.label} className={`rounded-md px-2.5 py-1.5 text-center border ${a.color}`}>
+              <div className="text-[10px] font-semibold">{a.label}</div>
+              <div className="text-[9px] font-mono opacity-70">{a.mod} pts</div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-2">
+          <strong>Pullback detection:</strong> When the daily trend is clear and the 15M flips back to match it
+          (with price above EMA9), a &ldquo;Pullback Complete&rdquo; signal fires — indicating the lower-timeframe
+          correction is over and the higher-timeframe trend may resume.
+        </p>
+      </PipelineStageCard>
+
+      <PipelineStageCard
+        number={6}
         title="Conviction Scoring"
-        subtitle="Signal agreement + regime match + impulse → A+ to D"
+        subtitle="Signal agreement + regime match + impulse + MTF → A+ to D"
         icon={<Target className="h-3.5 w-3.5" />}
         badge="mechanical"
         accentColor="green"
       >
-        <p>A conviction score (0-100) is calculated from four factors:</p>
+        <p>A conviction score (0-100) is calculated from six factors:</p>
         <div className="space-y-1 mt-2">
           <div className="flex items-center gap-2">
             <span className="w-20 text-[9px] font-bold text-neutral-accent/60 uppercase">Agreement</span>
@@ -146,6 +214,20 @@ export function PipelineFlow() {
             </div>
             <span className="text-[9px] font-mono text-muted-foreground/60 w-12 text-right">0-15 pts</span>
           </div>
+          <div className="flex items-center gap-2">
+            <span className="w-20 text-[9px] font-bold text-bearish/60 uppercase">ADX Exh.</span>
+            <div className="flex-1 h-3 bg-bearish/10 rounded-full overflow-hidden">
+              <div className="h-full bg-bearish/40 rounded-full" style={{ width: "10%" }} />
+            </div>
+            <span className="text-[9px] font-mono text-muted-foreground/60 w-12 text-right">-10 pts</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-20 text-[9px] font-bold text-neutral-accent/60 uppercase">MTF</span>
+            <div className="flex-1 h-3 bg-neutral-accent/10 rounded-full overflow-hidden">
+              <div className="h-full bg-neutral-accent/40 rounded-full" style={{ width: "20%" }} />
+            </div>
+            <span className="text-[9px] font-mono text-muted-foreground/60 w-12 text-right">-10 to +10</span>
+          </div>
         </div>
         <p className="mt-2">
           <strong>Tiers:</strong> A+ (≥75, 5+ signals) → A (≥60, 4+) → B (≥40, 3+) → C (≥25, 2+) → D (&lt;25)
@@ -153,7 +235,7 @@ export function PipelineFlow() {
       </PipelineStageCard>
 
       <PipelineStageCard
-        number={5}
+        number={7}
         title="Hard Filters"
         subtitle="Quality gates that reject weak setups"
         icon={<ShieldAlert className="h-3.5 w-3.5" />}
@@ -177,7 +259,7 @@ export function PipelineFlow() {
       </PipelineStageCard>
 
       <PipelineStageCard
-        number={6}
+        number={8}
         title="Structural Level Snapping"
         subtitle="Entry, SL, TP levels aligned to real S/R zones"
         icon={<Layers className="h-3.5 w-3.5" />}
@@ -207,41 +289,7 @@ export function PipelineFlow() {
       </PipelineStageCard>
 
       <PipelineStageCard
-        number={7}
-        title="Trading Style Selection"
-        subtitle="ADX regime + session score → intraday vs swing"
-        icon={<Clock className="h-3.5 w-3.5" />}
-        badge="mechanical"
-        accentColor="amber"
-      >
-        <p>
-          Each instrument gets its own trading style based on current market conditions:
-        </p>
-        <div className="space-y-1 mt-2">
-          {[
-            { condition: "Session score < 30", result: "Swing", reason: "Off-hours = low liquidity, wider stops" },
-            { condition: "ADX > 50", result: "Intraday", reason: "Very volatile = shorter exposure" },
-            { condition: "ADX > 20", result: "Swing", reason: "Trending = ride the move" },
-            { condition: "ADX ≤ 20", result: "Intraday", reason: "Ranging = mean reversion works" },
-          ].map((r) => (
-            <div key={r.condition} className="flex items-center gap-2 text-[10px]">
-              <span className="font-mono text-muted-foreground/60 w-32 shrink-0">{r.condition}</span>
-              <span className="text-[8px] font-bold text-foreground/60">→</span>
-              <span className={r.result === "Intraday" ? "text-neutral-accent font-semibold w-14" : "text-muted-foreground font-semibold w-14"}>
-                {r.result}
-              </span>
-              <span className="text-muted-foreground/50">{r.reason}</span>
-            </div>
-          ))}
-        </div>
-        <p className="mt-2">
-          <strong>Intraday</strong>: 1H candles, 1.5 ATR stop, 8h expiry.{" "}
-          <strong>Swing</strong>: 4H candles, 2.0 ATR stop, 24h expiry.
-        </p>
-      </PipelineStageCard>
-
-      <PipelineStageCard
-        number={8}
+        number={9}
         title="Position Sizing"
         subtitle="Conviction-scaled risk per trade"
         icon={<Scale className="h-3.5 w-3.5" />}
@@ -268,7 +316,7 @@ export function PipelineFlow() {
       </PipelineStageCard>
 
       <PipelineStageCard
-        number={9}
+        number={10}
         title="AI Trade Advisor"
         subtitle="LLM narrates and contextualizes the top setups"
         icon={<Sparkles className="h-3.5 w-3.5" />}
@@ -299,7 +347,7 @@ export function PipelineFlow() {
       </PipelineStageCard>
 
       <PipelineStageCard
-        number={10}
+        number={11}
         title="Confluence Learning"
         subtitle="Feedback loop — outcomes improve future scoring"
         icon={<RefreshCw className="h-3.5 w-3.5" />}
