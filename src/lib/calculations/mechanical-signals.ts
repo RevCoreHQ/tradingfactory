@@ -846,11 +846,12 @@ export function generateTradeDeskSetup(
   candles: OHLCV[],
   summary: TechnicalSummary,
   instrument: Instrument,
-  accountEquity: number = 10000,
+  accountEquity: number = 0,
   riskPercent: number = 2,
   confluencePatterns?: Record<string, ConfluencePattern>,
   tradingStyle?: TradingStyle,
-  systemPerformance?: Record<string, SystemPerformance>
+  systemPerformance?: Record<string, SystemPerformance>,
+  overrideParams?: { slMultiplier?: number; tpMultipliers?: [number, number, number]; entrySpreadMultiplier?: number }
 ): TradeDeskSetup {
   // 1. Detect regime (pass candles for full multi-dimensional regime)
   const { regime, label: regimeLabel, fullRegime } = detectRegime(summary, candles);
@@ -954,7 +955,9 @@ export function generateTradeDeskSetup(
 
   // 5. Resolve trading style and apply style-specific parameters
   const style: TradingStyle = tradingStyle ?? "swing";
-  const params = STYLE_PARAMS[style];
+  const params = overrideParams
+    ? { ...STYLE_PARAMS[style], ...overrideParams }
+    : STYLE_PARAMS[style];
   const tf: "1h" | "4h" = style === "intraday" ? "1h" : "4h";
 
   const atr = summary.atr.value;

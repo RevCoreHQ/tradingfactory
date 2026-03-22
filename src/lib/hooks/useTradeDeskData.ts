@@ -77,7 +77,7 @@ export function useTradeDeskData(
   activeSetups?: TrackedSetup[],
   historySetups?: TrackedSetup[]
 ) {
-  const accountEquity = getStoredNumber(ACCOUNT_EQUITY_KEY, 10000);
+  const accountEquity = getStoredNumber(ACCOUNT_EQUITY_KEY, 0);
   const riskPercent = getStoredNumber(RISK_PERCENT_KEY, 2);
 
   const { data: candleMap, isLoading, error, mutate } = useSWR(

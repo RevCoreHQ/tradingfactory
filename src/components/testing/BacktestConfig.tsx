@@ -99,7 +99,7 @@ export function BacktestConfig({ config, onConfigChange, progress, onRun, onStop
           <input
             type="number"
             value={config.accountEquity}
-            onChange={(e) => update({ accountEquity: Math.max(100, Number(e.target.value) || 10000) })}
+            onChange={(e) => update({ accountEquity: Math.max(0, Number(e.target.value) || 0) })}
             disabled={isRunning}
             className="w-full h-8 rounded-md border border-border/50 bg-[var(--surface-1)] px-2 text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-neutral-accent/40"
           />

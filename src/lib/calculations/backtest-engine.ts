@@ -299,7 +299,9 @@ export function runBacktest(
         config.accountEquity,
         config.riskPercent,
         undefined,
-        config.tradingStyle
+        config.tradingStyle,
+        undefined,
+        config.overrides
       );
 
       if (passesFilters(setup, config)) {

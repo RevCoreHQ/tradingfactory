@@ -14,6 +14,12 @@ export interface BacktestConfig {
   minRiskReward: number | null;         // null = use production default (1.5)
   enforceImpulseGate: boolean;
   maxConcurrentTrades: number;
+  // Optional parameter overrides (from auto-improvement)
+  overrides?: {
+    slMultiplier?: number;
+    tpMultipliers?: [number, number, number];
+    entrySpreadMultiplier?: number;
+  };
 }
 
 export const DEFAULT_BACKTEST_CONFIG: BacktestConfig = {
@@ -21,7 +27,7 @@ export const DEFAULT_BACKTEST_CONFIG: BacktestConfig = {
   timeframe: "4h",
   windowSize: 200,
   stepSize: 1,
-  accountEquity: 10000,
+  accountEquity: 0,
   riskPercent: 2,
   tradingStyle: "swing",
   minConviction: null,
@@ -201,4 +207,61 @@ export interface Weakness {
   severity: "critical" | "moderate" | "minor";
   evidence: string;
   suggestedFix: string;
+}
+
+// ==================== Weekend Lab / Batch Types ====================
+
+export interface BatchConfig {
+  baseConfig: BacktestConfig;
+  instruments: string[];
+  autoImprove: boolean;
+  feedConfluence: boolean;
+  timeframe: "1h" | "4h";
+  tradingStyle: TradingStyle;
+}
+
+export interface BatchProgress {
+  status: "idle" | "running" | "improving" | "complete" | "error";
+  currentInstrument: string;
+  currentInstrumentIndex: number;
+  totalInstruments: number;
+  phase: "backtest" | "analyze" | "improve" | "retest" | "confluence";
+  percentComplete: number;
+  errorMessage?: string;
+}
+
+export interface BatchInstrumentResult {
+  instrumentId: string;
+  symbol: string;
+  category: string;
+  baselineResult: BacktestResult;
+  improvedResult: BacktestResult | null;
+  weaknesses: Weakness[];
+  adjustments: ParameterAdjustment[];
+  hasEdge: boolean;
+  improvement: {
+    winRateDelta: number;
+    expectancyDelta: number;
+    profitFactorDelta: number;
+    maxDDDelta: number;
+  } | null;
+}
+
+export interface AggregateStats {
+  totalInstruments: number;
+  instrumentsWithEdge: number;
+  instrumentsWithoutEdge: number;
+  totalTrades: number;
+  overallWinRate: number;
+  overallExpectancy: number;
+  overallProfitFactor: number;
+  avgMaxDrawdown: number;
+  bestInstrument: { id: string; symbol: string; expectancy: number } | null;
+  worstInstrument: { id: string; symbol: string; expectancy: number } | null;
+  byCategory: {
+    category: string;
+    instruments: number;
+    avgExpectancy: number;
+    avgWinRate: number;
+  }[];
 }

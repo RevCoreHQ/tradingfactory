@@ -514,7 +514,7 @@ function SetupCard({
   const handleNavigate = () => {
     if (inst) {
       setSelectedInstrument(inst);
-      router.push(`/instrument/${inst.id}`);
+      router.push("/instrument");
     }
   };
 
@@ -607,6 +607,25 @@ function SetupCard({
 
         <ImpulseBadge color={setup.impulse} />
         <RegimeBadge regime={setup.regime} adx={setup.adx} />
+
+        {/* Compact MTF trend — always visible */}
+        {setup.mtfTrend && (
+          <div className="hidden lg:flex items-center gap-0.5">
+            {setup.mtfTrend.trends.map((t, i) => (
+              <div key={t.timeframe} className="flex items-center gap-0.5">
+                {i > 0 && <span className="text-muted-foreground/15 text-[8px]">&rarr;</span>}
+                <span className={cn(
+                  "text-[8px] font-mono font-bold px-1 py-0.5 rounded",
+                  t.direction === "bullish" && "text-bullish bg-bullish/8",
+                  t.direction === "bearish" && "text-bearish bg-bearish/8",
+                  t.direction === "neutral" && "text-muted-foreground/50 bg-muted/10"
+                )}>
+                  {t.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {expanded ? (
           <ChevronUp className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
@@ -1441,9 +1460,26 @@ export function AITradeDesk() {
           <>
             <StatsRow setups={setups} portfolioRisk={portfolioRisk} />
 
+            {/* New setups section — prioritized first */}
+            {actionable.length > 0 && (
+              <div className={running.length > 0 ? "mb-4" : ""}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[10px] font-bold text-neutral-accent uppercase tracking-wider">
+                    New Setups
+                  </span>
+                  <span className="text-[9px] text-muted-foreground/40">{actionable.length}</span>
+                </div>
+                <div className="space-y-1.5">
+                  {actionable.slice(0, 8).map((tracked, i) => (
+                    <SetupCard key={tracked.id} tracked={tracked} rank={i + 1} />
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Running trades section */}
             {running.length > 0 && (
-              <div className="mb-4">
+              <div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-[10px] font-bold text-bullish uppercase tracking-wider">
                     Core Trades Running
@@ -1458,25 +1494,6 @@ export function AITradeDesk() {
                       rank={i + 1}
                       onDismissScaleIn={dismissScaleIn}
                     />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Actionable setups section */}
-            {actionable.length > 0 && (
-              <div>
-                {running.length > 0 && (
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                      New Setups
-                    </span>
-                    <span className="text-[9px] text-muted-foreground/40">{actionable.length}</span>
-                  </div>
-                )}
-                <div className="space-y-1.5">
-                  {actionable.slice(0, 8).map((tracked, i) => (
-                    <SetupCard key={tracked.id} tracked={tracked} rank={i + 1} />
                   ))}
                 </div>
               </div>

@@ -1,4 +1,4 @@
-import type { BacktestResult, OptimizationProfile } from "@/lib/types/backtest";
+import type { BacktestResult, OptimizationProfile, BatchInstrumentResult } from "@/lib/types/backtest";
 
 const RESULTS_KEY = "tf_backtest_results";
 const PROFILES_KEY = "tf_optimization_profiles";
@@ -66,5 +66,52 @@ export function saveOptimizationProfile(profile: OptimizationProfile): void {
     localStorage.setItem(PROFILES_KEY, JSON.stringify(trimmed));
   } catch {
     // storage full
+  }
+}
+
+// ==================== BATCH RESULTS ====================
+
+const BATCH_KEY = "tf_batch_results";
+const MAX_BATCHES = 3;
+
+interface StoredBatch {
+  timestamp: number;
+  results: BatchInstrumentResult[];
+}
+
+export function loadBatchResults(): StoredBatch[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(BATCH_KEY);
+    return raw ? (JSON.parse(raw) as StoredBatch[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveBatchResults(results: BatchInstrumentResult[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    // Strip trade arrays and equity curves to save space
+    const lightweight = results.map((r) => ({
+      ...r,
+      baselineResult: { ...r.baselineResult, trades: [], equityCurve: [] },
+      improvedResult: r.improvedResult
+        ? { ...r.improvedResult, trades: [], equityCurve: [] }
+        : null,
+    }));
+    const existing = loadBatchResults();
+    const batch: StoredBatch = { timestamp: Date.now(), results: lightweight };
+    const updated = [batch, ...existing].slice(0, MAX_BATCHES);
+    localStorage.setItem(BATCH_KEY, JSON.stringify(updated));
+  } catch {
+    try {
+      const lightweight = results.map((r) => ({
+        ...r,
+        baselineResult: { ...r.baselineResult, trades: [], equityCurve: [] },
+        improvedResult: null,
+      }));
+      localStorage.setItem(BATCH_KEY, JSON.stringify([{ timestamp: Date.now(), results: lightweight }]));
+    } catch { /* give up */ }
   }
 }

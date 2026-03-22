@@ -51,7 +51,7 @@ export function InstrumentAnalysis() {
     const session = getSessionRelevance(instrument.id);
     const style = selectTradingStyle(adx, session.sessionScore);
 
-    const setup = generateTradeDeskSetup(candles, indicators, instrument, 10000, 2, undefined, style);
+    const setup = generateTradeDeskSetup(candles, indicators, instrument, 0, 2, undefined, style);
     // Filter same as overview: only A+/A conviction, non-neutral, R:R >= 1.5, impulse aligned
     if (setup.conviction === "D" || setup.conviction === "C" || setup.conviction === "B") return null;
     if (setup.direction === "neutral") return null;
