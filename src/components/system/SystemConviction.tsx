@@ -1,7 +1,9 @@
 "use client";
 
+import { useRef } from "react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
+import { AnimatedBeam } from "@/components/ui/animated-beam";
 
 const factors = [
   { name: "Cluster Agreement", range: "0-40 pts", pct: 40, color: "bg-neutral-accent/50", desc: "De-correlated: best signal per cluster, weighted by regime" },
@@ -23,10 +25,14 @@ const tiers = [
 ];
 
 export function SystemConviction() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const factorsRef = useRef<HTMLDivElement>(null);
+  const tiersRef = useRef<HTMLDivElement>(null);
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <div ref={containerRef} className="relative grid grid-cols-1 lg:grid-cols-12 gap-6">
       {/* Left: Scoring factors */}
-      <div className="lg:col-span-5">
+      <div ref={factorsRef} className="lg:col-span-5">
         <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-3">
           8 Scoring Factors (0-100 pts)
         </h4>
@@ -60,7 +66,7 @@ export function SystemConviction() {
       </div>
 
       {/* Right: Tier ladder */}
-      <div className="lg:col-span-7">
+      <div ref={tiersRef} className="lg:col-span-7">
         <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-3">
           Conviction Tiers
         </h4>
@@ -116,6 +122,19 @@ export function SystemConviction() {
           ))}
         </div>
       </div>
+
+      {/* AnimatedBeam — factors flow to tiers */}
+      <AnimatedBeam
+        containerRef={containerRef}
+        fromRef={factorsRef}
+        toRef={tiersRef}
+        gradientStartColor="var(--neutral-accent)"
+        gradientStopColor="var(--bullish)"
+        pathColor="var(--neutral-accent)"
+        pathOpacity={0.08}
+        pathWidth={1.5}
+        curvature={-50}
+      />
     </div>
   );
 }

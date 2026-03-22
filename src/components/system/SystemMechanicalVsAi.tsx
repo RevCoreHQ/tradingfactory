@@ -1,7 +1,9 @@
 "use client";
 
+import { useRef } from "react";
 import { motion } from "motion/react";
-import { Cog, Sparkles } from "lucide-react";
+import { Cog, Sparkles, ArrowRight } from "lucide-react";
+import { AnimatedBeam } from "@/components/ui/animated-beam";
 
 const mechanicalTags = ["Deterministic", "Reproducible", "Book-sourced", "Rule-based"];
 const aiTags = ["Narrator", "Interpreter", "Contextualizer"];
@@ -13,11 +15,17 @@ const aiRoles = [
 ];
 
 export function SystemMechanicalVsAi() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mechRef = useRef<HTMLDivElement>(null);
+  const centerRef = useRef<HTMLDivElement>(null);
+  const aiRef = useRef<HTMLDivElement>(null);
+
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div ref={containerRef} className="relative grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-4 items-start">
         {/* Mechanical */}
         <motion.div
+          ref={mechRef}
           initial={{ opacity: 0, x: -20 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
@@ -59,8 +67,23 @@ export function SystemMechanicalVsAi() {
           </div>
         </motion.div>
 
+        {/* Center flow indicator */}
+        <div ref={centerRef} className="hidden lg:flex flex-col items-center justify-center gap-2 py-8">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.3 }}
+            className="h-10 w-10 rounded-full bg-foreground/5 border border-border/40 flex items-center justify-center"
+          >
+            <ArrowRight className="h-4 w-4 text-muted-foreground/40" />
+          </motion.div>
+          <span className="text-[8px] font-bold uppercase tracking-wider text-muted-foreground/30">Then</span>
+        </div>
+
         {/* AI */}
         <motion.div
+          ref={aiRef}
           initial={{ opacity: 0, x: 20 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
@@ -103,6 +126,30 @@ export function SystemMechanicalVsAi() {
             ))}
           </div>
         </motion.div>
+
+        {/* AnimatedBeam connections — mechanical → center → AI */}
+        <AnimatedBeam
+          containerRef={containerRef}
+          fromRef={mechRef}
+          toRef={centerRef}
+          gradientStartColor="var(--bullish)"
+          gradientStopColor="var(--neutral-accent)"
+          pathColor="var(--bullish)"
+          pathOpacity={0.1}
+          pathWidth={1.5}
+          curvature={0}
+        />
+        <AnimatedBeam
+          containerRef={containerRef}
+          fromRef={centerRef}
+          toRef={aiRef}
+          gradientStartColor="var(--neutral-accent)"
+          gradientStopColor="#f59e0b"
+          pathColor="#f59e0b"
+          pathOpacity={0.1}
+          pathWidth={1.5}
+          curvature={0}
+        />
       </div>
 
       {/* Bottom callout */}

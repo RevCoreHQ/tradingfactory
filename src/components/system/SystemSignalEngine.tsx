@@ -2,6 +2,7 @@
 
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
+import { CpuArchitecture } from "@/components/ui/cpu-architecture";
 
 interface MechanicalSystem {
   name: string;
@@ -55,6 +56,17 @@ export function SystemSignalEngine() {
 
   return (
     <div className="space-y-6">
+      {/* CpuArchitecture visualization — 8 systems flow to signal processor */}
+      <div className="rounded-xl overflow-hidden glass-card p-4">
+        <CpuArchitecture
+          text="SIG"
+          className="w-full max-h-[160px]"
+        />
+        <p className="text-center text-[10px] text-muted-foreground/50 mt-2">
+          8 independent systems fire in parallel through the signal processing core
+        </p>
+      </div>
+
       {/* 3 cluster zones */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {clusters.map((cluster, ci) => {

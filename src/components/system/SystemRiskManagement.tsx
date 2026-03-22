@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Scale, ShieldAlert, RefreshCw, ShieldCheck } from "lucide-react";
+import DatabaseWithRestApi from "@/components/ui/database-with-rest-api";
 
 const gateChecks = [
   { icon: "%", check: "Total risk < 6%", desc: "Sum of all open position risk vs equity" },
@@ -14,6 +15,18 @@ const gateChecks = [
 export function SystemRiskManagement() {
   return (
     <div className="space-y-6">
+      {/* DatabaseWithRestApi visualization — risk checks flowing to gate */}
+      <div className="flex justify-center">
+        <DatabaseWithRestApi
+          badgeTexts={{ first: "SIZE", second: "RISK", third: "CORR", fourth: "DRAW" }}
+          title="Portfolio-level risk constraints gate every trade"
+          circleText="GATE"
+          buttonTexts={{ first: "Risk Gate", second: "4 Checks" }}
+          lightColor="#ef4444"
+          className="max-w-[480px]"
+        />
+      </div>
+
       {/* Three cards: Position Sizing → Risk Per Trade → Expectancy */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Position Sizing */}

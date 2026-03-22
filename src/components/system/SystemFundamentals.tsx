@@ -2,6 +2,7 @@
 
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
+import DatabaseWithRestApi from "@/components/ui/database-with-rest-api";
 import {
   Newspaper,
   Gauge,
@@ -35,6 +36,18 @@ const sources: Source[] = [
 export function SystemFundamentals() {
   return (
     <div className="space-y-6">
+      {/* DatabaseWithRestApi visualization — data sources flowing to bias engine */}
+      <div className="flex justify-center">
+        <DatabaseWithRestApi
+          badgeTexts={{ first: "NEWS", second: "RATES", third: "ECON", fourth: "YIELD" }}
+          title="7 fundamental data sources feed the Bias Engine"
+          circleText="BIAS"
+          buttonTexts={{ first: "Bias Engine", second: "7 Sources" }}
+          lightColor="#f59e0b"
+          className="max-w-[480px]"
+        />
+      </div>
+
       {/* Hub node */}
       <div className="flex justify-center">
         <motion.div
