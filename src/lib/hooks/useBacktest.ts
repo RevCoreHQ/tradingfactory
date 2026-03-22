@@ -53,14 +53,16 @@ export function useBacktest() {
       const data = await res.json();
       const candles = data.candles;
 
-      if (!candles || candles.length < config.windowSize + 50) {
+      // Need at least windowSize + a few bars to walk forward
+      const minCandles = config.windowSize + 10;
+      if (!candles || candles.length < minCandles) {
         setProgress({
           status: "error",
           currentBar: 0,
           totalBars: 0,
           tradesFound: 0,
           percentComplete: 0,
-          errorMessage: `Insufficient data: ${candles?.length ?? 0} candles (need ${config.windowSize + 50}+)`,
+          errorMessage: `Insufficient data: ${candles?.length ?? 0} candles (need ${minCandles}+). Try 1h timeframe for more data.`,
         });
         return;
       }

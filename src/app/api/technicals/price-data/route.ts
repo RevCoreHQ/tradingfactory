@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
       try {
         const tdInterval = TWELVE_DATA_INTERVALS[timeframe] || "1h";
         const tdSymbol = instrument.twelveDataSymbol || instrument.symbol;
-        candles = await fetchTwelveDataCandles(tdSymbol, tdInterval);
+        candles = await fetchTwelveDataCandles(tdSymbol, tdInterval, limit);
       } catch (err) {
         console.warn(`[PriceData] TwelveData failed for ${instrument.symbol}:`, err);
         candles = [];
@@ -110,7 +110,7 @@ export async function GET(req: NextRequest) {
       try {
         const tdInterval = TWELVE_DATA_INTERVALS[timeframe] || "1h";
         const tdSymbol = instrument.twelveDataSymbol || instrument.symbol;
-        candles = await fetchTwelveDataCandles(tdSymbol, tdInterval);
+        candles = await fetchTwelveDataCandles(tdSymbol, tdInterval, limit);
       } catch (err) {
         console.warn(`[PriceData] TwelveData failed for index ${instrument.symbol}:`, err);
         candles = [];
