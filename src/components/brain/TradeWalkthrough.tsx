@@ -19,14 +19,14 @@ const steps: Step[] = [
     badgeColor: "bg-neutral-accent/12 text-neutral-accent border-neutral-accent/20",
     content: (
       <div className="space-y-2">
-        <p>The system fetches <strong>both</strong> 1H and 4H OHLCV candles for every instrument from Twelve Data (primary) with Finnhub fallback.</p>
+        <p>The system fetches <strong>4 timeframes</strong> of OHLCV candles for every instrument from Twelve Data (primary) with Finnhub fallback.</p>
         <div className="bg-surface-2/30 rounded-md px-3 py-2 font-mono text-[9px] text-muted-foreground/60 space-y-0.5">
           <div>Instrument: EUR_USD</div>
-          <div>Timeframes: 1H (300 candles), 4H (300 candles)</div>
+          <div>Timeframes: 15M, 1H, 4H, Daily (200-250 candles each)</div>
           <div>Latest close: 1.0845</div>
           <div>Session: London-NY overlap (score: 100)</div>
         </div>
-        <p className="text-[10px] text-muted-foreground/60">Both timeframes are always fetched. The system picks which one to use in the next step.</p>
+        <p className="text-[10px] text-muted-foreground/60">15M and 1H feed the MTF trend alignment. 1H or 4H is selected for the signal engine. Daily provides the higher-timeframe directional anchor.</p>
       </div>
     ),
   },
@@ -126,6 +126,47 @@ const steps: Step[] = [
     ),
   },
   {
+    title: "MTF Trend Alignment",
+    badge: "MECHANICAL",
+    badgeColor: "bg-bullish/12 text-bullish border-bullish/20",
+    content: (
+      <div className="space-y-2">
+        <p>The EMA stack (EMA 9/21/50 + SMA 200) is computed on <strong>all 4 timeframes</strong> to determine trend alignment and detect pullback completions.</p>
+        <div className="space-y-1.5">
+          {[
+            { tf: "Daily", stack: "EMA 9 > 21 > 50 > SMA 200", dir: "Bullish", color: "text-bullish" },
+            { tf: "4H", stack: "EMA 9 > 21 > 50 > SMA 200", dir: "Bullish", color: "text-bullish" },
+            { tf: "1H", stack: "EMA 9 < 21 (pulling back)", dir: "Mixed", color: "text-muted-foreground/60" },
+            { tf: "15M", stack: "EMA 9 > 21 > 50 (flipped back)", dir: "Bullish", color: "text-bullish" },
+          ].map((t) => (
+            <div key={t.tf} className="flex items-center gap-2 text-[10px]">
+              <span className="w-12 shrink-0 font-mono font-semibold text-foreground/70">{t.tf}</span>
+              <span className="flex-1 text-[9px] text-muted-foreground/50">{t.stack}</span>
+              <span className={cn("font-semibold", t.color)}>{t.dir}</span>
+            </div>
+          ))}
+        </div>
+        <div className="bg-surface-2/30 rounded-md px-3 py-2 text-[10px] space-y-1 mt-2">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground/50">Alignment:</span>
+            <span className="text-bullish font-bold">Strong (3 of 4)</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground/50">Conviction modifier:</span>
+            <span className="text-bullish font-bold">+5</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground/50">Pullback complete:</span>
+            <span className="text-neutral-accent font-bold">YES (15M flipped back to daily trend)</span>
+          </div>
+        </div>
+        <p className="text-[10px] text-muted-foreground/60">
+          Full alignment (4/4): +10 | Strong (3/4): +5 | Partial: 0 | Against daily: -10
+        </p>
+      </div>
+    ),
+  },
+  {
     title: "Conviction Scored",
     badge: "MECHANICAL",
     badgeColor: "bg-bullish/12 text-bullish border-bullish/20",
@@ -139,6 +180,7 @@ const steps: Step[] = [
             { factor: "Impulse", calc: "GREEN + bullish = aligned", pts: 20, max: 20 },
             { factor: "Strong Signals", calc: "5 signals ≥ 70 (×5 pts each)", pts: 15, max: 15 },
             { factor: "ADX Exhaustion", calc: "ADX 35 (< 50, no penalty)", pts: 0, max: -10 },
+            { factor: "MTF Alignment", calc: "3/4 timeframes aligned = strong", pts: 5, max: 10 },
           ].map((f) => (
             <div key={f.factor} className="flex items-center gap-2">
               <span className="w-28 text-[10px] font-semibold text-foreground/70">{f.factor}</span>
@@ -150,7 +192,7 @@ const steps: Step[] = [
         <div className="flex items-center gap-3 mt-2 bg-bullish/10 rounded-md px-3 py-2">
           <span className="text-2xl font-black text-bullish">A+</span>
           <div>
-            <div className="text-[10px] font-mono text-foreground/70">Score: 95/100 (clamped 0-100)</div>
+            <div className="text-[10px] font-mono text-foreground/70">Score: 100/100 (base 95 + MTF 5, clamped 0-100)</div>
             <div className="text-[9px] text-muted-foreground/50">≥75 score AND ≥5 agreeing = A+ | ≥60 AND ≥4 = A</div>
           </div>
         </div>

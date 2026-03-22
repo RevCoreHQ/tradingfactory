@@ -20,6 +20,7 @@ import type {
   ConfluencePattern,
   ScaleInOpportunity,
 } from "@/lib/types/signals";
+import type { TimeframeTrend, MTFTrendSummary } from "@/lib/types/mtf";
 import {
   TrendingUp,
   TrendingDown,
@@ -418,6 +419,74 @@ function ScaleInBanner({
 
 // ==================== Setup Card ====================
 
+// ==================== MTF Trend Bar ====================
+
+function MTFTrendBar({ mtf }: { mtf: MTFTrendSummary }) {
+  const alignmentColors: Record<string, string> = {
+    full: "text-bullish",
+    strong: "text-bullish/70",
+    partial: "text-[var(--amber)]",
+    conflicting: "text-bearish/70",
+  };
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-1.5">
+        <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
+          Multi-Timeframe Trend
+        </div>
+        <span className={cn(
+          "text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded",
+          mtf.alignment === "full" && "bg-bullish/12 text-bullish",
+          mtf.alignment === "strong" && "bg-bullish/8 text-bullish/70",
+          mtf.alignment === "partial" && "bg-[var(--amber)]/10 text-[var(--amber)]",
+          mtf.alignment === "conflicting" && "bg-bearish/10 text-bearish/70"
+        )}>
+          {mtf.alignment === "full" ? "Fully Aligned" :
+           mtf.alignment === "strong" ? "Strong" :
+           mtf.alignment === "partial" ? "Partial" : "Conflicting"}
+          {mtf.convictionModifier !== 0 && (
+            <span className="ml-1 opacity-70">
+              ({mtf.convictionModifier > 0 ? "+" : ""}{mtf.convictionModifier})
+            </span>
+          )}
+        </span>
+        {mtf.pullbackComplete && (
+          <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-neutral-accent/12 text-neutral-accent flex items-center gap-1">
+            <Zap className="h-2.5 w-2.5" />
+            Pullback Complete
+            {mtf.pullbackTimeframe && (
+              <span className="opacity-60">({mtf.pullbackTimeframe.toUpperCase()})</span>
+            )}
+          </span>
+        )}
+      </div>
+      <div className="flex items-center gap-1">
+        {mtf.trends.map((t, i) => (
+          <div key={t.timeframe} className="flex items-center gap-1">
+            {i > 0 && <span className="text-muted-foreground/20 text-[10px]">&rarr;</span>}
+            <div className={cn(
+              "flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold border",
+              t.direction === "bullish" && "bg-bullish/8 border-bullish/20 text-bullish",
+              t.direction === "bearish" && "bg-bearish/8 border-bearish/20 text-bearish",
+              t.direction === "neutral" && "bg-muted/10 border-border/30 text-muted-foreground/60"
+            )}>
+              <span className="text-[9px] font-mono opacity-60">{t.label}</span>
+              {t.direction === "bullish" ? (
+                <TrendingUp className="h-2.5 w-2.5" />
+              ) : t.direction === "bearish" ? (
+                <TrendingDown className="h-2.5 w-2.5" />
+              ) : (
+                <Minus className="h-2.5 w-2.5" />
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function SetupCard({
   tracked,
   rank,
@@ -562,6 +631,9 @@ function SetupCard({
               />
             );
           })}
+
+          {/* MTF Trend Alignment */}
+          {setup.mtfTrend && <MTFTrendBar mtf={setup.mtfTrend} />}
 
           <div>
             <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1.5">

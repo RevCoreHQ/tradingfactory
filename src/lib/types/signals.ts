@@ -1,3 +1,5 @@
+import type { MTFTrendSummary } from "./mtf";
+
 // ==================== Market Regime ====================
 
 export type MarketRegime = "trending_up" | "trending_down" | "ranging" | "volatile";
@@ -46,6 +48,7 @@ export interface TradeDeskSetup {
   positionSizeLots: number;
   riskAmount: number;
   reasonsToExit: string[];
+  mtfTrend?: MTFTrendSummary;
   learningApplied?: {
     riskMultiplier: number;
     convictionAdjust: number;
