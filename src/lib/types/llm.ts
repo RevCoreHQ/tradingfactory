@@ -56,7 +56,7 @@ export interface LLMBatchRequest {
 }
 
 export interface MarketSummaryRequest {
-  fearGreed: { value: number; label: string };
+  fearGreed: { value: number | null; label: string };
   dxy: { value: number; change: number };
   bondYields: { maturity: string; yield: number; change: number }[];
   centralBanks: { bank: string; rate: number; direction: string; stance: string }[];

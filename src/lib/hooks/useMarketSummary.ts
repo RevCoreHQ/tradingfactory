@@ -146,8 +146,11 @@ export function useMarketSummary() {
     cachedRef.current = getCachedSummary() ?? undefined as unknown as null;
   }
 
-  // Fire when any upstream data arrives, OR after 6s timeout (whichever first)
-  const hasAnyData = !!(fearGreedData || bondData || newsData || bankData);
+  // Fire when critical data (fear-greed) has arrived along with any other source,
+  // OR after 6s timeout (whichever first). Previously fired on ANY data arrival,
+  // which caused the LLM to receive the default fearGreed=50 when bonds loaded first.
+  const hasCriticalData = !!fearGreedData;
+  const hasAnyData = hasCriticalData && !!(bondData || newsData || bankData);
   const [timerReady, setTimerReady] = useState(false);
   useEffect(() => {
     const timer = setTimeout(() => setTimerReady(true), 6000);
@@ -164,11 +167,11 @@ export function useMarketSummary() {
     };
   });
 
-  // Always build request body with defaults for missing data
+  // Build request body — use actual data when available, mark as unavailable otherwise
   const requestBody = {
     fearGreed: {
-      value: fearGreedData?.current?.value ?? 50,
-      label: fearGreedData?.current?.label ?? "Neutral",
+      value: fearGreedData?.current?.value ?? null,
+      label: fearGreedData?.current?.label ?? "Unavailable",
     },
     dxy: {
       value: bondData?.dxy?.value ?? 0,
