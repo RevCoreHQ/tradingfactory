@@ -296,7 +296,6 @@ export function runBacktest(
         window,
         summary,
         instrument,
-        config.accountEquity,
         config.riskPercent,
         undefined,
         config.tradingStyle,

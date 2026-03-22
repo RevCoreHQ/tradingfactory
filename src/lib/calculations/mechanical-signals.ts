@@ -818,26 +818,15 @@ function generateReasonsToExit(
 // ==================== POSITION SIZING ====================
 
 function calculatePositionSize(
-  accountEquity: number,
   riskPercent: number,
-  entryPrice: number,
-  stopLoss: number,
-  pipSize: number
+  _entryPrice: number,
+  _stopLoss: number,
+  _pipSize: number
 ): { lots: number; riskAmount: number } {
-  const riskAmount = accountEquity * (riskPercent / 100);
-  const stopDistance = Math.abs(entryPrice - stopLoss);
-
-  if (stopDistance === 0) return { lots: 0, riskAmount };
-
-  // Position size in units (for forex, 1 lot = 100,000 units)
-  const pipsAtRisk = stopDistance / pipSize;
-  const pipValue = pipSize * 100000; // Standard lot pip value
-  const lots = pipsAtRisk > 0 ? riskAmount / (pipsAtRisk * pipValue) : 0;
-
-  return {
-    lots: Number(Math.max(0.01, lots).toFixed(2)),
-    riskAmount: Number(riskAmount.toFixed(0)),
-  };
+  // Without account equity, we can't calculate actual lot sizes or dollar risk.
+  // The system still tracks riskPercent for conviction-based scaling.
+  void _entryPrice; void _stopLoss; void _pipSize;
+  return { lots: 0, riskAmount: 0 };
 }
 
 // ==================== MASTER FUNCTION ====================
@@ -846,7 +835,6 @@ export function generateTradeDeskSetup(
   candles: OHLCV[],
   summary: TechnicalSummary,
   instrument: Instrument,
-  accountEquity: number = 0,
   riskPercent: number = 2,
   confluencePatterns?: Record<string, ConfluencePattern>,
   tradingStyle?: TradingStyle,
@@ -999,7 +987,6 @@ export function generateTradeDeskSetup(
   };
   const adjustedRisk = riskPercent * tierRiskMultiplier[tier];
   const { lots, riskAmount } = calculatePositionSize(
-    accountEquity,
     adjustedRisk,
     price,
     snapped.stopLoss,

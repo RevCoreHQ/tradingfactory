@@ -12,7 +12,6 @@ import { calculateMTFTrendSummary } from "@/lib/calculations/mtf-trend";
 import { evaluatePortfolioGate } from "@/lib/calculations/portfolio-risk-gate";
 import { getOptimizedOverrides } from "@/lib/storage/backtest-storage";
 
-const ACCOUNT_EQUITY_KEY = "tradingfactory_account_equity";
 const RISK_PERCENT_KEY = "tradingfactory_risk_percent";
 
 function getStoredNumber(key: string, defaultValue: number): number {
@@ -78,7 +77,6 @@ export function useTradeDeskData(
   activeSetups?: TrackedSetup[],
   historySetups?: TrackedSetup[]
 ) {
-  const accountEquity = getStoredNumber(ACCOUNT_EQUITY_KEY, 0);
   const riskPercent = getStoredNumber(RISK_PERCENT_KEY, 2);
 
   const { data: candleMap, isLoading, error, mutate } = useSWR(
@@ -96,10 +94,7 @@ export function useTradeDeskData(
         setups: [] as TradeDeskSetup[],
         allSetups: [] as TradeDeskSetup[],
         portfolioRisk: {
-          accountEquity,
-          riskPerTrade: accountEquity * (riskPercent / 100),
           riskPercent,
-          portfolioHeat: 0,
           canTrade: true,
           warning: null,
         } as PortfolioRisk,
@@ -141,7 +136,6 @@ export function useTradeDeskData(
         candles,
         summary,
         inst,
-        accountEquity,
         riskPercent,
         confluencePatterns,
         effectiveStyle,
@@ -172,8 +166,7 @@ export function useTradeDeskData(
         const gate = evaluatePortfolioGate(
           setup,
           activeSetups,
-          historySetups,
-          accountEquity
+          historySetups
         );
         setup.portfolioGate = gate;
 
@@ -198,17 +191,14 @@ export function useTradeDeskData(
     const ranked = rankSetupsByConviction(allSetups);
 
     const portfolioRisk: PortfolioRisk = {
-      accountEquity,
-      riskPerTrade: accountEquity * (riskPercent / 100),
       riskPercent,
-      portfolioHeat: 0,
       canTrade: true,
       warning: null,
     };
 
     const instrumentsWithData = Object.keys(candleMap).length;
     return { setups: ranked, allSetups, portfolioRisk, instrumentsWithData };
-  }, [candleMap, accountEquity, riskPercent, confluencePatterns, activeSetups, historySetups]);
+  }, [candleMap, riskPercent, confluencePatterns, activeSetups, historySetups]);
 
   return {
     setups,

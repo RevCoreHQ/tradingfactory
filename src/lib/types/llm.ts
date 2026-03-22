@@ -142,7 +142,6 @@ export interface TradingAdvisorRequest {
   fearGreed: { value: number; label: string };
   dxy: { value: number; change: number };
   bondYields: { maturity: string; yield: number; change: number }[];
-  accountEquity: number;
   riskPercent: number;
 }
 

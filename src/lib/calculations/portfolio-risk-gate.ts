@@ -13,20 +13,20 @@ export interface PortfolioRiskGate {
 
 export interface CurrencyExposureEntry {
   currency: string;
-  current: number; // % of equity at risk on this currency
+  current: number; // number of positions on this currency
   max: number;
   headroom: number;
 }
 
 export interface PortfolioGateConfig {
-  maxCurrencyExposurePercent: number;
-  maxTotalRiskPercent: number;
+  maxOpenPositions: number;
+  maxCurrencyPositions: number;
   maxCorrelatedPositions: number;
 }
 
 export const DEFAULT_GATE_CONFIG: PortfolioGateConfig = {
-  maxCurrencyExposurePercent: 4,
-  maxTotalRiskPercent: 6,
+  maxOpenPositions: 5,
+  maxCurrencyPositions: 3,
   maxCorrelatedPositions: 2,
 };
 
@@ -59,25 +59,19 @@ const CORRELATED_GROUPS = [
 // ==================== POSITION-BASED EXPOSURE ====================
 
 /**
- * Calculate actual risk-based currency exposure from active tracked setups.
- * Returns per-currency risk as % of equity.
+ * Count positions per currency from active tracked setups.
  */
 export function calculatePositionExposure(
-  activeSetups: TrackedSetup[],
-  equity: number
+  activeSetups: TrackedSetup[]
 ): Record<string, number> {
-  if (equity <= 0) return {};
   const exposure: Record<string, number> = {};
 
   for (const tracked of activeSetups) {
-    const { setup } = tracked;
-    const riskPct = (setup.riskAmount / equity) * 100;
-    const currencies = INSTRUMENT_CURRENCIES[setup.instrumentId];
+    const currencies = INSTRUMENT_CURRENCIES[tracked.setup.instrumentId];
     if (!currencies) continue;
 
-    // Both base and quote carry the risk
-    exposure[currencies.base] = (exposure[currencies.base] ?? 0) + riskPct;
-    exposure[currencies.quote] = (exposure[currencies.quote] ?? 0) + riskPct;
+    exposure[currencies.base] = (exposure[currencies.base] ?? 0) + 1;
+    exposure[currencies.quote] = (exposure[currencies.quote] ?? 0) + 1;
   }
 
   return exposure;
@@ -137,46 +131,40 @@ export function evaluatePortfolioGate(
   newSetup: TradeDeskSetup,
   activeSetups: TrackedSetup[],
   historySetups: TrackedSetup[],
-  equity: number,
   config: PortfolioGateConfig = DEFAULT_GATE_CONFIG
 ): PortfolioRiskGate {
   const reasons: string[] = [];
   let canOpenNew = true;
 
-  // 1. Total portfolio risk
-  const totalRisk = activeSetups.reduce((s, t) => s + t.setup.riskAmount, 0);
-  const totalRiskPct = equity > 0 ? (totalRisk / equity) * 100 : 0;
-  const newRiskPct = equity > 0 ? (newSetup.riskAmount / equity) * 100 : 0;
-
-  if (totalRiskPct + newRiskPct > config.maxTotalRiskPercent) {
+  // 1. Max open positions
+  if (activeSetups.length >= config.maxOpenPositions) {
     canOpenNew = false;
     reasons.push(
-      `Total risk would exceed ${config.maxTotalRiskPercent}% (current: ${totalRiskPct.toFixed(1)}%, new: ${newRiskPct.toFixed(1)}%)`
+      `Max open positions reached (${activeSetups.length}/${config.maxOpenPositions})`
     );
   }
 
-  // 2. Currency exposure
-  const currExposure = calculatePositionExposure(activeSetups, equity);
+  // 2. Currency exposure (count-based)
+  const currExposure = calculatePositionExposure(activeSetups);
   const currencies = INSTRUMENT_CURRENCIES[newSetup.instrumentId];
   const exposureEntries: CurrencyExposureEntry[] = [];
 
   if (currencies) {
     for (const curr of [currencies.base, currencies.quote]) {
-      const currentExp = currExposure[curr] ?? 0;
-      const afterExp = currentExp + newRiskPct;
-      const headroom = config.maxCurrencyExposurePercent - currentExp;
+      const currentCount = currExposure[curr] ?? 0;
+      const headroom = config.maxCurrencyPositions - currentCount;
 
       exposureEntries.push({
         currency: curr,
-        current: Number(currentExp.toFixed(2)),
-        max: config.maxCurrencyExposurePercent,
-        headroom: Number(headroom.toFixed(2)),
+        current: currentCount,
+        max: config.maxCurrencyPositions,
+        headroom,
       });
 
-      if (afterExp > config.maxCurrencyExposurePercent) {
+      if (currentCount + 1 > config.maxCurrencyPositions) {
         canOpenNew = false;
         reasons.push(
-          `${curr} exposure would exceed ${config.maxCurrencyExposurePercent}% (current: ${currentExp.toFixed(1)}%, adding: ${newRiskPct.toFixed(1)}%)`
+          `${curr} exposure maxed (${currentCount}/${config.maxCurrencyPositions} positions)`
         );
       }
     }
@@ -206,19 +194,9 @@ export function evaluatePortfolioGate(
     );
   }
 
-  // Max risk available considering throttle and headroom
-  const maxFromHeat = Math.max(0, config.maxTotalRiskPercent - totalRiskPct);
-  const maxFromCurrency = currencies
-    ? Math.min(
-        config.maxCurrencyExposurePercent - (currExposure[currencies.base] ?? 0),
-        config.maxCurrencyExposurePercent - (currExposure[currencies.quote] ?? 0)
-      )
-    : maxFromHeat;
-  const maxRiskAvailable = Math.max(0, Math.min(maxFromHeat, maxFromCurrency) * throttle);
-
   return {
     canOpenNew,
-    maxRiskAvailable: Number(maxRiskAvailable.toFixed(2)),
+    maxRiskAvailable: 0,
     reasons,
     currencyExposure: exposureEntries,
     correlationBlock,

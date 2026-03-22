@@ -848,10 +848,7 @@ function StatsRow({
           Risk Per Trade
         </div>
         <div className="text-xs font-bold font-mono text-foreground">
-          {portfolioRisk.riskPercent}%
-        </div>
-        <div className="text-[10px] text-muted-foreground/50 mt-0.5">
-          ${portfolioRisk.riskPerTrade.toFixed(0)} per trade
+          {portfolioRisk.riskPercent}% per trade
         </div>
       </div>
     </div>
@@ -1390,12 +1387,10 @@ export function AITradeDesk() {
   const portfolioRisk = useMemo(
     () =>
       computePortfolioRisk(
-        baseRisk.accountEquity,
         baseRisk.riskPercent,
-        activeSetups,
-        historySetups
+        activeSetups
       ),
-    [baseRisk.accountEquity, baseRisk.riskPercent, activeSetups, historySetups]
+    [baseRisk.riskPercent, activeSetups]
   );
 
   if (isLoading) {

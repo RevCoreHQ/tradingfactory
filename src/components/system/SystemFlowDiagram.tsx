@@ -27,107 +27,165 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// ==================== Flow Node Component ====================
+// ==================== Compact Flow Node ====================
 
 type NodeColor = "blue" | "green" | "amber" | "red";
+
+const colorMap: Record<
+  NodeColor,
+  { bg: string; border: string; icon: string; text: string; glow: string }
+> = {
+  blue: {
+    bg: "bg-neutral-accent/5",
+    border: "border-neutral-accent/30",
+    icon: "text-neutral-accent",
+    text: "text-neutral-accent",
+    glow: "shadow-neutral-accent/10",
+  },
+  green: {
+    bg: "bg-bullish/5",
+    border: "border-bullish/30",
+    icon: "text-bullish",
+    text: "text-bullish",
+    glow: "shadow-bullish/10",
+  },
+  amber: {
+    bg: "bg-amber-500/5",
+    border: "border-amber-500/30",
+    icon: "text-amber-600 dark:text-amber-500",
+    text: "text-amber-600 dark:text-amber-500",
+    glow: "shadow-amber-500/10",
+  },
+  red: {
+    bg: "bg-bearish/5",
+    border: "border-bearish/30",
+    icon: "text-bearish",
+    text: "text-bearish",
+    glow: "shadow-bearish/10",
+  },
+};
 
 interface FlowNodeProps {
   icon: React.ReactNode;
   label: string;
-  detail: string;
+  subtitle?: string;
   color: NodeColor;
   badge?: string;
-  highlighted?: boolean;
+  large?: boolean;
 }
 
-const colorMap: Record<NodeColor, { border: string; iconBg: string; iconText: string; badgeBg: string }> = {
-  blue: {
-    border: "border-l-neutral-accent",
-    iconBg: "bg-neutral-accent/10",
-    iconText: "text-neutral-accent",
-    badgeBg: "bg-neutral-accent/10 text-neutral-accent",
-  },
-  green: {
-    border: "border-l-bullish",
-    iconBg: "bg-bullish/10",
-    iconText: "text-bullish",
-    badgeBg: "bg-bullish/10 text-bullish",
-  },
-  amber: {
-    border: "border-l-amber-500",
-    iconBg: "bg-amber-500/10",
-    iconText: "text-amber-600 dark:text-amber-500",
-    badgeBg: "bg-amber-500/10 text-amber-600 dark:text-amber-500",
-  },
-  red: {
-    border: "border-l-bearish",
-    iconBg: "bg-bearish/10",
-    iconText: "text-bearish",
-    badgeBg: "bg-bearish/10 text-bearish",
-  },
-};
-
-function FlowNode({ icon, label, detail, color, badge, highlighted }: FlowNodeProps) {
+function FlowNode({ icon, label, subtitle, color, badge, large }: FlowNodeProps) {
   const c = colorMap[color];
   return (
     <div
       className={cn(
-        "relative rounded-lg border border-border/40 border-l-[3px] px-3 py-2 backdrop-blur-sm transition-colors",
+        "rounded-lg border backdrop-blur-sm flex flex-col items-center justify-center text-center gap-0.5 shadow-sm",
+        c.bg,
         c.border,
-        highlighted
-          ? "bg-surface-1/90 shadow-md ring-1 ring-amber-500/30"
-          : "bg-surface-1/70"
+        c.glow,
+        large ? "px-4 py-3 min-w-[160px]" : "px-3 py-2 min-w-[120px]"
       )}
     >
-      <div className="flex items-center gap-2 mb-0.5">
-        <div className={cn("h-5 w-5 rounded flex items-center justify-center shrink-0", c.iconBg)}>
-          <span className={c.iconText}>{icon}</span>
-        </div>
-        <span className="text-[11px] font-semibold text-foreground leading-tight">{label}</span>
-        {badge && (
-          <span className={cn("text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded", c.badgeBg)}>
-            {badge}
-          </span>
-        )}
+      <div className="flex items-center gap-1.5">
+        <span className={c.icon}>{icon}</span>
+        <span className={cn("text-[11px] font-semibold text-foreground leading-tight", large && "text-xs")}>
+          {label}
+        </span>
       </div>
-      <p className="text-[9px] text-muted-foreground/60 leading-snug pl-7">{detail}</p>
+      {subtitle && (
+        <p className="text-[8px] text-muted-foreground/50 leading-tight max-w-[180px]">{subtitle}</p>
+      )}
+      {badge && (
+        <span
+          className={cn(
+            "text-[7px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded mt-0.5",
+            c.bg,
+            c.text
+          )}
+        >
+          {badge}
+        </span>
+      )}
     </div>
   );
 }
 
-// ==================== Tier Label ====================
+// ==================== Tier Divider ====================
 
-function TierLabel({ label, color }: { label: string; color: NodeColor }) {
-  const borderColor: Record<NodeColor, string> = {
-    blue: "border-neutral-accent/30",
-    green: "border-bullish/30",
-    amber: "border-amber-500/30",
-    red: "border-bearish/30",
+function TierDivider({ label, color }: { label: string; color: NodeColor }) {
+  const tc: Record<NodeColor, string> = {
+    blue: "text-neutral-accent/30",
+    green: "text-bullish/30",
+    amber: "text-amber-500/30",
+    red: "text-bearish/30",
   };
-  const textColor: Record<NodeColor, string> = {
-    blue: "text-neutral-accent/50",
-    green: "text-bullish/50",
-    amber: "text-amber-600/50 dark:text-amber-500/50",
-    red: "text-bearish/50",
+  const bc: Record<NodeColor, string> = {
+    blue: "border-neutral-accent/10",
+    green: "border-bullish/10",
+    amber: "border-amber-500/10",
+    red: "border-bearish/10",
   };
-
   return (
-    <div className={cn("flex items-center gap-3 col-span-full", borderColor[color])}>
-      <div className={cn("h-px flex-1 border-t border-dashed", borderColor[color])} />
-      <span className={cn("text-[9px] font-bold uppercase tracking-widest whitespace-nowrap", textColor[color])}>
+    <div className="flex items-center gap-4 w-full">
+      <div className={cn("h-px flex-1 border-t border-dashed", bc[color])} />
+      <span className={cn("text-[8px] font-bold uppercase tracking-[0.2em] whitespace-nowrap", tc[color])}>
         {label}
       </span>
-      <div className={cn("h-px flex-1 border-t border-dashed", borderColor[color])} />
+      <div className={cn("h-px flex-1 border-t border-dashed", bc[color])} />
     </div>
   );
 }
 
-// ==================== Beam Gradient Colors ====================
+// ==================== Beam Colors ====================
 
-const BEAM_BLUE = { start: "#6b8aad", stop: "#4a6d8c" };
-const BEAM_GREEN = { start: "#22c55e", stop: "#16a34a" };
-const BEAM_AMBER = { start: "#f59e0b", stop: "#d97706" };
-const BEAM_RED = { start: "#ef4444", stop: "#b91c1c" };
+const B = {
+  blue: { start: "#6b8aad", stop: "#4a6d8c" },
+  green: { start: "#22c55e", stop: "#16a34a" },
+  amber: { start: "#f59e0b", stop: "#d97706" },
+  red: { start: "#ef4444", stop: "#b91c1c" },
+};
+
+// Helper to make a beam
+function Beam({
+  container,
+  from,
+  to,
+  color,
+  curvature = 0,
+  delay = 0,
+  duration = 4,
+  width = 1.5,
+  opacity = 0.08,
+  reverse = false,
+}: {
+  container: React.RefObject<HTMLElement>;
+  from: React.RefObject<HTMLElement>;
+  to: React.RefObject<HTMLElement>;
+  color: keyof typeof B;
+  curvature?: number;
+  delay?: number;
+  duration?: number;
+  width?: number;
+  opacity?: number;
+  reverse?: boolean;
+}) {
+  return (
+    <AnimatedBeam
+      containerRef={container}
+      fromRef={from}
+      toRef={to}
+      curvature={curvature}
+      gradientStartColor={B[color].start}
+      gradientStopColor={B[color].stop}
+      duration={duration}
+      delay={delay}
+      pathColor="gray"
+      pathOpacity={opacity}
+      pathWidth={width}
+      reverse={reverse}
+    />
+  );
+}
 
 // ==================== Main Component ====================
 
@@ -151,7 +209,7 @@ export function SystemFlowDiagram() {
   const structureRef = useRef<HTMLDivElement>(null);
   const ictRef = useRef<HTMLDivElement>(null);
   const mtfRef = useRef<HTMLDivElement>(null);
-  const entryOptRef = useRef<HTMLDivElement>(null);
+  const entryRef = useRef<HTMLDivElement>(null);
 
   // Tier 5: Decision
   const convictionRef = useRef<HTMLDivElement>(null);
@@ -162,296 +220,312 @@ export function SystemFlowDiagram() {
   const setupRef = useRef<HTMLDivElement>(null);
 
   // Tier 7: AI
-  const batchLlmRef = useRef<HTMLDivElement>(null);
-  const summaryLlmRef = useRef<HTMLDivElement>(null);
-  const deskMgrRef = useRef<HTMLDivElement>(null);
-  const deskChatRef = useRef<HTMLDivElement>(null);
+  const batchRef = useRef<HTMLDivElement>(null);
+  const summaryRef = useRef<HTMLDivElement>(null);
+  const deskRef = useRef<HTMLDivElement>(null);
+  const chatRef = useRef<HTMLDivElement>(null);
 
   // Tier 8: Output
   const tradeUiRef = useRef<HTMLDivElement>(null);
   const deskUiRef = useRef<HTMLDivElement>(null);
   const learningRef = useRef<HTMLDivElement>(null);
 
-  const cRef = containerRef as React.RefObject<HTMLElement>;
-  const asRef = (r: React.RefObject<HTMLDivElement | null>) => r as React.RefObject<HTMLElement>;
+  const c = containerRef as React.RefObject<HTMLElement>;
+  const r = (ref: React.RefObject<HTMLDivElement | null>) => ref as React.RefObject<HTMLElement>;
 
   return (
     <div ref={containerRef} className="relative">
-      {/* Node Grid */}
-      <div className="grid grid-cols-4 gap-x-4 gap-y-3 relative z-10">
+      {/* Dot grid background */}
+      <div
+        className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: "radial-gradient(circle, currentColor 0.5px, transparent 0.5px)",
+          backgroundSize: "20px 20px",
+        }}
+      />
 
+      {/* Flow layout */}
+      <div className="relative z-10 flex flex-col items-center gap-10 py-6">
         {/* ===== TIER 1: DATA SOURCES ===== */}
-        <TierLabel label="Data Ingestion" color="blue" />
-
-        <div className="col-start-1 col-span-2" ref={priceRef}>
-          <FlowNode
-            icon={<Database className="h-3 w-3" />}
-            label="Price APIs"
-            detail="Twelve Data (primary) → Finnhub → Alpha Vantage | CoinGecko for crypto | 4 timeframes: 15m, 1h, 4h, 1D"
-            color="blue"
-            badge="data"
-          />
-        </div>
-        <div className="col-start-3 col-span-2" ref={fundRef}>
-          <FlowNode
-            icon={<Globe className="h-3 w-3" />}
-            label="Fundamental APIs"
-            detail="Fear & Greed, DXY, Bond Yields (FRED), News (NewsAPI), Central Bank Rates, COT, Sentiment"
-            color="blue"
-            badge="data"
-          />
-        </div>
-
-        {/* ===== TIER 2: FIRST PROCESSING ===== */}
-        <TierLabel label="Technical Processing" color="blue" />
-
-        <div ref={techRef}>
-          <FlowNode
-            icon={<BarChart3 className="h-3 w-3" />}
-            label="Technical Indicators"
-            detail="RSI(14), MACD(12,26,9), Bollinger(20,2), EMA stacks, ATR(14), ADX(14)"
-            color="blue"
-          />
-        </div>
-        <div className="col-span-2" ref={regimeRef}>
-          <FlowNode
-            icon={<Layers className="h-3 w-3" />}
-            label="Regime Engine"
-            detail="Volatility (ATR pctile) + Structure (ADX/EMA/BB) + Wyckoff Phase (accum/expand/distrib/markdown) + ADX trend"
-            color="green"
-            badge="mechanical"
-          />
-        </div>
-        <div ref={biasRef}>
-          <FlowNode
-            icon={<Scale className="h-3 w-3" />}
-            label="Bias Engine"
-            detail="7 fundamental inputs → rule-based scores → direction + bias strength per instrument"
-            color="blue"
-          />
+        <TierDivider label="Data Ingestion" color="blue" />
+        <div className="flex items-start justify-center gap-16">
+          <div ref={priceRef}>
+            <FlowNode
+              icon={<Database className="h-3 w-3" />}
+              label="Price APIs"
+              subtitle="Twelve Data / Finnhub / CoinGecko — 15m, 1h, 4h, 1D"
+              color="blue"
+              badge="data"
+            />
+          </div>
+          <div ref={fundRef}>
+            <FlowNode
+              icon={<Globe className="h-3 w-3" />}
+              label="Fundamental APIs"
+              subtitle="F&G, DXY, Bonds, News, Central Banks, COT, Sentiment"
+              color="blue"
+              badge="data"
+            />
+          </div>
         </div>
 
-        {/* ===== TIER 3: SIGNAL GENERATION ===== */}
-        <TierLabel label="Signal Generation" color="green" />
-
-        <div className="col-span-3" ref={signalsRef}>
-          <FlowNode
-            icon={<Cog className="h-3 w-3" />}
-            label="8 Mechanical Signal Systems"
-            detail="MA Cross, MACD, BB Breakout, RSI Extremes, BB Mean Reversion, Elder Impulse, Elder-Ray, Trend Stack — each returns direction + strength"
-            color="green"
-            badge="mechanical"
-          />
+        {/* ===== TIER 2: PROCESSING ===== */}
+        <TierDivider label="Technical Processing" color="blue" />
+        <div className="flex items-start justify-center gap-10">
+          <div ref={techRef}>
+            <FlowNode
+              icon={<BarChart3 className="h-3 w-3" />}
+              label="Technical Indicators"
+              subtitle="RSI, MACD, BB, EMA, ATR, ADX"
+              color="blue"
+            />
+          </div>
+          <div ref={regimeRef}>
+            <FlowNode
+              icon={<Layers className="h-3 w-3" />}
+              label="Regime Engine"
+              subtitle="Volatility + Wyckoff Phase + ADX Trend"
+              color="green"
+              badge="mechanical"
+            />
+          </div>
+          <div ref={biasRef}>
+            <FlowNode
+              icon={<Scale className="h-3 w-3" />}
+              label="Bias Engine"
+              subtitle="7 fundamentals → direction + strength"
+              color="blue"
+            />
+          </div>
         </div>
-        <div ref={decorrelRef}>
-          <FlowNode
-            icon={<GitBranch className="h-3 w-3" />}
-            label="De-correlation"
-            detail="3 clusters: Trend (MA,MACD,BB,Stack), MR (RSI,BB-MR), Momentum (Impulse,Ray)"
-            color="green"
-          />
+
+        {/* ===== TIER 3: SIGNALS ===== */}
+        <TierDivider label="Signal Generation" color="green" />
+        <div className="flex items-start justify-center gap-16">
+          <div ref={signalsRef}>
+            <FlowNode
+              icon={<Cog className="h-3 w-3" />}
+              label="8 Signal Systems"
+              subtitle="MA Cross, MACD, BB, RSI, Elder, Trend Stack"
+              color="green"
+              badge="mechanical"
+            />
+          </div>
+          <div ref={decorrelRef}>
+            <FlowNode
+              icon={<GitBranch className="h-3 w-3" />}
+              label="De-correlation"
+              subtitle="3 clusters: Trend, Mean Reversion, Momentum"
+              color="green"
+            />
+          </div>
         </div>
 
         {/* ===== TIER 4: ENRICHMENT ===== */}
-        <TierLabel label="Enrichment Layer" color="green" />
-
-        <div ref={structureRef}>
-          <FlowNode
-            icon={<AlignVerticalSpaceAround className="h-3 w-3" />}
-            label="Market Structure"
-            detail="HH/HL/LH/LL swings, BOS, CHoCH detection, structure score (-100 to +100)"
-            color="green"
-          />
-        </div>
-        <div ref={ictRef}>
-          <FlowNode
-            icon={<Gem className="h-3 w-3" />}
-            label="ICT Context"
-            detail="Fair Value Gaps, Order Blocks, Displacement, Supply/Demand zones → ICT score 0-100"
-            color="green"
-          />
-        </div>
-        <div ref={mtfRef}>
-          <FlowNode
-            icon={<Layers className="h-3 w-3" />}
-            label="MTF Alignment"
-            detail="15m/1h/4h/1D EMA stacks → full/strong/partial/conflicting alignment + pullback detection"
-            color="green"
-          />
-        </div>
-        <div ref={entryOptRef}>
-          <FlowNode
-            icon={<Crosshair className="h-3 w-3" />}
-            label="Entry Optimization"
-            detail="Hammer, Engulfing, Pin Bar, FVG Reentry, OB Retest patterns → entry score 0-100"
-            color="green"
-          />
+        <TierDivider label="Enrichment Layer" color="green" />
+        <div className="flex items-start justify-center gap-8">
+          <div ref={structureRef}>
+            <FlowNode
+              icon={<AlignVerticalSpaceAround className="h-3 w-3" />}
+              label="Market Structure"
+              subtitle="BOS, CHoCH, swing detection"
+              color="green"
+            />
+          </div>
+          <div ref={ictRef}>
+            <FlowNode
+              icon={<Gem className="h-3 w-3" />}
+              label="ICT Context"
+              subtitle="FVG, Order Blocks, Displacement"
+              color="green"
+            />
+          </div>
+          <div ref={mtfRef}>
+            <FlowNode
+              icon={<Layers className="h-3 w-3" />}
+              label="MTF Alignment"
+              subtitle="15m/1h/4h/1D EMA stacks"
+              color="green"
+            />
+          </div>
+          <div ref={entryRef}>
+            <FlowNode
+              icon={<Crosshair className="h-3 w-3" />}
+              label="Entry Optimization"
+              subtitle="Hammer, Engulfing, Pin Bar, FVG Reentry"
+              color="green"
+            />
+          </div>
         </div>
 
         {/* ===== TIER 5: DECISION ===== */}
-        <TierLabel label="Decision Layer" color="green" />
-
-        <div className="col-start-1 col-span-2" ref={convictionRef}>
-          <FlowNode
-            icon={<Target className="h-3 w-3" />}
-            label="Conviction Scoring"
-            detail="De-corr agreement (40pts) + Regime (25pts) + Impulse (±15pts) + Structure (±10pts) + ICT (10pts) → A+/A/B/C/D tiers"
-            color="green"
-            badge="mechanical"
-          />
-        </div>
-        <div ref={positionRef}>
-          <FlowNode
-            icon={<Ruler className="h-3 w-3" />}
-            label="Position Sizing"
-            detail="ATR-based SL/TP → conviction-scaled lots: A+ = 1.25×, A = 1.0×, B = 0.75×"
-            color="green"
-          />
-        </div>
-        <div ref={filtersRef}>
-          <FlowNode
-            icon={<ShieldCheck className="h-3 w-3" />}
-            label="Hard Filters + Risk Gate"
-            detail="Elder gates (no longs on RED), R:R ≥ 1.5, portfolio limits, correlation blocks, drawdown throttle"
-            color="red"
-            badge="filter"
-          />
-        </div>
-
-        {/* ===== TIER 6: MERGE POINT ===== */}
-        <TierLabel label="Setup Assembly" color="amber" />
-
-        <div className="col-start-1 col-span-4" ref={setupRef}>
-          <FlowNode
-            icon={<Box className="h-3 w-3" />}
-            label="TradeDeskSetup — Complete Setup Object"
-            detail="18+ fields: symbol, direction, conviction, regime, signals, entry/SL/TP levels, R:R, position size, MTF alignment, structure score, ICT score, entry pattern, learning data, Wyckoff phase → stored in useTradeDeskData() hook state"
-            color="amber"
-            highlighted
-            badge="merge"
-          />
+        <TierDivider label="Decision Layer" color="green" />
+        <div className="flex items-start justify-center gap-10">
+          <div ref={convictionRef}>
+            <FlowNode
+              icon={<Target className="h-3 w-3" />}
+              label="Conviction Scoring"
+              subtitle="De-corr + Regime + Impulse + Structure + ICT → A+ to D"
+              color="green"
+              badge="mechanical"
+            />
+          </div>
+          <div ref={positionRef}>
+            <FlowNode
+              icon={<Ruler className="h-3 w-3" />}
+              label="Position Sizing"
+              subtitle="ATR-based SL/TP, conviction-scaled lots"
+              color="green"
+            />
+          </div>
+          <div ref={filtersRef}>
+            <FlowNode
+              icon={<ShieldCheck className="h-3 w-3" />}
+              label="Hard Filters"
+              subtitle="Elder gates, R:R ≥ 1.5, portfolio limits"
+              color="red"
+              badge="filter"
+            />
+          </div>
         </div>
 
-        {/* ===== TIER 7: AI INTELLIGENCE ===== */}
-        <TierLabel label="AI Intelligence Layer" color="amber" />
+        {/* ===== TIER 6: MERGE ===== */}
+        <TierDivider label="Setup Assembly" color="amber" />
+        <div className="flex justify-center" ref={setupRef}>
+          <FlowNode
+            icon={<Box className="h-3.5 w-3.5" />}
+            label="TradeDeskSetup"
+            subtitle="18+ fields: conviction, regime, signals, ICT, structure, MTF, entry, sizing"
+            color="amber"
+            badge="merge point"
+            large
+          />
+        </div>
 
-        <div ref={batchLlmRef}>
-          <FlowNode
-            icon={<Cpu className="h-3 w-3" />}
-            label="Batch LLM"
-            detail="Haiku — bias adjustments (-50 to +50) for all instruments → server cache 10min, localStorage 4h"
-            color="amber"
-            badge="ai"
-          />
-        </div>
-        <div ref={summaryLlmRef}>
-          <FlowNode
-            icon={<Newspaper className="h-3 w-3" />}
-            label="Market Summary"
-            detail="Sonnet — macro overview, sector outlook, focus/avoid instruments → server cache 10min, localStorage 1h"
-            color="amber"
-            badge="ai"
-          />
-        </div>
-        <div ref={deskMgrRef}>
-          <FlowNode
-            icon={<Brain className="h-3 w-3" />}
-            label="Desk Manager"
-            detail="Opus — top pick, reasoning (MTF+ICT+structure), avoid list, risk warning, desk note → server 10min, client 2min"
-            color="amber"
-            badge="ai · opus"
-          />
-        </div>
-        <div ref={deskChatRef}>
-          <FlowNode
-            icon={<MessageSquare className="h-3 w-3" />}
-            label="Desk Chat"
-            detail="Opus — conversational follow-up with full setup context, max 20 messages → session state only"
-            color="amber"
-            badge="ai · opus"
-          />
+        {/* ===== TIER 7: AI ===== */}
+        <TierDivider label="AI Intelligence Layer" color="amber" />
+        <div className="flex items-start justify-center gap-8">
+          <div ref={batchRef}>
+            <FlowNode
+              icon={<Cpu className="h-3 w-3" />}
+              label="Batch LLM"
+              subtitle="Haiku — bias adjustments per instrument"
+              color="amber"
+              badge="ai"
+            />
+          </div>
+          <div ref={summaryRef}>
+            <FlowNode
+              icon={<Newspaper className="h-3 w-3" />}
+              label="Market Summary"
+              subtitle="Sonnet — macro overview, focus/avoid"
+              color="amber"
+              badge="ai"
+            />
+          </div>
+          <div ref={deskRef}>
+            <FlowNode
+              icon={<Brain className="h-3 w-3" />}
+              label="Desk Manager"
+              subtitle="Opus — top pick, reasoning, risk warning"
+              color="amber"
+              badge="ai · opus"
+            />
+          </div>
+          <div ref={chatRef}>
+            <FlowNode
+              icon={<MessageSquare className="h-3 w-3" />}
+              label="Desk Chat"
+              subtitle="Opus — conversational follow-up"
+              color="amber"
+              badge="ai · opus"
+            />
+          </div>
         </div>
 
         {/* ===== TIER 8: OUTPUT ===== */}
-        <TierLabel label="Output & Feedback" color="red" />
-
-        <div className="col-start-1 col-span-2" ref={tradeUiRef}>
-          <FlowNode
-            icon={<LayoutList className="h-3 w-3" />}
-            label="Trade Setups UI"
-            detail="AITradeDesk cards — ranked by conviction, real-time tracking, entry/SL/TP monitoring → /desk page"
-            color="red"
-          />
-        </div>
-        <div ref={deskUiRef}>
-          <FlowNode
-            icon={<MonitorDot className="h-3 w-3" />}
-            label="Desk Manager UI"
-            detail="Briefing panel + chat interface → /desk page"
-            color="red"
-          />
-        </div>
-        <div ref={learningRef}>
-          <FlowNode
-            icon={<RefreshCcw className="h-3 w-3" />}
-            label="Confluence Learning"
-            detail="Win/loss patterns per confluence key → time-decayed win rates → feeds back to conviction scoring → localStorage"
-            color="red"
-            badge="feedback"
-          />
+        <TierDivider label="Output & Feedback" color="red" />
+        <div className="flex items-start justify-center gap-10">
+          <div ref={tradeUiRef}>
+            <FlowNode
+              icon={<LayoutList className="h-3 w-3" />}
+              label="Trade Setups UI"
+              subtitle="Ranked cards with real-time tracking"
+              color="red"
+            />
+          </div>
+          <div ref={deskUiRef}>
+            <FlowNode
+              icon={<MonitorDot className="h-3 w-3" />}
+              label="Desk Manager UI"
+              subtitle="Briefing panel + chat interface"
+              color="red"
+            />
+          </div>
+          <div ref={learningRef}>
+            <FlowNode
+              icon={<RefreshCcw className="h-3 w-3" />}
+              label="Confluence Learning"
+              subtitle="Win rates → feeds back to conviction"
+              color="red"
+              badge="feedback loop"
+            />
+          </div>
         </div>
       </div>
 
       {/* ===== ANIMATED BEAM CONNECTIONS ===== */}
+
       {/* Tier 1 → Tier 2 */}
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(priceRef)} toRef={asRef(techRef)} curvature={-15} gradientStartColor={BEAM_BLUE.start} gradientStopColor={BEAM_BLUE.stop} duration={4} delay={0} pathColor="gray" pathOpacity={0.06} pathWidth={1.5} />
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(priceRef)} toRef={asRef(regimeRef)} curvature={-10} gradientStartColor={BEAM_BLUE.start} gradientStopColor={BEAM_GREEN.stop} duration={4.5} delay={0.2} pathColor="gray" pathOpacity={0.06} pathWidth={1.5} />
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(fundRef)} toRef={asRef(biasRef)} curvature={-15} gradientStartColor={BEAM_BLUE.start} gradientStopColor={BEAM_BLUE.stop} duration={4} delay={0.4} pathColor="gray" pathOpacity={0.06} pathWidth={1.5} />
+      <Beam container={c} from={r(priceRef)} to={r(techRef)} color="blue" curvature={-20} delay={0} duration={4} />
+      <Beam container={c} from={r(priceRef)} to={r(regimeRef)} color="blue" curvature={-10} delay={0.3} duration={4.5} />
+      <Beam container={c} from={r(fundRef)} to={r(biasRef)} color="blue" curvature={-20} delay={0.5} duration={4} />
 
       {/* Tier 2 → Tier 3 */}
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(techRef)} toRef={asRef(signalsRef)} curvature={-10} gradientStartColor={BEAM_GREEN.start} gradientStopColor={BEAM_GREEN.stop} duration={3.5} delay={0.6} pathColor="gray" pathOpacity={0.06} pathWidth={1.5} />
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(regimeRef)} toRef={asRef(signalsRef)} curvature={-8} gradientStartColor={BEAM_GREEN.start} gradientStopColor={BEAM_GREEN.stop} duration={4} delay={0.8} pathColor="gray" pathOpacity={0.06} pathWidth={1.5} />
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(signalsRef)} toRef={asRef(decorrelRef)} curvature={-5} gradientStartColor={BEAM_GREEN.start} gradientStopColor={BEAM_GREEN.stop} duration={3} delay={1.0} pathColor="gray" pathOpacity={0.06} pathWidth={1.5} />
+      <Beam container={c} from={r(techRef)} to={r(signalsRef)} color="green" curvature={-15} delay={0.8} duration={3.5} />
+      <Beam container={c} from={r(regimeRef)} to={r(signalsRef)} color="green" curvature={-10} delay={1.0} duration={4} />
+      <Beam container={c} from={r(signalsRef)} to={r(decorrelRef)} color="green" curvature={-8} delay={1.2} duration={3} />
 
-      {/* Tier 3 → Tier 4 (signals feed enrichment) */}
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(techRef)} toRef={asRef(structureRef)} curvature={-20} gradientStartColor={BEAM_GREEN.start} gradientStopColor={BEAM_GREEN.stop} duration={5} delay={1.2} pathColor="gray" pathOpacity={0.04} pathWidth={1} />
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(techRef)} toRef={asRef(ictRef)} curvature={-15} gradientStartColor={BEAM_GREEN.start} gradientStopColor={BEAM_GREEN.stop} duration={5.5} delay={1.4} pathColor="gray" pathOpacity={0.04} pathWidth={1} />
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(priceRef)} toRef={asRef(mtfRef)} curvature={-30} gradientStartColor={BEAM_BLUE.start} gradientStopColor={BEAM_GREEN.stop} duration={6} delay={1.6} pathColor="gray" pathOpacity={0.04} pathWidth={1} />
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(techRef)} toRef={asRef(entryOptRef)} curvature={-25} gradientStartColor={BEAM_GREEN.start} gradientStopColor={BEAM_GREEN.stop} duration={5} delay={1.8} pathColor="gray" pathOpacity={0.04} pathWidth={1} />
+      {/* Tier 2/3 → Tier 4 (enrichment) */}
+      <Beam container={c} from={r(techRef)} to={r(structureRef)} color="green" curvature={-30} delay={1.4} duration={5} opacity={0.05} width={1} />
+      <Beam container={c} from={r(techRef)} to={r(ictRef)} color="green" curvature={-20} delay={1.6} duration={5.5} opacity={0.05} width={1} />
+      <Beam container={c} from={r(priceRef)} to={r(mtfRef)} color="blue" curvature={-40} delay={1.8} duration={6} opacity={0.05} width={1} />
+      <Beam container={c} from={r(techRef)} to={r(entryRef)} color="green" curvature={-35} delay={2.0} duration={5} opacity={0.05} width={1} />
 
-      {/* Tier 4 → Tier 5 (enrichment feeds conviction) */}
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(decorrelRef)} toRef={asRef(convictionRef)} curvature={-15} gradientStartColor={BEAM_GREEN.start} gradientStopColor={BEAM_GREEN.stop} duration={4} delay={2.0} pathColor="gray" pathOpacity={0.06} pathWidth={1.5} />
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(structureRef)} toRef={asRef(convictionRef)} curvature={-10} gradientStartColor={BEAM_GREEN.start} gradientStopColor={BEAM_GREEN.stop} duration={4.5} delay={2.2} pathColor="gray" pathOpacity={0.06} pathWidth={1.5} />
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(ictRef)} toRef={asRef(convictionRef)} curvature={-8} gradientStartColor={BEAM_GREEN.start} gradientStopColor={BEAM_GREEN.stop} duration={4} delay={2.4} pathColor="gray" pathOpacity={0.06} pathWidth={1.5} />
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(mtfRef)} toRef={asRef(convictionRef)} curvature={-12} gradientStartColor={BEAM_GREEN.start} gradientStopColor={BEAM_GREEN.stop} duration={4.5} delay={2.6} pathColor="gray" pathOpacity={0.06} pathWidth={1.5} />
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(entryOptRef)} toRef={asRef(convictionRef)} curvature={-18} gradientStartColor={BEAM_GREEN.start} gradientStopColor={BEAM_GREEN.stop} duration={5} delay={2.8} pathColor="gray" pathOpacity={0.06} pathWidth={1.5} />
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(regimeRef)} toRef={asRef(convictionRef)} curvature={-25} gradientStartColor={BEAM_GREEN.start} gradientStopColor={BEAM_GREEN.stop} duration={5.5} delay={3.0} pathColor="gray" pathOpacity={0.04} pathWidth={1} />
+      {/* Tier 3/4 → Tier 5 (conviction) */}
+      <Beam container={c} from={r(decorrelRef)} to={r(convictionRef)} color="green" curvature={-15} delay={2.2} duration={4} />
+      <Beam container={c} from={r(structureRef)} to={r(convictionRef)} color="green" curvature={-10} delay={2.4} duration={4.5} />
+      <Beam container={c} from={r(ictRef)} to={r(convictionRef)} color="green" curvature={-8} delay={2.6} duration={4} />
+      <Beam container={c} from={r(mtfRef)} to={r(convictionRef)} color="green" curvature={-12} delay={2.8} duration={4.5} />
+      <Beam container={c} from={r(entryRef)} to={r(convictionRef)} color="green" curvature={-20} delay={3.0} duration={5} />
+      <Beam container={c} from={r(regimeRef)} to={r(convictionRef)} color="green" curvature={-35} delay={3.2} duration={5.5} opacity={0.05} width={1} />
 
-      {/* Tier 5 → Tier 6 (decision → setup) */}
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(convictionRef)} toRef={asRef(setupRef)} curvature={-8} gradientStartColor={BEAM_GREEN.start} gradientStopColor={BEAM_AMBER.stop} duration={3.5} delay={3.2} pathColor="gray" pathOpacity={0.06} pathWidth={1.5} />
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(positionRef)} toRef={asRef(setupRef)} curvature={-5} gradientStartColor={BEAM_GREEN.start} gradientStopColor={BEAM_AMBER.stop} duration={3.5} delay={3.4} pathColor="gray" pathOpacity={0.06} pathWidth={1.5} />
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(filtersRef)} toRef={asRef(setupRef)} curvature={-8} gradientStartColor={BEAM_RED.start} gradientStopColor={BEAM_AMBER.stop} duration={3.5} delay={3.6} pathColor="gray" pathOpacity={0.06} pathWidth={1.5} />
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(convictionRef)} toRef={asRef(positionRef)} curvature={-5} gradientStartColor={BEAM_GREEN.start} gradientStopColor={BEAM_GREEN.stop} duration={3} delay={3.1} pathColor="gray" pathOpacity={0.04} pathWidth={1} />
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(positionRef)} toRef={asRef(filtersRef)} curvature={-5} gradientStartColor={BEAM_GREEN.start} gradientStopColor={BEAM_RED.stop} duration={3} delay={3.3} pathColor="gray" pathOpacity={0.04} pathWidth={1} />
+      {/* Tier 5 internal: conviction → sizing → filters */}
+      <Beam container={c} from={r(convictionRef)} to={r(positionRef)} color="green" curvature={-8} delay={3.3} duration={3} opacity={0.06} width={1} />
+      <Beam container={c} from={r(positionRef)} to={r(filtersRef)} color="red" curvature={-8} delay={3.5} duration={3} opacity={0.06} width={1} />
 
-      {/* Tier 6 → Tier 7 (setup → AI) */}
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(setupRef)} toRef={asRef(batchLlmRef)} curvature={-10} gradientStartColor={BEAM_AMBER.start} gradientStopColor={BEAM_AMBER.stop} duration={4} delay={4.0} pathColor="gray" pathOpacity={0.06} pathWidth={1.5} />
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(setupRef)} toRef={asRef(summaryLlmRef)} curvature={-6} gradientStartColor={BEAM_AMBER.start} gradientStopColor={BEAM_AMBER.stop} duration={4.5} delay={4.2} pathColor="gray" pathOpacity={0.06} pathWidth={1.5} />
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(setupRef)} toRef={asRef(deskMgrRef)} curvature={-6} gradientStartColor={BEAM_AMBER.start} gradientStopColor={BEAM_AMBER.stop} duration={4} delay={4.4} pathColor="gray" pathOpacity={0.06} pathWidth={2} />
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(deskMgrRef)} toRef={asRef(deskChatRef)} curvature={-5} gradientStartColor={BEAM_AMBER.start} gradientStopColor={BEAM_AMBER.stop} duration={3} delay={4.6} pathColor="gray" pathOpacity={0.06} pathWidth={1.5} />
-      {/* Fundamentals also feed Market Summary */}
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(fundRef)} toRef={asRef(summaryLlmRef)} curvature={-50} gradientStartColor={BEAM_BLUE.start} gradientStopColor={BEAM_AMBER.stop} duration={6} delay={4.3} pathColor="gray" pathOpacity={0.04} pathWidth={1} />
-      {/* Fundamentals also feed Desk Manager */}
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(fundRef)} toRef={asRef(deskMgrRef)} curvature={-60} gradientStartColor={BEAM_BLUE.start} gradientStopColor={BEAM_AMBER.stop} duration={6.5} delay={4.5} pathColor="gray" pathOpacity={0.04} pathWidth={1} />
+      {/* Tier 5 → Tier 6 (setup) */}
+      <Beam container={c} from={r(convictionRef)} to={r(setupRef)} color="amber" curvature={-12} delay={3.6} duration={3.5} />
+      <Beam container={c} from={r(positionRef)} to={r(setupRef)} color="amber" curvature={-8} delay={3.8} duration={3.5} />
+      <Beam container={c} from={r(filtersRef)} to={r(setupRef)} color="red" curvature={-12} delay={4.0} duration={3.5} />
 
-      {/* Tier 7 → Tier 8 (AI → output) */}
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(batchLlmRef)} toRef={asRef(tradeUiRef)} curvature={-8} gradientStartColor={BEAM_AMBER.start} gradientStopColor={BEAM_RED.stop} duration={3.5} delay={5.0} pathColor="gray" pathOpacity={0.06} pathWidth={1.5} />
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(setupRef)} toRef={asRef(tradeUiRef)} curvature={-15} gradientStartColor={BEAM_AMBER.start} gradientStopColor={BEAM_RED.stop} duration={4} delay={5.2} pathColor="gray" pathOpacity={0.06} pathWidth={1.5} />
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(deskMgrRef)} toRef={asRef(deskUiRef)} curvature={-8} gradientStartColor={BEAM_AMBER.start} gradientStopColor={BEAM_RED.stop} duration={3.5} delay={5.4} pathColor="gray" pathOpacity={0.06} pathWidth={1.5} />
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(summaryLlmRef)} toRef={asRef(deskUiRef)} curvature={-10} gradientStartColor={BEAM_AMBER.start} gradientStopColor={BEAM_RED.stop} duration={4} delay={5.6} pathColor="gray" pathOpacity={0.06} pathWidth={1.5} />
+      {/* Tier 6 → Tier 7 (AI) */}
+      <Beam container={c} from={r(setupRef)} to={r(batchRef)} color="amber" curvature={-12} delay={4.2} duration={4} />
+      <Beam container={c} from={r(setupRef)} to={r(summaryRef)} color="amber" curvature={-8} delay={4.4} duration={4.5} />
+      <Beam container={c} from={r(setupRef)} to={r(deskRef)} color="amber" curvature={-8} delay={4.6} duration={4} width={2} />
+      <Beam container={c} from={r(deskRef)} to={r(chatRef)} color="amber" curvature={-8} delay={4.8} duration={3} />
+      {/* Fundamentals also feed Summary + Desk */}
+      <Beam container={c} from={r(fundRef)} to={r(summaryRef)} color="blue" curvature={-60} delay={4.5} duration={6} opacity={0.04} width={1} />
+      <Beam container={c} from={r(fundRef)} to={r(deskRef)} color="blue" curvature={-70} delay={4.7} duration={6.5} opacity={0.04} width={1} />
 
-      {/* Feedback loop: Learning → Conviction (reverse direction) */}
-      <AnimatedBeam containerRef={cRef} fromRef={asRef(learningRef)} toRef={asRef(convictionRef)} curvature={80} gradientStartColor={BEAM_RED.start} gradientStopColor={BEAM_GREEN.stop} duration={7} delay={6.0} pathColor="gray" pathOpacity={0.04} pathWidth={1} reverse />
+      {/* Tier 7 → Tier 8 (output) */}
+      <Beam container={c} from={r(batchRef)} to={r(tradeUiRef)} color="red" curvature={-10} delay={5.0} duration={3.5} />
+      <Beam container={c} from={r(setupRef)} to={r(tradeUiRef)} color="amber" curvature={-20} delay={5.2} duration={4} opacity={0.06} width={1} />
+      <Beam container={c} from={r(deskRef)} to={r(deskUiRef)} color="red" curvature={-10} delay={5.4} duration={3.5} />
+      <Beam container={c} from={r(summaryRef)} to={r(deskUiRef)} color="red" curvature={-12} delay={5.6} duration={4} />
+
+      {/* Feedback loop: Learning → Conviction */}
+      <Beam container={c} from={r(learningRef)} to={r(convictionRef)} color="red" curvature={90} delay={6.0} duration={7} opacity={0.05} width={1} reverse />
     </div>
   );
 }

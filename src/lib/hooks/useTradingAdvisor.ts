@@ -163,7 +163,6 @@ interface UseTradingAdvisorParams {
   fearGreed: { value: number; label: string };
   dxy: { value: number; change: number };
   bondYields: { maturity: string; yield: number; change: number }[];
-  accountEquity: number;
   riskPercent: number;
   trackedStatuses?: Record<string, string>; // instrumentId -> status label
 }
@@ -274,7 +273,6 @@ export function useTradingAdvisor(params: UseTradingAdvisorParams | null) {
         fearGreed: params.fearGreed,
         dxy: params.dxy,
         bondYields: params.bondYields,
-        accountEquity: params.accountEquity,
         riskPercent: params.riskPercent,
       };
 

@@ -366,7 +366,6 @@ export function TradingAdvisor() {
           yield: y.yield,
           change: y.change,
         })),
-        accountEquity: portfolioRisk.accountEquity,
         riskPercent: portfolioRisk.riskPercent,
         trackedStatuses,
       }

@@ -908,7 +908,7 @@ System Consensus: ${req.consensusSummary}
 Impulse Distribution: ${req.impulseSummary}
 Fear & Greed: ${req.fearGreed.value} (${req.fearGreed.label})
 DXY: ${req.dxy.value} (${req.dxy.change >= 0 ? "+" : ""}${req.dxy.change.toFixed(2)})
-Account: $${req.accountEquity.toLocaleString()} | Risk: ${req.riskPercent}% per trade ($${(req.accountEquity * req.riskPercent / 100).toFixed(0)})
+Risk: ${req.riskPercent}% per trade (percentage-based position sizing)
 
 Bond Yields:
 ${req.bondYields.map((b) => `  ${b.maturity}: ${b.yield.toFixed(3)}% (${b.change >= 0 ? "+" : ""}${b.change.toFixed(3)})`).join("\n")}
