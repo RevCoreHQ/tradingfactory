@@ -1053,8 +1053,8 @@ export async function generateTradingAdvisor(
   }
 
   const userPrompt = buildTradingAdvisorPrompt(req);
-  // Use Sonnet for quality — this is the desk manager voice. Increased token budget for richer reasoning.
-  const response = await callLLM(TRADING_ADVISOR_SYSTEM_PROMPT, userPrompt, 2048);
+  // Use Opus for maximum reasoning quality — this is the highest-stakes LLM call in the system
+  const response = await callLLM(TRADING_ADVISOR_SYSTEM_PROMPT, userPrompt, 2048, "claude-opus-4-6");
   if (!response) return null;
 
   const result = parseAdvisorResult(response.text, response.provider);
