@@ -10,6 +10,7 @@ import { getStatusLabel, isActionable, isRunning as isRunningStatus } from "@/li
 import { getScaleInSize } from "@/lib/calculations/scale-in-detector";
 import { computePortfolioRisk } from "@/lib/calculations/risk-engine";
 import { cn } from "@/lib/utils";
+import { AnalysisLoader } from "@/components/ui/analysis-loader";
 import type {
   TradeDeskSetup,
   TrackedSetup,
@@ -1124,21 +1125,20 @@ function TabBar({
 
 function TradeDeskSkeleton() {
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="section-card p-3 space-y-2">
-            <div className="h-3 w-20 shimmer rounded" />
-            <div className="h-5 w-24 shimmer rounded" />
-          </div>
-        ))}
+    <div className="section-card p-5">
+      <div className="py-12">
+        <AnalysisLoader
+          messages={[
+            "Scanning 16 instruments...",
+            "Running mechanical signal systems...",
+            "Evaluating regime conditions...",
+            "Checking multi-timeframe alignment...",
+            "Ranking by conviction tier...",
+          ]}
+          speed={20}
+          holdMs={800}
+        />
       </div>
-      {[1, 2, 3].map((i) => (
-        <div key={i} className="section-card p-4 space-y-2">
-          <div className="h-4 w-full shimmer rounded" />
-          <div className="h-3 w-3/4 shimmer rounded" />
-        </div>
-      ))}
     </div>
   );
 }

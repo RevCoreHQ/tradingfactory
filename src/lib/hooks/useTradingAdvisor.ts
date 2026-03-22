@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import useSWR from "swr";
 import type { TradeDeskSetup } from "@/lib/types/signals";
 import type { TradingAdvisorRequest, TradingAdvisorResult } from "@/lib/types/llm";
@@ -169,6 +170,7 @@ interface UseTradingAdvisorParams {
 
 export function useTradingAdvisor(params: UseTradingAdvisorParams | null) {
   const hash = params && params.setups.length > 0 ? buildSetupHash(params.setups, params.trackedStatuses) : null;
+  const advisorRequestRef = useRef<TradingAdvisorRequest | null>(null);
 
   const { data, error, isLoading, mutate } = useSWR(
     hash ? `trade-advisor:${hash}` : null,
@@ -276,6 +278,7 @@ export function useTradingAdvisor(params: UseTradingAdvisorParams | null) {
         riskPercent: params.riskPercent,
       };
 
+      advisorRequestRef.current = request;
       const raw = await fetchAdvisor("", { arg: request });
       if (!raw) return null;
 
@@ -293,6 +296,7 @@ export function useTradingAdvisor(params: UseTradingAdvisorParams | null) {
 
   return {
     advisor: data ?? null,
+    advisorRequest: advisorRequestRef.current,
     isLoading,
     error,
     refresh: () => {

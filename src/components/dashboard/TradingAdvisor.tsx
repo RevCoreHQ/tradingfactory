@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTradeDeskData } from "@/lib/hooks/useTradeDeskData";
 import { useTradingAdvisor } from "@/lib/hooks/useTradingAdvisor";
-import { useMarketNews, useFearGreed, useBondYields } from "@/lib/hooks/useMarketData";
+import { useDeskChat } from "@/lib/hooks/useDeskChat";
+import { useFearGreed, useBondYields } from "@/lib/hooks/useMarketData";
 import { loadTrackedSetups } from "@/lib/storage/setup-storage";
 import { getStatusLabel } from "@/lib/calculations/setup-tracker";
 import { cn } from "@/lib/utils";
@@ -12,35 +13,40 @@ import {
   Target,
   AlertTriangle,
   TrendingUp,
-  TrendingDown,
   Shield,
   BookOpen,
   RefreshCw,
   Ban,
+  Send,
 } from "lucide-react";
-import type { TradingAdvisorResult } from "@/lib/types/llm";
+import type { TradingAdvisorResult, TradingAdvisorRequest } from "@/lib/types/llm";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
+import { AnalysisLoader } from "@/components/ui/analysis-loader";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const DEFAULT_FEAR_GREED = { value: 50, label: "Neutral" };
 const DEFAULT_DXY = { value: 0, change: 0 };
 
+const ADVISOR_LOADING_MESSAGES = [
+  "Analyzing market structure...",
+  "Evaluating ICT confluences...",
+  "Checking MTF alignment...",
+  "Assessing risk conditions...",
+  "Consulting the books...",
+  "Preparing desk briefing...",
+];
+
 function AdvisorSkeleton() {
   return (
-    <div className="section-card p-5 space-y-4">
-      <div className="flex items-center gap-2 mb-1">
+    <div className="section-card p-5">
+      <div className="flex items-center gap-2 mb-4">
         <div className="h-6 w-6 rounded-md flex items-center justify-center bg-neutral-accent/15">
           <MessageSquare className="h-3.5 w-3.5 text-neutral-accent" />
         </div>
         <h3 className="text-xs font-semibold text-foreground">Desk Manager</h3>
-        <span className="text-[10px] text-muted-foreground/50 ml-auto">Loading advisor...</span>
       </div>
-      <div className="space-y-3">
-        <div className="h-4 w-3/4 shimmer rounded" />
-        <div className="h-3 w-full shimmer rounded" />
-        <div className="h-3 w-full shimmer rounded" />
-        <div className="h-3 w-2/3 shimmer rounded" />
-        <div className="h-16 w-full shimmer rounded-lg" />
-        <div className="h-3 w-1/2 shimmer rounded" />
+      <div className="py-8">
+        <AnalysisLoader messages={ADVISOR_LOADING_MESSAGES} speed={20} holdMs={800} />
       </div>
     </div>
   );
@@ -203,6 +209,122 @@ function AdvisorContent({ advisor, onRefresh }: { advisor: TradingAdvisorResult;
   );
 }
 
+// ==================== Desk Chat ====================
+
+function DeskChat({
+  advisor,
+  advisorContext,
+}: {
+  advisor: TradingAdvisorResult;
+  advisorContext: TradingAdvisorRequest;
+}) {
+  const { messages, isSending, error, send, clear } = useDeskChat({
+    advisorContext,
+    initialBriefing: advisor,
+  });
+  const [input, setInput] = useState("");
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-scroll on new messages
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages.length]);
+
+  const handleSend = () => {
+    if (!input.trim()) return;
+    send(input);
+    setInput("");
+    inputRef.current?.focus();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  return (
+    <div className="section-card mt-3 overflow-hidden">
+      {/* Chat header */}
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30">
+        <MessageSquare className="h-3 w-3 text-neutral-accent" />
+        <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
+          Ask the Desk Manager
+        </span>
+        {messages.length > 0 && (
+          <button
+            onClick={clear}
+            className="ml-auto text-[10px] text-muted-foreground/30 hover:text-muted-foreground transition-colors"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {/* Message history */}
+      {messages.length > 0 && (
+        <ScrollArea className="max-h-[300px]">
+          <div ref={scrollRef} className="px-4 py-3 space-y-3">
+            {messages.map((msg, i) => (
+              <div
+                key={i}
+                className={cn(
+                  "text-xs leading-relaxed",
+                  msg.role === "user"
+                    ? "pl-4 border-l-2 border-neutral-accent/30"
+                    : "text-muted-foreground/80"
+                )}
+              >
+                <span className={cn(
+                  "text-[9px] font-semibold uppercase block mb-0.5",
+                  msg.role === "user" ? "text-neutral-accent/50" : "text-muted-foreground/40"
+                )}>
+                  {msg.role === "user" ? "You" : "Desk Manager"}
+                </span>
+                <p className="whitespace-pre-wrap">{msg.content}</p>
+              </div>
+            ))}
+            {isSending && (
+              <div className="text-[10px] text-muted-foreground/40 italic">
+                Desk manager is thinking...
+              </div>
+            )}
+            {error && (
+              <p className="text-[10px] text-bearish/70">{error}</p>
+            )}
+          </div>
+        </ScrollArea>
+      )}
+
+      {/* Input area */}
+      <div className="flex items-center gap-2 px-4 py-2.5 border-t border-border/30">
+        <input
+          ref={inputRef}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Ask about any setup, risk, or market condition..."
+          className="flex-1 h-7 text-xs bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground/40"
+          disabled={isSending}
+        />
+        <button
+          onClick={handleSend}
+          disabled={isSending || !input.trim()}
+          className="p-1.5 rounded hover:bg-surface-2/80 text-muted-foreground/40 hover:text-neutral-accent transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          <Send className="h-3 w-3" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ==================== Main Component ====================
+
 export function TradingAdvisor() {
   const { setups, portfolioRisk } = useTradeDeskData();
   const { data: fearGreedData } = useFearGreed();
@@ -215,7 +337,6 @@ export function TradingAdvisor() {
       const tracked = loadTrackedSetups();
       const statuses: Record<string, string> = {};
       for (const t of tracked) {
-        // Keep the most "advanced" status per instrument (active > pending)
         if (!statuses[t.setup.instrumentId]) {
           statuses[t.setup.instrumentId] = getStatusLabel(t.status);
         }
@@ -251,7 +372,7 @@ export function TradingAdvisor() {
       }
     : null;
 
-  const { advisor, isLoading, refresh } = useTradingAdvisor(advisorParams);
+  const { advisor, advisorRequest, isLoading, refresh } = useTradingAdvisor(advisorParams);
 
   if (isLoading || (!advisor && setups.length > 0)) {
     return <AdvisorSkeleton />;
@@ -273,5 +394,12 @@ export function TradingAdvisor() {
     );
   }
 
-  return <AdvisorContent advisor={advisor} onRefresh={refresh} />;
+  return (
+    <>
+      <AdvisorContent advisor={advisor} onRefresh={refresh} />
+      {advisorRequest && (
+        <DeskChat advisor={advisor} advisorContext={advisorRequest} />
+      )}
+    </>
+  );
 }

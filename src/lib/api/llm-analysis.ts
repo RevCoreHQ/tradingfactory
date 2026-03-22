@@ -842,7 +842,7 @@ export async function analyzeDeepAnalysis(req: any): Promise<DeepAnalysisLLMResu
 // Trading Advisor — Virtual Desk Manager
 // ---------------------------------------------------------------------------
 
-import type { TradingAdvisorRequest, TradingAdvisorResult } from "@/lib/types/llm";
+import type { TradingAdvisorRequest, TradingAdvisorResult, DeskChatRequest, DeskChatResponse } from "@/lib/types/llm";
 
 const TRADING_ADVISOR_SYSTEM_PROMPT = `You are a senior trading desk manager with 20+ years of experience at a prop trading firm. You advise traders based on mechanical system signals, market regime data, and risk parameters derived from 8 professional trading books (Trading In The Zone, Trade Like a Casino, Mechanical Trading Systems, The PlayBook, One Good Trade, Best Loser Wins, Market Wizards, Trading for a Living).
 
@@ -1062,4 +1062,77 @@ export async function generateTradingAdvisor(
 
   advisorCache.set(cacheKey, { data: result, expiry: Date.now() + ADVISOR_TTL_MS });
   return result;
+}
+
+// ---------------------------------------------------------------------------
+// Desk Chat — Conversational Multi-Turn
+// ---------------------------------------------------------------------------
+
+const DESK_CHAT_SYSTEM_PROMPT_SUFFIX = `
+
+--- CHAT MODE ---
+You are now in conversational mode. The trader is asking follow-up questions about the data above.
+- Be concise. Max 2-3 sentences unless they ask for detail.
+- Reference the specific instrument data above when answering.
+- If they ask about an instrument, use the exact data provided.
+- If they ask about something not in the data, say so honestly.
+- Keep your desk manager personality: direct, professional, trading desk language.
+- Do NOT return JSON. Respond in natural language.`;
+
+export async function generateDeskChatReply(
+  req: DeskChatRequest
+): Promise<DeskChatResponse | null> {
+  const providers = getAvailableProviders();
+  const anthropicProvider = providers.find((p) => p.provider === "anthropic");
+  if (!anthropicProvider) return null;
+
+  const rateCheck = checkRateLimit("anthropic");
+  if (!rateCheck.allowed) return null;
+
+  // System prompt: full desk manager persona + all current setup data + chat mode instructions
+  const contextPrompt = buildTradingAdvisorPrompt(req.context);
+  const systemPrompt = TRADING_ADVISOR_SYSTEM_PROMPT + "\n\n--- CURRENT DESK DATA ---\n" + contextPrompt + DESK_CHAT_SYSTEM_PROMPT_SUFFIX;
+
+  // Convert to Anthropic message format, cap at 20 messages
+  const messages = req.messages
+    .slice(-20)
+    .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
+
+  try {
+    console.log(`[Desk Chat] Sending ${messages.length} messages to Opus`);
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": anthropicProvider.key,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-opus-4-6",
+        max_tokens: 512,
+        temperature: 0.4,
+        system: systemPrompt,
+        messages,
+      }),
+    });
+
+    if (!response.ok) {
+      const errBody = await response.text().catch(() => "");
+      console.error(`[Desk Chat] Anthropic error: ${response.status} ${errBody}`);
+      return null;
+    }
+
+    const data = await response.json();
+    const reply = data.content[0].text;
+    console.log(`[Desk Chat] Reply generated (${reply.length} chars)`);
+
+    return {
+      reply,
+      provider: "anthropic",
+      timestamp: Date.now(),
+    };
+  } catch (err) {
+    console.error("[Desk Chat] Error:", err);
+    return null;
+  }
 }

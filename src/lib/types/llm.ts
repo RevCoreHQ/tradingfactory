@@ -163,3 +163,22 @@ export interface TradingAdvisorResult {
   timestamp: number;
   provider: LLMProvider;
 }
+
+// ==================== Desk Chat ====================
+
+export interface DeskChatMessage {
+  role: "user" | "assistant";
+  content: string;
+  timestamp: number;
+}
+
+export interface DeskChatRequest {
+  messages: DeskChatMessage[];
+  context: TradingAdvisorRequest;
+}
+
+export interface DeskChatResponse {
+  reply: string;
+  provider: LLMProvider;
+  timestamp: number;
+}

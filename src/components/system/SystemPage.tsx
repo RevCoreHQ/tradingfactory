@@ -13,6 +13,7 @@ import { SystemSignalEngine } from "./SystemSignalEngine";
 import { SystemConviction } from "./SystemConviction";
 import { SystemRiskManagement } from "./SystemRiskManagement";
 import { SystemTradeWalkthrough } from "./SystemTradeWalkthrough";
+import { SystemFlowDiagram } from "./SystemFlowDiagram";
 import {
   Sparkles,
   Globe,
@@ -20,6 +21,7 @@ import {
   Target,
   Shield,
   Route,
+  Workflow,
 } from "lucide-react";
 
 export function SystemPage() {
@@ -121,6 +123,23 @@ export function SystemPage() {
               accentColor="green"
             >
               <SystemTradeWalkthrough />
+            </SystemSectionCard>
+          </section>
+
+          {/* System Architecture Flow Diagram */}
+          <section>
+            <SystemSectionCard
+              title="System Architecture"
+              subtitle="Complete data flow from raw price feeds to desk manager output"
+              icon={<Workflow className="h-4 w-4" />}
+              accentColor="amber"
+            >
+              <div className="hidden md:block">
+                <SystemFlowDiagram />
+              </div>
+              <p className="block md:hidden text-xs text-muted-foreground/50 text-center py-4">
+                View on desktop for the full system architecture diagram
+              </p>
             </SystemSectionCard>
           </section>
         </main>
