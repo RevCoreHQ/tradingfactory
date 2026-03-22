@@ -157,6 +157,8 @@ export interface TradingAdvisorResult {
   } | null;
   otherSetups: string[];
   avoidList: string[];
+  focusToday: { symbol: string; action: "LONG" | "SHORT" }[];
+  sitOutToday: string[];
   riskWarning: string;
   deskNote: string;
   timestamp: number;

@@ -894,6 +894,8 @@ Rules:
 - marketRegime: 2-3 sentences assessing the overall market regime across instruments, referencing MTF alignment distribution and volatility conditions
 - topPick: Your #1 ACTIONABLE setup. Only from the "Actionable Setups" section. Explain WHY based on the mechanical data — reference MTF alignment, ICT score, structure, entry pattern quality, and learning data. Be specific. topPick.instrument must match the symbol EXACTLY.
 - otherSetups: 2-3 one-sentence notes on other actionable setups worth watching
+- focusToday: Top 3-5 instruments to focus on today with direction (LONG/SHORT). Derived from your top pick + best actionable setups. Use exact symbol names.
+- sitOutToday: 1-3 instruments or conditions to sit out — e.g. "AUD/USD — conflicting MTF, choppy structure"
 - avoidList: 1-2 instruments/situations to avoid and why — reference the specific data that makes them dangerous (conflicting MTF, negative structure score, high volatility + distribution, etc.)
 - riskWarning: Key risk to watch right now (reference specific regime, volatility, or correlation data)
 - deskNote: One piece of wisdom from the 8 books — connect it specifically to today's conditions using the data provided
@@ -991,6 +993,8 @@ Respond with JSON:
     "levels": "<entry, SL, TP summary>"
   },
   "otherSetups": ["<1 sentence each for 2-3 other actionable setups>"],
+  "focusToday": [{"symbol": "EUR/USD", "action": "LONG"}, {"symbol": "XAU/USD", "action": "SHORT"}],
+  "sitOutToday": ["AUD/USD — conflicting MTF, choppy structure"],
   "avoidList": ["<instrument/situation — reference the specific data making it dangerous>"],
   "riskWarning": "<key risk with specific data reference>",
   "deskNote": "<wisdom from the 8 trading books connected to today's specific conditions>"
@@ -1030,6 +1034,18 @@ function parseAdvisorResult(raw: string, provider: LLMProvider): TradingAdvisorR
         : [],
       avoidList: Array.isArray(parsed.avoidList)
         ? parsed.avoidList.map(String).slice(0, 3)
+        : [],
+      focusToday: Array.isArray(parsed.focusToday)
+        ? parsed.focusToday
+            .filter((f: unknown) => f && typeof f === "object" && "symbol" in (f as Record<string, unknown>))
+            .map((f: { symbol: string; action?: string }) => ({
+              symbol: String(f.symbol),
+              action: (f.action === "SHORT" ? "SHORT" : "LONG") as "LONG" | "SHORT",
+            }))
+            .slice(0, 5)
+        : [],
+      sitOutToday: Array.isArray(parsed.sitOutToday)
+        ? parsed.sitOutToday.map(String).slice(0, 5)
         : [],
       riskWarning: String(parsed.riskWarning ?? ""),
       deskNote: String(parsed.deskNote ?? ""),

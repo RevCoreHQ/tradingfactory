@@ -4,10 +4,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMarketSummary } from "@/lib/hooks/useMarketSummary";
 import { cn } from "@/lib/utils";
-import { Sparkles, AlertTriangle, Zap, ChevronDown, RefreshCw, Target, Ban, Star, TrendingUp, TrendingDown } from "lucide-react";
+import { Sparkles, AlertTriangle, Zap, ChevronDown, RefreshCw } from "lucide-react";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
-import { useMarketStore } from "@/lib/store/market-store";
-import { INSTRUMENTS } from "@/lib/utils/constants";
 
 function OutlookBadge({ outlook }: { outlook: "bullish" | "bearish" | "neutral" }) {
   return (
@@ -121,8 +119,6 @@ function SectorBreakdown({ sectors }: { sectors: { sector: string; outlook: "bul
 
 export function AIMarketSummary() {
   const { summary, isLoading, isRefreshing, apiError, refresh } = useMarketSummary();
-  const currentResults = useMarketStore((s) => s.allBiasResults.intraday);
-
   if (isLoading) {
     return (
       <div className="section-card p-5">
@@ -250,68 +246,6 @@ export function AIMarketSummary() {
         <SectorBreakdown sectors={summary.sectorOutlook} />
       )}
 
-      {/* Focus Today / Sit Out */}
-      {(summary.focusToday?.length || summary.sitOutToday?.length) ? (
-        <div className="mt-6 pt-5 border-t border-border/50">
-          {summary.focusToday && summary.focusToday.length > 0 && (
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
-                <Target className="h-3 w-3 text-neutral-accent" />
-                Focus Today
-              </div>
-              {summary.focusToday.map((pair, i) => {
-                const inst = INSTRUMENTS.find(
-                  (instr) => instr.symbol === pair || pair.includes(instr.symbol) || instr.symbol.replace("/", "") === pair.replace("/", "")
-                );
-                const bias = inst ? currentResults[inst.id] : null;
-                const isLong = bias ? bias.overallBias > 0 : true;
-                const isShort = bias ? bias.overallBias < 0 : false;
-                const isStrong = bias ? Math.abs(bias.overallBias) >= 45 : false;
-
-                return (
-                  <span
-                    key={i}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 text-[11px] font-medium text-foreground px-2.5 py-1 rounded-md border",
-                      isShort
-                        ? "bg-bearish/10 border-bearish/20"
-                        : "bg-bullish/10 border-bullish/20"
-                    )}
-                  >
-                    {isStrong && <Star className="h-3 w-3 fill-[#FFD700] text-[#FFD700]" />}
-                    {isShort ? (
-                      <TrendingDown className="h-3 w-3 text-bearish" />
-                    ) : (
-                      <TrendingUp className="h-3 w-3 text-bullish" />
-                    )}
-                    <span className={cn(
-                      "text-[9px] font-bold uppercase tracking-wider",
-                      isShort ? "text-bearish" : "text-bullish"
-                    )}>
-                      {isLong ? "LONG" : "SHORT"}
-                    </span>
-                    {pair}
-                  </span>
-                );
-              })}
-            </div>
-          )}
-
-          {summary.sitOutToday && summary.sitOutToday.length > 0 && (
-            <div className="flex items-center gap-3 flex-wrap mt-3">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <Ban className="h-3 w-3" />
-                Sit Out
-              </div>
-              {summary.sitOutToday.map((note, i) => (
-                <span key={i} className="text-[11px] text-muted-foreground bg-[var(--surface-2)] px-2.5 py-1 rounded-md border border-border/30">
-                  {note}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      ) : null}
     </div>
   );
 }

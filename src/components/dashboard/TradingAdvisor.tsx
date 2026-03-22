@@ -13,13 +13,17 @@ import {
   Target,
   AlertTriangle,
   TrendingUp,
+  TrendingDown,
   Shield,
   BookOpen,
   RefreshCw,
   Ban,
   Send,
+  Star,
 } from "lucide-react";
 import type { TradingAdvisorResult, TradingAdvisorRequest } from "@/lib/types/llm";
+import { useMarketStore } from "@/lib/store/market-store";
+import { INSTRUMENTS } from "@/lib/utils/constants";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
 import { AnalysisLoader } from "@/components/ui/analysis-loader";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -52,10 +56,53 @@ function AdvisorSkeleton() {
   );
 }
 
+const STRONG_CONVICTION_THRESHOLD = 45;
+
 function AdvisorContent({ advisor, onRefresh }: { advisor: TradingAdvisorResult; onRefresh: () => void }) {
   const timeSince = Date.now() - advisor.timestamp;
   const minutesAgo = Math.floor(timeSince / 60000);
   const timeLabel = minutesAgo < 1 ? "Just now" : `${minutesAgo}m ago`;
+
+  // Enforce focus with mechanical bias data
+  const currentResults = useMarketStore((s) => s.allBiasResults.intraday);
+  const hasBiasData = Object.keys(currentResults).length > 0;
+
+  // Build enforced focus/sitout lists
+  let focusToday = advisor.focusToday ?? [];
+  let sitOutToday = advisor.sitOutToday ?? [];
+
+  if (hasBiasData) {
+    const strongInstruments: { symbol: string; id: string; direction: "LONG" | "SHORT" }[] = [];
+    for (const [id, result] of Object.entries(currentResults)) {
+      if (Math.abs(result.overallBias) >= STRONG_CONVICTION_THRESHOLD) {
+        const inst = INSTRUMENTS.find((i) => i.id === id);
+        if (inst) {
+          strongInstruments.push({
+            symbol: inst.symbol,
+            id,
+            direction: result.overallBias > 0 ? "LONG" : "SHORT",
+          });
+        }
+      }
+    }
+
+    // Inject missing strong conviction instruments into Focus Today
+    const symbolInList = (sym: string, list: { symbol: string }[]) =>
+      list.some((item) => item.symbol === sym || item.symbol.includes(sym) || sym.includes(item.symbol) || item.symbol.replace("/", "") === sym.replace("/", ""));
+
+    const enriched = [...focusToday];
+    for (const sc of strongInstruments) {
+      if (!symbolInList(sc.symbol, enriched)) {
+        enriched.push({ symbol: sc.symbol, action: sc.direction });
+      }
+    }
+    focusToday = enriched;
+
+    // Remove strong conviction instruments from Sit Out
+    sitOutToday = sitOutToday.filter(
+      (item) => !strongInstruments.some((sc) => item.includes(sc.symbol) || item.replace("/", "").includes(sc.symbol.replace("/", "")))
+    );
+  }
 
   return (
     <div className="relative section-card p-5">
@@ -89,6 +136,68 @@ function AdvisorContent({ advisor, onRefresh }: { advisor: TradingAdvisorResult;
         <p className="text-sm text-foreground font-medium mb-3 leading-relaxed">
           {advisor.greeting}
         </p>
+      )}
+
+      {/* Focus Today / Sit Out */}
+      {(focusToday.length > 0 || sitOutToday.length > 0) && (
+        <div className="mb-4 pb-4 border-b border-border/30">
+          {focusToday.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                <Target className="h-3 w-3 text-neutral-accent" />
+                Focus Today
+              </div>
+              {focusToday.map((item, i) => {
+                const inst = INSTRUMENTS.find(
+                  (instr) => instr.symbol === item.symbol || item.symbol.includes(instr.symbol) || instr.symbol.replace("/", "") === item.symbol.replace("/", "")
+                );
+                const bias = inst ? currentResults[inst.id] : null;
+                const isStrong = bias ? Math.abs(bias.overallBias) >= STRONG_CONVICTION_THRESHOLD : false;
+                const isShort = item.action === "SHORT";
+
+                return (
+                  <span
+                    key={i}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 text-[11px] font-medium text-foreground px-2.5 py-1 rounded-md border",
+                      isShort
+                        ? "bg-bearish/10 border-bearish/20"
+                        : "bg-bullish/10 border-bullish/20"
+                    )}
+                  >
+                    {isStrong && <Star className="h-3 w-3 fill-[#FFD700] text-[#FFD700]" />}
+                    {isShort ? (
+                      <TrendingDown className="h-3 w-3 text-bearish" />
+                    ) : (
+                      <TrendingUp className="h-3 w-3 text-bullish" />
+                    )}
+                    <span className={cn(
+                      "text-[9px] font-bold uppercase tracking-wider",
+                      isShort ? "text-bearish" : "text-bullish"
+                    )}>
+                      {item.action}
+                    </span>
+                    {item.symbol}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          {sitOutToday.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap mt-2">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <Ban className="h-3 w-3" />
+                Sit Out
+              </div>
+              {sitOutToday.map((note, i) => (
+                <span key={i} className="text-[11px] text-muted-foreground bg-[var(--surface-2)] px-2.5 py-1 rounded-md border border-border/30">
+                  {note}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       {/* Market Regime Assessment */}
