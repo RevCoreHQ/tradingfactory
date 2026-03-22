@@ -14,6 +14,7 @@ import { SystemConviction } from "./SystemConviction";
 import { SystemRiskManagement } from "./SystemRiskManagement";
 import { SystemTradeWalkthrough } from "./SystemTradeWalkthrough";
 import { SystemFlowDiagram } from "./SystemFlowDiagram";
+import { SystemComprehensiveGuide } from "./SystemComprehensiveGuide";
 import {
   Sparkles,
   Globe,
@@ -22,6 +23,7 @@ import {
   Shield,
   Route,
   Workflow,
+  BookOpen,
 } from "lucide-react";
 
 export function SystemPage() {
@@ -123,6 +125,18 @@ export function SystemPage() {
               accentColor="green"
             >
               <SystemTradeWalkthrough />
+            </SystemSectionCard>
+          </section>
+
+          {/* Complete System Reference */}
+          <section>
+            <SystemSectionCard
+              title="Complete System Reference"
+              subtitle="Comprehensive technical documentation — every stage, model, and data flow"
+              icon={<BookOpen className="h-4 w-4" />}
+              accentColor="blue"
+            >
+              <SystemComprehensiveGuide />
             </SystemSectionCard>
           </section>
 

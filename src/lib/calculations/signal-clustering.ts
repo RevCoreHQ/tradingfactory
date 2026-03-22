@@ -134,3 +134,48 @@ export function computeDeCorrelatedAgreement(
 
   return { agreement, clusters, activeClusters };
 }
+
+// ==================== CLUSTER CONFLICT DETECTION ====================
+
+/**
+ * Detect conflicting clusters that should not agree simultaneously.
+ * Trend + Mean Reversion active at the same time is almost always bad
+ * regime classification rather than a genuine signal.
+ *
+ * Returns a penalty value (always <= 0).
+ */
+export function detectClusterConflict(
+  clusters: ClusterScore[]
+): { penalty: number; reason: string | null } {
+  const trend = clusters.find((c) => c.cluster === "trend");
+  const mr = clusters.find((c) => c.cluster === "mean_reversion");
+
+  const trendActive = trend && trend.bestSignal !== null && trend.effectiveScore > 0;
+  const mrActive = mr && mr.bestSignal !== null && mr.effectiveScore > 0;
+
+  // Trend + MR conflict (most suspicious)
+  if (trendActive && mrActive) {
+    const trendDir = trend!.bestSignal!.direction;
+    const mrDir = mr!.bestSignal!.direction;
+    if (trendDir !== mrDir) {
+      return { penalty: -15, reason: "Trend + MR clusters active in opposing directions" };
+    }
+    // Same direction still suspicious (regime likely misclassified)
+    return { penalty: -10, reason: "Trend + MR clusters both active — possible regime misclassification" };
+  }
+
+  // Any two active clusters with opposing best signal directions
+  const activeClusters = clusters.filter(
+    (c) => c.bestSignal !== null && c.effectiveScore > 0
+  );
+  if (activeClusters.length >= 2) {
+    const directions = activeClusters.map((c) => c.bestSignal!.direction);
+    const hasBullish = directions.includes("bullish");
+    const hasBearish = directions.includes("bearish");
+    if (hasBullish && hasBearish) {
+      return { penalty: -10, reason: "Active clusters disagree on direction" };
+    }
+  }
+
+  return { penalty: 0, reason: null };
+}

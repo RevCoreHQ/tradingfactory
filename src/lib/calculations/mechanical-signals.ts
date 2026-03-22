@@ -9,6 +9,7 @@ import type {
   TradeDeskSetup,
   ConfluencePattern,
   TradingStyle,
+  MarketPhase,
 } from "@/lib/types/signals";
 import type { Instrument } from "@/lib/types/market";
 import { calcSMA, calcEMA } from "./technical-indicators";
@@ -16,7 +17,7 @@ import { applyLearning, adjustedTier } from "./confluence-learning";
 import { buildConfluenceKey, buildRegimeConfluenceKey } from "./setup-tracker";
 import { detectFullRegime } from "./regime-engine";
 import { analyzeMarketStructure } from "./market-structure";
-import { computeDeCorrelatedAgreement } from "./signal-clustering";
+import { computeDeCorrelatedAgreement, detectClusterConflict } from "./signal-clustering";
 import { applySystemWeights, type SystemPerformance } from "./system-performance";
 import { analyzeEntryOptimization } from "./entry-optimization";
 import { detectFairValueGaps } from "./fair-value-gaps";
@@ -245,14 +246,14 @@ function snapLevelsToStructure(
 
 // ==================== REGIME DETECTION ====================
 
-export function detectRegime(summary: TechnicalSummary, candles?: OHLCV[]): {
+export function detectRegime(summary: TechnicalSummary, candles?: OHLCV[], previousPhase?: MarketPhase): {
   regime: MarketRegime;
   label: string;
   fullRegime?: FullRegime;
 } {
   // If candles provided, use the full multi-dimensional regime engine
   if (candles && candles.length >= 50) {
-    const fullRegime = detectFullRegime(candles, summary);
+    const fullRegime = detectFullRegime(candles, summary, previousPhase);
     return {
       regime: fullRegime.legacy,
       label: fullRegime.label,
@@ -725,40 +726,38 @@ function calculateConviction(
   const matched = signals.filter((s) => s.regimeMatch && s.direction === direction).length;
   const activeSignals = signals.filter((s) => s.direction !== "neutral").length;
 
-  // Conviction scoring
+  // Conviction scoring — 6 independent factor groups (v3)
+  // Removed: Strong Signal Bonus (captured by agreement), Structure Alignment (handled by gate)
   let score = 0;
 
-  // De-correlated agreement factor (0-40 pts)
+  // 1. De-correlated agreement factor (0-40 pts)
   // Uses cluster-based scoring: only the best signal per cluster counts,
   // weighted by regime. This prevents correlated signals from inflating conviction.
-  // activeClusters = number of independent signal families with at least one agreeing signal.
-  // This replaces raw `agreeing` count for tier thresholds.
   let activeClusters = 0;
   if (direction !== "neutral" && activeSignals > 0) {
     const clusterResult = computeDeCorrelatedAgreement(signals, direction, fullRegime);
     score += clusterResult.agreement;
     activeClusters = clusterResult.activeClusters;
+
+    // 2. Cluster conflict penalty (0 to -15 pts)
+    // Trend + MR clusters both active = suspicious (regime likely misclassified)
+    const conflict = detectClusterConflict(clusterResult.clusters);
+    score += conflict.penalty;
   }
 
-  // Regime match factor (0-25 pts)
+  // 3. Regime match factor (0-25 pts)
   if (matched >= 3) score += 25;
   else if (matched >= 2) score += 15;
   else if (matched >= 1) score += 8;
 
-  // Impulse alignment (-15 to +20 pts) — Elder: no longs on RED, no shorts on GREEN
+  // 4. Impulse alignment (-15 to +20 pts) — Elder: no longs on RED, no shorts on GREEN
   if (direction === "bullish" && impulseColor === "green") score += 20;
   else if (direction === "bearish" && impulseColor === "red") score += 20;
   else if (impulseColor === "blue") score += 5;
   else if (direction === "bullish" && impulseColor === "red") score -= 15;
   else if (direction === "bearish" && impulseColor === "green") score -= 15;
 
-  // Strong signal bonus (0-15 pts)
-  const strongSignals = signals.filter(
-    (s) => s.direction === direction && s.strength >= 70
-  ).length;
-  score += Math.min(15, strongSignals * 5);
-
-  // Phase-aware scoring (replaces simple ADX > 50 penalty)
+  // 5. Phase-aware scoring + transition bonuses (-15 to +20 pts)
   if (fullRegime) {
     // Distribution/reversal against bullish signals = strong penalty
     if ((fullRegime.phase === "distribution" || fullRegime.phase === "reversal") && direction === "bullish") {
@@ -775,36 +774,31 @@ function calculateConviction(
         (direction === "bearish" && fullRegime.emaSlope < 0);
       if (expansionAligned) score += 10;
     }
-    // High volatility exhaustion (replaces raw ADX > 50 check)
+    // High volatility exhaustion
     if (fullRegime.volatility === "high" && fullRegime.adxTrend === "falling") {
-      score -= 10; // Exhaustion: high vol + ADX decelerating
+      score -= 10;
+    }
+
+    // Phase transition bonuses — the edge is in TRANSITIONS between phases
+    if (fullRegime.phaseTransition?.isActionable) {
+      const t = fullRegime.phaseTransition;
+      const key = `${t.from}->${t.to}`;
+      if (key === "expansion->distribution" && direction === "bearish") score += 10;
+      else if (key === "accumulation->expansion" && direction === "bullish") score += 10;
+      else if (key === "distribution->reversal" && direction === "bearish") score += 8;
+      else if (key === "reversal->accumulation" && direction === "bullish") score += 8;
+      else if (key === "distribution->accumulation" && direction === "bullish") score += 5;
+      // Counter-transition penalty
+      else if (key === "expansion->distribution" && direction === "bullish") score -= 8;
+      else if (key === "accumulation->expansion" && direction === "bearish") score -= 8;
     }
   } else {
     // Legacy fallback: ADX exhaustion penalty
     if (adx > 50) score -= 10;
   }
 
-  // Market structure alignment (-15 to +10 pts)
-  if (marketStructure) {
-    const structDir = marketStructure.latestStructure;
-    if (direction === "bullish" && structDir === "bullish") score += 10;
-    else if (direction === "bearish" && structDir === "bearish") score += 10;
-    else if (direction === "bullish" && structDir === "bearish") score -= 10;
-    else if (direction === "bearish" && structDir === "bullish") score -= 10;
-
-    // Recent CHoCH against direction = strong warning
-    if (marketStructure.lastCHoCH) {
-      if (direction === "bullish" && marketStructure.lastCHoCH.direction === "bearish") score -= 15;
-      else if (direction === "bearish" && marketStructure.lastCHoCH.direction === "bullish") score -= 15;
-    }
-
-    // Recent BOS aligned = minor bonus
-    if (marketStructure.lastBOS) {
-      if (marketStructure.lastBOS.direction === direction) score += 5;
-    }
-  }
-
-  // ICT confluence factor (0-10 pts)
+  // 6. ICT confluence factor (0-7 pts) — reduced from 0-10
+  // Removed displacement (+2, too noisy). Reduced OB from +3 to +2 (overlaps S/D entry).
   if (ictContext) {
     let ictBonus = 0;
     if (ictContext.nearestFVG && ictContext.nearestFVG.freshness === "fresh") {
@@ -815,10 +809,9 @@ function calculateConviction(
     if (ictContext.nearestOB && ictContext.nearestOB.strength >= 60) {
       const aligned = (direction === "bullish" && ictContext.nearestOB.type === "demand") ||
                       (direction === "bearish" && ictContext.nearestOB.type === "supply");
-      if (aligned) ictBonus += 3;
+      if (aligned) ictBonus += 2;
     }
-    if (ictContext.displacementDetected) ictBonus += 2;
-    score += Math.min(10, ictBonus);
+    score += Math.min(7, ictBonus);
   }
 
   // Map to tier using INDEPENDENT CLUSTER COUNT instead of raw signal count.
@@ -901,10 +894,11 @@ export function generateTradeDeskSetup(
   confluencePatterns?: Record<string, ConfluencePattern>,
   tradingStyle?: TradingStyle,
   systemPerformance?: Record<string, SystemPerformance>,
-  overrideParams?: { slMultiplier?: number; tpMultipliers?: [number, number, number]; entrySpreadMultiplier?: number }
+  overrideParams?: { slMultiplier?: number; tpMultipliers?: [number, number, number]; entrySpreadMultiplier?: number },
+  previousPhase?: MarketPhase
 ): TradeDeskSetup {
   // 1. Detect regime (pass candles for full multi-dimensional regime)
-  const { regime, label: regimeLabel, fullRegime } = detectRegime(summary, candles);
+  const { regime, label: regimeLabel, fullRegime } = detectRegime(summary, candles, previousPhase);
   const impulseColor = summary.impulse.color;
 
   // 2. Analyze market structure BEFORE signal generation (HH/HL/BOS/CHoCH)
@@ -933,17 +927,33 @@ export function generateTradeDeskSetup(
     signals = applySystemWeights(signals, weights);
   }
 
-  // 3c. Structure direction gate — hard filter signals against structure.
+  // 3c. Structure direction gate — filter signals against structure.
   // Only longs allowed in bullish structure, only shorts in bearish.
   // Neutral structure allows both directions (structure is ambiguous).
+  // CHoCH relaxation: if a recent Change of Character was detected,
+  // allow opposing signals through at 50% strength to capture early reversals.
   if (marketStructure && marketStructure.latestStructure !== "neutral") {
     const structDir = marketStructure.latestStructure;
+    const hasRecentCHoCH = marketStructure.lastCHoCH !== null && (() => {
+      const chochIndex = marketStructure.lastCHoCH!.swingBroken.index;
+      return (candles.length - 1 - chochIndex) <= 10;
+    })();
+
     signals = signals.map((s) => {
       if (s.direction === "neutral" || s.strength === 0) return s;
       const opposing =
         (structDir === "bullish" && s.direction === "bearish") ||
         (structDir === "bearish" && s.direction === "bullish");
       if (opposing) {
+        if (hasRecentCHoCH) {
+          // Controlled contradiction: allow through at 50% strength
+          return {
+            ...s,
+            strength: Math.round(s.strength * 0.5),
+            description: s.description + ` [structure-softened: CHoCH detected, 50% strength]`,
+          };
+        }
+        // Hard filter: no CHoCH, full block
         return {
           ...s,
           direction: "neutral" as const,
@@ -1124,9 +1134,13 @@ export function generateTradeDeskSetup(
     const regimePattern = confluencePatterns[regimeKey] ?? null;
     const legacyPattern = confluencePatterns[legacyKey] ?? null;
 
-    // Use regime-specific pattern if it has enough trades, otherwise fall back
-    const pattern = (regimePattern && regimePattern.trades >= 20) ? regimePattern : legacyPattern;
-    const learning = applyLearning(convictionScore, riskAmount, lots, pattern);
+    // Use regime-specific pattern if it has enough trades, otherwise fall back.
+    // Regime-lock: when falling back to legacy key (which pools all regimes),
+    // dampen adjustments by 50% to prevent learning from overriding real-time conditions.
+    const useRegimeKey = regimePattern && regimePattern.trades >= 20;
+    const pattern = useRegimeKey ? regimePattern : legacyPattern;
+    const regimeDampen = useRegimeKey ? 1.0 : 0.5;
+    const learning = applyLearning(convictionScore, riskAmount, lots, pattern, regimeDampen);
 
     if (learning.applied) {
       baseSetup.convictionScore = learning.adjustedScore;

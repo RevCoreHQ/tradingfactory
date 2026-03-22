@@ -16,6 +16,13 @@ export type VolatilityRegime = "low" | "normal" | "high";
 export type StructureRegime = "trend" | "range" | "breakout";
 export type MarketPhase = "accumulation" | "expansion" | "distribution" | "reversal";
 
+export interface PhaseTransition {
+  from: MarketPhase;
+  to: MarketPhase;
+  /** True when the transition represents a directional opportunity */
+  isActionable: boolean;
+}
+
 export interface FullRegime {
   /** Backward-compatible legacy regime derived from structure + volatility */
   legacy: MarketRegime;
@@ -37,6 +44,8 @@ export interface FullRegime {
   adxTrend: "rising" | "falling" | "flat";
   /** Human-readable description */
   label: string;
+  /** Phase transition detected when previous phase differs from current */
+  phaseTransition?: PhaseTransition;
 }
 
 // ==================== Market Structure ====================
@@ -184,6 +193,10 @@ export interface TrackedSetup {
   peakPrice: number | null;
   timeline: StatusTimelineEntry[];
   missedEntry: boolean;
+  /** Whether the entry zone was refined by entry-optimization */
+  entryRefined?: boolean;
+  /** Type of refinement applied (e.g. "engulfing", "fvg_reentry", "pullback_to_ema") */
+  refinementType?: string | null;
 }
 
 // ==================== Confluence Learning ====================

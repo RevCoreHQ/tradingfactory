@@ -8,6 +8,7 @@ export interface PortfolioRiskGate {
   totalRiskPercent: number; // current total portfolio risk%
   reasons: string[];
   currencyExposure: CurrencyExposureEntry[];
+  directionalExposure: DirectionalExposureEntry[];
   correlationBlock: boolean;
   drawdownThrottle: number; // 0-1 multiplier (1.0 = no throttle)
 }
@@ -17,6 +18,14 @@ export interface CurrencyExposureEntry {
   current: number; // number of positions on this currency
   max: number;
   headroom: number;
+}
+
+export interface DirectionalExposureEntry {
+  currency: string;
+  netLong: number;
+  netShort: number;
+  netDirection: number; // netLong - netShort (positive = net long)
+  limit: number;
 }
 
 export interface PortfolioGateConfig {
@@ -29,6 +38,9 @@ export interface PortfolioGateConfig {
   /** Base risk per trade (default 2%). Used to estimate risk of active positions
    *  when actual riskAmount is unavailable (lots=0 mode). */
   baseRiskPercent: number;
+  /** Maximum net directional exposure per currency.
+   *  E.g., max 3 positions net in the same direction for any single currency. */
+  maxDirectionalExposure: number;
 }
 
 export const DEFAULT_GATE_CONFIG: PortfolioGateConfig = {
@@ -37,6 +49,7 @@ export const DEFAULT_GATE_CONFIG: PortfolioGateConfig = {
   maxCorrelatedPositions: 2,
   maxTotalRiskPercent: 10,
   baseRiskPercent: 2,
+  maxDirectionalExposure: 3,
 };
 
 // ==================== CURRENCY DECOMPOSITION ====================
@@ -81,6 +94,46 @@ export function calculatePositionExposure(
 
     exposure[currencies.base] = (exposure[currencies.base] ?? 0) + 1;
     exposure[currencies.quote] = (exposure[currencies.quote] ?? 0) + 1;
+  }
+
+  return exposure;
+}
+
+// ==================== DIRECTIONAL EXPOSURE ====================
+
+/**
+ * Decompose each position into base/quote currency direction.
+ * EURUSD long = EUR long + USD short.
+ * Returns net long/short counts per currency.
+ */
+export function calculateDirectionalExposure(
+  activeSetups: TrackedSetup[]
+): Record<string, { long: number; short: number }> {
+  const exposure: Record<string, { long: number; short: number }> = {};
+
+  const ensure = (currency: string) => {
+    if (!exposure[currency]) exposure[currency] = { long: 0, short: 0 };
+  };
+
+  for (const tracked of activeSetups) {
+    const currencies = INSTRUMENT_CURRENCIES[tracked.setup.instrumentId];
+    if (!currencies) continue;
+
+    const dir = tracked.setup.direction;
+    if (dir === "neutral") continue;
+
+    ensure(currencies.base);
+    ensure(currencies.quote);
+
+    if (dir === "bullish") {
+      // Long the pair = long base, short quote
+      exposure[currencies.base].long += 1;
+      exposure[currencies.quote].short += 1;
+    } else {
+      // Short the pair = short base, long quote
+      exposure[currencies.base].short += 1;
+      exposure[currencies.quote].long += 1;
+    }
   }
 
   return exposure;
@@ -228,6 +281,43 @@ export function evaluatePortfolioGate(
     );
   }
 
+  // 3b. Directional exposure check
+  // EURUSD long + GBPUSD long + USDJPY short = all USD weakness.
+  // Limit net directional exposure per currency.
+  const dirExposure = calculateDirectionalExposure(activeSetups);
+  const dirEntries: DirectionalExposureEntry[] = [];
+
+  if (currencies && newSetup.direction !== "neutral") {
+    const newDir = newSetup.direction;
+
+    for (const curr of [currencies.base, currencies.quote]) {
+      const exp = dirExposure[curr] ?? { long: 0, short: 0 };
+      const isBase = curr === currencies.base;
+      // Determine which direction this currency goes for the new trade
+      const addLong = (isBase && newDir === "bullish") || (!isBase && newDir === "bearish") ? 1 : 0;
+      const addShort = (isBase && newDir === "bearish") || (!isBase && newDir === "bullish") ? 1 : 0;
+      const newLong = exp.long + addLong;
+      const newShort = exp.short + addShort;
+      const netDirection = newLong - newShort;
+
+      dirEntries.push({
+        currency: curr,
+        netLong: newLong,
+        netShort: newShort,
+        netDirection,
+        limit: config.maxDirectionalExposure,
+      });
+
+      if (Math.abs(netDirection) > config.maxDirectionalExposure) {
+        canOpenNew = false;
+        const dirLabel = netDirection > 0 ? "long" : "short";
+        reasons.push(
+          `${curr} net ${dirLabel} exposure would reach ${Math.abs(netDirection)} (max ${config.maxDirectionalExposure})`
+        );
+      }
+    }
+  }
+
   // 4. Drawdown throttle
   const consecutiveLosses = countConsecutiveLosses(historySetups);
   const throttle = drawdownThrottle(consecutiveLosses);
@@ -264,6 +354,7 @@ export function evaluatePortfolioGate(
     totalRiskPercent: currentTotalRisk,
     reasons,
     currencyExposure: exposureEntries,
+    directionalExposure: dirEntries,
     correlationBlock,
     drawdownThrottle: throttle,
   };

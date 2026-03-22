@@ -5,8 +5,8 @@ import { cn } from "@/lib/utils";
 import { Scale, ShieldAlert, RefreshCw, ShieldCheck } from "lucide-react";
 
 const gateChecks = [
-  { icon: "%", check: "Total risk < 6%", desc: "Sum of all open position risk vs equity" },
-  { icon: "$", check: "Currency cap < 4%", desc: "Per-currency exposure (base + quote)" },
+  { icon: "%", check: "Total risk < 10%", desc: "Sum of all open position risk% must not exceed budget" },
+  { icon: "$", check: "Max 3/currency", desc: "Per-currency position count (base + quote)" },
   { icon: "C", check: "Max 2 correlated", desc: "EUR/GBP, AUD/NZD, indices, crypto" },
   { icon: "D", check: "Drawdown throttle", desc: "2 losses = 75%, 3 = 50%, 4+ = 25%" },
 ];
@@ -119,7 +119,7 @@ export function SystemRiskManagement() {
             ))}
           </div>
           <div className="bg-bullish/8 border border-bullish/15 rounded-md px-3 py-1.5">
-            <span className="text-[9px] font-semibold text-bullish/80">10+ trades threshold</span>
+            <span className="text-[9px] font-semibold text-bullish/80">20+ trades threshold</span>
           </div>
         </motion.div>
       </div>

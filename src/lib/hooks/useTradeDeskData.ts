@@ -1,9 +1,9 @@
 "use client";
 
 import useSWR from "swr";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import type { OHLCV } from "@/lib/types/market";
-import type { TradeDeskSetup, TrackedSetup, PortfolioRisk, ConfluencePattern } from "@/lib/types/signals";
+import type { TradeDeskSetup, TrackedSetup, PortfolioRisk, ConfluencePattern, MarketPhase } from "@/lib/types/signals";
 import { INSTRUMENTS, REFRESH_INTERVALS } from "@/lib/utils/constants";
 import { calculateAllIndicators } from "@/lib/calculations/technical-indicators";
 import { generateTradeDeskSetup, rankSetupsByConviction, selectTradingStyle } from "@/lib/calculations/mechanical-signals";
@@ -78,6 +78,7 @@ export function useTradeDeskData(
   historySetups?: TrackedSetup[]
 ) {
   const riskPercent = getStoredNumber(RISK_PERCENT_KEY, 2);
+  const previousPhases = useRef<Record<string, MarketPhase>>({});
 
   const { data: candleMap, isLoading, error, mutate } = useSWR(
     "trade-desk-candles",
@@ -140,8 +141,14 @@ export function useTradeDeskData(
         confluencePatterns,
         effectiveStyle,
         undefined,
-        labOverrides
+        labOverrides,
+        previousPhases.current[inst.id]
       );
+
+      // Store current phase for next iteration (phase transition detection)
+      if (setup.fullRegime) {
+        previousPhases.current[inst.id] = setup.fullRegime.phase;
+      }
 
       // Calculate MTF trend alignment
       const mtfTrend = calculateMTFTrendSummary({

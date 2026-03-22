@@ -209,7 +209,8 @@ export function applyLearning(
   convictionScore: number,
   riskAmount: number,
   lots: number,
-  pattern: ConfluencePattern | null
+  pattern: ConfluencePattern | null,
+  regimeDampen: number = 1.0
 ): {
   adjustedScore: number;
   adjustedRisk: number;
@@ -233,17 +234,25 @@ export function applyLearning(
     };
   }
 
-  const adjustedScore = Math.max(0, Math.min(100, convictionScore + pattern.convictionAdjust));
-  const adjustedRisk = Number((riskAmount * pattern.riskMultiplier).toFixed(0));
-  const adjustedLots = Number(Math.max(0.01, lots * pattern.riskMultiplier).toFixed(2));
+  // Apply regime-lock dampening: when current regime doesn't match
+  // the regime where this pattern was learned, halve the adjustments
+  // to prevent learning from overriding real-time market conditions.
+  const effectiveConvictionAdjust = Math.round(pattern.convictionAdjust * regimeDampen);
+  const effectiveRiskMultiplier = regimeDampen < 1.0
+    ? 1.0 + (pattern.riskMultiplier - 1.0) * regimeDampen
+    : pattern.riskMultiplier;
+
+  const adjustedScore = Math.max(0, Math.min(100, convictionScore + effectiveConvictionAdjust));
+  const adjustedRisk = Number((riskAmount * effectiveRiskMultiplier).toFixed(0));
+  const adjustedLots = Number(Math.max(0.01, lots * effectiveRiskMultiplier).toFixed(2));
 
   return {
     adjustedScore,
     adjustedRisk,
     adjustedLots,
     applied: true,
-    riskMultiplier: pattern.riskMultiplier,
-    convictionAdjust: pattern.convictionAdjust,
+    riskMultiplier: effectiveRiskMultiplier,
+    convictionAdjust: effectiveConvictionAdjust,
     winRate: pattern.decayedWinRate ?? pattern.winRate,
     trades: pattern.trades,
   };

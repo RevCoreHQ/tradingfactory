@@ -6,6 +6,7 @@ import type {
   VolatilityRegime,
   StructureRegime,
   MarketPhase,
+  PhaseTransition,
 } from "@/lib/types/signals";
 import { calcEMA, calculateATRSeries, calculateBollingerBands, calculateADX } from "./technical-indicators";
 
@@ -228,7 +229,8 @@ function buildLabel(regime: FullRegime): string {
  */
 export function detectFullRegime(
   candles: OHLCV[],
-  summary: TechnicalSummary
+  summary: TechnicalSummary,
+  previousPhase?: MarketPhase
 ): FullRegime {
   const adx = summary.adx.adx;
   const atr = summary.atr.value;
@@ -270,6 +272,23 @@ export function detectFullRegime(
 
   regime.legacy = deriveLegacyRegime(regime);
   regime.label = buildLabel(regime);
+
+  // Phase transition detection: compare current phase to previous
+  if (previousPhase && previousPhase !== phase) {
+    const actionableTransitions: Record<string, boolean> = {
+      "expansion->distribution": true,   // Best short opportunity
+      "distribution->reversal": true,    // Continuation short
+      "accumulation->expansion": true,   // Best long opportunity
+      "reversal->accumulation": true,    // Continuation long
+      "distribution->accumulation": true, // Trend completion
+    };
+    const key = `${previousPhase}->${phase}`;
+    regime.phaseTransition = {
+      from: previousPhase,
+      to: phase,
+      isActionable: !!actionableTransitions[key],
+    };
+  }
 
   return regime;
 }

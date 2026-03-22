@@ -53,6 +53,8 @@ export function createTrackedSetup(setup: TradeDeskSetup): TrackedSetup {
     peakPrice: null,
     timeline: [{ status: "pending", timestamp: now, price: setup.currentPrice }],
     missedEntry: false,
+    entryRefined: !!(setup.entryOptimization?.signals?.length),
+    refinementType: setup.entryOptimization?.bestSignal?.type ?? null,
   };
 }
 

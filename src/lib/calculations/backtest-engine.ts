@@ -5,7 +5,7 @@ import type {
   BacktestResult,
   BacktestProgress,
 } from "@/lib/types/backtest";
-import type { TradeDeskSetup, ConvictionTier } from "@/lib/types/signals";
+import type { TradeDeskSetup, ConvictionTier, MarketPhase } from "@/lib/types/signals";
 import { calculateAllIndicators } from "./technical-indicators";
 import { generateTradeDeskSetup } from "./mechanical-signals";
 import {
@@ -272,6 +272,8 @@ export function runBacktest(
     return emptyResult(config);
   }
 
+  let previousPhase: MarketPhase | undefined = undefined;
+
   for (let i = config.windowSize; i < candles.length; i += config.stepSize) {
     const window = candles.slice(i - config.windowSize, i);
     const currentBar = candles[i];
@@ -300,8 +302,14 @@ export function runBacktest(
         undefined,
         config.tradingStyle,
         undefined,
-        config.overrides
+        config.overrides,
+        previousPhase
       );
+
+      // Track phase for transition detection on next iteration
+      if (setup.fullRegime) {
+        previousPhase = setup.fullRegime.phase;
+      }
 
       if (passesFilters(setup, config)) {
         // Avoid re-entering same direction immediately after a loss

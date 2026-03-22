@@ -108,7 +108,7 @@ export function SystemPipelineFlow() {
             {[
               { axis: "Volatility", values: "Low / Normal / High", source: "ATR percentile vs rolling window" },
               { axis: "Structure", values: "Trend / Range / Breakout", source: "ADX + EMA slope + BB width" },
-              { axis: "Phase", values: "Accumulation / Expansion / Distribution / Markdown", source: "Wyckoff-inspired: ADX direction + price vs EMA50" },
+              { axis: "Phase", values: "Accumulation / Expansion / Distribution / Reversal", source: "Wyckoff-inspired: ADX direction + price vs EMA50" },
             ].map((a) => (
               <div key={a.axis} className="bg-bullish/8 border border-bullish/15 rounded-md px-2.5 py-1.5">
                 <div className="text-[10px] font-semibold text-bullish/80">{a.axis}</div>
@@ -202,7 +202,7 @@ export function SystemPipelineFlow() {
           <p>
             Systems are grouped into three <strong>de-correlation clusters</strong> — Trend (MA Crossover, MACD,
             BB Breakout, Trend Stack), Mean Reversion (RSI Extremes, BB MR), and Momentum (Elder Impulse, Elder-Ray).
-            Signals that don&apos;t match the regime get their strength reduced by 40%.
+            Signals that don&apos;t match the regime are excluded entirely (strength=0, direction=neutral).
           </p>
           <p>
             <strong>Auto-kill weak systems:</strong> Each system&apos;s historical win rate is tracked. Systems
@@ -364,8 +364,8 @@ export function SystemPipelineFlow() {
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-2">
             {[
-              { check: "Total portfolio risk < 6%", desc: "Sum of all open position risk amounts vs equity" },
-              { check: "Currency exposure < 4% per currency", desc: "Both base and quote currency caps enforced" },
+              { check: "Total portfolio risk < 10%", desc: "Sum of all open position risk% must not exceed budget" },
+              { check: "Max 3 positions per currency", desc: "Both base and quote currency caps enforced" },
               { check: "Max 2 correlated positions", desc: "EUR/GBP, AUD/NZD, US indices, crypto groups" },
               { check: "Drawdown throttle", desc: "2 consecutive losses → 75% size, 3 → 50%, 4+ → 25%" },
             ].map((c) => (
@@ -428,10 +428,10 @@ export function SystemPipelineFlow() {
             ))}
           </div>
           <div className="mt-2 bg-bullish/8 border border-bullish/15 rounded-md px-3 py-2">
-            <div className="text-[10px] font-semibold text-bullish/80">Threshold: 10+ trades</div>
+            <div className="text-[10px] font-semibold text-bullish/80">Threshold: 20+ trades</div>
             <p className="text-[9px] text-muted-foreground/50">
-              Learning kicks in after 10 completed trades. EV &gt; 1.0R &rarr; 1.5x risk, EV 0.5-1.0R &rarr; 1.25x, EV &lt; 0 &rarr; 0.5x.
-              Falls back to win-rate multipliers when expectancy data is insufficient.
+              Learning kicks in after 20 completed trades. EV &gt; 1.0R &rarr; 1.5x risk, EV 0.5-1.0R &rarr; 1.25x, EV &lt; 0 &rarr; 0.5x.
+              Regime-specific keys preferred when available. Falls back to legacy keys when data insufficient.
             </p>
           </div>
         </PipelineStageCard>
