@@ -119,6 +119,13 @@ export interface TradeDeskSetup {
   };
   portfolioGate?: import("@/lib/calculations/portfolio-risk-gate").PortfolioRiskGate;
   entryOptimization?: import("@/lib/calculations/entry-optimization").EntryOptimization;
+  ictContext?: {
+    nearestFVG: { type: "bullish" | "bearish"; midpoint: number; freshness: string } | null;
+    nearestOB: { type: "supply" | "demand"; high: number; low: number; strength: number } | null;
+    displacementDetected: boolean;
+    consolidationBreakout: boolean;
+    ictScore: number; // 0-100
+  };
 }
 
 // ==================== Setup Lifecycle ====================

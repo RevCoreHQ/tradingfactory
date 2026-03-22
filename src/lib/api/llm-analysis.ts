@@ -685,7 +685,7 @@ export async function generateMarketSummary(
 
 import type { DeepAnalysisLLMResult, AITradeIdea } from "@/lib/types/deep-analysis";
 
-const DEEP_ANALYSIS_SYSTEM_PROMPT = `You are an elite price action and order flow analyst at a prop trading desk. Given supply/demand zones, confluence levels, and technical context, provide specific actionable trade ideas.
+const DEEP_ANALYSIS_SYSTEM_PROMPT = `You are an elite price action and order flow analyst at a prop trading desk. Given supply/demand zones, Fair Value Gaps (ICT concepts), confluence levels, and technical context, provide specific actionable trade ideas.
 
 Rules:
 - Provide 2-3 specific trade ideas, each with:
@@ -718,6 +718,11 @@ ${(req.supplyZones || []).map((z: { priceHigh: number; priceLow: number; strengt
 Demand Zones (support/buying pressure):
 ${(req.demandZones || []).map((z: { priceHigh: number; priceLow: number; strength: number; freshness: string; impulseMagnitude: number }) =>
   `  ${z.priceLow.toFixed(req.currentPrice > 100 ? 2 : 5)} – ${z.priceHigh.toFixed(req.currentPrice > 100 ? 2 : 5)} (strength: ${z.strength}, ${z.freshness}, ${z.impulseMagnitude.toFixed(1)}x ATR)`
+).join("\n") || "  None detected"}
+
+--- Fair Value Gaps (ICT) ---
+${(req.fairValueGaps || []).map((f: { type: string; high: number; low: number; midpoint: number; freshness: string; sizeATR: number; strength: number }) =>
+  `  ${f.type} FVG: ${f.low.toFixed(req.currentPrice > 100 ? 2 : 5)} – ${f.high.toFixed(req.currentPrice > 100 ? 2 : 5)} (CE: ${f.midpoint.toFixed(req.currentPrice > 100 ? 2 : 5)}, ${f.freshness}, ${f.sizeATR.toFixed(1)}x ATR, strength: ${f.strength})`
 ).join("\n") || "  None detected"}
 
 --- Confluence Levels ---

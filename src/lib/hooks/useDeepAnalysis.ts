@@ -6,6 +6,8 @@ import { useTechnicalData } from "./useTechnicalData";
 import { useMarketStore } from "@/lib/store/market-store";
 import { detectSupplyDemandZones } from "@/lib/calculations/supply-demand-zones";
 import { calculateConfluenceLevels } from "@/lib/calculations/confluence-levels";
+import { detectFairValueGaps } from "@/lib/calculations/fair-value-gaps";
+import { detectInstitutionalCandles, detectConsolidationBreakouts } from "@/lib/calculations/institutional-candles";
 import type { DeepAnalysisResult, DeepAnalysisLLMResult } from "@/lib/types/deep-analysis";
 import type { TechnicalSummary } from "@/lib/types/indicators";
 import type { BiasResult } from "@/lib/types/bias";
@@ -24,21 +26,31 @@ export function useDeepAnalysis(): {
   const deepAnalysis = useMemo(() => {
     if (!indicators || candles.length < 20) return null;
 
+    const atrValue = indicators.atr.value;
+
     const { supplyZones, demandZones } = detectSupplyDemandZones(
       candles,
-      indicators.atr.value
+      atrValue
     );
+
+    const fairValueGaps = detectFairValueGaps(candles, atrValue);
+    const institutionalCandles = detectInstitutionalCandles(candles, atrValue);
+    const consolidationBreakouts = detectConsolidationBreakouts(candles, atrValue, institutionalCandles);
 
     const confluenceLevels = calculateConfluenceLevels(
       indicators.currentPrice,
       indicators,
       supplyZones,
-      demandZones
+      demandZones,
+      fairValueGaps
     );
 
     return {
       supplyZones,
       demandZones,
+      fairValueGaps,
+      institutionalCandles,
+      consolidationBreakouts,
       confluenceLevels,
       currentPrice: indicators.currentPrice,
       timestamp: Date.now(),
@@ -71,6 +83,7 @@ export function useDeepAnalysisLLM(
       currentPrice: indicators.currentPrice,
       supplyZones: deepAnalysis?.supplyZones.slice(0, 5) ?? [],
       demandZones: deepAnalysis?.demandZones.slice(0, 5) ?? [],
+      fairValueGaps: deepAnalysis?.fairValueGaps?.slice(0, 5) ?? [],
       confluenceLevels: deepAnalysis?.confluenceLevels ?? [],
       trend: indicators.trend,
       rsi: indicators.rsi,

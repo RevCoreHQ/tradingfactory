@@ -19,6 +19,10 @@ import { analyzeMarketStructure } from "./market-structure";
 import { computeDeCorrelatedAgreement } from "./signal-clustering";
 import { applySystemWeights, type SystemPerformance } from "./system-performance";
 import { analyzeEntryOptimization } from "./entry-optimization";
+import { detectFairValueGaps } from "./fair-value-gaps";
+import { detectInstitutionalCandles, detectConsolidationBreakouts } from "./institutional-candles";
+import { detectSupplyDemandZones } from "./supply-demand-zones";
+import type { FairValueGap, SupplyDemandZone } from "@/lib/types/deep-analysis";
 import type { MarketStructure } from "@/lib/types/signals";
 
 // ==================== TRADING STYLE ====================
@@ -130,7 +134,8 @@ function snapLevelsToStructure(
   atr: number,
   atrEntry: [number, number],
   atrSL: number,
-  atrTP: [number, number, number]
+  atrTP: [number, number, number],
+  fairValueGaps?: FairValueGap[]
 ): {
   entry: [number, number];
   stopLoss: number;
@@ -142,6 +147,20 @@ function snapLevelsToStructure(
   }
 
   const levels = collectStructuralLevels(summary, price);
+
+  // Add FVG midpoints (Consequent Encroachment) as structural levels
+  if (fairValueGaps && fairValueGaps.length > 0) {
+    for (const fvg of fairValueGaps) {
+      if (fvg.freshness === "filled") continue;
+      const fvgStrength = Math.round(fvg.strength / 20); // Normalize 0-100 → 0-5
+      levels.push({
+        price: fvg.midpoint,
+        type: fvg.type === "bullish" ? "support" : "resistance",
+        strength: Math.max(3, fvgStrength),
+      });
+    }
+  }
+
   if (levels.length === 0) {
     return { entry: atrEntry, stopLoss: atrSL, takeProfit: atrTP, riskReward: [1.5, 2.5, 3.5] };
   }
@@ -633,7 +652,8 @@ function calculateConviction(
   impulseColor: ImpulseColor,
   adx: number,
   fullRegime?: FullRegime,
-  marketStructure?: MarketStructure | null
+  marketStructure?: MarketStructure | null,
+  ictContext?: TradeDeskSetup["ictContext"]
 ): { tier: ConvictionTier; score: number; direction: "bullish" | "bearish" | "neutral" } {
   // Count signal directions
   const bullish = signals.filter((s) => s.direction === "bullish");
@@ -724,6 +744,23 @@ function calculateConviction(
     if (marketStructure.lastBOS) {
       if (marketStructure.lastBOS.direction === direction) score += 5;
     }
+  }
+
+  // ICT confluence factor (0-10 pts)
+  if (ictContext) {
+    let ictBonus = 0;
+    if (ictContext.nearestFVG && ictContext.nearestFVG.freshness === "fresh") {
+      const aligned = (direction === "bullish" && ictContext.nearestFVG.type === "bullish") ||
+                      (direction === "bearish" && ictContext.nearestFVG.type === "bearish");
+      if (aligned) ictBonus += 5;
+    }
+    if (ictContext.nearestOB && ictContext.nearestOB.strength >= 60) {
+      const aligned = (direction === "bullish" && ictContext.nearestOB.type === "demand") ||
+                      (direction === "bearish" && ictContext.nearestOB.type === "supply");
+      if (aligned) ictBonus += 3;
+    }
+    if (ictContext.displacementDetected) ictBonus += 2;
+    score += Math.min(10, ictBonus);
   }
 
   // Map to tier
@@ -843,9 +880,72 @@ export function generateTradeDeskSetup(
   // 3. Analyze market structure (HH/HL/BOS/CHoCH)
   const marketStructure = analyzeMarketStructure(candles);
 
-  // 4. Calculate conviction (pass fullRegime + structure for phase-aware scoring)
+  // 3b. ICT context — Fair Value Gaps, Institutional Candles, Consolidation Breakouts, S/D Zones
+  const atrVal = summary.atr.value;
+  const fairValueGaps = detectFairValueGaps(candles, atrVal);
+  const institutionalCandles = detectInstitutionalCandles(candles, atrVal);
+  const consolidationBreakouts = detectConsolidationBreakouts(candles, atrVal, institutionalCandles);
+  const { supplyZones, demandZones } = detectSupplyDemandZones(candles, atrVal);
+  const allSDZones: SupplyDemandZone[] = [...supplyZones, ...demandZones];
+
+  // Build ICT context for conviction + setup
+  const currentPrice = summary.currentPrice;
+  const prelimDirection = (() => {
+    const b = signals.filter((s) => s.direction === "bullish").length;
+    const be = signals.filter((s) => s.direction === "bearish").length;
+    return b > be ? "bullish" : be > b ? "bearish" : "neutral";
+  })();
+
+  const nearestFVG = fairValueGaps.length > 0
+    ? (() => {
+        const sorted = [...fairValueGaps]
+          .filter((f) => f.freshness !== "filled")
+          .sort((a, b) => Math.abs(a.midpoint - currentPrice) - Math.abs(b.midpoint - currentPrice));
+        const nearest = sorted[0];
+        return nearest ? { type: nearest.type, midpoint: nearest.midpoint, freshness: nearest.freshness } : null;
+      })()
+    : null;
+
+  const nearestOB = allSDZones.length > 0
+    ? (() => {
+        const obs = allSDZones.filter((z) => z.isOrderBlock && z.freshness !== "broken");
+        const sorted = obs.sort((a, b) => {
+          const aMid = (a.priceHigh + a.priceLow) / 2;
+          const bMid = (b.priceHigh + b.priceLow) / 2;
+          return Math.abs(aMid - currentPrice) - Math.abs(bMid - currentPrice);
+        });
+        const nearest = sorted[0];
+        return nearest ? { type: nearest.type, high: nearest.priceHigh, low: nearest.priceLow, strength: nearest.strength } : null;
+      })()
+    : null;
+
+  const displacementDetected = institutionalCandles.length > 0 &&
+    institutionalCandles.some((ic) => {
+      if (prelimDirection === "neutral") return false;
+      return ic.type === prelimDirection && ic.displacementScore >= 60;
+    });
+
+  const consolidationBreakout = consolidationBreakouts.length > 0 &&
+    consolidationBreakouts.some((cb) => cb.breakoutDirection === prelimDirection);
+
+  const ictScore = Math.min(100, Math.round(
+    (nearestFVG && nearestFVG.freshness === "fresh" ? 30 : nearestFVG ? 15 : 0) +
+    (nearestOB ? Math.min(30, nearestOB.strength * 0.3) : 0) +
+    (displacementDetected ? 25 : 0) +
+    (consolidationBreakout ? 15 : 0)
+  ));
+
+  const ictContext: TradeDeskSetup["ictContext"] = {
+    nearestFVG,
+    nearestOB,
+    displacementDetected,
+    consolidationBreakout,
+    ictScore,
+  };
+
+  // 4. Calculate conviction (pass fullRegime + structure + ICT for phase-aware scoring)
   const adx = summary.adx.adx;
-  const { tier, score: convictionScore, direction } = calculateConviction(signals, regime, impulseColor, adx, fullRegime, marketStructure);
+  const { tier, score: convictionScore, direction } = calculateConviction(signals, regime, impulseColor, adx, fullRegime, marketStructure, ictContext);
 
   // 4. Consensus
   const bullish = signals.filter((s) => s.direction === "bullish").length;
@@ -875,13 +975,13 @@ export function generateTradeDeskSetup(
   const tp3 = price + dir * atr * params.tpMultipliers[2];
   const takeProfit: [number, number, number] = [tp1, tp2, tp3];
 
-  // 5b. Snap levels to structural S/R, pivots, fibs
+  // 5b. Snap levels to structural S/R, pivots, fibs, FVG midpoints
   const snapped = snapLevelsToStructure(
-    summary, direction, price, atr, entry, stopLoss, takeProfit
+    summary, direction, price, atr, entry, stopLoss, takeProfit, fairValueGaps
   );
 
-  // 5c. Entry optimization — candle patterns + pullback detection
-  const entryOpt = analyzeEntryOptimization(candles, direction, atr, snapped.entry);
+  // 5c. Entry optimization — candle patterns + pullback + ICT patterns
+  const entryOpt = analyzeEntryOptimization(candles, direction, atr, snapped.entry, fairValueGaps, allSDZones);
   if (entryOpt.refinedEntry) {
     snapped.entry = entryOpt.refinedEntry;
   }
@@ -935,6 +1035,7 @@ export function generateTradeDeskSetup(
     fullRegime,
     marketStructure: marketStructure ?? undefined,
     entryOptimization: entryOpt.signals.length > 0 ? entryOpt : undefined,
+    ictContext: ictScore > 0 ? ictContext : undefined,
   };
 
   if (confluencePatterns) {

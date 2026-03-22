@@ -141,6 +141,20 @@ export function SystemPipelineFlow() {
               </div>
             ))}
           </div>
+          <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mt-3 mb-1.5">ICT Concepts</h4>
+          <div className="grid grid-cols-2 gap-1.5">
+            {[
+              { name: "Fair Value Gaps", desc: "3-candle imbalances where price skipped — CE midpoint acts as institutional magnet", color: "text-amber-700 dark:text-amber-500" },
+              { name: "Order Blocks", desc: "Last opposing candle before impulse (body ≥ 2x ATR, ratio ≥ 0.6) — institutional entry footprint", color: "text-amber-700 dark:text-amber-500" },
+              { name: "Displacement", desc: "Large institutional candles (≥ 2x ATR body) that create FVGs and break structure", color: "text-amber-700 dark:text-amber-500" },
+              { name: "Consolidation Breakouts", desc: "Tight ranges (< 1.5x ATR, ≥ 5 bars) before institutional moves — retest zones", color: "text-amber-700 dark:text-amber-500" },
+            ].map((c) => (
+              <div key={c.name} className="bg-amber-500/8 border border-amber-500/15 rounded-md px-2.5 py-1.5">
+                <div className={`text-[10px] font-semibold ${c.color}`}>{c.name}</div>
+                <div className="text-[9px] text-muted-foreground/50">{c.desc}</div>
+              </div>
+            ))}
+          </div>
           <p className="mt-2">
             A <strong>structure score</strong> (-100 to +100) is computed from the balance of HH/HL vs LH/LL swings.
             This feeds conviction scoring: aligned structure adds +10, opposing structure subtracts -10, and
@@ -246,7 +260,7 @@ export function SystemPipelineFlow() {
         </PipelineStageCard>
 
         <PipelineStageCard number={9} title="Conviction Scoring" subtitle="De-correlated agreement + regime + phase + structure + impulse → A+ to D" icon={<Target className="h-3.5 w-3.5" />} badge="mechanical" accentColor="green" defaultExpanded>
-          <p>A conviction score (0-100) is calculated from <strong>eight factors</strong>:</p>
+          <p>A conviction score (0-100) is calculated from <strong>nine factors</strong>:</p>
           <div className="space-y-1 mt-2">
             {[
               { label: "Cluster Agreement", range: "0-40 pts", width: "40%", color: "bg-neutral-accent/40" },
@@ -257,6 +271,7 @@ export function SystemPipelineFlow() {
               { label: "Structure Alignment", range: "-15 to +10", width: "25%", color: "bg-neutral-accent/30" },
               { label: "Exhaustion Penalty", range: "-10 pts", width: "10%", color: "bg-bearish/40" },
               { label: "MTF Alignment", range: "-10 to +10", width: "20%", color: "bg-neutral-accent/40" },
+              { label: "ICT Confluence", range: "0-10 pts", width: "10%", color: "bg-amber-500/30" },
             ].map((f) => (
               <div key={f.label} className="flex items-center gap-2">
                 <span className="w-28 text-[9px] font-bold text-muted-foreground/60 uppercase shrink-0">{f.label}</span>
@@ -296,10 +311,10 @@ export function SystemPipelineFlow() {
           </div>
         </PipelineStageCard>
 
-        <PipelineStageCard number={11} title="Entry Optimization" subtitle="Candle patterns + pullback detection refine entry timing" icon={<Crosshair className="h-3.5 w-3.5" />} badge="mechanical" accentColor="green" defaultExpanded>
+        <PipelineStageCard number={11} title="Entry Optimization" subtitle="Candle patterns + pullback + ICT patterns refine entry timing" icon={<Crosshair className="h-3.5 w-3.5" />} badge="mechanical" accentColor="green" defaultExpanded>
           <p>
-            After structural level snapping, the entry zone is refined using <strong>candle pattern recognition</strong>
-            and <strong>pullback detection</strong>. The system scans the most recent candles for:
+            After structural level snapping, the entry zone is refined using <strong>candle pattern recognition</strong>,
+            <strong>pullback detection</strong>, and <strong>ICT entry patterns</strong>. The system scans the most recent candles for:
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mt-2">
             {[
@@ -308,6 +323,8 @@ export function SystemPipelineFlow() {
               { name: "Pin Bar", desc: "Tiny body (<20%), dominant wick (>60%)" },
               { name: "Inside Bar", desc: "Range compression = breakout anticipation" },
               { name: "Pullback to EMA(21)", desc: "30-70% retracement to key MA" },
+              { name: "FVG Re-entry", desc: "Price enters fresh/tested Fair Value Gap" },
+              { name: "OB Retest", desc: "Wick into Order Block with rejection close" },
               { name: "Refined Entry Zone", desc: "Tightened when pattern quality > 60" },
             ].map((p) => (
               <div key={p.name} className="bg-bullish/8 border border-bullish/15 rounded-md px-2.5 py-1.5">
@@ -325,7 +342,7 @@ export function SystemPipelineFlow() {
         <PipelineStageCard number={12} title="Structural Level Snapping + Position Sizing" subtitle="S/R snap → conviction-scaled risk per trade" icon={<Scale className="h-3.5 w-3.5" />} badge="data" accentColor="blue" defaultExpanded>
           <p>
             Raw ATR-based levels are &ldquo;snapped&rdquo; to the nearest structural support/resistance zones
-            (Fractal S/R, Pivot Points, Fibonacci). Position size scales by conviction tier:
+            (Fractal S/R, Pivot Points, Fibonacci, FVG Midpoints). Position size scales by conviction tier:
           </p>
           <div className="flex gap-3 mt-2">
             {[

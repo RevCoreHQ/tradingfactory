@@ -1,3 +1,50 @@
+// ==================== ICT Concepts ====================
+
+export interface FairValueGap {
+  type: "bullish" | "bearish";
+  high: number;
+  low: number;
+  midpoint: number; // Consequent Encroachment (CE) = (high + low) / 2
+  candleIndex: number;
+  timestamp: number;
+  size: number;
+  sizeATR: number;
+  fillPercent: number; // 0-100
+  freshness: "fresh" | "tested" | "filled";
+  strength: number; // 0-100
+}
+
+export interface InstitutionalCandle {
+  type: "bullish" | "bearish";
+  candleIndex: number;
+  timestamp: number;
+  open: number;
+  close: number;
+  high: number;
+  low: number;
+  bodyATR: number;
+  createdFVG: boolean;
+  brokeStructure: boolean;
+  displacementScore: number; // 0-100
+}
+
+export interface ConsolidationBreakout {
+  rangeHigh: number;
+  rangeLow: number;
+  startIndex: number;
+  endIndex: number;
+  barCount: number;
+  rangeATR: number;
+  breakoutDirection: "bullish" | "bearish";
+  breakoutCandle: InstitutionalCandle;
+  retestZoneHigh: number;
+  retestZoneLow: number;
+  retested: boolean;
+  strength: number; // 0-100
+}
+
+// ==================== Supply / Demand ====================
+
 export interface SupplyDemandZone {
   type: "supply" | "demand";
   priceHigh: number;
@@ -14,7 +61,7 @@ export interface SupplyDemandZone {
 export interface ConfluenceSource {
   name: string;
   price: number;
-  category: "support_resistance" | "pivot" | "fibonacci" | "supply_demand" | "moving_average" | "vwap";
+  category: "support_resistance" | "pivot" | "fibonacci" | "supply_demand" | "moving_average" | "vwap" | "ict";
 }
 
 export interface ConfluenceLevel {
@@ -28,6 +75,9 @@ export interface DeepAnalysisResult {
   supplyZones: SupplyDemandZone[];
   demandZones: SupplyDemandZone[];
   confluenceLevels: ConfluenceLevel[];
+  fairValueGaps: FairValueGap[];
+  institutionalCandles: InstitutionalCandle[];
+  consolidationBreakouts: ConsolidationBreakout[];
   currentPrice: number;
   timestamp: number;
 }

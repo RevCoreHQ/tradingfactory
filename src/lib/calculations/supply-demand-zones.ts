@@ -6,6 +6,10 @@ const MIN_BODY_RATIO = 0.5;
 const MAX_IMPULSE_CANDLES = 3;
 const MAX_ZONES = 10;
 
+// ICT Order Block thresholds — stricter than regular S/D zones
+const MIN_OB_IMPULSE_ATR = 2.0;
+const MIN_OB_BODY_RATIO = 0.6;
+
 function bodyRatio(c: OHLCV): number {
   const range = c.high - c.low;
   if (range === 0) return 0;
@@ -76,7 +80,7 @@ export function detectSupplyDemandZones(
           freshness,
           testCount,
           impulseMagnitude: magnitude,
-          isOrderBlock: true,
+          isOrderBlock: magnitude >= MIN_OB_IMPULSE_ATR && br >= MIN_OB_BODY_RATIO,
         });
       }
     }
@@ -116,7 +120,7 @@ export function detectSupplyDemandZones(
           freshness,
           testCount,
           impulseMagnitude: magnitude,
-          isOrderBlock: true,
+          isOrderBlock: magnitude >= MIN_OB_IMPULSE_ATR && br >= MIN_OB_BODY_RATIO,
         });
       }
     }

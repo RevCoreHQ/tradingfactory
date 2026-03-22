@@ -1,5 +1,5 @@
 import type { TechnicalSummary } from "@/lib/types/indicators";
-import type { SupplyDemandZone, ConfluenceLevel, ConfluenceSource } from "@/lib/types/deep-analysis";
+import type { SupplyDemandZone, ConfluenceLevel, ConfluenceSource, FairValueGap } from "@/lib/types/deep-analysis";
 
 const PROXIMITY_PCT = 0.003; // 0.3% — levels within this range cluster together
 const MAX_LEVELS = 8;
@@ -12,7 +12,8 @@ export function calculateConfluenceLevels(
   currentPrice: number,
   indicators: TechnicalSummary,
   supplyZones: SupplyDemandZone[],
-  demandZones: SupplyDemandZone[]
+  demandZones: SupplyDemandZone[],
+  fairValueGaps?: FairValueGap[]
 ): ConfluenceLevel[] {
   const allSources: ConfluenceSource[] = [];
 
@@ -77,6 +78,23 @@ export function calculateConfluenceLevels(
       price: indicators.vwap.value,
       category: "vwap",
     });
+  }
+
+  // Fair Value Gap midpoints (ICT Consequent Encroachment)
+  if (fairValueGaps) {
+    for (const fvg of fairValueGaps) {
+      if (fvg.freshness === "filled") continue;
+      allSources.push({
+        name: `FVG CE (${fvg.type})`,
+        price: fvg.midpoint,
+        category: "ict",
+      });
+      allSources.push({
+        name: `FVG ${fvg.type === "bullish" ? "Low" : "High"}`,
+        price: fvg.type === "bullish" ? fvg.low : fvg.high,
+        category: "ict",
+      });
+    }
   }
 
   // Filter out levels too far from current price (>5%)

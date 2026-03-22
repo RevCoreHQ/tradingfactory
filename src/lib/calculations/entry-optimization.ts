@@ -1,4 +1,5 @@
 import type { OHLCV } from "@/lib/types/market";
+import type { FairValueGap, SupplyDemandZone } from "@/lib/types/deep-analysis";
 
 // ==================== TYPES ====================
 
@@ -16,7 +17,9 @@ export type EntryPatternType =
   | "engulfing"
   | "pin_bar"
   | "inside_bar"
-  | "pullback_to_ema";
+  | "pullback_to_ema"
+  | "fvg_reentry"
+  | "order_block_retest";
 
 export interface EntryOptimization {
   signals: EntrySignal[];
@@ -263,17 +266,100 @@ function detectPullback(
   };
 }
 
+// ==================== ICT ENTRY PATTERNS ====================
+
+/**
+ * Detect price entering a fresh/tested Fair Value Gap aligned with direction.
+ */
+function detectFVGReentry(
+  candles: OHLCV[],
+  direction: "bullish" | "bearish",
+  fairValueGaps: FairValueGap[]
+): EntrySignal | null {
+  if (candles.length < 2 || fairValueGaps.length === 0) return null;
+
+  const last = candles[candles.length - 1];
+  const prev = candles[candles.length - 2];
+
+  for (const fvg of fairValueGaps) {
+    if (fvg.freshness === "filled") continue;
+    // Must align: bullish FVG for bullish direction, bearish for bearish
+    if (fvg.type !== direction) continue;
+
+    // Check if the last candle entered the FVG zone
+    const entered = last.low <= fvg.high && last.high >= fvg.low;
+    // Previous candle should have been outside (confirming this is a new entry)
+    const wasOutside = direction === "bullish"
+      ? prev.low > fvg.high
+      : prev.high < fvg.low;
+
+    if (entered && wasOutside) {
+      const quality = Math.min(85, Math.round(45 + fvg.strength * 0.4));
+      return {
+        type: "fvg_reentry",
+        direction,
+        quality,
+        description: `Price entered ${fvg.freshness} ${direction} FVG (CE: ${fvg.midpoint.toFixed(4)})`,
+        candleIndex: candles.length - 1,
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Detect price testing a fresh Order Block with rejection wick.
+ */
+function detectOrderBlockRetest(
+  candles: OHLCV[],
+  direction: "bullish" | "bearish",
+  zones: SupplyDemandZone[]
+): EntrySignal | null {
+  if (candles.length < 2 || zones.length === 0) return null;
+
+  const last = candles[candles.length - 1];
+
+  for (const zone of zones) {
+    if (!zone.isOrderBlock || zone.freshness === "broken") continue;
+    // Demand OB for bullish, Supply OB for bearish
+    if (direction === "bullish" && zone.type !== "demand") continue;
+    if (direction === "bearish" && zone.type !== "supply") continue;
+
+    // Check if the candle wicked into the OB zone but closed outside
+    const wickedIn = last.low <= zone.priceHigh && last.high >= zone.priceLow;
+    const rejection = direction === "bullish"
+      ? last.close > zone.priceHigh // Wick into demand OB, closed above
+      : last.close < zone.priceLow; // Wick into supply OB, closed below
+
+    if (wickedIn && rejection) {
+      const quality = Math.min(85, Math.round(50 + zone.strength * 0.35));
+      return {
+        type: "order_block_retest",
+        direction,
+        quality,
+        description: `${zone.freshness} ${zone.type} Order Block retest with rejection`,
+        candleIndex: candles.length - 1,
+      };
+    }
+  }
+
+  return null;
+}
+
 // ==================== MASTER FUNCTION ====================
 
 /**
  * Analyze candles for entry optimization signals.
- * Returns candle patterns + pullback detection + refined entry zone.
+ * Returns candle patterns + pullback detection + ICT patterns + refined entry zone.
  */
 export function analyzeEntryOptimization(
   candles: OHLCV[],
   direction: "bullish" | "bearish" | "neutral",
   atr: number,
-  currentEntry: [number, number]
+  currentEntry: [number, number],
+  fairValueGaps?: FairValueGap[],
+  supplyDemandZones?: SupplyDemandZone[]
 ): EntryOptimization {
   if (direction === "neutral" || candles.length < 5) {
     return {
@@ -304,6 +390,17 @@ export function analyzeEntryOptimization(
   // Detect pullback
   const pullback = detectPullback(candles, direction, atr);
   if (pullback.signal) signals.push(pullback.signal);
+
+  // ICT entry patterns
+  if (fairValueGaps && fairValueGaps.length > 0) {
+    const fvgSignal = detectFVGReentry(candles, direction, fairValueGaps);
+    if (fvgSignal) signals.push(fvgSignal);
+  }
+
+  if (supplyDemandZones && supplyDemandZones.length > 0) {
+    const obSignal = detectOrderBlockRetest(candles, direction, supplyDemandZones);
+    if (obSignal) signals.push(obSignal);
+  }
 
   // Find best signal
   const bestSignal = signals.length > 0
