@@ -1,4 +1,4 @@
-import type { BacktestResult, OptimizationProfile, BatchInstrumentResult } from "@/lib/types/backtest";
+import type { BacktestResult, OptimizationProfile, BatchInstrumentResult, OptimizedParams } from "@/lib/types/backtest";
 
 const RESULTS_KEY = "tf_backtest_results";
 const PROFILES_KEY = "tf_optimization_profiles";
@@ -114,4 +114,46 @@ export function saveBatchResults(results: BatchInstrumentResult[]): void {
       localStorage.setItem(BATCH_KEY, JSON.stringify([{ timestamp: Date.now(), results: lightweight }]));
     } catch { /* give up */ }
   }
+}
+
+// ==================== OPTIMIZED PARAMS (Weekend Lab → Runtime) ====================
+
+const OPTIMIZED_KEY = "tf_optimized_params";
+
+export function loadOptimizedParams(): OptimizedParams[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(OPTIMIZED_KEY);
+    return raw ? (JSON.parse(raw) as OptimizedParams[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function getOptimizedOverrides(
+  instrumentId: string,
+  style: string
+): NonNullable<OptimizedParams["overrides"]> | null {
+  const all = loadOptimizedParams();
+  const match = all.find((p) => p.instrumentId === instrumentId && p.style === style);
+  return match?.overrides ?? null;
+}
+
+export function saveOptimizedParams(params: OptimizedParams[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    // Dedupe by instrumentId+style — keep latest
+    const map = new Map<string, OptimizedParams>();
+    for (const p of params) {
+      map.set(`${p.instrumentId}::${p.style}`, p);
+    }
+    localStorage.setItem(OPTIMIZED_KEY, JSON.stringify(Array.from(map.values())));
+  } catch {
+    // storage full
+  }
+}
+
+export function clearOptimizedParams(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(OPTIMIZED_KEY);
 }

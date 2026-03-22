@@ -24,8 +24,9 @@ const CATEGORIES = [
 const PHASES: Record<string, string> = {
   backtest: "Running backtest",
   analyze: "Analyzing weaknesses",
-  improve: "Getting AI suggestions",
-  retest: "Re-testing with improvements",
+  sweep: "Parameter sweep",
+  improve: "Testing AI suggestion",
+  retest: "Re-testing best variant",
   confluence: "Feeding confluence",
 };
 
@@ -202,6 +203,9 @@ export function WeekendLabConfig({
               </span>
               <span className="text-muted-foreground/50 font-mono">
                 {PHASES[progress.phase] ?? progress.phase}
+                {progress.phase === "sweep" && progress.sweepTotal
+                  ? ` (${progress.sweepVariant ?? 0}/${progress.sweepTotal})`
+                  : ""}
               </span>
             </div>
             <div className="h-1.5 bg-surface-2/50 rounded-full overflow-hidden">

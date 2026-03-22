@@ -848,26 +848,55 @@ const TRADING_ADVISOR_SYSTEM_PROMPT = `You are a senior trading desk manager wit
 
 Your style:
 - Direct, concise, and actionable — like a real desk manager speaking to traders at the morning meeting
-- Reference specific data: conviction tiers, ADX values, impulse colors, signal counts
+- Reference specific data points in your reasoning: MTF alignment, ICT score, structure score, entry patterns, learning win rates
 - Use trading desk language naturally (e.g. "the tape looks heavy", "clean setup", "chop zone")
 - Be honest about uncertainty — if signals are mixed, say so
 - Always emphasize risk management (the 2% rule, position sizing, when to sit out)
 
+DECISION FRAMEWORK — Weighted Priority (use this to rank setups):
+1. MTF Alignment (30%): "full" alignment = all timeframes agree. This is the strongest edge. "conflicting" = DO NOT TRADE.
+2. ICT Confluence (25%): FVG reentry + order block retest + displacement = institutional money flow. ICT score 70+ is high conviction.
+3. Market Structure (20%): Positive structureScore for longs, negative for shorts. BOS confirms trend. CHoCH = early reversal signal.
+4. Signal Count + Conviction (15%): A+ conviction with 5+ systems agreeing is strong. But without MTF/structure support, it's just noise.
+5. Entry Pattern Quality (10%): Engulfing > Pin Bar > Inside Bar for reversal entries. FVG reentry and OB retest are institutional-grade patterns.
+
+ICT EMPHASIS — These are HIGH PRIORITY confirmations:
+- FVG reentry (price returns to fill a Fair Value Gap) = smart money is accumulating/distributing
+- Order Block retest = institutional level being defended
+- Displacement (large candle with body > 70% of range) = aggressive institutional activity
+- When ICT score > 70 AND MTF alignment is "full" or "strong", this is an A++ setup
+
+ANTI-PATTERNS — Hard rules:
+- NEVER recommend a setup with "conflicting" MTF alignment
+- Setups where market structure opposes the trade direction (negative structureScore for longs, positive for shorts) are AVOID setups
+- If volatility regime is "high" AND Wyckoff phase is "distribution" or "markdown", REDUCE position sizes or sit out
+- If the learning system shows < 40% win rate over 15+ trades for a confluence pattern, AVOID that setup
+
+LEARNING INTEGRATION:
+- If a confluence pattern has 60%+ win rate over 20+ trades, this is PROVEN edge — weight it heavily
+- If learning data shows 50-60% win rate, it's marginal — only take with strong ICT + MTF confirmation
+- Reference the learning data in your reasoning when available
+
+WYCKOFF PHASE STRATEGY:
+- Expansion: ride the trend, trail stops — best environment for swing trades
+- Accumulation: position early with tight risk — potential for breakout
+- Distribution: tighten stops, take profits, prepare for reversal — defensive posture
+- Markdown: defense mode — only counter-trend scalps or sit out entirely
+
 CRITICAL RULE — INSTRUMENT NAMES:
-- You may ONLY reference instruments that appear in the "Top Setups" list below.
+- You may ONLY reference instruments that appear in the "Actionable Setups" list below.
 - Use the EXACT symbol provided (e.g. "XAU/USD", "EUR/USD", "BTC/USD"). Never invent or modify symbols.
 - Do NOT reference instruments that are not in the list. If an instrument is not listed, it does not exist in this system.
-- topPick.instrument MUST be copied exactly from the symbol field of one of the setups below.
+- topPick.instrument MUST be copied exactly from the symbol field of one of the actionable setups below.
 
 Rules:
-- greeting: 1 sentence setting the tone for the session (reference market regime or dominant theme)
-- marketRegime: 2-3 sentences assessing the overall market regime across instruments, what it means for strategy selection
-- topPick: Your #1 ACTIONABLE setup — only recommend setups still "Awaiting Entry" or "Entry Zone". Never recommend setups already running (Running BE/TP1/TP2). Explain WHY based on the mechanical signals and conviction data. Be specific about which systems agree. topPick.instrument must match the symbol EXACTLY.
-- otherSetups: 2-3 one-sentence notes on other ACTIONABLE setups. Skip setups already running at breakeven or beyond.
-- avoidList: 1-2 instruments/situations to avoid and why (include any setups already running that should not be chased)
-- riskWarning: Key risk to watch right now (economic event, regime shift, correlation, etc.)
-- deskNote: One piece of wisdom from the books — connect it to today's conditions (e.g. "As Elder says, the impulse is RED on weekly — no longs until it turns blue" or "Weissman's combined system approach says run both trend and MR here")
-- If a setup has a "Trade Status" field, it means the position is already being tracked. "Awaiting Entry" and "Entry Zone" are still tradeable. "Running (BE)", "Running (TP1)", "Running (TP2)" mean the trade has moved past entry — do NOT recommend entering these.
+- greeting: 1 sentence setting the tone for the session (reference market regime, dominant theme, or Wyckoff phase)
+- marketRegime: 2-3 sentences assessing the overall market regime across instruments, referencing MTF alignment distribution and volatility conditions
+- topPick: Your #1 ACTIONABLE setup. Only from the "Actionable Setups" section. Explain WHY based on the mechanical data — reference MTF alignment, ICT score, structure, entry pattern quality, and learning data. Be specific. topPick.instrument must match the symbol EXACTLY.
+- otherSetups: 2-3 one-sentence notes on other actionable setups worth watching
+- avoidList: 1-2 instruments/situations to avoid and why — reference the specific data that makes them dangerous (conflicting MTF, negative structure score, high volatility + distribution, etc.)
+- riskWarning: Key risk to watch right now (reference specific regime, volatility, or correlation data)
+- deskNote: One piece of wisdom from the 8 books — connect it specifically to today's conditions using the data provided
 - Respond with valid JSON only.`;
 
 function buildTradingAdvisorPrompt(req: TradingAdvisorRequest): string {
@@ -884,37 +913,87 @@ Account: $${req.accountEquity.toLocaleString()} | Risk: ${req.riskPercent}% per 
 Bond Yields:
 ${req.bondYields.map((b) => `  ${b.maturity}: ${b.yield.toFixed(3)}% (${b.change >= 0 ? "+" : ""}${b.change.toFixed(3)})`).join("\n")}
 
---- Top Setups (ranked by conviction) ---
+--- Actionable Setups (ranked by conviction) ---
 `;
 
   for (const setup of req.setups) {
-    const statusLine = setup.trackedStatus ? `  Trade Status: ${setup.trackedStatus}\n` : "";
+    const statusLine = setup.trackedStatus ? `  Trade Status: ${setup.trackedStatus}` : "";
     prompt += `
 ${setup.symbol} (${setup.category}) — ${setup.conviction} conviction (score: ${setup.convictionScore})
   Direction: ${setup.direction} | Regime: ${setup.regime} (ADX ${setup.adx.toFixed(0)}) | Impulse: ${setup.impulse}
   Signals: ${setup.signalsSummary}
   Systems agreeing: ${setup.systemsAgreeing.join(", ") || "none"}
   Price: ${setup.currentPrice} | Entry: ${setup.entry} | SL: ${setup.stopLoss} | TP: ${setup.takeProfit}
-  R:R: ${setup.riskReward} | Size: ${setup.positionSize}
-${statusLine}`;
+  R:R: ${setup.riskReward} | Size: ${setup.positionSize}`;
+
+    // MTF alignment
+    if (setup.mtfAlignment) {
+      const pbStr = setup.pullbackComplete ? " | Pullback complete" : "";
+      prompt += `\n  MTF: ${setup.mtfAlignment} alignment (Daily: ${setup.mtfDaily ?? "—"})${pbStr}`;
+    }
+
+    // Market structure
+    if (setup.structureBias) {
+      const bosStr = setup.lastBOS ? ` | Last BOS: ${setup.lastBOS.direction} at ${setup.lastBOS.price}` : "";
+      const chochStr = setup.lastCHoCH ? ` | Last CHoCH: ${setup.lastCHoCH.direction} at ${setup.lastCHoCH.price}` : "";
+      prompt += `\n  Structure: ${setup.structureBias} (score ${setup.structureScore ?? 0})${bosStr}${chochStr}`;
+    }
+
+    // ICT context
+    if (setup.ictScore != null) {
+      const fvgStr = setup.nearestFVG ? ` | FVG (${setup.nearestFVG.type}, ${setup.nearestFVG.freshness}) at ${setup.nearestFVG.midpoint}` : "";
+      const obStr = setup.nearestOB ? ` | OB (${setup.nearestOB.type}, strength ${setup.nearestOB.strength})` : "";
+      const dispStr = setup.displacement ? " | Displacement: YES" : "";
+      prompt += `\n  ICT: Score ${setup.ictScore}${fvgStr}${obStr}${dispStr}`;
+    }
+
+    // Entry optimization
+    if (setup.bestEntryPattern) {
+      const pbDepthStr = setup.pullbackDepth != null ? ` | Pullback ${(setup.pullbackDepth * 100).toFixed(0)}%` : "";
+      prompt += `\n  Entry: Best pattern: ${setup.bestEntryPattern} | Entry score: ${setup.entryScore ?? 0}/100${pbDepthStr}`;
+    }
+
+    // Volatility / Wyckoff phase
+    if (setup.volatilityRegime || setup.wyckoffPhase) {
+      const volStr = setup.volatilityRegime ? `Volatility: ${setup.volatilityRegime}` : "";
+      const phaseStr = setup.wyckoffPhase ? `Phase: ${setup.wyckoffPhase}` : "";
+      const adxTrendStr = setup.adxTrend ? `ADX: ${setup.adxTrend}` : "";
+      prompt += `\n  ${[volStr, phaseStr, adxTrendStr].filter(Boolean).join(" | ")}`;
+    }
+
+    // Learning / confluence history
+    if (setup.learningWinRate != null && setup.learningTrades != null && setup.learningTrades > 0) {
+      prompt += `\n  Learning: ${(setup.learningWinRate * 100).toFixed(0)}% win rate over ${setup.learningTrades} trades for this confluence pattern`;
+    }
+
+    if (statusLine) prompt += `\n${statusLine}`;
+    prompt += "\n";
+  }
+
+  // Managed positions (context only — not for top pick selection)
+  if (req.managedSetups && req.managedSetups.length > 0) {
+    prompt += `\n--- Currently Managed Positions (DO NOT recommend entering these) ---\n`;
+    for (const m of req.managedSetups) {
+      prompt += `  ${m.symbol}: ${m.direction} — ${m.status}\n`;
+    }
   }
 
   prompt += `
 Respond with JSON:
 {
-  "greeting": "<1 sentence opening>",
-  "marketRegime": "<2-3 sentence regime assessment>",
+  "greeting": "<1 sentence opening — reference the dominant theme or regime>",
+  "marketRegime": "<2-3 sentence regime assessment referencing MTF alignment distribution and volatility>",
   "topPick": {
-    "instrument": "<symbol>",
+    "instrument": "<EXACT symbol from actionable setups>",
     "action": "LONG" | "SHORT",
     "conviction": "<tier>",
-    "reasoning": "<2-3 sentences explaining why this is the top pick, referencing specific signals>",
+    "reasoning": "<2-3 sentences — reference specific MTF alignment, ICT score, structure score, entry pattern, learning data>",
     "levels": "<entry, SL, TP summary>"
   },
-  "otherSetups": ["<1 sentence each for 2-3 other setups>"],
-  "avoidList": ["<instrument/situation to avoid — brief reason>"],
-  "riskWarning": "<key risk to watch>",
-  "deskNote": "<wisdom from the trading books connected to today's conditions>"
+  "otherSetups": ["<1 sentence each for 2-3 other actionable setups>"],
+  "avoidList": ["<instrument/situation — reference the specific data making it dangerous>"],
+  "riskWarning": "<key risk with specific data reference>",
+  "deskNote": "<wisdom from the 8 trading books connected to today's specific conditions>"
 }`;
 
   return prompt;
@@ -924,7 +1003,9 @@ const advisorCache = new Map<string, CacheEntry<TradingAdvisorResult>>();
 const ADVISOR_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 function getAdvisorCacheKey(req: TradingAdvisorRequest): string {
-  return `advisor:${req.setups.map((s) => `${s.instrument}:${s.conviction}:${s.direction}:${s.impulse}:${s.regime}`).join("|")}`;
+  const setupPart = req.setups.map((s) => `${s.instrument}:${s.conviction}:${s.direction}:${s.impulse}:${s.trackedStatus ?? "new"}`).join("|");
+  const managedPart = (req.managedSetups ?? []).map((m) => `${m.symbol}:${m.status}`).join("|");
+  return `advisor:${setupPart}|m:${managedPart}`;
 }
 
 function parseAdvisorResult(raw: string, provider: LLMProvider): TradingAdvisorResult | null {
@@ -972,8 +1053,8 @@ export async function generateTradingAdvisor(
   }
 
   const userPrompt = buildTradingAdvisorPrompt(req);
-  // Use Sonnet for quality — this is the desk manager voice
-  const response = await callLLM(TRADING_ADVISOR_SYSTEM_PROMPT, userPrompt, 1536);
+  // Use Sonnet for quality — this is the desk manager voice. Increased token budget for richer reasoning.
+  const response = await callLLM(TRADING_ADVISOR_SYSTEM_PROMPT, userPrompt, 2048);
   if (!response) return null;
 
   const result = parseAdvisorResult(response.text, response.provider);

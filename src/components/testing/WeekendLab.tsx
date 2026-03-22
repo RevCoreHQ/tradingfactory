@@ -1,11 +1,12 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { WeekendLabConfig } from "./WeekendLabConfig";
 import { AggregateScorecard } from "./AggregateScorecard";
 import { InstrumentGrid } from "./InstrumentGrid";
 import { useWeekendLab } from "@/lib/hooks/useWeekendLab";
-import { FlaskConical, BarChart3, Grid3X3, Brain } from "lucide-react";
+import { FlaskConical, BarChart3, Grid3X3, Brain, Zap, Copy, Check } from "lucide-react";
 
 export function WeekendLab() {
   const {
@@ -16,10 +17,24 @@ export function WeekendLab() {
     aggregateStats,
     confluenceFed,
     confluencePreview,
+    paramsApplied,
+    improvementCount,
     runBatch,
     stopBatch,
     applyConfluenceFeedback,
+    applyOptimizedParams,
+    getOptimizationPrompt,
   } = useWeekendLab();
+
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyPrompt = useCallback(() => {
+    const prompt = getOptimizationPrompt();
+    navigator.clipboard.writeText(prompt).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [getOptimizationPrompt]);
 
   return (
     <div className="space-y-8">
@@ -27,7 +42,7 @@ export function WeekendLab() {
       <section>
         <SectionHeader
           title="Weekend Lab Configuration"
-          subtitle="Run the brain across all instruments with auto-improvement"
+          subtitle="Parameter sweep across all instruments with auto-improvement"
           icon={<FlaskConical className="h-4 w-4" />}
           accentColor="blue"
         />
@@ -58,7 +73,7 @@ export function WeekendLab() {
         <section>
           <SectionHeader
             title="Instrument Results"
-            subtitle="Per-instrument backtest with before/after improvements"
+            subtitle="Per-instrument sweep — expand for variant comparison"
             icon={<Grid3X3 className="h-4 w-4" />}
             accentColor="amber"
           />
@@ -66,7 +81,73 @@ export function WeekendLab() {
         </section>
       )}
 
-      {/* Section 4: Confluence Feedback */}
+      {/* Section 4: Apply Optimizations */}
+      {results.length > 0 && improvementCount > 0 && (
+        <section>
+          <SectionHeader
+            title="Apply Optimizations"
+            subtitle={`${improvementCount} instruments found better parameters via sweep`}
+            icon={<Zap className="h-4 w-4" />}
+            accentColor="green"
+          />
+          <div className="glass-card rounded-2xl border border-border/30 p-6 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Runtime: Save to localStorage */}
+              <div className="space-y-2">
+                <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">
+                  Runtime Override
+                </h4>
+                <p className="text-[10px] text-muted-foreground/50">
+                  Saves optimized params to localStorage. The desk will auto-load them as overrides per instrument.
+                  Resets on clear storage.
+                </p>
+                {paramsApplied ? (
+                  <div className="flex items-center gap-1.5 text-[11px] text-bullish font-semibold">
+                    <Check className="h-3.5 w-3.5" />
+                    {improvementCount} profiles saved — desk will use them automatically
+                  </div>
+                ) : (
+                  <button
+                    onClick={applyOptimizedParams}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-foreground text-background text-[11px] font-bold transition-all hover:opacity-90"
+                  >
+                    <Zap className="h-3.5 w-3.5" />
+                    Apply to Desk ({improvementCount})
+                  </button>
+                )}
+              </div>
+
+              {/* Permanent: Copy prompt for Claude */}
+              <div className="space-y-2">
+                <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">
+                  Permanent Code Change
+                </h4>
+                <p className="text-[10px] text-muted-foreground/50">
+                  Copies a prompt with the exact STYLE_PARAMS changes. Paste into Claude to update the code permanently.
+                </p>
+                <button
+                  onClick={handleCopyPrompt}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border/30 text-foreground text-[11px] font-bold transition-all hover:bg-surface-2/30"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 text-bullish" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3.5 w-3.5" />
+                      Copy for Claude
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Section 5: Confluence Feedback */}
       {results.length > 0 && confluencePreview && (
         <section>
           <SectionHeader

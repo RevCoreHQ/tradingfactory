@@ -105,10 +105,37 @@ export interface TradingAdvisorSetupInput {
   positionSize: string;
   currentPrice: number;
   trackedStatus?: string; // e.g. "Awaiting Entry", "Entry Zone", "Running (BE)" — from setup tracker
+  // ---- Rich data from mechanical pipeline ----
+  // Multi-timeframe
+  mtfAlignment?: "full" | "strong" | "partial" | "conflicting";
+  mtfDaily?: "bullish" | "bearish" | "neutral";
+  pullbackComplete?: boolean;
+  // Advanced regime
+  volatilityRegime?: "low" | "normal" | "high";
+  wyckoffPhase?: "accumulation" | "expansion" | "distribution" | "markdown";
+  adxTrend?: "rising" | "falling" | "flat";
+  // Market structure
+  structureBias?: "bullish" | "bearish" | "neutral";
+  structureScore?: number; // -100 to +100
+  lastBOS?: { direction: string; price: number } | null;
+  lastCHoCH?: { direction: string; price: number } | null;
+  // ICT context
+  ictScore?: number; // 0-100
+  nearestFVG?: { type: string; midpoint: number; freshness: string } | null;
+  nearestOB?: { type: string; strength: number } | null;
+  displacement?: boolean;
+  // Entry optimization
+  bestEntryPattern?: string; // "hammer", "engulfing", "fvg_reentry", etc.
+  entryScore?: number; // 0-100
+  pullbackDepth?: number; // 0-1 (0.5 = 50% retracement)
+  // Learning / confluence history
+  learningWinRate?: number;
+  learningTrades?: number;
 }
 
 export interface TradingAdvisorRequest {
   setups: TradingAdvisorSetupInput[];
+  managedSetups?: { symbol: string; direction: string; status: string }[];
   regimeSummary: string;
   consensusSummary: string;
   impulseSummary: string;

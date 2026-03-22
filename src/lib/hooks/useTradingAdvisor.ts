@@ -97,10 +97,30 @@ function validateAdvisorResult(
   );
 
   if (matchedSetup) {
-    // Found a match — override levels with mechanical data
+    // Found a match — but check if it's actionable
     const status = trackedStatuses[matchedSetup.instrumentId];
-    const isRunning = status && (status.includes("Running") || status.includes("TP"));
+    const isActionable = !status || status.includes("Await") || status.includes("Entry");
 
+    if (!isActionable) {
+      // LLM picked a non-actionable setup (e.g. invalidated, running). Swap to best actionable.
+      const fallback = setups.find((s) => {
+        const st = trackedStatuses[s.instrumentId];
+        return !st || st.includes("Await") || st.includes("Entry");
+      });
+      if (!fallback) return { ...result, topPick: null };
+      return {
+        ...result,
+        topPick: {
+          instrument: fallback.symbol,
+          action: fallback.direction === "bullish" ? "LONG" : "SHORT",
+          conviction: fallback.conviction,
+          reasoning: result.topPick.reasoning || `Highest conviction ${fallback.conviction} actionable setup.`,
+          levels: `Entry: ${fallback.entry[0].toFixed(4)} – ${fallback.entry[1].toFixed(4)} | SL: ${fallback.stopLoss.toFixed(4)} | TP1: ${fallback.takeProfit[0].toFixed(4)}, TP2: ${fallback.takeProfit[1].toFixed(4)}, TP3: ${fallback.takeProfit[2].toFixed(4)} | R:R 1:${fallback.riskReward[0]}`,
+        },
+      };
+    }
+
+    // Override levels with mechanical data
     return {
       ...result,
       topPick: {
@@ -118,7 +138,12 @@ function validateAdvisorResult(
   const actionableSetup = setups.find((s) => {
     const status = trackedStatuses[s.instrumentId];
     return !status || status.includes("Await") || status.includes("Entry");
-  }) || setups[0];
+  });
+
+  // If NO actionable setups exist, return null topPick rather than recommending an invalidated one
+  if (!actionableSetup) {
+    return { ...result, topPick: null };
+  }
 
   return {
     ...result,
@@ -154,8 +179,19 @@ export function useTradingAdvisor(params: UseTradingAdvisorParams | null) {
       const cached = getClientCache(hash!);
       if (cached) return validateAdvisorResult(cached, params.setups, params.trackedStatuses ?? {});
 
-      // Build request from setups
-      const topSetups = params.setups; // Send all A+/A setups (max 13 instruments)
+      // Pre-filter: separate actionable vs managed setups
+      const trackedStatuses = params.trackedStatuses ?? {};
+      const actionableSetups = params.setups.filter((s) => {
+        const status = trackedStatuses[s.instrumentId];
+        // "Awaiting Entry", "Entry Zone", or new (no status) are actionable
+        return !status || status.includes("Await") || status.includes("Entry");
+      });
+      const managedSetups = params.setups.filter((s) => {
+        const status = trackedStatuses[s.instrumentId];
+        return status && (status.includes("Running") || status.includes("TP") || status.includes("Invalidated") || status.includes("SL"));
+      });
+      // Send actionable setups as primary, managed as context-only
+      const topSetups = actionableSetups.length > 0 ? actionableSetups : params.setups;
 
       // Regime summary
       const regimeCounts: Record<string, number> = {};
@@ -176,7 +212,6 @@ export function useTradingAdvisor(params: UseTradingAdvisorParams | null) {
 
       const impulseSummary = `GREEN: ${impulseCounts["green"] || 0}, RED: ${impulseCounts["red"] || 0}, BLUE: ${impulseCounts["blue"] || 0}`;
 
-      const trackedStatuses = params.trackedStatuses ?? {};
       const request: TradingAdvisorRequest = {
         setups: topSetups.map((s) => ({
           instrument: s.instrumentId,
@@ -199,6 +234,37 @@ export function useTradingAdvisor(params: UseTradingAdvisorParams | null) {
           positionSize: `${s.positionSizeLots} lots ($${s.riskAmount} risk)`,
           currentPrice: s.currentPrice,
           trackedStatus: trackedStatuses[s.instrumentId],
+          // Rich data from mechanical pipeline
+          mtfAlignment: s.mtfTrend?.alignment,
+          mtfDaily: s.mtfTrend?.dailyDirection,
+          pullbackComplete: s.mtfTrend?.pullbackComplete,
+          volatilityRegime: s.fullRegime?.volatility,
+          wyckoffPhase: s.fullRegime?.phase,
+          adxTrend: s.fullRegime?.adxTrend,
+          structureBias: s.marketStructure?.latestStructure,
+          structureScore: s.marketStructure?.structureScore,
+          lastBOS: s.marketStructure?.lastBOS
+            ? { direction: s.marketStructure.lastBOS.direction, price: s.marketStructure.lastBOS.price }
+            : null,
+          lastCHoCH: s.marketStructure?.lastCHoCH
+            ? { direction: s.marketStructure.lastCHoCH.direction, price: s.marketStructure.lastCHoCH.price }
+            : null,
+          ictScore: s.ictContext?.ictScore,
+          nearestFVG: s.ictContext?.nearestFVG ?? null,
+          nearestOB: s.ictContext?.nearestOB
+            ? { type: s.ictContext.nearestOB.type, strength: s.ictContext.nearestOB.strength }
+            : null,
+          displacement: s.ictContext?.displacementDetected,
+          bestEntryPattern: s.entryOptimization?.bestSignal?.type,
+          entryScore: s.entryOptimization?.entryScore,
+          pullbackDepth: s.entryOptimization?.pullbackDepth,
+          learningWinRate: s.learningApplied?.winRate,
+          learningTrades: s.learningApplied?.trades,
+        })),
+        managedSetups: managedSetups.map((s) => ({
+          symbol: s.symbol,
+          direction: s.direction,
+          status: trackedStatuses[s.instrumentId] ?? "unknown",
         })),
         regimeSummary,
         consensusSummary,

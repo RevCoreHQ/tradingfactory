@@ -2,17 +2,17 @@
 
 import { useState, useCallback, useRef } from "react";
 import type {
-  BacktestConfig,
   BatchConfig,
   BatchProgress,
   BatchInstrumentResult,
   AggregateStats,
+  OptimizedParams,
 } from "@/lib/types/backtest";
 import { DEFAULT_BACKTEST_CONFIG } from "@/lib/types/backtest";
 import { INSTRUMENTS } from "@/lib/utils/constants";
-import { runBatchBacktest, computeAggregateStats } from "@/lib/calculations/batch-runner";
+import { runBatchBacktest, computeAggregateStats, generateOptimizationPrompt } from "@/lib/calculations/batch-runner";
 import { feedBatchToConfluence, previewConfluenceUpdates } from "@/lib/calculations/confluence-bridge";
-import { saveBatchResults } from "@/lib/storage/backtest-storage";
+import { saveBatchResults, saveOptimizedParams } from "@/lib/storage/backtest-storage";
 import { loadConfluencePatterns, saveConfluencePatterns } from "@/lib/storage/setup-storage";
 
 export function useWeekendLab() {
@@ -41,6 +41,7 @@ export function useWeekendLab() {
   const [results, setResults] = useState<BatchInstrumentResult[]>([]);
   const [aggregateStats, setAggregateStats] = useState<AggregateStats | null>(null);
   const [confluenceFed, setConfluenceFed] = useState(false);
+  const [paramsApplied, setParamsApplied] = useState(false);
   const abortRef = useRef({ aborted: false });
 
   const runBatch = useCallback(async () => {
@@ -48,8 +49,8 @@ export function useWeekendLab() {
     setResults([]);
     setAggregateStats(null);
     setConfluenceFed(false);
+    setParamsApplied(false);
 
-    // Sync config
     const config: BatchConfig = {
       ...batchConfig,
       baseConfig: {
@@ -74,11 +75,8 @@ export function useWeekendLab() {
 
     if (!abortRef.current.aborted) {
       setAggregateStats(computeAggregateStats(batchResults));
-
-      // Save to localStorage
       saveBatchResults(batchResults);
 
-      // Auto-feed confluence if enabled
       if (config.feedConfluence && batchResults.length > 0) {
         applyConfluenceFeedbackInternal(batchResults);
       }
@@ -106,9 +104,37 @@ export function useWeekendLab() {
     }
   }, [results, applyConfluenceFeedbackInternal]);
 
+  // Save winning params to localStorage for runtime auto-loading
+  const applyOptimizedParams = useCallback(() => {
+    const params: OptimizedParams[] = [];
+    for (const r of results) {
+      if (r.bestVariant) {
+        params.push({
+          instrumentId: r.instrumentId,
+          style: batchConfig.tradingStyle,
+          overrides: r.bestVariant.overrides,
+          baselineExpectancy: r.baselineResult.stats.expectancy,
+          optimizedExpectancy: r.bestVariant.stats.expectancy,
+          timestamp: Date.now(),
+        });
+      }
+    }
+    if (params.length > 0) {
+      saveOptimizedParams(params);
+      setParamsApplied(true);
+    }
+  }, [results, batchConfig.tradingStyle]);
+
+  // Generate copy-paste prompt for Claude
+  const getOptimizationPrompt = useCallback(() => {
+    return generateOptimizationPrompt(results, batchConfig.tradingStyle);
+  }, [results, batchConfig.tradingStyle]);
+
   const confluencePreview = results.length > 0
     ? previewConfluenceUpdates(results)
     : null;
+
+  const improvementCount = results.filter((r) => r.bestVariant !== null).length;
 
   return {
     batchConfig,
@@ -118,8 +144,12 @@ export function useWeekendLab() {
     aggregateStats,
     confluenceFed,
     confluencePreview,
+    paramsApplied,
+    improvementCount,
     runBatch,
     stopBatch,
     applyConfluenceFeedback,
+    applyOptimizedParams,
+    getOptimizationPrompt,
   };
 }

@@ -174,6 +174,64 @@ export function InstrumentGrid({ results }: InstrumentGridProps) {
                   </div>
                 )}
 
+                {/* Sweep Variants Table */}
+                {r.sweepVariants.length > 0 && (
+                  <div>
+                    <h5 className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">
+                      Parameter Sweep ({r.sweepVariants.length} variants tested)
+                    </h5>
+                    <div className="rounded-lg border border-border/15 overflow-hidden">
+                      <div className="grid grid-cols-[1.2fr_0.7fr_0.8fr_0.7fr_0.6fr_0.5fr] gap-1 px-3 py-1.5 bg-surface-2/30 text-[8px] font-bold text-muted-foreground/50 uppercase tracking-wider">
+                        <span>Variant</span>
+                        <span>Trades</span>
+                        <span>Win Rate</span>
+                        <span>Expectancy</span>
+                        <span>PF</span>
+                        <span>Score</span>
+                      </div>
+                      {/* Baseline row */}
+                      <div className="grid grid-cols-[1.2fr_0.7fr_0.8fr_0.7fr_0.6fr_0.5fr] gap-1 px-3 py-1 text-[9px] font-mono border-t border-border/10 bg-surface-2/10">
+                        <span className="font-semibold text-muted-foreground">Baseline</span>
+                        <span className="text-muted-foreground">{r.baselineResult.stats.totalTrades}</span>
+                        <span className="text-muted-foreground">{(r.baselineResult.stats.winRate * 100).toFixed(1)}%</span>
+                        <span className="text-muted-foreground">{r.baselineResult.stats.expectancy.toFixed(2)}R</span>
+                        <span className="text-muted-foreground">{r.baselineResult.stats.profitFactor.toFixed(2)}</span>
+                        <span className="text-muted-foreground/40">—</span>
+                      </div>
+                      {/* Variant rows sorted by score */}
+                      {[...r.sweepVariants]
+                        .sort((a, b) => b.score - a.score)
+                        .map((v, vi) => {
+                          const isBest = r.bestVariant?.label === v.label;
+                          return (
+                            <div
+                              key={vi}
+                              className={cn(
+                                "grid grid-cols-[1.2fr_0.7fr_0.8fr_0.7fr_0.6fr_0.5fr] gap-1 px-3 py-1 text-[9px] font-mono border-t border-border/10",
+                                isBest && "bg-bullish/5"
+                              )}
+                            >
+                              <span className={cn("font-semibold", isBest ? "text-bullish" : "text-foreground")}>
+                                {v.label} {isBest && "★"}
+                              </span>
+                              <span className="text-muted-foreground">{v.stats.totalTrades}</span>
+                              <span className={v.stats.winRate >= r.baselineResult.stats.winRate ? "text-bullish" : "text-bearish"}>
+                                {(v.stats.winRate * 100).toFixed(1)}%
+                              </span>
+                              <span className={v.stats.expectancy > r.baselineResult.stats.expectancy ? "text-bullish" : "text-bearish"}>
+                                {v.stats.expectancy.toFixed(2)}R
+                              </span>
+                              <span className={v.stats.profitFactor >= r.baselineResult.stats.profitFactor ? "text-foreground" : "text-bearish"}>
+                                {v.stats.profitFactor.toFixed(2)}
+                              </span>
+                              <span className="text-muted-foreground/60">{v.score.toFixed(2)}</span>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Weaknesses */}
                 {r.weaknesses.length > 0 && (
                   <div>
@@ -192,25 +250,6 @@ export function InstrumentGrid({ results }: InstrumentGridProps) {
                             <span className="text-[9px] text-muted-foreground/60 ml-1.5">{w.description}</span>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Adjustments */}
-                {r.adjustments.length > 0 && (
-                  <div>
-                    <h5 className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">
-                      Applied Adjustments ({r.adjustments.length})
-                    </h5>
-                    <div className="flex flex-wrap gap-1.5">
-                      {r.adjustments.map((adj, i) => (
-                        <span
-                          key={i}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface-2/50 text-[9px] font-mono text-muted-foreground"
-                        >
-                          {adj.parameter}: {String(adj.currentValue)} → {String(adj.suggestedValue)}
-                        </span>
                       ))}
                     </div>
                   </div>

@@ -225,9 +225,18 @@ export interface BatchProgress {
   currentInstrument: string;
   currentInstrumentIndex: number;
   totalInstruments: number;
-  phase: "backtest" | "analyze" | "improve" | "retest" | "confluence";
+  phase: "backtest" | "analyze" | "sweep" | "improve" | "retest" | "confluence";
+  sweepVariant?: number;
+  sweepTotal?: number;
   percentComplete: number;
   errorMessage?: string;
+}
+
+export interface SweepVariant {
+  label: string;
+  overrides: NonNullable<BacktestConfig["overrides"]>;
+  stats: BacktestStats;
+  score: number; // composite score for ranking
 }
 
 export interface BatchInstrumentResult {
@@ -245,6 +254,19 @@ export interface BatchInstrumentResult {
     profitFactorDelta: number;
     maxDDDelta: number;
   } | null;
+  // Parameter sweep data
+  sweepVariants: SweepVariant[];
+  bestVariant: SweepVariant | null;
+  sweepImprovement: number; // expectancy delta vs baseline for best variant
+}
+
+export interface OptimizedParams {
+  instrumentId: string;
+  style: TradingStyle;
+  overrides: NonNullable<BacktestConfig["overrides"]>;
+  baselineExpectancy: number;
+  optimizedExpectancy: number;
+  timestamp: number;
 }
 
 export interface AggregateStats {

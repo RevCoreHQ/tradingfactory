@@ -10,6 +10,7 @@ import { generateTradeDeskSetup, rankSetupsByConviction, selectTradingStyle } fr
 import { getSessionRelevance } from "@/lib/calculations/session-scoring";
 import { calculateMTFTrendSummary } from "@/lib/calculations/mtf-trend";
 import { evaluatePortfolioGate } from "@/lib/calculations/portfolio-risk-gate";
+import { getOptimizedOverrides } from "@/lib/storage/backtest-storage";
 
 const ACCOUNT_EQUITY_KEY = "tradingfactory_account_equity";
 const RISK_PERCENT_KEY = "tradingfactory_risk_percent";
@@ -133,6 +134,9 @@ export function useTradeDeskData(
 
       const effectiveStyle = style === "intraday" && multi.candles1h.length >= 30 ? "intraday" : "swing";
 
+      // Load optimized params from Weekend Lab if available
+      const labOverrides = getOptimizedOverrides(inst.id, effectiveStyle) ?? undefined;
+
       const setup = generateTradeDeskSetup(
         candles,
         summary,
@@ -140,7 +144,9 @@ export function useTradeDeskData(
         accountEquity,
         riskPercent,
         confluencePatterns,
-        effectiveStyle
+        effectiveStyle,
+        undefined,
+        labOverrides
       );
 
       // Calculate MTF trend alignment
