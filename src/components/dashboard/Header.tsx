@@ -8,7 +8,7 @@ import { AlertsBell } from "@/components/alerts/AlertsPanel";
 import { DataFeedStatus } from "./DataFeedStatus";
 
 interface HeaderProps {
-  mode?: "overview" | "desk" | "analysis" | "journal" | "brain";
+  mode?: "overview" | "desk" | "analysis" | "journal" | "brain" | "system";
 }
 
 export function Header({ mode = "analysis" }: HeaderProps) {
@@ -79,6 +79,17 @@ export function Header({ mode = "analysis" }: HeaderProps) {
             )}
           >
             Brain
+          </Link>
+          <Link
+            href="/system"
+            className={cn(
+              "px-4 py-1.5 rounded-full text-xs font-medium transition-all",
+              mode === "system"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            System
           </Link>
         </div>
 

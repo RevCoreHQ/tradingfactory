@@ -364,3 +364,126 @@
 ::-webkit-scrollbar-thumb:hover {
   background: var(--border-bright);
 }
+
+/* ===== System Page Animations ===== */
+
+/* Pipeline particle flow */
+@keyframes pipeline-flow {
+  0% { offset-distance: 0%; opacity: 0; }
+  5% { opacity: 1; }
+  95% { opacity: 1; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+
+.pipeline-particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  animation: pipeline-flow 4s linear infinite;
+  pointer-events: none;
+}
+
+.pipeline-particle-blue {
+  background: var(--neutral-accent);
+  box-shadow: 0 0 6px var(--neutral-accent), 0 0 12px oklch(0.65 0.18 250 / 0.4);
+}
+
+.pipeline-particle-green {
+  background: var(--bullish);
+  box-shadow: 0 0 6px var(--bullish), 0 0 12px oklch(0.72 0.20 142 / 0.4);
+}
+
+.pipeline-particle-red {
+  background: var(--bearish);
+  box-shadow: 0 0 6px var(--bearish), 0 0 12px oklch(0.68 0.22 25 / 0.4);
+}
+
+.pipeline-particle-amber {
+  background: var(--amber);
+  box-shadow: 0 0 6px var(--amber), 0 0 12px oklch(0.78 0.16 85 / 0.4);
+}
+
+/* Pipeline node glow on hover */
+.pipeline-node-glow {
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.pipeline-node-glow:hover {
+  transform: scale(1.03);
+}
+
+.pipeline-node-glow-blue:hover {
+  box-shadow: 0 0 0 1px var(--neutral-accent), 0 0 20px oklch(0.65 0.18 250 / 0.15);
+}
+
+.pipeline-node-glow-green:hover {
+  box-shadow: 0 0 0 1px var(--bullish), 0 0 20px oklch(0.72 0.20 142 / 0.15);
+}
+
+.pipeline-node-glow-red:hover {
+  box-shadow: 0 0 0 1px var(--bearish), 0 0 20px oklch(0.68 0.22 25 / 0.15);
+}
+
+.pipeline-node-glow-amber:hover {
+  box-shadow: 0 0 0 1px var(--amber), 0 0 20px oklch(0.78 0.16 85 / 0.15);
+}
+
+/* Pulsing ring for hub nodes */
+@keyframes pulse-ring-anim {
+  0% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 0.2; }
+  100% { transform: scale(1); opacity: 0.6; }
+}
+
+.pulse-ring {
+  animation: pulse-ring-anim 2.5s ease-in-out infinite;
+}
+
+/* Horizontal scroll timeline */
+.system-timeline-scroll {
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.system-timeline-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.system-timeline-card {
+  scroll-snap-align: center;
+  flex-shrink: 0;
+}
+
+/* DatabaseWithRestApi offset-path animations */
+.database {
+  offset-anchor: 10px 0px;
+  animation: database-animation-path;
+  animation-iteration-count: infinite;
+  animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  animation-duration: 4s;
+  animation-delay: 1s;
+}
+
+.db-light-1 {
+  offset-path: path("M 31 10 v 15 q 0 5 5 5 h 59 q 5 0 5 5 v 25");
+}
+
+.db-light-2 {
+  offset-path: path("M 77 10 v 10 q 0 5 5 5 h 13 q 5 0 5 5 v 25");
+}
+
+.db-light-3 {
+  offset-path: path("M 124 10 v 10 q 0 5 -5 5 h -14 q -5 0 -5 5 v 25");
+}
+
+.db-light-4 {
+  offset-path: path("M 170 10 v 15 q 0 5 -5 5 h -60 q -5 0 -5 5 v 25");
+}
+
+@keyframes database-animation-path {
+  0% { offset-distance: 0%; }
+  100% { offset-distance: 100%; }
+}
