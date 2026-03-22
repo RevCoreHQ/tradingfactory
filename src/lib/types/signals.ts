@@ -10,6 +10,66 @@ export type ConvictionTier = "A+" | "A" | "B" | "C" | "D";
 
 export type TradingStyle = "intraday" | "swing";
 
+// ==================== Full Regime (v2) ====================
+
+export type VolatilityRegime = "low" | "normal" | "high";
+export type StructureRegime = "trend" | "range" | "breakout";
+export type MarketPhase = "accumulation" | "expansion" | "distribution" | "markdown";
+
+export interface FullRegime {
+  /** Backward-compatible legacy regime derived from structure + volatility */
+  legacy: MarketRegime;
+  /** ATR(14) percentile vs 100-bar rolling window */
+  volatility: VolatilityRegime;
+  /** ADX + EMA slope + BB width classification */
+  structure: StructureRegime;
+  /** Wyckoff-inspired phase: ADX direction + price vs EMA50 */
+  phase: MarketPhase;
+  /** 0-100: ATR(14) rank within rolling window */
+  atrPercentile: number;
+  /** Normalized rate of change of EMA(21) */
+  emaSlope: number;
+  /** 0-100: current BB width vs historical BB width */
+  bbWidthPercentile: number;
+  /** Raw ADX value (still computed, now one input among many) */
+  adx: number;
+  /** ADX direction over recent bars */
+  adxTrend: "rising" | "falling" | "flat";
+  /** Human-readable description */
+  label: string;
+}
+
+// ==================== Market Structure ====================
+
+export type SwingType = "HH" | "HL" | "LH" | "LL";
+export type StructureBreak = "BOS" | "CHoCH";
+
+export interface SwingPoint {
+  price: number;
+  timestamp: number;
+  type: "high" | "low";
+  classification: SwingType;
+  index: number;
+}
+
+export interface StructureEvent {
+  type: StructureBreak;
+  direction: "bullish" | "bearish";
+  price: number;
+  timestamp: number;
+  swingBroken: SwingPoint;
+}
+
+export interface MarketStructure {
+  swingPoints: SwingPoint[];
+  latestStructure: "bullish" | "bearish" | "neutral";
+  events: StructureEvent[];
+  lastBOS: StructureEvent | null;
+  lastCHoCH: StructureEvent | null;
+  /** -100 (strong bearish) to +100 (strong bullish) */
+  structureScore: number;
+}
+
 // ==================== Mechanical Signal ====================
 
 export interface MechanicalSignal {
@@ -49,12 +109,16 @@ export interface TradeDeskSetup {
   riskAmount: number;
   reasonsToExit: string[];
   mtfTrend?: MTFTrendSummary;
+  fullRegime?: FullRegime;
+  marketStructure?: MarketStructure;
   learningApplied?: {
     riskMultiplier: number;
     convictionAdjust: number;
     winRate: number;
     trades: number;
   };
+  portfolioGate?: import("@/lib/calculations/portfolio-risk-gate").PortfolioRiskGate;
+  entryOptimization?: import("@/lib/calculations/entry-optimization").EntryOptimization;
 }
 
 // ==================== Setup Lifecycle ====================
@@ -128,6 +192,21 @@ export interface ConfluencePattern {
   riskMultiplier: number;
   convictionAdjust: number;
   lastUpdated: number;
+  // Expectancy model fields (v2)
+  avgWinR?: number;
+  avgLossR?: number;
+  maxDrawdownR?: number;
+  expectancy?: number;
+  kellyFraction?: number;
+  tradeHistory?: Array<{
+    timestamp: number;
+    outcome: "win" | "loss" | "breakeven";
+    pnlPercent: number;
+    rMultiple: number;
+  }>;
+  decayedWinRate?: number;
+  instrument?: string;
+  regime?: string;
 }
 
 // ==================== Risk Management ====================

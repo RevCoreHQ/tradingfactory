@@ -1,7 +1,11 @@
 import type { TrackedSetup, ConfluencePattern } from "@/lib/types/signals";
+import type { SystemPerformance } from "@/lib/calculations/system-performance";
 
 const TRACKED_KEY = "tf_tracked_setups";
 const PATTERNS_KEY = "tf_confluence_patterns";
+const INSTRUMENT_PATTERNS_KEY = "tf_instrument_patterns";
+const REGIME_PATTERNS_KEY = "tf_regime_patterns";
+const SYSTEM_PERF_KEY = "tf_system_performance";
 const MAX_TRACKED = 200;
 
 // ==================== TRACKED SETUPS ====================
@@ -93,6 +97,72 @@ export function saveConfluencePatterns(
   } catch {}
 }
 
+// ==================== INSTRUMENT PATTERNS ====================
+
+export function loadInstrumentPatterns(): Record<string, ConfluencePattern> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(INSTRUMENT_PATTERNS_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) as Record<string, ConfluencePattern>;
+  } catch {
+    return {};
+  }
+}
+
+export function saveInstrumentPatterns(
+  patterns: Record<string, ConfluencePattern>
+): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(INSTRUMENT_PATTERNS_KEY, JSON.stringify(patterns));
+  } catch {}
+}
+
+// ==================== REGIME PATTERNS ====================
+
+export function loadRegimePatterns(): Record<string, ConfluencePattern> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(REGIME_PATTERNS_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) as Record<string, ConfluencePattern>;
+  } catch {
+    return {};
+  }
+}
+
+export function saveRegimePatterns(
+  patterns: Record<string, ConfluencePattern>
+): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(REGIME_PATTERNS_KEY, JSON.stringify(patterns));
+  } catch {}
+}
+
+// ==================== SYSTEM PERFORMANCE ====================
+
+export function loadSystemPerformance(): Record<string, SystemPerformance> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(SYSTEM_PERF_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) as Record<string, SystemPerformance>;
+  } catch {
+    return {};
+  }
+}
+
+export function saveSystemPerformance(
+  perf: Record<string, SystemPerformance>
+): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(SYSTEM_PERF_KEY, JSON.stringify(perf));
+  } catch {}
+}
+
 // ==================== HELPERS ====================
 
 function isTerminalStatus(status: string): boolean {
@@ -103,4 +173,7 @@ export function clearAllTrackingData(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(TRACKED_KEY);
   localStorage.removeItem(PATTERNS_KEY);
+  localStorage.removeItem(INSTRUMENT_PATTERNS_KEY);
+  localStorage.removeItem(REGIME_PATTERNS_KEY);
+  localStorage.removeItem(SYSTEM_PERF_KEY);
 }

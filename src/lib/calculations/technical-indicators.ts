@@ -199,6 +199,28 @@ export function calculateATR(candles: OHLCV[], period: number = 14): ATRResult {
   return { value: atr, normalized: currentPrice > 0 ? (atr / currentPrice) * 100 : 0 };
 }
 
+/** Returns full ATR series (one value per bar after warmup) for percentile computation. */
+export function calculateATRSeries(candles: OHLCV[], period: number = 14): number[] {
+  if (candles.length < period + 1) return [];
+
+  const trueRanges: number[] = [];
+  for (let i = 1; i < candles.length; i++) {
+    const high = candles[i].high;
+    const low = candles[i].low;
+    const prevClose = candles[i - 1].close;
+    trueRanges.push(Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose)));
+  }
+
+  const series: number[] = [];
+  let atr = trueRanges.slice(0, period).reduce((a, b) => a + b, 0) / period;
+  series.push(atr);
+  for (let i = period; i < trueRanges.length; i++) {
+    atr = (atr * (period - 1) + trueRanges[i]) / period;
+    series.push(atr);
+  }
+  return series;
+}
+
 // ============== Stochastic RSI ==============
 
 export function calculateStochasticRSI(candles: OHLCV[], period: number = 14): StochasticRSIResult {

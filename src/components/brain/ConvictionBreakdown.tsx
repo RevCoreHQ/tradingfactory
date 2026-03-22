@@ -22,10 +22,12 @@ export function ConvictionBreakdown() {
           </h4>
           <div className="space-y-2.5">
             {[
-              { name: "Signal Agreement", range: "0-40 pts", pct: 40, color: "bg-neutral-accent/50", desc: "% of non-neutral systems agreeing with the dominant direction (determined by weighted strength sums)" },
+              { name: "Cluster Agreement", range: "0-40 pts", pct: 40, color: "bg-neutral-accent/50", desc: "De-correlated: best signal per cluster (trend/MR/momentum), weighted by regime structure" },
               { name: "Regime Match", range: "0-25 pts", pct: 25, color: "bg-bullish/50", desc: "Regime-matched signals: ≥3 = 25 pts, ≥2 = 15 pts, ≥1 = 8 pts" },
               { name: "Impulse Alignment", range: "-15 to +20", pct: 35, color: "bg-amber-500/50", desc: "GREEN+bullish = +20, RED+bearish = +20, conflict = -15" },
               { name: "Strong Signal Bonus", range: "0-15 pts", pct: 15, color: "bg-foreground/20", desc: "5 pts per agreeing signal with strength ≥ 70 (max 15)" },
+              { name: "Phase Scoring", range: "-15 to +10", pct: 25, color: "bg-bullish/40", desc: "Expansion aligned = +10, distribution/markdown vs bullish = -15, accumulation vs bearish = -10" },
+              { name: "Structure Alignment", range: "-15 to +10", pct: 25, color: "bg-neutral-accent/40", desc: "HH/HL aligned = +10, opposing = -10, CHoCH against = -15, BOS aligned = +5" },
               { name: "MTF Alignment", range: "-10 to +10", pct: 20, color: "bg-neutral-accent/40", desc: "Daily/4H/1H/15M EMA stack alignment: +10 full, +5 strong, 0 partial, -10 against" },
             ].map((f, i) => (
               <motion.div
@@ -54,11 +56,11 @@ export function ConvictionBreakdown() {
             ))}
           </div>
 
-          {/* ADX Exhaustion */}
+          {/* Exhaustion */}
           <div className="mt-3 bg-bearish/8 border border-bearish/15 rounded-md px-3 py-2">
-            <div className="text-[10px] font-semibold text-bearish/80">ADX Exhaustion Penalty</div>
+            <div className="text-[10px] font-semibold text-bearish/80">Exhaustion Penalty (-10 pts)</div>
             <div className="text-[9px] text-muted-foreground/50">
-              -10 points when ADX &gt; 50 (reversal risk in overextended trends)
+              High volatility + ADX decelerating (full regime), or ADX &gt; 50 (legacy fallback)
             </div>
           </div>
         </div>

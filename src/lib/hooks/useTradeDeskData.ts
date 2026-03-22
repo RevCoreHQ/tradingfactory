@@ -3,12 +3,13 @@
 import useSWR from "swr";
 import { useMemo } from "react";
 import type { OHLCV } from "@/lib/types/market";
-import type { TradeDeskSetup, PortfolioRisk, ConfluencePattern } from "@/lib/types/signals";
+import type { TradeDeskSetup, TrackedSetup, PortfolioRisk, ConfluencePattern } from "@/lib/types/signals";
 import { INSTRUMENTS, REFRESH_INTERVALS } from "@/lib/utils/constants";
 import { calculateAllIndicators } from "@/lib/calculations/technical-indicators";
 import { generateTradeDeskSetup, rankSetupsByConviction, selectTradingStyle } from "@/lib/calculations/mechanical-signals";
 import { getSessionRelevance } from "@/lib/calculations/session-scoring";
 import { calculateMTFTrendSummary } from "@/lib/calculations/mtf-trend";
+import { evaluatePortfolioGate } from "@/lib/calculations/portfolio-risk-gate";
 
 const ACCOUNT_EQUITY_KEY = "tradingfactory_account_equity";
 const RISK_PERCENT_KEY = "tradingfactory_risk_percent";
@@ -71,7 +72,11 @@ async function fetchAllCandles(): Promise<Record<string, MultiCandles>> {
   return results;
 }
 
-export function useTradeDeskData(confluencePatterns?: Record<string, ConfluencePattern>) {
+export function useTradeDeskData(
+  confluencePatterns?: Record<string, ConfluencePattern>,
+  activeSetups?: TrackedSetup[],
+  historySetups?: TrackedSetup[]
+) {
   const accountEquity = getStoredNumber(ACCOUNT_EQUITY_KEY, 10000);
   const riskPercent = getStoredNumber(RISK_PERCENT_KEY, 2);
 
@@ -155,6 +160,35 @@ export function useTradeDeskData(confluencePatterns?: Record<string, ConfluenceP
       allSetups.push(setup);
     }
 
+    // Apply portfolio risk gate per setup
+    if (activeSetups && historySetups) {
+      for (const setup of allSetups) {
+        const gate = evaluatePortfolioGate(
+          setup,
+          activeSetups,
+          historySetups,
+          accountEquity
+        );
+        setup.portfolioGate = gate;
+
+        // If can't open new, cap conviction to D (filtered by hard filters)
+        if (!gate.canOpenNew) {
+          setup.convictionScore = Math.min(setup.convictionScore, 19);
+          setup.conviction = "D";
+        }
+
+        // Apply drawdown throttle to position size
+        if (gate.drawdownThrottle < 1.0) {
+          setup.positionSizeLots = Number(
+            (setup.positionSizeLots * gate.drawdownThrottle).toFixed(2)
+          );
+          setup.riskAmount = Number(
+            (setup.riskAmount * gate.drawdownThrottle).toFixed(2)
+          );
+        }
+      }
+    }
+
     const ranked = rankSetupsByConviction(allSetups);
 
     const portfolioRisk: PortfolioRisk = {
@@ -168,7 +202,7 @@ export function useTradeDeskData(confluencePatterns?: Record<string, ConfluenceP
 
     const instrumentsWithData = Object.keys(candleMap).length;
     return { setups: ranked, allSetups, portfolioRisk, instrumentsWithData };
-  }, [candleMap, accountEquity, riskPercent, confluencePatterns]);
+  }, [candleMap, accountEquity, riskPercent, confluencePatterns, activeSetups, historySetups]);
 
   return {
     setups,

@@ -17,6 +17,23 @@ export function buildConfluenceKey(setup: TradeDeskSetup): string {
   return `${agreeing}::${setup.regime}::${setup.impulse}::${setup.tradingStyle ?? "swing"}`;
 }
 
+/** Instrument-specific confluence key (same signal combo, scoped to instrument) */
+export function buildInstrumentConfluenceKey(setup: TradeDeskSetup): string {
+  return `${setup.instrumentId}::${buildConfluenceKey(setup)}`;
+}
+
+/** Regime-specific confluence key (same signal combo, scoped to regime structure) */
+export function buildRegimeConfluenceKey(setup: TradeDeskSetup): string {
+  const structure = setup.fullRegime?.structure ?? "unknown";
+  const phase = setup.fullRegime?.phase ?? "unknown";
+  const agreeing = setup.signals
+    .filter((s) => s.direction === setup.direction)
+    .map((s) => s.system)
+    .sort()
+    .join("|");
+  return `${agreeing}::${structure}::${phase}::${setup.tradingStyle ?? "swing"}`;
+}
+
 // ==================== CREATE TRACKED SETUP ====================
 
 export function createTrackedSetup(setup: TradeDeskSetup): TrackedSetup {

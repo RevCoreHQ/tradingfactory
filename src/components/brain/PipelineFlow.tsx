@@ -13,6 +13,10 @@ import {
   Sparkles,
   RefreshCw,
   TrendingUp,
+  Activity,
+  Fingerprint,
+  Crosshair,
+  ShieldCheck,
 } from "lucide-react";
 
 export function PipelineFlow() {
@@ -68,8 +72,8 @@ export function PipelineFlow() {
             "RSI(14)",
             "MACD (12,26,9)",
             "Bollinger Bands",
-            "ATR(14)",
-            "ADX",
+            "ATR(14) + Series",
+            "ADX + DI+/DI-",
             "Stochastic RSI",
             "Elder-Ray",
             "Elder Impulse",
@@ -85,26 +89,92 @@ export function PipelineFlow() {
 
       <PipelineStageCard
         number={3}
+        title="Multi-Dimensional Regime Engine"
+        subtitle="ATR percentile × BB width × EMA slope × ADX → volatility/structure/phase"
+        icon={<Activity className="h-3.5 w-3.5" />}
+        badge="mechanical"
+        accentColor="green"
+      >
+        <p>
+          Replaces the old ADX-only regime detection with a <strong>3-axis classification</strong>. Four
+          independent metrics — ATR percentile (rolling 100-bar), BB width percentile, EMA(21) slope, and ADX
+          direction — are combined to classify every instrument on three dimensions:
+        </p>
+        <div className="grid grid-cols-3 gap-1.5 mt-2">
+          {[
+            { axis: "Volatility", values: "Low / Normal / High", source: "ATR percentile vs rolling window" },
+            { axis: "Structure", values: "Trend / Range / Breakout", source: "ADX + EMA slope + BB width" },
+            { axis: "Phase", values: "Accumulation / Expansion / Distribution / Markdown", source: "Wyckoff-inspired: ADX direction + price vs EMA50" },
+          ].map((a) => (
+            <div key={a.axis} className="bg-bullish/8 border border-bullish/15 rounded-md px-2.5 py-1.5">
+              <div className="text-[10px] font-semibold text-bullish/80">{a.axis}</div>
+              <div className="text-[9px] font-mono text-foreground/60">{a.values}</div>
+              <div className="text-[8px] text-muted-foreground/50 mt-0.5">{a.source}</div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-2">
+          A backward-compatible <strong>legacy regime</strong> (trending_up/trending_down/ranging/volatile) is
+          derived for existing systems. The full regime powers phase-aware conviction scoring, cluster weighting,
+          and trading style selection.
+        </p>
+      </PipelineStageCard>
+
+      <PipelineStageCard
+        number={4}
+        title="Market Structure Analysis"
+        subtitle="HH/HL/LH/LL swing classification + BOS/CHoCH detection"
+        icon={<TrendingUp className="h-3.5 w-3.5" />}
+        badge="mechanical"
+        accentColor="green"
+      >
+        <p>
+          Swing points are identified using a configurable lookback window, then classified as <strong>Higher High
+          (HH)</strong>, <strong>Higher Low (HL)</strong>, <strong>Lower High (LH)</strong>, or <strong>Lower Low
+          (LL)</strong> based on the prior swing of the same type.
+        </p>
+        <div className="grid grid-cols-2 gap-1.5 mt-2">
+          {[
+            { event: "BOS (Break of Structure)", desc: "Price breaks a swing in the existing trend direction — trend continuation confirmed", color: "text-bullish/80" },
+            { event: "CHoCH (Change of Character)", desc: "Price breaks a swing against the trend — potential reversal warning", color: "text-bearish/80" },
+          ].map((e) => (
+            <div key={e.event} className="bg-neutral-accent/8 border border-neutral-accent/15 rounded-md px-2.5 py-1.5">
+              <div className={`text-[10px] font-semibold ${e.color}`}>{e.event}</div>
+              <div className="text-[9px] text-muted-foreground/50">{e.desc}</div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-2">
+          A <strong>structure score</strong> (-100 to +100) is computed from the balance of HH/HL vs LH/LL swings.
+          This feeds conviction scoring: aligned structure adds +10, opposing structure subtracts -10, and
+          a recent CHoCH against the signal direction incurs a -15 penalty.
+        </p>
+      </PipelineStageCard>
+
+      <PipelineStageCard
+        number={5}
         title="Trading Style Selection"
-        subtitle="ADX regime + session score → intraday vs swing"
+        subtitle="Full regime + session score → intraday vs swing"
         icon={<Clock className="h-3.5 w-3.5" />}
         badge="mechanical"
         accentColor="amber"
       >
         <p>
-          Each instrument gets its own trading style based on 4H ADX and session conditions.
-          This determines which candles the signal engine uses.
+          Each instrument gets its own trading style based on the <strong>full regime classification</strong> and
+          session conditions. The regime phase and structure now drive selection instead of raw ADX alone.
         </p>
         <div className="space-y-1 mt-2">
           {[
             { condition: "Session score < 30", result: "Swing", reason: "Off-hours = low liquidity, wider stops" },
-            { condition: "ADX > 50", result: "Intraday", reason: "Very volatile = shorter exposure" },
-            { condition: "ADX > 20", result: "Swing", reason: "Trending = ride the move" },
-            { condition: "ADX ≤ 20", result: "Intraday", reason: "Ranging = mean reversion works" },
+            { condition: "Distribution phase", result: "Intraday", reason: "Reversal risk = shorter exposure" },
+            { condition: "Accumulation phase", result: "Swing", reason: "Position for breakout" },
+            { condition: "Expansion + trend", result: "Swing", reason: "Ride the move" },
+            { condition: "Breakout structure", result: "Intraday", reason: "Capture initial momentum" },
+            { condition: "Range structure", result: "Intraday", reason: "Mean reversion plays" },
           ].map((r) => (
             <div key={r.condition} className="flex items-center gap-2 text-[10px]">
-              <span className="font-mono text-muted-foreground/60 w-32 shrink-0">{r.condition}</span>
-              <span className="text-[8px] font-bold text-foreground/60">→</span>
+              <span className="font-mono text-muted-foreground/60 w-36 shrink-0">{r.condition}</span>
+              <span className="text-[8px] font-bold text-foreground/60">&rarr;</span>
               <span className={r.result === "Intraday" ? "text-neutral-accent font-semibold w-14" : "text-muted-foreground font-semibold w-14"}>
                 {r.result}
               </span>
@@ -119,9 +189,9 @@ export function PipelineFlow() {
       </PipelineStageCard>
 
       <PipelineStageCard
-        number={4}
+        number={6}
         title="8 Mechanical Signal Systems"
-        subtitle="Book-sourced strategies fire independently"
+        subtitle="Book-sourced strategies with dynamic system weights"
         icon={<Cog className="h-3.5 w-3.5" />}
         badge="mechanical"
         accentColor="green"
@@ -132,20 +202,56 @@ export function PipelineFlow() {
           a strength score (0-100), and whether they match the current market regime.
         </p>
         <p>
-          The regime is detected from ADX: <strong>ADX &gt; 50</strong> = volatile,{" "}
-          <strong>ADX &gt; 30</strong> = trending (up/down based on DI+/DI-),{" "}
-          <strong>ADX ≤ 30</strong> = ranging. Systems are categorized as <strong>Trend</strong> (MA Crossover,
-          MACD, BB Breakout, Trend Stack), <strong>Mean Reversion</strong> (RSI Extremes, BB Mean Reversion),
-          or <strong>Momentum</strong> (Elder Impulse, Elder-Ray). Signals that don&apos;t match the regime get
-          their strength reduced by 40%.
+          Systems are grouped into three <strong>de-correlation clusters</strong> — Trend (MA Crossover, MACD,
+          BB Breakout, Trend Stack), Mean Reversion (RSI Extremes, BB MR), and Momentum (Elder Impulse, Elder-Ray).
+          Signals that don&apos;t match the regime get their strength reduced by 40%.
+        </p>
+        <p>
+          <strong>Auto-kill weak systems:</strong> Each system&apos;s historical win rate is tracked. Systems
+          below 30% win rate (after 10+ trades) are disabled. Systems below 40% get a strength penalty.
+          Systems above 60% get a bonus. Weights adapt automatically over a 30-trade rolling window.
         </p>
         <p className="text-bullish/70 font-semibold">
-          This is 100% rule-based. Zero AI. Pure math from indicator values.
+          100% rule-based. Zero AI. Pure math from indicator values.
         </p>
       </PipelineStageCard>
 
       <PipelineStageCard
-        number={5}
+        number={7}
+        title="Signal De-correlation"
+        subtitle="Cluster-weighted agreement prevents fake confluence"
+        icon={<Fingerprint className="h-3.5 w-3.5" />}
+        badge="mechanical"
+        accentColor="green"
+      >
+        <p>
+          Raw signal agreement (5/8 bullish) can overcount because many systems derive from the same OHLCV data.
+          The de-correlation engine groups signals into <strong>3 clusters</strong> and picks only the best
+          signal per cluster. Each cluster is weighted by the current regime structure:
+        </p>
+        <div className="grid grid-cols-3 gap-1.5 mt-2">
+          {[
+            { regime: "Trend", trend: "0.45", mr: "0.15", mom: "0.40" },
+            { regime: "Range", trend: "0.15", mr: "0.45", mom: "0.40" },
+            { regime: "Breakout", trend: "0.35", mr: "0.10", mom: "0.55" },
+          ].map((r) => (
+            <div key={r.regime} className="bg-neutral-accent/8 border border-neutral-accent/15 rounded-md px-2.5 py-1.5 text-center">
+              <div className="text-[10px] font-semibold text-neutral-accent/80">{r.regime}</div>
+              <div className="text-[8px] font-mono text-muted-foreground/50">
+                T:{r.trend} MR:{r.mr} M:{r.mom}
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-2">
+          The weighted cluster score (0-40 pts) replaces the old raw agreement count in conviction scoring.
+          This prevents 4 correlated trend signals from inflating conviction the same way 4 independent
+          signals would.
+        </p>
+      </PipelineStageCard>
+
+      <PipelineStageCard
+        number={8}
         title="MTF Trend Alignment"
         subtitle="Daily/4H/1H/15M EMA stack → alignment score"
         icon={<TrendingUp className="h-3.5 w-3.5" />}
@@ -169,73 +275,48 @@ export function PipelineFlow() {
             </div>
           ))}
         </div>
-        <p className="mt-2">
-          <strong>Pullback detection:</strong> When the daily trend is clear and the 15M flips back to match it
-          (with price above EMA9), a &ldquo;Pullback Complete&rdquo; signal fires — indicating the lower-timeframe
-          correction is over and the higher-timeframe trend may resume.
-        </p>
       </PipelineStageCard>
 
       <PipelineStageCard
-        number={6}
+        number={9}
         title="Conviction Scoring"
-        subtitle="Signal agreement + regime match + impulse + MTF → A+ to D"
+        subtitle="De-correlated agreement + regime + phase + structure + impulse → A+ to D"
         icon={<Target className="h-3.5 w-3.5" />}
         badge="mechanical"
         accentColor="green"
       >
-        <p>A conviction score (0-100) is calculated from six factors:</p>
+        <p>A conviction score (0-100) is calculated from <strong>eight factors</strong>:</p>
         <div className="space-y-1 mt-2">
-          <div className="flex items-center gap-2">
-            <span className="w-20 text-[9px] font-bold text-neutral-accent/60 uppercase">Agreement</span>
-            <div className="flex-1 h-3 bg-neutral-accent/10 rounded-full overflow-hidden">
-              <div className="h-full bg-neutral-accent/40 rounded-full" style={{ width: "40%" }} />
+          {[
+            { label: "Cluster Agreement", range: "0-40 pts", width: "40%", color: "bg-neutral-accent/40" },
+            { label: "Regime Match", range: "0-25 pts", width: "25%", color: "bg-bullish/40" },
+            { label: "Impulse Alignment", range: "-15 to +20", width: "35%", color: "bg-amber-500/40" },
+            { label: "Strong Signal Bonus", range: "0-15 pts", width: "15%", color: "bg-foreground/20" },
+            { label: "Phase Scoring", range: "-15 to +10", width: "25%", color: "bg-bullish/30" },
+            { label: "Structure Alignment", range: "-15 to +10", width: "25%", color: "bg-neutral-accent/30" },
+            { label: "Exhaustion Penalty", range: "-10 pts", width: "10%", color: "bg-bearish/40" },
+            { label: "MTF Alignment", range: "-10 to +10", width: "20%", color: "bg-neutral-accent/40" },
+          ].map((f) => (
+            <div key={f.label} className="flex items-center gap-2">
+              <span className="w-28 text-[9px] font-bold text-muted-foreground/60 uppercase shrink-0">{f.label}</span>
+              <div className="flex-1 h-3 bg-surface-2/30 rounded-full overflow-hidden">
+                <div className={`h-full rounded-full ${f.color}`} style={{ width: f.width }} />
+              </div>
+              <span className="text-[9px] font-mono text-muted-foreground/60 w-16 text-right shrink-0">{f.range}</span>
             </div>
-            <span className="text-[9px] font-mono text-muted-foreground/60 w-12 text-right">0-40 pts</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-20 text-[9px] font-bold text-bullish/60 uppercase">Regime</span>
-            <div className="flex-1 h-3 bg-bullish/10 rounded-full overflow-hidden">
-              <div className="h-full bg-bullish/40 rounded-full" style={{ width: "25%" }} />
-            </div>
-            <span className="text-[9px] font-mono text-muted-foreground/60 w-12 text-right">0-25 pts</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-20 text-[9px] font-bold text-amber-500/60 uppercase">Impulse</span>
-            <div className="flex-1 h-3 bg-amber-500/10 rounded-full overflow-hidden">
-              <div className="h-full bg-amber-500/40 rounded-full" style={{ width: "35%" }} />
-            </div>
-            <span className="text-[9px] font-mono text-muted-foreground/60 w-12 text-right">-15 to +20</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-20 text-[9px] font-bold text-[var(--foreground)]/40 uppercase">Strong</span>
-            <div className="flex-1 h-3 bg-foreground/5 rounded-full overflow-hidden">
-              <div className="h-full bg-foreground/20 rounded-full" style={{ width: "15%" }} />
-            </div>
-            <span className="text-[9px] font-mono text-muted-foreground/60 w-12 text-right">0-15 pts</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-20 text-[9px] font-bold text-bearish/60 uppercase">ADX Exh.</span>
-            <div className="flex-1 h-3 bg-bearish/10 rounded-full overflow-hidden">
-              <div className="h-full bg-bearish/40 rounded-full" style={{ width: "10%" }} />
-            </div>
-            <span className="text-[9px] font-mono text-muted-foreground/60 w-12 text-right">-10 pts</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-20 text-[9px] font-bold text-neutral-accent/60 uppercase">MTF</span>
-            <div className="flex-1 h-3 bg-neutral-accent/10 rounded-full overflow-hidden">
-              <div className="h-full bg-neutral-accent/40 rounded-full" style={{ width: "20%" }} />
-            </div>
-            <span className="text-[9px] font-mono text-muted-foreground/60 w-12 text-right">-10 to +10</span>
-          </div>
+          ))}
         </div>
         <p className="mt-2">
-          <strong>Tiers:</strong> A+ (≥75, 5+ signals) → A (≥60, 4+) → B (≥40, 3+) → C (≥25, 2+) → D (&lt;25)
+          <strong>Phase scoring</strong>: Distribution/markdown against bullish = -15, accumulation against bearish = -10,
+          expansion aligned = +10. <strong>Structure</strong>: HH/HL aligned = +10, CHoCH against = -15, BOS aligned = +5.
+        </p>
+        <p>
+          <strong>Tiers:</strong> A+ (&ge;75, 5+ signals) &rarr; A (&ge;60, 4+) &rarr; B (&ge;40, 3+) &rarr; C (&ge;25, 2+) &rarr; D (&lt;25)
         </p>
       </PipelineStageCard>
 
       <PipelineStageCard
-        number={7}
+        number={10}
         title="Hard Filters"
         subtitle="Quality gates that reject weak setups"
         icon={<ShieldAlert className="h-3.5 w-3.5" />}
@@ -259,45 +340,49 @@ export function PipelineFlow() {
       </PipelineStageCard>
 
       <PipelineStageCard
-        number={8}
-        title="Structural Level Snapping"
-        subtitle="Entry, SL, TP levels aligned to real S/R zones"
+        number={11}
+        title="Entry Optimization"
+        subtitle="Candle patterns + pullback detection refine entry timing"
+        icon={<Crosshair className="h-3.5 w-3.5" />}
+        badge="mechanical"
+        accentColor="green"
+      >
+        <p>
+          After structural level snapping, the entry zone is refined using <strong>candle pattern recognition</strong>
+          and <strong>pullback detection</strong>. The system scans the most recent candles for:
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mt-2">
+          {[
+            { name: "Hammer / Shooting Star", desc: "Reversal candle with long wick" },
+            { name: "Engulfing", desc: "Current body engulfs previous (1.2x min)" },
+            { name: "Pin Bar", desc: "Tiny body (<20%), dominant wick (>60%)" },
+            { name: "Inside Bar", desc: "Range compression = breakout anticipation" },
+            { name: "Pullback to EMA(21)", desc: "30-70% retracement to key MA" },
+            { name: "Refined Entry Zone", desc: "Tightened when pattern quality > 60" },
+          ].map((p) => (
+            <div key={p.name} className="bg-bullish/8 border border-bullish/15 rounded-md px-2.5 py-1.5">
+              <div className="text-[10px] font-semibold text-bullish/80">{p.name}</div>
+              <div className="text-[9px] text-muted-foreground/50">{p.desc}</div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-2">
+          When a high-quality pattern is detected, the entry zone is tightened to the candle&apos;s
+          key levels, giving better fills and improving the effective risk-reward ratio.
+        </p>
+      </PipelineStageCard>
+
+      <PipelineStageCard
+        number={12}
+        title="Structural Level Snapping + Position Sizing"
+        subtitle="S/R snap → conviction-scaled risk per trade"
         icon={<Layers className="h-3.5 w-3.5" />}
         badge="data"
         accentColor="blue"
       >
         <p>
-          Raw ATR-based levels are &ldquo;snapped&rdquo; to the nearest structural support/resistance zones.
-          The system collects S/R from three sources:
-        </p>
-        <div className="grid grid-cols-3 gap-1.5 mt-2">
-          {[
-            { name: "Fractal S/R", desc: "Pivot highs & lows" },
-            { name: "Pivot Points", desc: "Daily + Weekly (weighted)" },
-            { name: "Fibonacci", desc: "0.618 & 0.382 levels" },
-          ].map((s) => (
-            <div key={s.name} className="bg-neutral-accent/8 border border-neutral-accent/15 rounded-md px-2.5 py-1.5 text-center">
-              <div className="text-[10px] font-semibold text-neutral-accent/80">{s.name}</div>
-              <div className="text-[9px] text-muted-foreground/50">{s.desc}</div>
-            </div>
-          ))}
-        </div>
-        <p className="mt-2">
-          Stop loss snaps to the strongest nearby support/resistance. Take profits snap to levels that maintain
-          minimum R:R ratios (1.5:1, 2.0:1, 2.5:1).
-        </p>
-      </PipelineStageCard>
-
-      <PipelineStageCard
-        number={9}
-        title="Position Sizing"
-        subtitle="Conviction-scaled risk per trade"
-        icon={<Scale className="h-3.5 w-3.5" />}
-        badge="filter"
-        accentColor="red"
-      >
-        <p>
-          Position size is calculated from account equity, risk percent, and conviction tier:
+          Raw ATR-based levels are &ldquo;snapped&rdquo; to the nearest structural support/resistance zones
+          (Fractal S/R, Pivot Points, Fibonacci). Position size scales by conviction tier:
         </p>
         <div className="flex gap-3 mt-2">
           {[
@@ -306,17 +391,45 @@ export function PipelineFlow() {
           ].map((t) => (
             <div key={t.tier} className="flex-1 bg-bullish/8 border border-bullish/15 rounded-md px-3 py-2 text-center">
               <div className={`text-lg font-black ${t.color}`}>{t.tier}</div>
-              <div className="text-[9px] text-muted-foreground/60">{t.mult} base → {t.risk} risk</div>
+              <div className="text-[9px] text-muted-foreground/60">{t.mult} base &rarr; {t.risk} risk</div>
             </div>
           ))}
         </div>
-        <p className="mt-2 font-mono text-[10px] text-muted-foreground/50">
-          lots = (equity * riskPercent * convictionMultiplier) / (pipsAtRisk * pipValue)
+      </PipelineStageCard>
+
+      <PipelineStageCard
+        number={13}
+        title="Portfolio Risk Gate"
+        subtitle="Currency exposure caps, correlation blocking, drawdown throttle"
+        icon={<ShieldCheck className="h-3.5 w-3.5" />}
+        badge="filter"
+        accentColor="red"
+      >
+        <p>
+          Before any setup reaches the desk, a <strong>portfolio-level risk gate</strong> evaluates
+          whether it can be opened given current exposure:
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-2">
+          {[
+            { check: "Total portfolio risk < 6%", desc: "Sum of all open position risk amounts vs equity" },
+            { check: "Currency exposure < 4% per currency", desc: "Both base and quote currency caps enforced" },
+            { check: "Max 2 correlated positions", desc: "EUR/GBP, AUD/NZD, US indices, crypto groups" },
+            { check: "Drawdown throttle", desc: "2 consecutive losses → 75% size, 3 → 50%, 4+ → 25%" },
+          ].map((c) => (
+            <div key={c.check} className="bg-bearish/8 border border-bearish/15 rounded-md px-2.5 py-1.5">
+              <div className="text-[10px] font-semibold text-bearish/80">{c.check}</div>
+              <div className="text-[9px] text-muted-foreground/50">{c.desc}</div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-2">
+          Blocked setups are capped to D-tier conviction (filtered out). The drawdown throttle
+          automatically reduces position sizes during losing streaks.
         </p>
       </PipelineStageCard>
 
       <PipelineStageCard
-        number={10}
+        number={14}
         title="AI Trade Advisor"
         subtitle="LLM narrates and contextualizes the top setups"
         icon={<Sparkles className="h-3.5 w-3.5" />}
@@ -347,27 +460,43 @@ export function PipelineFlow() {
       </PipelineStageCard>
 
       <PipelineStageCard
-        number={11}
-        title="Confluence Learning"
-        subtitle="Feedback loop — outcomes improve future scoring"
+        number={15}
+        title="Expectancy-Based Learning"
+        subtitle="R-multiple tracking, time decay, Kelly sizing — outcomes improve future scoring"
         icon={<RefreshCw className="h-3.5 w-3.5" />}
         badge="mechanical"
         accentColor="green"
       >
         <p>
-          Every trade setup is tracked through its lifecycle: <strong>pending → active → breakeven → TP1 → TP2 → TP3</strong> (or SL hit / expired / invalidated at any stage).
-          Pending/active setups are continuously re-evaluated — if the setup drops out of the A+/A rankings
-          (conviction fell, impulse flipped, or R:R collapsed), it is <strong>invalidated</strong> immediately.
-          Trade plan levels (entry zone, SL, TP, R:R) are synced live while <strong>pending</strong> but <strong>frozen on activation</strong> —
-          once price enters the entry zone, the levels lock in place so breakeven/TP tracking uses the actual
-          entry price, not a drifting recalculation. Outcomes are stored with a confluence pattern
-          key built from the agreeing system names + regime + impulse color + trading style.
+          Every trade is tracked through its lifecycle. Outcomes are stored with confluence pattern keys
+          (signal names + regime + impulse + style), plus <strong>instrument-specific</strong> and{" "}
+          <strong>regime-specific</strong> keys for granular learning.
         </p>
-        <p>
-          After 5+ trades on a pattern, the system adjusts risk multipliers based on win rate: ≥75% → 1.5x,
-          ≥60% → 1.25x, ≥50% → 1.0x, ≥30% → 0.75x, &lt;30% → 0.5x. This creates a self-improving feedback
-          loop — all without AI.
-        </p>
+        <div className="space-y-1.5 mt-2">
+          {[
+            { step: "1", label: "R-Multiple recorded", desc: "P&L converted to R-multiples (risk units) for normalization" },
+            { step: "2", label: "Time-decayed win rate", desc: "30-day half-life exponential decay — recent trades matter more" },
+            { step: "3", label: "Expectancy computed", desc: "EV = (decayedWinRate × avgWinR) - ((1-decayedWinRate) × avgLossR)" },
+            { step: "4", label: "Kelly fraction capped", desc: "Position sizing suggestion capped at 25% of Kelly criterion" },
+          ].map((s) => (
+            <div key={s.step} className="flex items-start gap-2">
+              <span className="h-5 w-5 rounded-full bg-bullish/15 text-bullish text-[9px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                {s.step}
+              </span>
+              <div>
+                <span className="text-[10px] font-semibold text-foreground">{s.label}</span>
+                <p className="text-[9px] text-muted-foreground/50">{s.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-2 bg-bullish/8 border border-bullish/15 rounded-md px-3 py-2">
+          <div className="text-[10px] font-semibold text-bullish/80">Threshold: 10+ trades</div>
+          <p className="text-[9px] text-muted-foreground/50">
+            Learning kicks in after 10 completed trades. EV &gt; 1.0R &rarr; 1.5x risk, EV 0.5-1.0R &rarr; 1.25x, EV &lt; 0 &rarr; 0.5x.
+            Falls back to win-rate multipliers when expectancy data is insufficient.
+          </p>
+        </div>
       </PipelineStageCard>
     </div>
   );

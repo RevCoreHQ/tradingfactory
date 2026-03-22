@@ -18,14 +18,18 @@ import {
   saveTrackedSetups,
   loadConfluencePatterns,
   saveConfluencePatterns,
+  loadSystemPerformance,
+  saveSystemPerformance,
   clearAllTrackingData,
 } from "@/lib/storage/setup-storage";
+import { recordSystemOutcome, type SystemPerformance } from "@/lib/calculations/system-performance";
 import type { SmartAlert } from "@/lib/types/alerts";
 
 interface UseTrackedSetupsResult {
   activeSetups: TrackedSetup[];
   historySetups: TrackedSetup[];
   confluencePatterns: Record<string, ConfluencePattern>;
+  systemPerformance: Record<string, SystemPerformance>;
   clearHistory: () => void;
   dismissScaleIn: (setupId: string, scaleInIndex: number) => void;
 }
@@ -35,6 +39,7 @@ export function useTrackedSetups(
 ): UseTrackedSetupsResult {
   const patternsRef = useRef<Record<string, ConfluencePattern>>({});
   const trackedRef = useRef<TrackedSetup[]>([]);
+  const sysPerfRef = useRef<Record<string, SystemPerformance>>({});
   const initializedRef = useRef(false);
   const milestoneAlertsRef = useRef<SmartAlert[]>([]);
   const addStoreAlerts = useMarketStore((s) => s.addAlerts);
@@ -43,6 +48,7 @@ export function useTrackedSetups(
   if (!initializedRef.current && typeof window !== "undefined") {
     trackedRef.current = loadTrackedSetups();
     patternsRef.current = loadConfluencePatterns();
+    sysPerfRef.current = loadSystemPerformance();
     initializedRef.current = true;
   }
 
@@ -53,6 +59,7 @@ export function useTrackedSetups(
   const { activeSetups, historySetups } = useMemo(() => {
     const currentTracked = trackedRef.current;
     const patterns = { ...patternsRef.current };
+    let sysPerf = { ...sysPerfRef.current };
     let changed = false;
     const milestoneAlerts: SmartAlert[] = [];
 
@@ -203,6 +210,7 @@ export function useTrackedSetups(
           if (!isSetupActive(updated.status)) {
             const key = updated.confluenceKey;
             patterns[key] = recordOutcome(patterns[key] ?? null, updated);
+            sysPerf = recordSystemOutcome(sysPerf, updated);
             terminalList.push(updated);
             continue;
           }
@@ -265,6 +273,7 @@ export function useTrackedSetups(
         if (updated.outcome) {
           const key = updated.confluenceKey;
           patterns[key] = recordOutcome(patterns[key] ?? null, updated);
+          sysPerf = recordSystemOutcome(sysPerf, updated);
         }
         terminalList.push(updated);
       } else {
@@ -279,8 +288,10 @@ export function useTrackedSetups(
     // Persist to localStorage if state changed (idempotent, no re-render)
     if (changed && typeof window !== "undefined") {
       patternsRef.current = patterns;
+      sysPerfRef.current = sysPerf;
       saveTrackedSetups(all);
       saveConfluencePatterns(patterns);
+      saveSystemPerformance(sysPerf);
     }
 
     // Store milestone alerts for flushing after render
@@ -333,6 +344,7 @@ export function useTrackedSetups(
     activeSetups,
     historySetups,
     confluencePatterns: patternsRef.current,
+    systemPerformance: sysPerfRef.current,
     clearHistory,
     dismissScaleIn,
   };

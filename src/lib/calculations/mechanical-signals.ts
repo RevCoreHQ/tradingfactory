@@ -2,6 +2,7 @@ import type { OHLCV } from "@/lib/types/market";
 import type { TechnicalSummary, SupportResistanceLevel, PivotPointResult, FibonacciLevel } from "@/lib/types/indicators";
 import type {
   MarketRegime,
+  FullRegime,
   ImpulseColor,
   ConvictionTier,
   MechanicalSignal,
@@ -13,6 +14,12 @@ import type { Instrument } from "@/lib/types/market";
 import { calcSMA, calcEMA } from "./technical-indicators";
 import { applyLearning, adjustedTier } from "./confluence-learning";
 import { buildConfluenceKey } from "./setup-tracker";
+import { detectFullRegime } from "./regime-engine";
+import { analyzeMarketStructure } from "./market-structure";
+import { computeDeCorrelatedAgreement } from "./signal-clustering";
+import { applySystemWeights, type SystemPerformance } from "./system-performance";
+import { analyzeEntryOptimization } from "./entry-optimization";
+import type { MarketStructure } from "@/lib/types/signals";
 
 // ==================== TRADING STYLE ====================
 
@@ -41,14 +48,31 @@ export const STYLE_PARAMS: Record<TradingStyle, StyleParams> = {
   },
 };
 
-export function selectTradingStyle(adx: number, sessionScore: number): TradingStyle {
+export function selectTradingStyle(adx: number, sessionScore: number, fullRegime?: FullRegime): TradingStyle {
   // Off-hours: prefer swing (wider stops = less noise-sensitive)
   if (sessionScore < 30) return "swing";
-  // Volatile: intraday for shorter exposure
+
+  // Use full regime classification when available
+  if (fullRegime) {
+    // Distribution: shorter exposure — reversal risk
+    if (fullRegime.phase === "distribution") return "intraday";
+    // Accumulation: swing to position for breakout
+    if (fullRegime.phase === "accumulation") return "swing";
+    // Expansion with trend: ride the move
+    if (fullRegime.phase === "expansion" && fullRegime.structure === "trend") return "swing";
+    // Markdown with high vol: short intraday exposure
+    if (fullRegime.phase === "markdown" && fullRegime.volatility === "high") return "intraday";
+    // Breakout: intraday to capture initial move
+    if (fullRegime.structure === "breakout") return "intraday";
+    // Range: intraday mean reversion
+    if (fullRegime.structure === "range") return "intraday";
+    // Trend: swing
+    if (fullRegime.structure === "trend") return "swing";
+  }
+
+  // Fallback to legacy ADX logic
   if (adx > 50) return "intraday";
-  // Trending or developing trend: swing to ride it
   if (adx > 20) return "swing";
-  // Ranging/choppy: intraday mean reversion
   return "intraday";
 }
 
@@ -202,10 +226,22 @@ function snapLevelsToStructure(
 
 // ==================== REGIME DETECTION ====================
 
-export function detectRegime(summary: TechnicalSummary): {
+export function detectRegime(summary: TechnicalSummary, candles?: OHLCV[]): {
   regime: MarketRegime;
   label: string;
+  fullRegime?: FullRegime;
 } {
+  // If candles provided, use the full multi-dimensional regime engine
+  if (candles && candles.length >= 50) {
+    const fullRegime = detectFullRegime(candles, summary);
+    return {
+      regime: fullRegime.legacy,
+      label: fullRegime.label,
+      fullRegime,
+    };
+  }
+
+  // Fallback: legacy ADX-only detection
   const adx = summary.adx.adx;
   const plusDI = summary.adx.plusDI;
   const minusDI = summary.adx.minusDI;
@@ -214,7 +250,6 @@ export function detectRegime(summary: TechnicalSummary): {
     return { regime: "volatile", label: `Volatile (ADX ${adx.toFixed(0)})` };
   }
   if (adx > 30) {
-    // Wilder: ADX > 30 = strong trend (20-30 is weak/developing — treat as ranging)
     if (plusDI > minusDI) {
       return { regime: "trending_up", label: `Trending Up (ADX ${adx.toFixed(0)})` };
     }
@@ -596,7 +631,9 @@ function calculateConviction(
   signals: MechanicalSignal[],
   regime: MarketRegime,
   impulseColor: ImpulseColor,
-  adx: number
+  adx: number,
+  fullRegime?: FullRegime,
+  marketStructure?: MarketStructure | null
 ): { tier: ConvictionTier; score: number; direction: "bullish" | "bearish" | "neutral" } {
   // Count signal directions
   const bullish = signals.filter((s) => s.direction === "bullish");
@@ -617,9 +654,12 @@ function calculateConviction(
   // Conviction scoring
   let score = 0;
 
-  // Agreement factor (0-40 pts)
-  if (activeSignals > 0) {
-    score += (agreeing / activeSignals) * 40;
+  // De-correlated agreement factor (0-40 pts)
+  // Uses cluster-based scoring: only the best signal per cluster counts,
+  // weighted by regime. This prevents correlated signals from inflating conviction.
+  if (direction !== "neutral" && activeSignals > 0) {
+    const { agreement } = computeDeCorrelatedAgreement(signals, direction, fullRegime);
+    score += agreement;
   }
 
   // Regime match factor (0-25 pts)
@@ -640,8 +680,51 @@ function calculateConviction(
   ).length;
   score += Math.min(15, strongSignals * 5);
 
-  // ADX exhaustion penalty — extreme trends often signal reversal
-  if (adx > 50) score -= 10;
+  // Phase-aware scoring (replaces simple ADX > 50 penalty)
+  if (fullRegime) {
+    // Distribution/markdown against bullish signals = strong penalty
+    if ((fullRegime.phase === "distribution" || fullRegime.phase === "markdown") && direction === "bullish") {
+      score -= 15;
+    }
+    // Accumulation against bearish signals = penalty
+    if (fullRegime.phase === "accumulation" && direction === "bearish") {
+      score -= 10;
+    }
+    // Expansion aligned with signal direction = bonus
+    if (fullRegime.phase === "expansion") {
+      const expansionAligned =
+        (direction === "bullish" && fullRegime.emaSlope > 0) ||
+        (direction === "bearish" && fullRegime.emaSlope < 0);
+      if (expansionAligned) score += 10;
+    }
+    // High volatility exhaustion (replaces raw ADX > 50 check)
+    if (fullRegime.volatility === "high" && fullRegime.adxTrend === "falling") {
+      score -= 10; // Exhaustion: high vol + ADX decelerating
+    }
+  } else {
+    // Legacy fallback: ADX exhaustion penalty
+    if (adx > 50) score -= 10;
+  }
+
+  // Market structure alignment (-15 to +10 pts)
+  if (marketStructure) {
+    const structDir = marketStructure.latestStructure;
+    if (direction === "bullish" && structDir === "bullish") score += 10;
+    else if (direction === "bearish" && structDir === "bearish") score += 10;
+    else if (direction === "bullish" && structDir === "bearish") score -= 10;
+    else if (direction === "bearish" && structDir === "bullish") score -= 10;
+
+    // Recent CHoCH against direction = strong warning
+    if (marketStructure.lastCHoCH) {
+      if (direction === "bullish" && marketStructure.lastCHoCH.direction === "bearish") score -= 15;
+      else if (direction === "bearish" && marketStructure.lastCHoCH.direction === "bullish") score -= 15;
+    }
+
+    // Recent BOS aligned = minor bonus
+    if (marketStructure.lastBOS) {
+      if (marketStructure.lastBOS.direction === direction) score += 5;
+    }
+  }
 
   // Map to tier
   let tier: ConvictionTier;
@@ -729,14 +812,15 @@ export function generateTradeDeskSetup(
   accountEquity: number = 10000,
   riskPercent: number = 2,
   confluencePatterns?: Record<string, ConfluencePattern>,
-  tradingStyle?: TradingStyle
+  tradingStyle?: TradingStyle,
+  systemPerformance?: Record<string, SystemPerformance>
 ): TradeDeskSetup {
-  // 1. Detect regime
-  const { regime, label: regimeLabel } = detectRegime(summary);
+  // 1. Detect regime (pass candles for full multi-dimensional regime)
+  const { regime, label: regimeLabel, fullRegime } = detectRegime(summary, candles);
   const impulseColor = summary.impulse.color;
 
   // 2. Run all mechanical systems
-  const signals: MechanicalSignal[] = [
+  let signals: MechanicalSignal[] = [
     maSignal(candles, regime),
     macdSignal(summary, regime),
     bbBreakoutSignal(summary, regime),
@@ -747,9 +831,21 @@ export function generateTradeDeskSetup(
     trendAlignmentSignal(summary, regime),
   ];
 
-  // 3. Calculate conviction
+  // 2b. Apply system performance weights (auto-kill weak systems)
+  if (systemPerformance && Object.keys(systemPerformance).length > 0) {
+    const weights: Record<string, number> = {};
+    for (const [key, perf] of Object.entries(systemPerformance)) {
+      weights[key] = perf.weight;
+    }
+    signals = applySystemWeights(signals, weights);
+  }
+
+  // 3. Analyze market structure (HH/HL/BOS/CHoCH)
+  const marketStructure = analyzeMarketStructure(candles);
+
+  // 4. Calculate conviction (pass fullRegime + structure for phase-aware scoring)
   const adx = summary.adx.adx;
-  const { tier, score: convictionScore, direction } = calculateConviction(signals, regime, impulseColor, adx);
+  const { tier, score: convictionScore, direction } = calculateConviction(signals, regime, impulseColor, adx, fullRegime, marketStructure);
 
   // 4. Consensus
   const bullish = signals.filter((s) => s.direction === "bullish").length;
@@ -783,6 +879,12 @@ export function generateTradeDeskSetup(
   const snapped = snapLevelsToStructure(
     summary, direction, price, atr, entry, stopLoss, takeProfit
   );
+
+  // 5c. Entry optimization — candle patterns + pullback detection
+  const entryOpt = analyzeEntryOptimization(candles, direction, atr, snapped.entry);
+  if (entryOpt.refinedEntry) {
+    snapped.entry = entryOpt.refinedEntry;
+  }
 
   // 6. Position sizing — conviction-scaled risk (Hougaard: size up on best setups)
   const tierRiskMultiplier: Record<ConvictionTier, number> = {
@@ -830,6 +932,9 @@ export function generateTradeDeskSetup(
     positionSizeLots: lots,
     riskAmount,
     reasonsToExit,
+    fullRegime,
+    marketStructure: marketStructure ?? undefined,
+    entryOptimization: entryOpt.signals.length > 0 ? entryOpt : undefined,
   };
 
   if (confluencePatterns) {
