@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useTransform, type MotionValue } from "framer-motion";
+import { motion, useTransform, type MotionValue } from "motion/react";
 
 interface SystemHeroProps {
   scrollYProgress: MotionValue<number>;

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Cog, Sparkles } from "lucide-react";
 
 const mechanicalTags = ["Deterministic", "Reproducible", "Book-sourced", "Rule-based"];

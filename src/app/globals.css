@@ -487,3 +487,62 @@
   0% { offset-distance: 0%; }
   100% { offset-distance: 100%; }
 }
+
+/* Pipeline spine particles (vertical flow) */
+@keyframes pipeline-spine-flow {
+  0% { top: 0%; opacity: 0; }
+  3% { opacity: 0.8; }
+  50% { opacity: 1; }
+  97% { opacity: 0.8; }
+  100% { top: 100%; opacity: 0; }
+}
+
+.pipeline-spine-particle {
+  position: absolute;
+  left: 27px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.pipeline-spine-particle-1 {
+  background: var(--neutral-accent);
+  box-shadow: 0 0 8px var(--neutral-accent), 0 0 16px oklch(0.65 0.18 250 / 0.3);
+  animation: pipeline-spine-flow 6s ease-in-out infinite;
+}
+
+.pipeline-spine-particle-2 {
+  background: var(--bullish);
+  box-shadow: 0 0 8px var(--bullish), 0 0 16px oklch(0.72 0.20 142 / 0.3);
+  animation: pipeline-spine-flow 6s ease-in-out infinite 1.5s;
+}
+
+.pipeline-spine-particle-3 {
+  background: var(--bearish);
+  box-shadow: 0 0 8px var(--bearish), 0 0 16px oklch(0.68 0.22 25 / 0.3);
+  animation: pipeline-spine-flow 6s ease-in-out infinite 3s;
+}
+
+.pipeline-spine-particle-4 {
+  background: var(--amber);
+  box-shadow: 0 0 8px var(--amber), 0 0 16px oklch(0.78 0.16 85 / 0.3);
+  animation: pipeline-spine-flow 6s ease-in-out infinite 4.5s;
+}
+
+/* Lane divider label */
+.pipeline-lane-divider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.25rem 0;
+}
+
+.pipeline-lane-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, var(--border) 0%, transparent 100%);
+}

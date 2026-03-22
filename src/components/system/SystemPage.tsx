@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { useScroll } from "framer-motion";
+import { useScroll } from "motion/react";
 import { Header } from "@/components/dashboard/Header";
 import { EtheralShadow } from "@/components/ui/etheral-shadow";
 import { SystemHero } from "./SystemHero";
