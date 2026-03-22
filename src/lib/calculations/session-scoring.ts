@@ -47,8 +47,71 @@ const SESSION_REASONS: Record<string, string> = {
   US2000: "US market hours only",
 };
 
-/** Check if a session is currently active */
-export function isSessionActive(
+/** Instruments that trade 24/7 (ignore weekend/holiday checks) */
+const CRYPTO_INSTRUMENTS = new Set(["BTC_USD", "ETH_USD"]);
+
+/** Instruments that follow US equity calendar (close on US holidays) */
+const US_INDEX_INSTRUMENTS = new Set(["US100", "US30", "SPX500", "US2000"]);
+
+// ==================== WEEKEND / HOLIDAY CHECKS ====================
+
+/**
+ * Forex market hours: Sunday 22:00 UTC → Friday 22:00 UTC.
+ * Returns false on weekends.
+ */
+export function isForexMarketOpen(now?: Date): boolean {
+  const d = now ?? new Date();
+  const day = d.getUTCDay(); // 0=Sun, 6=Sat
+  const hour = d.getUTCHours();
+
+  if (day === 6) return false;                    // Saturday: always closed
+  if (day === 0 && hour < 22) return false;       // Sunday: closed until 22:00 UTC
+  if (day === 5 && hour >= 22) return false;      // Friday: closed after 22:00 UTC
+
+  return true;
+}
+
+/**
+ * NYSE/NASDAQ observed holidays 2025–2026.
+ * US indices close on these dates.
+ */
+const US_HOLIDAYS: Set<string> = new Set([
+  // 2025
+  "2025-01-01", "2025-01-20", "2025-02-17", "2025-04-18",
+  "2025-05-26", "2025-06-19", "2025-07-04", "2025-09-01",
+  "2025-11-27", "2025-12-25",
+  // 2026
+  "2026-01-01", "2026-01-19", "2026-02-16", "2026-04-03",
+  "2026-05-25", "2026-06-19", "2026-07-03", "2026-09-07",
+  "2026-11-26", "2026-12-25",
+]);
+
+function toDateKey(d: Date): string {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+}
+
+export function isUSHoliday(now?: Date): boolean {
+  return US_HOLIDAYS.has(toDateKey(now ?? new Date()));
+}
+
+/**
+ * Check if markets are open for a given instrument class.
+ * - Crypto: always open (24/7)
+ * - US indices: closed weekends + US holidays
+ * - Forex/commodities: closed weekends
+ */
+export function isMarketOpen(instrumentId?: string, now?: Date): boolean {
+  if (instrumentId && CRYPTO_INSTRUMENTS.has(instrumentId)) return true;
+  const d = now ?? new Date();
+  if (!isForexMarketOpen(d)) return false;
+  if (instrumentId && US_INDEX_INSTRUMENTS.has(instrumentId) && isUSHoliday(d)) return false;
+  return true;
+}
+
+// ==================== SESSION CHECKS ====================
+
+/** Check if a session is currently active (hour-based, ignores day) */
+function isSessionActiveByHour(
   session: { openHourUTC: number; closeHourUTC: number },
   hourUTC: number
 ): boolean {
@@ -56,6 +119,22 @@ export function isSessionActive(
     return hourUTC >= session.openHourUTC && hourUTC < session.closeHourUTC;
   }
   return hourUTC >= session.openHourUTC || hourUTC < session.closeHourUTC;
+}
+
+/**
+ * Check if a session is currently active, accounting for weekends/holidays.
+ * Exported for use by MarketHours UI and other consumers.
+ */
+export function isSessionActive(
+  session: { openHourUTC: number; closeHourUTC: number },
+  hourUTC: number,
+  now?: Date
+): boolean {
+  // If forex market is closed (weekend), no sessions are active
+  // Exception: this doesn't apply to crypto, but session-level checks
+  // are generic — instrument-level checks happen in isMarketOpen()
+  if (!isForexMarketOpen(now)) return false;
+  return isSessionActiveByHour(session, hourUTC);
 }
 
 /** Get time until a target UTC hour */
@@ -73,6 +152,25 @@ export function getTimeUntil(
   return `${h}h ${m}m`;
 }
 
+/** Get time until forex market reopens (Sunday 22:00 UTC) */
+function getTimeUntilMarketOpen(now: Date): string {
+  const day = now.getUTCDay();
+  const hour = now.getUTCHours();
+  const min = now.getUTCMinutes();
+
+  // Calculate hours until Sunday 22:00 UTC
+  let daysUntilSunday = 0;
+  if (day === 6) daysUntilSunday = 1; // Saturday → Sunday
+  else if (day === 5 && hour >= 22) daysUntilSunday = 2; // Friday after close → Sunday
+  else if (day === 0 && hour < 22) daysUntilSunday = 0; // Sunday before open
+
+  const totalMinutes = daysUntilSunday * 24 * 60 + (22 - hour) * 60 - min;
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h >= 24) return `${Math.floor(h / 24)}d ${h % 24}h`;
+  return `${h}h ${m}m`;
+}
+
 /** Get the session relevance for a specific instrument */
 export function getSessionRelevance(instrumentId: string): SessionRelevance {
   const now = new Date();
@@ -80,29 +178,44 @@ export function getSessionRelevance(instrumentId: string): SessionRelevance {
   const minUTC = now.getUTCMinutes();
   const optimalSessions = INSTRUMENT_SESSIONS[instrumentId] || [];
 
+  // Check if this instrument's market is open at all
+  const marketOpen = isMarketOpen(instrumentId, now);
+
+  if (!marketOpen) {
+    const isCrypto = CRYPTO_INSTRUMENTS.has(instrumentId);
+    return {
+      instrumentId,
+      optimalSessions,
+      currentSessionActive: false,
+      isOptimalNow: false,
+      nextOptimalIn: isCrypto ? "Active now" : getTimeUntilMarketOpen(now),
+      sessionScore: 0,
+      reason: isUSHoliday(now) && US_INDEX_INSTRUMENTS.has(instrumentId)
+        ? "US market holiday"
+        : "Markets closed (weekend)",
+    };
+  }
+
   const activeSessions = optimalSessions.filter((sessionKey) => {
     const session = TRADING_SESSIONS[sessionKey];
-    return session && isSessionActive(session, hourUTC);
+    return session && isSessionActive(session, hourUTC, now);
   });
 
   const isOptimalNow = activeSessions.length > 0;
   const isOverlap = activeSessions.length >= 2;
 
-  // Calculate session score
   let sessionScore: number;
   if (isOverlap) {
     sessionScore = 100;
   } else if (isOptimalNow) {
     sessionScore = 75;
   } else {
-    // Check if ANY session is active (even non-optimal)
     const anyActive = Object.values(TRADING_SESSIONS).some((s) =>
-      isSessionActive(s, hourUTC)
+      isSessionActive(s, hourUTC, now)
     );
     sessionScore = anyActive ? 40 : 15;
   }
 
-  // Find next optimal session opening
   let nextOptimalIn = "Active now";
   if (!isOptimalNow && optimalSessions.length > 0) {
     const times = optimalSessions.map((key) => {

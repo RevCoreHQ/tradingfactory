@@ -3,15 +3,9 @@
 import { useMarketStore } from "@/lib/store/market-store";
 import { useBondYields } from "@/lib/hooks/useMarketData";
 import { TRADING_SESSIONS } from "@/lib/utils/constants";
+import { isSessionActive } from "@/lib/calculations/session-scoring";
 import { getChangeClass, getSignPrefix } from "@/lib/utils/formatters";
 import { cn } from "@/lib/utils";
-
-function isSessionActive(session: { openHourUTC: number; closeHourUTC: number }, hourUTC: number): boolean {
-  if (session.openHourUTC < session.closeHourUTC) {
-    return hourUTC >= session.openHourUTC && hourUTC < session.closeHourUTC;
-  }
-  return hourUTC >= session.openHourUTC || hourUTC < session.closeHourUTC;
-}
 
 export function MarketContext() {
   const allBiasResults = useMarketStore((s) => s.allBiasResults);

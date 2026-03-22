@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { TRADING_SESSIONS } from "@/lib/utils/constants";
-import { isSessionActive, getTimeUntil } from "@/lib/calculations/session-scoring";
+import { isSessionActive, getTimeUntil, isForexMarketOpen } from "@/lib/calculations/session-scoring";
 import { GlassCard } from "./GlassCard";
 import { cn } from "@/lib/utils";
 
@@ -18,8 +18,9 @@ export function MarketHoursStrip() {
   const hourUTC = now.getUTCHours();
   const minUTC = now.getUTCMinutes();
 
+  const marketOpen = isForexMarketOpen(now);
   const sessions = Object.entries(TRADING_SESSIONS).map(([key, session]) => {
-    const active = isSessionActive(session, hourUTC);
+    const active = marketOpen && isSessionActive(session, hourUTC, now);
     const timeLeft = active
       ? getTimeUntil(session.closeHourUTC, hourUTC, minUTC)
       : getTimeUntil(session.openHourUTC, hourUTC, minUTC);
@@ -32,8 +33,11 @@ export function MarketHoursStrip() {
         <span className="text-[10px] font-mono text-muted-foreground/60 shrink-0">
           {now.toUTCString().slice(17, 25)} UTC
         </span>
+        {!marketOpen && (
+          <span className="text-[11px] font-medium text-muted-foreground/50">Markets Closed — Weekend</span>
+        )}
         {sessions.map((session) => (
-          <div key={session.key} className="flex items-center gap-2 shrink-0">
+          <div key={session.key} className={cn("flex items-center gap-2 shrink-0", !marketOpen && "opacity-30")}>
             <span
               className={cn("h-2 w-2 rounded-full shrink-0", session.active && "pulse-dot")}
               style={{ backgroundColor: session.color, opacity: session.active ? 1 : 0.2 }}
@@ -44,12 +48,14 @@ export function MarketHoursStrip() {
             )}>
               {session.name}
             </span>
-            <span className={cn(
-              "text-[10px] font-mono",
-              session.active ? "text-foreground/70" : "text-muted-foreground/40"
-            )}>
-              {session.active ? session.timeLeft : `in ${session.timeLeft}`}
-            </span>
+            {marketOpen && (
+              <span className={cn(
+                "text-[10px] font-mono",
+                session.active ? "text-foreground/70" : "text-muted-foreground/40"
+              )}>
+                {session.active ? session.timeLeft : `in ${session.timeLeft}`}
+              </span>
+            )}
           </div>
         ))}
       </div>
@@ -69,8 +75,9 @@ export function MarketHours() {
   const hourUTC = now.getUTCHours();
   const minUTC = now.getUTCMinutes();
 
+  const marketOpen = isForexMarketOpen(now);
   const sessions = Object.entries(TRADING_SESSIONS).map(([key, session]) => {
-    const active = isSessionActive(session, hourUTC);
+    const active = marketOpen && isSessionActive(session, hourUTC, now);
     const timeLeft = active
       ? getTimeUntil(session.closeHourUTC, hourUTC, minUTC)
       : getTimeUntil(session.openHourUTC, hourUTC, minUTC);

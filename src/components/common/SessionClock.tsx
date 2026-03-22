@@ -2,15 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { TRADING_SESSIONS } from "@/lib/utils/constants";
+import { isSessionActive } from "@/lib/calculations/session-scoring";
 import { cn } from "@/lib/utils";
-
-function isSessionActive(session: { openHourUTC: number; closeHourUTC: number }, hourUTC: number): boolean {
-  if (session.openHourUTC < session.closeHourUTC) {
-    return hourUTC >= session.openHourUTC && hourUTC < session.closeHourUTC;
-  }
-  // Wraps around midnight
-  return hourUTC >= session.openHourUTC || hourUTC < session.closeHourUTC;
-}
 
 export function SessionClock() {
   const [now, setNow] = useState(new Date());

@@ -10,12 +10,7 @@ import { Activity, TrendingUp, TrendingDown, DollarSign, BarChart3, Star } from 
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 
-function isSessionActive(session: { openHourUTC: number; closeHourUTC: number }, hourUTC: number): boolean {
-  if (session.openHourUTC < session.closeHourUTC) {
-    return hourUTC >= session.openHourUTC && hourUTC < session.closeHourUTC;
-  }
-  return hourUTC >= session.openHourUTC || hourUTC < session.closeHourUTC;
-}
+import { isSessionActive } from "@/lib/calculations/session-scoring";
 
 function getGaugeColor(value: number): string {
   if (value <= 20) return "var(--bearish)";
