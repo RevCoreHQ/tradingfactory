@@ -128,7 +128,7 @@ export function SystemHero({ scrollYProgress }: SystemHeroProps) {
           {[
             { label: "8 Systems", color: "bg-bullish/15 text-bullish border-bullish/25" },
             { label: "16 Instruments", color: "bg-neutral-accent/15 text-neutral-accent border-neutral-accent/25" },
-            { label: "3 Clusters", color: "bg-amber-500/15 text-amber-500 border-amber-500/25" },
+            { label: "3 Clusters", color: "bg-amber-500/15 text-amber-700 dark:text-amber-500 border-amber-500/25" },
           ].map((stat) => (
             <span
               key={stat.label}

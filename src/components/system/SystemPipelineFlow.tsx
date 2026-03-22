@@ -3,7 +3,6 @@
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { PipelineStageCard } from "@/components/brain/PipelineStageCard";
-import { CpuArchitecture } from "@/components/ui/cpu-architecture";
 import {
   Database,
   BarChart3,
@@ -19,6 +18,7 @@ import {
   ShieldCheck,
   Sparkles,
   RefreshCw,
+  Brain,
 } from "lucide-react";
 
 /* ── Lane Divider ── */
@@ -41,38 +41,29 @@ export function SystemPipelineFlow() {
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.6 }}
     >
-      {/* Header */}
-      <div className="text-center mb-6">
-        <h2 className="text-lg font-semibold text-foreground">15-Stage Pipeline</h2>
-        <p className="text-xs text-muted-foreground/60 mt-1">
+      {/* Brain Hero */}
+      <div className="flex flex-col items-center mb-10">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.7 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="relative mb-5"
+        >
+          <div className="h-24 w-24 rounded-full bg-neutral-accent/10 border border-neutral-accent/20 flex items-center justify-center">
+            <Brain className="h-10 w-10 text-neutral-accent" />
+          </div>
+          <div className="absolute inset-0 h-24 w-24 rounded-full border border-neutral-accent/10 animate-ping [animation-duration:3s]" />
+          <div className="absolute -inset-3 rounded-full border border-neutral-accent/5 animate-pulse" />
+        </motion.div>
+        <h2 className="text-xl font-bold text-foreground">15-Stage Pipeline</h2>
+        <p className="text-sm text-muted-foreground/60 mt-1.5 max-w-md text-center">
           From raw market data to trade execution — every stage fully transparent
         </p>
       </div>
 
-      {/* CpuArchitecture visual header */}
-      <div className="mb-8 rounded-xl overflow-hidden glass-card p-4">
-        <CpuArchitecture
-          text="ENGINE"
-          className="w-full max-h-[180px]"
-        />
-        <p className="text-center text-[10px] text-muted-foreground/50 mt-2">
-          8 data streams flow through the mechanical signal engine
-        </p>
-      </div>
-
       {/* All 15 stages — expanded by default */}
-      <div className="relative space-y-2">
-        {/* Vertical flow spine */}
-        <div className="absolute left-[29px] top-0 bottom-0 w-px bg-gradient-to-b from-neutral-accent/30 via-bullish/20 via-60% to-bearish/20 hidden sm:block" />
-
-        {/* Animated particles */}
-        <div className="absolute left-0 top-0 bottom-0 w-[60px] hidden sm:block overflow-hidden pointer-events-none">
-          <div className="pipeline-spine-particle pipeline-spine-particle-1" />
-          <div className="pipeline-spine-particle pipeline-spine-particle-2" />
-          <div className="pipeline-spine-particle pipeline-spine-particle-3" />
-          <div className="pipeline-spine-particle pipeline-spine-particle-4" />
-        </div>
-
+      <div className="space-y-2">
         {/* ── DATA INGESTION ── */}
         <LaneDivider label="Data Ingestion" color="bg-neutral-accent/10 text-neutral-accent/70 border-neutral-accent/20" />
 
@@ -390,7 +381,7 @@ export function SystemPipelineFlow() {
               { name: "Desk Manager", desc: "All A+/A setups + market context" },
             ].map((ai) => (
               <div key={ai.name} className="bg-amber-500/8 border border-amber-500/15 rounded-md px-2.5 py-1.5 text-center">
-                <div className="text-[10px] font-semibold text-amber-500/80">{ai.name}</div>
+                <div className="text-[10px] font-semibold text-amber-700 dark:text-amber-500/80">{ai.name}</div>
                 <div className="text-[9px] text-muted-foreground/50">{ai.desc}</div>
               </div>
             ))}

@@ -34,7 +34,7 @@ const clusterConfig = {
   mean_reversion: {
     label: "Mean Reversion Cluster",
     color: "border-amber-500/30 bg-amber-500/5",
-    badgeColor: "bg-amber-500/15 text-amber-500 border-amber-500/25",
+    badgeColor: "bg-amber-500/15 text-amber-700 dark:text-amber-500 border-amber-500/25",
     dot: "bg-amber-500/50",
   },
   momentum: {
@@ -59,7 +59,7 @@ export function SystemSignalEngine() {
       {/* CpuArchitecture visualization — 8 systems flow to signal processor */}
       <div className="rounded-xl overflow-hidden glass-card p-4">
         <CpuArchitecture
-          text="SIG"
+          text="TF"
           className="w-full max-h-[160px]"
         />
         <p className="text-center text-[10px] text-muted-foreground/50 mt-2">

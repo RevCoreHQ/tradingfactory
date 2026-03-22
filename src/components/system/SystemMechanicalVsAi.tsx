@@ -1,9 +1,7 @@
 "use client";
 
-import { useRef } from "react";
 import { motion } from "motion/react";
 import { Cog, Sparkles, ArrowRight } from "lucide-react";
-import { AnimatedBeam } from "@/components/ui/animated-beam";
 
 const mechanicalTags = ["Deterministic", "Reproducible", "Book-sourced", "Rule-based"];
 const aiTags = ["Narrator", "Interpreter", "Contextualizer"];
@@ -15,17 +13,11 @@ const aiRoles = [
 ];
 
 export function SystemMechanicalVsAi() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const mechRef = useRef<HTMLDivElement>(null);
-  const centerRef = useRef<HTMLDivElement>(null);
-  const aiRef = useRef<HTMLDivElement>(null);
-
   return (
     <div className="space-y-4">
-      <div ref={containerRef} className="relative grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-4 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-4 items-start">
         {/* Mechanical */}
         <motion.div
-          ref={mechRef}
           initial={{ opacity: 0, x: -20 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
@@ -68,7 +60,7 @@ export function SystemMechanicalVsAi() {
         </motion.div>
 
         {/* Center flow indicator */}
-        <div ref={centerRef} className="hidden lg:flex flex-col items-center justify-center gap-2 py-8">
+        <div className="hidden lg:flex flex-col items-center justify-center gap-2 py-8">
           <motion.div
             initial={{ opacity: 0, scale: 0.5 }}
             whileInView={{ opacity: 1, scale: 1 }}
@@ -83,7 +75,6 @@ export function SystemMechanicalVsAi() {
 
         {/* AI */}
         <motion.div
-          ref={aiRef}
           initial={{ opacity: 0, x: 20 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
@@ -103,9 +94,9 @@ export function SystemMechanicalVsAi() {
             </p>
             {aiRoles.map((ai, i) => (
               <div key={ai.name} className="flex gap-2 items-start">
-                <span className="text-[9px] font-mono text-amber-500/60 w-4 shrink-0 mt-0.5">{i + 1}.</span>
+                <span className="text-[9px] font-mono text-amber-700/60 dark:text-amber-500/60 w-4 shrink-0 mt-0.5">{i + 1}.</span>
                 <div>
-                  <span className="text-[10px] font-semibold text-amber-500/80">{ai.name}</span>
+                  <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-500/80">{ai.name}</span>
                   <span className="text-[10px] text-muted-foreground/50 ml-1">&mdash; {ai.desc}</span>
                 </div>
               </div>
@@ -119,7 +110,7 @@ export function SystemMechanicalVsAi() {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-amber-500/10 text-amber-500/70 border border-amber-500/15"
+                className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-500/70 border border-amber-500/15"
               >
                 {tag}
               </motion.span>
@@ -127,29 +118,6 @@ export function SystemMechanicalVsAi() {
           </div>
         </motion.div>
 
-        {/* AnimatedBeam connections — mechanical → center → AI */}
-        <AnimatedBeam
-          containerRef={containerRef}
-          fromRef={mechRef}
-          toRef={centerRef}
-          gradientStartColor="var(--bullish)"
-          gradientStopColor="var(--neutral-accent)"
-          pathColor="var(--bullish)"
-          pathOpacity={0.1}
-          pathWidth={1.5}
-          curvature={0}
-        />
-        <AnimatedBeam
-          containerRef={containerRef}
-          fromRef={centerRef}
-          toRef={aiRef}
-          gradientStartColor="var(--neutral-accent)"
-          gradientStopColor="#f59e0b"
-          pathColor="#f59e0b"
-          pathOpacity={0.1}
-          pathWidth={1.5}
-          curvature={0}
-        />
       </div>
 
       {/* Bottom callout */}

@@ -1,8 +1,6 @@
 "use client";
 
 import { motion } from "motion/react";
-import { cn } from "@/lib/utils";
-import DatabaseWithRestApi from "@/components/ui/database-with-rest-api";
 import {
   Newspaper,
   Gauge,
@@ -36,18 +34,6 @@ const sources: Source[] = [
 export function SystemFundamentals() {
   return (
     <div className="space-y-6">
-      {/* DatabaseWithRestApi visualization — data sources flowing to bias engine */}
-      <div className="flex justify-center">
-        <DatabaseWithRestApi
-          badgeTexts={{ first: "NEWS", second: "RATES", third: "ECON", fourth: "YIELD" }}
-          title="7 fundamental data sources feed the Bias Engine"
-          circleText="BIAS"
-          buttonTexts={{ first: "Bias Engine", second: "7 Sources" }}
-          lightColor="#f59e0b"
-          className="max-w-[480px]"
-        />
-      </div>
-
       {/* Hub node */}
       <div className="flex justify-center">
         <motion.div
@@ -56,11 +42,11 @@ export function SystemFundamentals() {
           viewport={{ once: true }}
           className="relative"
         >
-          <div className="h-16 w-16 rounded-full bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
-            <Brain className="h-6 w-6 text-amber-500" />
+          <div className="h-16 w-16 rounded-full bg-amber-600/15 border border-amber-600/25 flex items-center justify-center">
+            <Brain className="h-6 w-6 text-amber-600 dark:text-amber-500" />
           </div>
-          <div className="absolute inset-0 h-16 w-16 rounded-full border border-amber-500/15 pulse-ring" />
-          <p className="text-[10px] font-semibold text-amber-500/80 text-center mt-2">Bias Engine</p>
+          <div className="absolute inset-0 h-16 w-16 rounded-full border border-amber-600/15 pulse-ring" />
+          <p className="text-[10px] font-semibold text-amber-700 dark:text-amber-500/80 text-center mt-2">Bias Engine</p>
         </motion.div>
       </div>
 
@@ -76,14 +62,14 @@ export function SystemFundamentals() {
             className="glass-card rounded-lg p-3 space-y-1.5 pipeline-node-glow pipeline-node-glow-amber"
           >
             <div className="flex items-center gap-2">
-              <span className="text-amber-500/70">{src.icon}</span>
+              <span className="text-amber-600 dark:text-amber-500/70">{src.icon}</span>
               <div className="min-w-0">
                 <div className="text-[10px] font-semibold text-foreground truncate">{src.name}</div>
                 <div className="text-[8px] font-mono text-muted-foreground/40">{src.provider}</div>
               </div>
             </div>
             <p className="text-[9px] text-muted-foreground/60 leading-relaxed">{src.measures}</p>
-            <p className="text-[8px] text-amber-500/50 leading-relaxed">{src.feedsInto}</p>
+            <p className="text-[8px] text-amber-700/70 dark:text-amber-500/50 leading-relaxed">{src.feedsInto}</p>
           </motion.div>
         ))}
       </div>

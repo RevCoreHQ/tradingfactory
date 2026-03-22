@@ -16,7 +16,7 @@ const badgeColors: Record<string, string> = {
   DATA: "bg-neutral-accent/15 text-neutral-accent border-neutral-accent/25",
   MECH: "bg-bullish/15 text-bullish border-bullish/25",
   FILTER: "bg-bearish/15 text-bearish border-bearish/25",
-  AI: "bg-amber-500/15 text-amber-500 border-amber-500/25",
+  AI: "bg-amber-500/15 text-amber-700 dark:text-amber-500 border-amber-500/25",
 };
 
 const accentBorders: Record<string, string> = {
