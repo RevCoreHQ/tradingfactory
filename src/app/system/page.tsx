@@ -1,5 +1,5 @@
-import { SystemPage } from "@/components/system/SystemPage";
+import { redirect } from "next/navigation";
 
 export default function SystemPageRoute() {
-  return <SystemPage />;
+  redirect("/brain");
 }

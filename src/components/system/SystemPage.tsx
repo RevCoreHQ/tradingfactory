@@ -42,7 +42,7 @@ export function SystemPage() {
       </div>
 
       <div className="relative z-10">
-        <Header mode="system" />
+        <Header mode="brain" />
 
         <SystemHero scrollYProgress={scrollYProgress} />
 

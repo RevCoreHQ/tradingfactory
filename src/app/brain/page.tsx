@@ -1,5 +1,5 @@
-import { TradingBrain } from "@/components/brain/TradingBrain";
+import { SystemPage } from "@/components/system/SystemPage";
 
 export default function BrainPage() {
-  return <TradingBrain />;
+  return <SystemPage />;
 }

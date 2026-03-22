@@ -12,6 +12,7 @@ const factors = [
   { name: "Structure", range: "-15 to +10", pct: 25, color: "bg-neutral-accent/40", desc: "HH/HL aligned = +10, CHoCH against = -15, BOS = +5" },
   { name: "Exhaustion", range: "-10 pts", pct: 10, color: "bg-bearish/40", desc: "High volatility + ADX decelerating" },
   { name: "MTF Alignment", range: "-10 to +10", pct: 20, color: "bg-neutral-accent/40", desc: "4-timeframe EMA stack: full = +10, against = -10" },
+  { name: "ICT Confluence", range: "0-10 pts", pct: 10, color: "bg-amber-500/40", desc: "Fresh FVG aligned +5, Order Block ≥60 strength +3, Displacement +2" },
 ];
 
 const tiers = [
@@ -28,7 +29,7 @@ export function SystemConviction() {
       {/* Left: Scoring factors */}
       <div className="lg:col-span-5">
         <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-3">
-          8 Scoring Factors (0-100 pts)
+          9 Scoring Factors (0-100 pts)
         </h4>
         <div className="space-y-2.5">
           {factors.map((f, i) => (
