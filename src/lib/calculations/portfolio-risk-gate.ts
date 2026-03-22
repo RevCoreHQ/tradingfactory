@@ -5,6 +5,7 @@ import type { TradeDeskSetup, TrackedSetup } from "@/lib/types/signals";
 export interface PortfolioRiskGate {
   canOpenNew: boolean;
   maxRiskAvailable: number; // max risk% this trade can use
+  totalRiskPercent: number; // current total portfolio risk%
   reasons: string[];
   currencyExposure: CurrencyExposureEntry[];
   correlationBlock: boolean;
@@ -22,12 +23,20 @@ export interface PortfolioGateConfig {
   maxOpenPositions: number;
   maxCurrencyPositions: number;
   maxCorrelatedPositions: number;
+  /** Maximum total portfolio risk as a percentage of account equity.
+   *  Default 10% — sum of all open position risk% must not exceed this. */
+  maxTotalRiskPercent: number;
+  /** Base risk per trade (default 2%). Used to estimate risk of active positions
+   *  when actual riskAmount is unavailable (lots=0 mode). */
+  baseRiskPercent: number;
 }
 
 export const DEFAULT_GATE_CONFIG: PortfolioGateConfig = {
   maxOpenPositions: 5,
   maxCurrencyPositions: 3,
   maxCorrelatedPositions: 2,
+  maxTotalRiskPercent: 10,
+  baseRiskPercent: 2,
 };
 
 // ==================== CURRENCY DECOMPOSITION ====================
@@ -75,6 +84,40 @@ export function calculatePositionExposure(
   }
 
   return exposure;
+}
+
+// ==================== TOTAL RISK COMPUTATION ====================
+
+/**
+ * Compute the total portfolio risk% from all active positions.
+ *
+ * Each setup has a conviction tier → tier risk multiplier → effective risk%.
+ * Since the system operates without account equity (lots=0 mode), we track
+ * the PERCENTAGE risk, which is position-size-independent.
+ *
+ * The tier risk multipliers are:
+ *   A+ = 1.25 × base, A = 1.0, B = 0.75, C = 0.5, D = 0.25
+ */
+const TIER_RISK_MULTIPLIER: Record<string, number> = {
+  "A+": 1.25,
+  "A": 1.0,
+  "B": 0.75,
+  "C": 0.5,
+  "D": 0.25,
+};
+
+export function calculateTotalRiskPercent(
+  activeSetups: TrackedSetup[],
+  baseRiskPercent: number = 2
+): number {
+  let total = 0;
+  for (const tracked of activeSetups) {
+    const mult = TIER_RISK_MULTIPLIER[tracked.setup.conviction] ?? 1.0;
+    // If learning adjusted the risk, use the learning multiplier
+    const learningMult = tracked.setup.learningApplied?.riskMultiplier ?? 1.0;
+    total += baseRiskPercent * mult * learningMult;
+  }
+  return Number(total.toFixed(2));
 }
 
 // ==================== CONSECUTIVE LOSSES ====================
@@ -126,6 +169,7 @@ function countCorrelatedPositions(
 
 /**
  * Evaluate whether a new setup can be opened given portfolio constraints.
+ * Now includes max total risk % enforcement.
  */
 export function evaluatePortfolioGate(
   newSetup: TradeDeskSetup,
@@ -194,9 +238,30 @@ export function evaluatePortfolioGate(
     );
   }
 
+  // 5. Max total risk % enforcement
+  // Sum risk% across all active positions + the proposed new trade.
+  // Block if total would exceed the portfolio risk budget.
+  const currentTotalRisk = calculateTotalRiskPercent(activeSetups, config.baseRiskPercent);
+  const newTradeRisk = (() => {
+    const mult = TIER_RISK_MULTIPLIER[newSetup.conviction] ?? 1.0;
+    const learningMult = newSetup.learningApplied?.riskMultiplier ?? 1.0;
+    return config.baseRiskPercent * mult * learningMult;
+  })();
+
+  const projectedTotalRisk = currentTotalRisk + newTradeRisk;
+  const maxRiskAvailable = Math.max(0, Number((config.maxTotalRiskPercent - currentTotalRisk).toFixed(2)));
+
+  if (projectedTotalRisk > config.maxTotalRiskPercent) {
+    canOpenNew = false;
+    reasons.push(
+      `Total portfolio risk would exceed budget: ${projectedTotalRisk.toFixed(1)}% > ${config.maxTotalRiskPercent}% max (current: ${currentTotalRisk.toFixed(1)}%, new trade: ${newTradeRisk.toFixed(1)}%)`
+    );
+  }
+
   return {
     canOpenNew,
-    maxRiskAvailable: 0,
+    maxRiskAvailable,
+    totalRiskPercent: currentTotalRisk,
     reasons,
     currencyExposure: exposureEntries,
     correlationBlock,

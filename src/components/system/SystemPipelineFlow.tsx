@@ -283,11 +283,11 @@ export function SystemPipelineFlow() {
             ))}
           </div>
           <p className="mt-2">
-            <strong>Phase scoring</strong>: Distribution/markdown against bullish = -15, accumulation against bearish = -10,
-            expansion aligned = +10. <strong>Structure</strong>: HH/HL aligned = +10, CHoCH against = -15, BOS aligned = +5.
+            <strong>Phase scoring</strong>: Distribution/reversal against bullish = -15, accumulation against bearish = -10,
+            expansion aligned = +10. <strong>Structure gate</strong>: Signals opposing market structure are excluded pre-scoring.
           </p>
           <p>
-            <strong>Tiers:</strong> A+ (&ge;75, 5+ signals) &rarr; A (&ge;60, 4+) &rarr; B (&ge;40, 3+) &rarr; C (&ge;25, 2+) &rarr; D (&lt;25)
+            <strong>Tiers (cluster-based):</strong> A+ (&ge;75, 3 clusters) &rarr; A (&ge;60, 2+ clusters) &rarr; B (&ge;40, 2+ clusters) &rarr; C (&ge;25, 1+ cluster) &rarr; D (&lt;25)
           </p>
         </PipelineStageCard>
 

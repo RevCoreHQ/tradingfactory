@@ -112,7 +112,7 @@ export interface TradingAdvisorSetupInput {
   pullbackComplete?: boolean;
   // Advanced regime
   volatilityRegime?: "low" | "normal" | "high";
-  wyckoffPhase?: "accumulation" | "expansion" | "distribution" | "markdown";
+  wyckoffPhase?: "accumulation" | "expansion" | "distribution" | "reversal";
   adxTrend?: "rising" | "falling" | "flat";
   // Market structure
   structureBias?: "bullish" | "bearish" | "neutral";

@@ -4,7 +4,11 @@ import type {
   ConvictionTier,
 } from "@/lib/types/signals";
 
-const MIN_TRADES_FOR_ADJUSTMENT = 10;
+// Minimum sample size before learning adjustments apply.
+// Raised from 10 to 20: at n=10, a 60% win rate has a 95% CI of ±31%,
+// making any EV-based adjustment statistically unreliable. At n=20 the
+// CI narrows to ±21% — still wide but actionable for position sizing.
+const MIN_TRADES_FOR_ADJUSTMENT = 20;
 const MAX_TRADE_HISTORY = 100;
 const DECAY_HALFLIFE_DAYS = 30;
 

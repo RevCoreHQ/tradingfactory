@@ -869,7 +869,7 @@ ICT EMPHASIS — These are HIGH PRIORITY confirmations:
 ANTI-PATTERNS — Hard rules:
 - NEVER recommend a setup with "conflicting" MTF alignment
 - Setups where market structure opposes the trade direction (negative structureScore for longs, positive for shorts) are AVOID setups
-- If volatility regime is "high" AND Wyckoff phase is "distribution" or "markdown", REDUCE position sizes or sit out
+- If volatility regime is "high" AND Wyckoff phase is "distribution" or "reversal", REDUCE position sizes or sit out
 - If the learning system shows < 40% win rate over 15+ trades for a confluence pattern, AVOID that setup
 
 LEARNING INTEGRATION:

@@ -13,7 +13,7 @@ import type {
 import type { Instrument } from "@/lib/types/market";
 import { calcSMA, calcEMA } from "./technical-indicators";
 import { applyLearning, adjustedTier } from "./confluence-learning";
-import { buildConfluenceKey } from "./setup-tracker";
+import { buildConfluenceKey, buildRegimeConfluenceKey } from "./setup-tracker";
 import { detectFullRegime } from "./regime-engine";
 import { analyzeMarketStructure } from "./market-structure";
 import { computeDeCorrelatedAgreement } from "./signal-clustering";
@@ -64,8 +64,8 @@ export function selectTradingStyle(adx: number, sessionScore: number, fullRegime
     if (fullRegime.phase === "accumulation") return "swing";
     // Expansion with trend: ride the move
     if (fullRegime.phase === "expansion" && fullRegime.structure === "trend") return "swing";
-    // Markdown with high vol: short intraday exposure
-    if (fullRegime.phase === "markdown" && fullRegime.volatility === "high") return "intraday";
+    // Reversal with high vol: short intraday exposure — direction uncertainty
+    if (fullRegime.phase === "reversal" && fullRegime.volatility === "high") return "intraday";
     // Breakout: intraday to capture initial move
     if (fullRegime.structure === "breakout") return "intraday";
     // Range: intraday mean reversion
@@ -328,8 +328,18 @@ function maSignal(candles: OHLCV[], regime: MarketRegime): MechanicalSignal {
   }
 
   const isTrending = regime === "trending_up" || regime === "trending_down";
-  // Weissman: trend signals are noise in ranging markets — reduce strength
-  if (!isTrending && direction !== "neutral") strength = Math.round(strength * 0.6);
+  // Hard regime gate: trend signals in non-trending markets are excluded entirely.
+  // Soft penalty (0.6x) allowed signals to leak into conviction — this blocks them.
+  if (!isTrending && direction !== "neutral") {
+    return {
+      system: "MA Crossover",
+      type: "trend",
+      direction: "neutral",
+      strength: 0,
+      description: description + " [regime-excluded: non-trending]",
+      regimeMatch: false,
+    };
+  }
   return {
     system: "MA Crossover",
     type: "trend",
@@ -367,7 +377,16 @@ function macdSignal(summary: TechnicalSummary, regime: MarketRegime): Mechanical
   }
 
   const isTrending = regime === "trending_up" || regime === "trending_down";
-  if (!isTrending && direction !== "neutral") strength = Math.round(strength * 0.6);
+  if (!isTrending && direction !== "neutral") {
+    return {
+      system: "MACD",
+      type: "trend",
+      direction: "neutral",
+      strength: 0,
+      description: description + " [regime-excluded: non-trending]",
+      regimeMatch: false,
+    };
+  }
   return {
     system: "MACD",
     type: "trend",
@@ -406,7 +425,16 @@ function bbBreakoutSignal(summary: TechnicalSummary, regime: MarketRegime): Mech
   }
 
   const isTrending = regime === "trending_up" || regime === "trending_down";
-  if (!isTrending && direction !== "neutral") strength = Math.round(strength * 0.6);
+  if (!isTrending && direction !== "neutral") {
+    return {
+      system: "BB Breakout",
+      type: "trend",
+      direction: "neutral",
+      strength: 0,
+      description: description + " [regime-excluded: non-trending]",
+      regimeMatch: false,
+    };
+  }
   return {
     system: "BB Breakout",
     type: "trend",
@@ -457,8 +485,17 @@ function rsiExtremesSignal(
 
   const isRanging = regime === "ranging";
   const regimeMatch = isRanging || regime === "volatile";
-  // Weissman: MR signals in trending markets are dangerous — reduce strength
-  if (!regimeMatch && direction !== "neutral") strength = Math.round(strength * 0.6);
+  // Hard regime gate: MR signals in trending markets are excluded entirely.
+  if (!regimeMatch && direction !== "neutral") {
+    return {
+      system: "RSI Extremes",
+      type: "mean_reversion",
+      direction: "neutral",
+      strength: 0,
+      description: description + " [regime-excluded: trending market]",
+      regimeMatch: false,
+    };
+  }
   return {
     system: "RSI Extremes",
     type: "mean_reversion",
@@ -508,7 +545,16 @@ function bbMeanReversionSignal(
 
   const isRanging = regime === "ranging";
   const regimeMatch = isRanging || regime === "volatile";
-  if (!regimeMatch && direction !== "neutral") strength = Math.round(strength * 0.6);
+  if (!regimeMatch && direction !== "neutral") {
+    return {
+      system: "BB MR",
+      type: "mean_reversion",
+      direction: "neutral",
+      strength: 0,
+      description: description + " [regime-excluded: trending market]",
+      regimeMatch: false,
+    };
+  }
   return {
     system: "BB MR",
     type: "mean_reversion",
@@ -633,7 +679,16 @@ function trendAlignmentSignal(summary: TechnicalSummary, regime: MarketRegime): 
   }
 
   const isTrending = regime === "trending_up" || regime === "trending_down";
-  if (!isTrending && direction !== "neutral") strength = Math.round(strength * 0.6);
+  if (!isTrending && direction !== "neutral") {
+    return {
+      system: "Trend Stack",
+      type: "trend",
+      direction: "neutral",
+      strength: 0,
+      description: description + " [regime-excluded: non-trending]",
+      regimeMatch: false,
+    };
+  }
   return {
     system: "Trend Stack",
     type: "trend",
@@ -669,7 +724,6 @@ function calculateConviction(
   // Count regime-matched signals
   const matched = signals.filter((s) => s.regimeMatch && s.direction === direction).length;
   const activeSignals = signals.filter((s) => s.direction !== "neutral").length;
-  const agreeing = direction === "bullish" ? bullish.length : bearish.length;
 
   // Conviction scoring
   let score = 0;
@@ -677,9 +731,13 @@ function calculateConviction(
   // De-correlated agreement factor (0-40 pts)
   // Uses cluster-based scoring: only the best signal per cluster counts,
   // weighted by regime. This prevents correlated signals from inflating conviction.
+  // activeClusters = number of independent signal families with at least one agreeing signal.
+  // This replaces raw `agreeing` count for tier thresholds.
+  let activeClusters = 0;
   if (direction !== "neutral" && activeSignals > 0) {
-    const { agreement } = computeDeCorrelatedAgreement(signals, direction, fullRegime);
-    score += agreement;
+    const clusterResult = computeDeCorrelatedAgreement(signals, direction, fullRegime);
+    score += clusterResult.agreement;
+    activeClusters = clusterResult.activeClusters;
   }
 
   // Regime match factor (0-25 pts)
@@ -702,8 +760,8 @@ function calculateConviction(
 
   // Phase-aware scoring (replaces simple ADX > 50 penalty)
   if (fullRegime) {
-    // Distribution/markdown against bullish signals = strong penalty
-    if ((fullRegime.phase === "distribution" || fullRegime.phase === "markdown") && direction === "bullish") {
+    // Distribution/reversal against bullish signals = strong penalty
+    if ((fullRegime.phase === "distribution" || fullRegime.phase === "reversal") && direction === "bullish") {
       score -= 15;
     }
     // Accumulation against bearish signals = penalty
@@ -763,12 +821,16 @@ function calculateConviction(
     score += Math.min(10, ictBonus);
   }
 
-  // Map to tier
+  // Map to tier using INDEPENDENT CLUSTER COUNT instead of raw signal count.
+  // Old thresholds (agreeing >= 5 for A+) allowed 4 correlated trend signals
+  // to inflate conviction. New thresholds require truly independent signal
+  // families (trend, momentum, mean_reversion) to agree.
+  // Max activeClusters = 3 (one per signal family).
   let tier: ConvictionTier;
-  if (score >= 75 && agreeing >= 5) tier = "A+";
-  else if (score >= 60 && agreeing >= 4) tier = "A";
-  else if (score >= 40 && agreeing >= 3) tier = "B";
-  else if (score >= 25 && agreeing >= 2) tier = "C";
+  if (score >= 75 && activeClusters >= 3) tier = "A+";
+  else if (score >= 60 && activeClusters >= 2) tier = "A";
+  else if (score >= 40 && activeClusters >= 2) tier = "B";
+  else if (score >= 25 && activeClusters >= 1) tier = "C";
   else tier = "D";
 
   return { tier, score: Math.max(0, Math.min(100, score)), direction };
@@ -845,7 +907,12 @@ export function generateTradeDeskSetup(
   const { regime, label: regimeLabel, fullRegime } = detectRegime(summary, candles);
   const impulseColor = summary.impulse.color;
 
-  // 2. Run all mechanical systems
+  // 2. Analyze market structure BEFORE signal generation (HH/HL/BOS/CHoCH)
+  // Structure gates which directions are allowed — this prevents generating
+  // signals that contradict the swing structure, then trying to filter them later.
+  const marketStructure = analyzeMarketStructure(candles);
+
+  // 3. Run all mechanical systems (regime-gated: non-matching signals already excluded)
   let signals: MechanicalSignal[] = [
     maSignal(candles, regime),
     macdSignal(summary, regime),
@@ -857,7 +924,7 @@ export function generateTradeDeskSetup(
     trendAlignmentSignal(summary, regime),
   ];
 
-  // 2b. Apply system performance weights (auto-kill weak systems)
+  // 3b. Apply system performance weights (auto-kill weak systems)
   if (systemPerformance && Object.keys(systemPerformance).length > 0) {
     const weights: Record<string, number> = {};
     for (const [key, perf] of Object.entries(systemPerformance)) {
@@ -866,8 +933,27 @@ export function generateTradeDeskSetup(
     signals = applySystemWeights(signals, weights);
   }
 
-  // 3. Analyze market structure (HH/HL/BOS/CHoCH)
-  const marketStructure = analyzeMarketStructure(candles);
+  // 3c. Structure direction gate — hard filter signals against structure.
+  // Only longs allowed in bullish structure, only shorts in bearish.
+  // Neutral structure allows both directions (structure is ambiguous).
+  if (marketStructure && marketStructure.latestStructure !== "neutral") {
+    const structDir = marketStructure.latestStructure;
+    signals = signals.map((s) => {
+      if (s.direction === "neutral" || s.strength === 0) return s;
+      const opposing =
+        (structDir === "bullish" && s.direction === "bearish") ||
+        (structDir === "bearish" && s.direction === "bullish");
+      if (opposing) {
+        return {
+          ...s,
+          direction: "neutral" as const,
+          strength: 0,
+          description: s.description + ` [structure-filtered: ${structDir} structure]`,
+        };
+      }
+      return s;
+    });
+  }
 
   // 3b. ICT context — Fair Value Gaps, Institutional Candles, Consolidation Breakouts, S/D Zones
   const atrVal = summary.atr.value;
@@ -1029,8 +1115,17 @@ export function generateTradeDeskSetup(
   };
 
   if (confluencePatterns) {
-    const confKey = buildConfluenceKey(baseSetup);
-    const pattern = confluencePatterns[confKey] ?? null;
+    // Regime-specific learning: prefer pattern scoped to current structure+phase.
+    // Falls back to legacy key (instrument+regime+impulse+style) if regime-specific
+    // key doesn't have enough data. This ensures learning tracks performance
+    // separately for each market regime, which is more statistically meaningful.
+    const regimeKey = buildRegimeConfluenceKey(baseSetup);
+    const legacyKey = buildConfluenceKey(baseSetup);
+    const regimePattern = confluencePatterns[regimeKey] ?? null;
+    const legacyPattern = confluencePatterns[legacyKey] ?? null;
+
+    // Use regime-specific pattern if it has enough trades, otherwise fall back
+    const pattern = (regimePattern && regimePattern.trades >= 20) ? regimePattern : legacyPattern;
     const learning = applyLearning(convictionScore, riskAmount, lots, pattern);
 
     if (learning.applied) {

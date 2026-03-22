@@ -164,9 +164,18 @@ export function classifyPhase(
     return "distribution";
   }
 
-  // Markdown: ADX elevated, price falling (emaSlope strongly negative), expanding volatility
-  if (emaSlope < -0.4 && adx > 25 && atrPercentile > 50) {
-    return "markdown";
+  // Reversal: trend direction actively changing — ADX was elevated but slope
+  // is weakening or has flipped sign. Replaces "markdown" (which only caught
+  // bearish decline). Reversal captures BOTH bullish→bearish and bearish→bullish
+  // transitions, which is more useful for directional gating.
+  // Detection: ADX still meaningful (>20), trend decelerating, EMA slope weak
+  // relative to volatility (direction uncertainty), and market still active.
+  if (adx > 20 && adxTrend === "falling" && absSlope < 0.3 && atrPercentile > 40) {
+    return "reversal";
+  }
+  // Also reversal: strong slope BUT ADX collapsing = momentum exhaustion
+  if (adx > 25 && adxTrend === "falling" && atrPercentile > 60 && absSlope > 0.4) {
+    return "reversal";
   }
 
   // Accumulation: ADX low/falling, tight range, low volatility

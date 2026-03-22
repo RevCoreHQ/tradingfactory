@@ -14,7 +14,7 @@ export type TradingStyle = "intraday" | "swing";
 
 export type VolatilityRegime = "low" | "normal" | "high";
 export type StructureRegime = "trend" | "range" | "breakout";
-export type MarketPhase = "accumulation" | "expansion" | "distribution" | "markdown";
+export type MarketPhase = "accumulation" | "expansion" | "distribution" | "reversal";
 
 export interface FullRegime {
   /** Backward-compatible legacy regime derived from structure + volatility */

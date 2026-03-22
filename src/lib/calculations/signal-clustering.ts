@@ -117,7 +117,7 @@ export function computeDeCorrelatedAgreement(
   signals: MechanicalSignal[],
   direction: "bullish" | "bearish",
   fullRegime?: FullRegime
-): { agreement: number; clusters: ClusterScore[] } {
+): { agreement: number; clusters: ClusterScore[]; activeClusters: number } {
   const clusters = clusterSignals(signals, direction, fullRegime);
 
   // Sum of effective scores across all clusters
@@ -127,5 +127,10 @@ export function computeDeCorrelatedAgreement(
   // Scale to 0-40 range for compatibility
   const agreement = Math.min(40, (totalEffective / 100) * 40);
 
-  return { agreement, clusters };
+  // Count how many independent clusters have at least one signal agreeing with direction.
+  // This replaces raw signal count for tier thresholds — prevents correlated
+  // signals (e.g. 4 trend indicators) from inflating conviction tier.
+  const activeClusters = clusters.filter((c) => c.bestSignal !== null && c.effectiveScore > 0).length;
+
+  return { agreement, clusters, activeClusters };
 }
