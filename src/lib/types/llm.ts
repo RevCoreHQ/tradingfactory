@@ -64,6 +64,10 @@ export interface MarketSummaryRequest {
   centralBanks: { bank: string; rate: number; direction: string; stance: string }[];
   newsHeadlines: { headline: string; sentiment: string; score: number }[];
   instrumentBiases?: { symbol: string; category: string; direction: string; bias: number }[];
+  // Institutional context
+  cotPositioning?: TradingAdvisorRequest["cotPositioning"];
+  highImpactEvents?: TradingAdvisorRequest["highImpactEvents"];
+  rateDifferentials?: TradingAdvisorRequest["rateDifferentials"];
 }
 
 export interface SectorOutlook {
@@ -145,6 +149,44 @@ export interface TradingAdvisorRequest {
   dxy: { value: number; change: number };
   bondYields: { maturity: string; yield: number; change: number }[];
   riskPercent: number;
+  // Institutional context (all optional for backwards compat)
+  cotPositioning?: {
+    currency: string;
+    netSpeculative: number;
+    netSpecChange: number;
+    percentLong: number;
+    netCommercial: number;
+  }[];
+  highImpactEvents?: {
+    event: string;
+    currency: string;
+    date: string;
+    time: string;
+    forecast?: number;
+    previous?: number;
+  }[];
+  portfolioRisk?: {
+    exposures: { currency: string; netExposure: number }[];
+    warnings: { type: string; severity: string; message: string }[];
+    diversificationScore: number;
+    concentrationRisk: "low" | "medium" | "high";
+  };
+  rateDifferentials?: {
+    pair: string;
+    baseCurrency: string;
+    quoteCurrency: string;
+    baseRate: number;
+    quoteRate: number;
+    differential: number;
+    carryDirection: "long" | "short" | "neutral";
+  }[];
+  centralBanks?: {
+    bank: string;
+    currency: string;
+    rate: number;
+    direction: string;
+    stance: string;
+  }[];
 }
 
 export interface TradingAdvisorResult {

@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { useTradeDeskData } from "@/lib/hooks/useTradeDeskData";
 import { useTradingAdvisor } from "@/lib/hooks/useTradingAdvisor";
 import { useDeskChat } from "@/lib/hooks/useDeskChat";
-import { useFearGreed, useBondYields } from "@/lib/hooks/useMarketData";
+import { useFearGreed, useBondYields, useCOTData, useEconomicCalendar, useCentralBanks } from "@/lib/hooks/useMarketData";
+import { useRiskCorrelation } from "@/lib/hooks/useRiskCorrelation";
 import { loadTrackedSetups } from "@/lib/storage/setup-storage";
 import { getStatusLabel } from "@/lib/calculations/setup-tracker";
 import { cn } from "@/lib/utils";
@@ -438,6 +439,10 @@ export function TradingAdvisor() {
   const { setups, portfolioRisk } = useTradeDeskData();
   const { data: fearGreedData } = useFearGreed();
   const { data: bondData } = useBondYields();
+  const { data: cotData } = useCOTData();
+  const { data: calendarData } = useEconomicCalendar();
+  const { data: bankData } = useCentralBanks();
+  const { assessment: riskAssessment } = useRiskCorrelation();
 
   // Read tracked setup statuses from localStorage (decoupled from AITradeDesk)
   const [trackedStatuses, setTrackedStatuses] = useState<Record<string, string>>({});
@@ -477,6 +482,17 @@ export function TradingAdvisor() {
         })),
         riskPercent: portfolioRisk.riskPercent,
         trackedStatuses,
+        // Institutional context
+        cotPositions: cotData?.positions,
+        highImpactEvents: calendarData?.events,
+        portfolioRisk: riskAssessment ?? undefined,
+        centralBanks: bankData?.banks?.map((b) => ({
+          bank: b.bank,
+          currency: b.currency,
+          rate: b.currentRate,
+          direction: b.rateDirection,
+          stance: b.policyStance,
+        })),
       }
     : null;
 

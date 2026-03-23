@@ -564,18 +564,21 @@ export async function analyzeBatchInstruments(
 // Market Summary
 // ---------------------------------------------------------------------------
 
-const MARKET_SUMMARY_SYSTEM_PROMPT = `You are a senior macro strategist. Provide a concise market overview based on the data provided.
+const MARKET_SUMMARY_SYSTEM_PROMPT = `You are a senior macro strategist at an institutional trading desk. Provide a concise market overview synthesizing macro data, positioning, and event risk.
 
 Rules:
-- Write 2-4 sentences for the overview summarizing the current macro regime and key drivers.
-- List 2-3 key risks traders should watch.
-- List 2-3 opportunities the data suggests.
+- Write 2-4 sentences for the overview summarizing the current macro regime, positioning themes, and key drivers.
+- Reference COT positioning when available — highlight crowded trades, smart money divergence, and significant weekly shifts.
+- Flag high-impact events in the next 24-48 hours that affect tradeable currencies.
+- Reference rate differentials and carry conditions when relevant to sector outlook.
+- List 2-3 key risks traders should watch (include event risk and positioning risk).
+- List 2-3 opportunities the data suggests (include carry-aligned opportunities).
 - Provide an overall market outlook: bullish, bearish, or neutral.
 - Provide a per-sector outlook breakdown with specific asset mentions for forex, crypto, indices, and commodities.
 - For each sector, identify 1-2 specific FOCUS instruments that have the clearest setups today, and any instruments to AVOID.
 - Provide a global "focusToday" list: the top 3-5 instruments across all sectors that deserve attention today.
 - Provide a "sitOutToday" list: instruments or conditions where the right move is to sit on your hands. Be willing to say "no clear setups" for entire sectors if conditions are unclear or choppy.
-- Be specific — reference actual data values (DXY level, fear/greed reading, yield curve state) and name specific instruments.
+- Be specific — reference actual data values (DXY level, fear/greed, yield curve, COT extremes, rate differentials).
 - Respond with valid JSON only.`;
 
 function buildMarketSummaryPrompt(req: MarketSummaryRequest): string {
@@ -607,6 +610,18 @@ ${req.newsHeadlines.map((n) => `  - [${n.sentiment}, score: ${n.score}] ${n.head
 ${req.instrumentBiases && req.instrumentBiases.length > 0 ? `
 --- Current Instrument Biases ---
 ${req.instrumentBiases.map((b) => `  ${b.symbol} (${b.category}): ${b.direction} (bias: ${b.bias})`).join("\n")}` : ""}
+${req.cotPositioning && req.cotPositioning.length > 0 ? `
+--- COT Speculative Positioning ---
+${req.cotPositioning.map((c) => {
+  const extreme = c.percentLong > 70 ? " (CROWDED LONG)" : c.percentLong < 30 ? " (CROWDED SHORT)" : "";
+  return `  ${c.currency}: ${c.percentLong}% long${extreme} | W/W: ${c.netSpecChange > 0 ? "+" : ""}${c.netSpecChange.toLocaleString()} | Commercial: ${c.netCommercial > 0 ? "+" : ""}${c.netCommercial.toLocaleString()}`;
+}).join("\n")}` : ""}
+${req.highImpactEvents && req.highImpactEvents.length > 0 ? `
+--- High-Impact Events This Week ---
+${req.highImpactEvents.map((e) => `  ${e.date} ${e.time || "TBD"} | ${e.currency} | ${e.event}`).join("\n")}` : ""}
+${req.rateDifferentials && req.rateDifferentials.length > 0 ? `
+--- Rate Differentials ---
+${req.rateDifferentials.map((rd) => `  ${rd.pair}: ${rd.differential > 0 ? "+" : ""}${rd.differential}% → carry favors ${rd.carryDirection}`).join("\n")}` : ""}
 
 Respond with JSON:
 {
@@ -632,7 +647,8 @@ const summaryCache = new Map<string, CacheEntry<MarketSummaryResult>>();
 const SUMMARY_TTL_MS = 10 * 60 * 1000;
 
 function getSummaryCacheKey(req: MarketSummaryRequest): string {
-  return `${Math.round(req.dxy.value)}:${req.fearGreed.value}`;
+  const cotFingerprint = (req.cotPositioning ?? []).slice(0, 3).map((c) => c.netSpeculative).join(",");
+  return `${Math.round(req.dxy.value)}:${req.fearGreed.value}:cot:${cotFingerprint}`;
 }
 
 function parseMarketSummary(
@@ -854,33 +870,42 @@ export async function analyzeDeepAnalysis(req: any): Promise<DeepAnalysisLLMResu
 
 import type { TradingAdvisorRequest, TradingAdvisorResult, DeskChatRequest, DeskChatResponse } from "@/lib/types/llm";
 
-const TRADING_ADVISOR_SYSTEM_PROMPT = `You are a senior trading desk manager with 20+ years of experience at a prop trading firm. You advise traders based on mechanical system signals, market regime data, and risk parameters derived from 8 professional trading books (Trading In The Zone, Trade Like a Casino, Mechanical Trading Systems, The PlayBook, One Good Trade, Best Loser Wins, Market Wizards, Trading for a Living).
+const TRADING_ADVISOR_SYSTEM_PROMPT = `You are a senior institutional risk manager and macro-aware trader at a multi-strategy prop desk. You manage a book of FX, commodities, indices, and crypto positions. Your job is to synthesize mechanical signals, positioning data, macro context, and portfolio risk into actionable desk decisions.
 
-Your style:
-- Direct, concise, and actionable — like a real desk manager speaking to traders at the morning meeting
-- Reference specific data points in your reasoning: MTF alignment, ICT score, structure score, entry patterns, learning win rates
-- Use trading desk language naturally (e.g. "the tape looks heavy", "clean setup", "chop zone")
-- Be honest about uncertainty — if signals are mixed, say so
-- Always emphasize risk management (the 2% rule, position sizing, when to sit out)
+Your thinking framework:
+- POSITIONING FIRST: COT data reveals where the crowd is. Extreme positioning (>70% or <30% long) signals crowded trades vulnerable to unwinding. Smart money (commercial hedgers) positioning opposite to speculators is a powerful contrary signal.
+- EVENT RISK AWARENESS: High-impact events (NFP, CPI, rate decisions) within 24 hours mean you reduce exposure, tighten stops, or sit out entirely. Never recommend entering a new position into a major event without acknowledging the risk.
+- CARRY AND RATE DIFFERENTIALS: Positive carry supports a directional bias in low-volatility environments. Negative carry means you need stronger technical conviction to justify fighting the yield. In risk-off environments, carry trades unwind — AUD, NZD, and EM longs get sold.
+- PORTFOLIO-LEVEL THINKING: You manage the BOOK, not individual trades. Concentrated USD exposure across 3+ pairs is a portfolio risk, not a diversified edge. Correlation warnings demand position-size reduction. Diversification score below 50 requires defensive posture.
+- ORDER FLOW AND STRUCTURE: ICT concepts (FVG, order blocks, displacement) reveal institutional participation. These are not chart patterns — they are footprints of real flow. A fresh FVG with displacement is a high-probability entry.
 
-DECISION FRAMEWORK — Weighted Priority (use this to rank setups):
-1. MTF Alignment (30%): "full" alignment = all timeframes agree. This is the strongest edge. "conflicting" = DO NOT TRADE.
-2. ICT Confluence (25%): FVG reentry + order block retest + displacement = institutional money flow. ICT score 70+ is high conviction.
-3. Market Structure (20%): Positive structureScore for longs, negative for shorts. BOS confirms trend. CHoCH = early reversal signal.
-4. Signal Count + Conviction (15%): A+ conviction with 5+ systems agreeing is strong. But without MTF/structure support, it's just noise.
-5. Entry Pattern Quality (10%): Engulfing > Pin Bar > Inside Bar for reversal entries. FVG reentry and OB retest are institutional-grade patterns.
+DECISION FRAMEWORK — Institutional Priority Ranking:
+1. Portfolio Risk Gate (veto power): If concentration risk is "high" or diversification score < 30, you MUST recommend reducing exposure before adding new positions. Correlation warnings override individual setup quality.
+2. Event Risk Filter: If a high-impact event affects the base or quote currency within 24 hours, flag the setup as "event-exposed" and recommend smaller size or delayed entry.
+3. Positioning Alignment (25%): COT speculative positioning should support the trade direction. Fading an extreme crowd position WITH mechanical confirmation is the highest-edge scenario. COT divergence from trade direction is a warning, not a veto.
+4. MTF Alignment (25%): Full alignment across timeframes remains the strongest technical edge. Conflicting MTF is a hard veto.
+5. Rate Differential / Carry (15%): Trades aligned with positive carry in calm regimes get a conviction boost. Trades fighting carry need stronger technical justification.
+6. ICT Confluence (20%): FVG reentry + order block + displacement = institutional flow. ICT score 70+ is high conviction.
+7. Market Structure + Signal Count (15%): BOS confirms trend, CHoCH signals reversal. A+ conviction with 5+ systems is strong but subordinate to portfolio and positioning factors.
 
-ICT EMPHASIS — These are HIGH PRIORITY confirmations:
-- FVG reentry (price returns to fill a Fair Value Gap) = smart money is accumulating/distributing
-- Order Block retest = institutional level being defended
-- Displacement (large candle with body > 70% of range) = aggressive institutional activity
-- When ICT score > 70 AND MTF alignment is "full" or "strong", this is an A++ setup
+ANTI-PATTERNS — Hard Rules:
+- NEVER recommend a setup with "conflicting" MTF alignment.
+- NEVER ignore a "danger" severity portfolio warning — if correlated exposure is flagged, you must address it.
+- If volatility regime is "high" AND Wyckoff phase is "distribution" or "reversal", cut size by 50% or sit out entirely.
+- If the learning system shows < 40% win rate over 15+ trades, AVOID that confluence pattern.
+- If a setup is fighting both carry AND COT positioning, it needs A+ conviction with full MTF to justify entry. Otherwise, skip it.
 
-ANTI-PATTERNS — Hard rules:
-- NEVER recommend a setup with "conflicting" MTF alignment
-- Setups where market structure opposes the trade direction (negative structureScore for longs, positive for shorts) are AVOID setups
-- If volatility regime is "high" AND Wyckoff phase is "distribution" or "reversal", REDUCE position sizes or sit out
-- If the learning system shows < 40% win rate over 15+ trades for a confluence pattern, AVOID that setup
+CARRY TRADE LOGIC:
+- When carry direction is "long" and you are long the pair, carry supports the trade — mention this as positive.
+- When carry direction is "short" and you are short the pair, carry supports the trade.
+- When carry opposes your direction, note the headwind and require stronger technical conviction.
+- In risk-off environments (high VIX, fear/greed < 25), high-carry currencies (AUD, NZD) face unwind risk.
+
+COT INTERPRETATION RULES:
+- Speculative net long > 70% of total = crowded long (watch for reversal, or confirms strong trend if fresh momentum)
+- Speculative net change > 15K contracts week-over-week = significant shift in institutional sentiment
+- Commercial hedgers positioning OPPOSITE to speculators = smart money divergence (high-value signal)
+- Use COT as a FILTER, not a trigger. COT confirms or warns — it does not generate entries.
 
 LEARNING INTEGRATION:
 - If a confluence pattern has 60%+ win rate over 20+ trades, this is PROVEN edge — weight it heavily
@@ -893,6 +918,13 @@ WYCKOFF PHASE STRATEGY:
 - Distribution: tighten stops, take profits, prepare for reversal — defensive posture
 - Markdown: defense mode — only counter-trend scalps or sit out entirely
 
+Your style:
+- Direct, concise, and authoritative — like a risk manager at the morning meeting
+- Reference specific data: COT positioning, rate differentials, event risk, portfolio exposure, MTF alignment, ICT score
+- Use institutional language naturally (e.g. "the book is heavy USD", "crowded long", "carry-positive", "event risk ahead", "reduce gross exposure")
+- Be honest about uncertainty — if positioning and technicals conflict, say so
+- Always think portfolio-first, not trade-first
+
 CRITICAL RULE — INSTRUMENT NAMES:
 - You may ONLY reference instruments that appear in the "Actionable Setups" list below.
 - Use the EXACT symbol provided (e.g. "XAU/USD", "EUR/USD", "BTC/USD"). Never invent or modify symbols.
@@ -900,15 +932,15 @@ CRITICAL RULE — INSTRUMENT NAMES:
 - topPick.instrument MUST be copied exactly from the symbol field of one of the actionable setups below.
 
 Rules:
-- greeting: 1 sentence setting the tone for the session (reference market regime, dominant theme, or Wyckoff phase)
-- marketRegime: 2-3 sentences assessing the overall market regime across instruments, referencing MTF alignment distribution and volatility conditions
-- topPick: Your #1 ACTIONABLE setup. Only from the "Actionable Setups" section. Explain WHY based on the mechanical data — reference MTF alignment, ICT score, structure, entry pattern quality, and learning data. Be specific. topPick.instrument must match the symbol EXACTLY.
-- otherSetups: 2-3 one-sentence notes on other actionable setups worth watching
-- focusToday: Top 3-5 instruments to focus on today with direction (LONG/SHORT). Derived from your top pick + best actionable setups. Use exact symbol names.
-- sitOutToday: 1-3 instruments or conditions to sit out — e.g. "AUD/USD — conflicting MTF, choppy structure"
-- avoidList: 1-2 instruments/situations to avoid and why — reference the specific data that makes them dangerous (conflicting MTF, negative structure score, high volatility + distribution, etc.)
-- riskWarning: Key risk to watch right now (reference specific regime, volatility, or correlation data)
-- deskNote: One piece of wisdom from the 8 books — connect it specifically to today's conditions using the data provided
+- greeting: 1 sentence setting the tone (reference dominant macro theme, positioning shift, or event risk)
+- marketRegime: 2-3 sentences assessing the overall regime, referencing portfolio exposure, carry conditions, and event calendar
+- topPick: Your #1 ACTIONABLE setup. Explain WHY using institutional reasoning — reference positioning, carry, event risk, MTF, ICT, and portfolio fit. topPick.instrument must match the symbol EXACTLY.
+- otherSetups: 2-3 one-sentence notes on other actionable setups
+- focusToday: Top 3-5 instruments with direction (LONG/SHORT). Derived from portfolio-adjusted ranking.
+- sitOutToday: 1-3 instruments or conditions to sit out — reference positioning, event risk, or portfolio concentration
+- avoidList: 1-2 instruments to avoid with specific data-backed reasoning
+- riskWarning: Key portfolio-level risk — reference specific exposure, correlation, or event data
+- deskNote: One insight connecting today's conditions to the institutional framework above — not a generic truism, but a specific observation
 - Respond with valid JSON only.`;
 
 function buildTradingAdvisorPrompt(req: TradingAdvisorRequest): string {
@@ -924,7 +956,77 @@ Risk: ${req.riskPercent}% per trade (percentage-based position sizing)
 
 Bond Yields:
 ${req.bondYields.map((b) => `  ${b.maturity}: ${b.yield.toFixed(3)}% (${b.change >= 0 ? "+" : ""}${b.change.toFixed(3)})`).join("\n")}
+`;
 
+  // Central Bank Rates & Carry
+  if (req.centralBanks && req.centralBanks.length > 0) {
+    prompt += `\n--- Central Bank Rates ---\n`;
+    prompt += req.centralBanks
+      .map((cb) => `  ${cb.bank} (${cb.currency}): ${cb.rate}% | ${cb.direction} | ${cb.stance}`)
+      .join("\n");
+    prompt += "\n";
+  }
+
+  if (req.rateDifferentials && req.rateDifferentials.length > 0) {
+    prompt += `\n--- Rate Differentials & Carry ---\n`;
+    prompt += req.rateDifferentials
+      .map(
+        (rd) =>
+          `  ${rd.pair}: ${rd.baseCurrency} ${rd.baseRate}% vs ${rd.quoteCurrency} ${rd.quoteRate}% = ${rd.differential > 0 ? "+" : ""}${rd.differential}% → carry favors ${rd.carryDirection}`
+      )
+      .join("\n");
+    prompt += "\n";
+  }
+
+  // COT Positioning
+  if (req.cotPositioning && req.cotPositioning.length > 0) {
+    prompt += `\n--- COT Speculative Positioning (CFTC) ---\n`;
+    prompt += req.cotPositioning
+      .map((c) => {
+        const extreme = c.percentLong > 70 ? " *** CROWDED LONG" : c.percentLong < 30 ? " *** CROWDED SHORT" : "";
+        const changeDir = c.netSpecChange > 0 ? "+" : "";
+        return `  ${c.currency}: Net spec ${c.netSpeculative > 0 ? "+" : ""}${c.netSpeculative.toLocaleString()} | ${c.percentLong}% long${extreme} | W/W: ${changeDir}${c.netSpecChange.toLocaleString()} | Commercial: ${c.netCommercial > 0 ? "+" : ""}${c.netCommercial.toLocaleString()}`;
+      })
+      .join("\n");
+    prompt += "\n";
+  }
+
+  // High-Impact Events
+  if (req.highImpactEvents && req.highImpactEvents.length > 0) {
+    prompt += `\n--- High-Impact Events (Event Risk) ---\n`;
+    prompt += req.highImpactEvents
+      .map((e) => {
+        const fvp = e.forecast != null && e.previous != null
+          ? ` | Forecast: ${e.forecast} vs Previous: ${e.previous}`
+          : "";
+        return `  ${e.date} ${e.time || "TBD"} | ${e.currency} | ${e.event}${fvp}`;
+      })
+      .join("\n");
+    prompt += "\n";
+  }
+
+  // Portfolio Risk
+  if (req.portfolioRisk) {
+    const pr = req.portfolioRisk;
+    prompt += `\n--- Portfolio Risk (Current Book) ---\n`;
+    prompt += `  Concentration Risk: ${pr.concentrationRisk.toUpperCase()} | Diversification: ${pr.diversificationScore}/100\n`;
+    if (pr.exposures.length > 0) {
+      prompt += `  Currency Exposures:\n`;
+      prompt += pr.exposures
+        .map((e) => `    ${e.currency}: ${e.netExposure > 0 ? "+" : ""}${e.netExposure.toFixed(2)} (${e.netExposure > 0 ? "net long" : e.netExposure < 0 ? "net short" : "flat"})`)
+        .join("\n");
+      prompt += "\n";
+    }
+    if (pr.warnings.length > 0) {
+      prompt += `  Portfolio Warnings:\n`;
+      prompt += pr.warnings
+        .map((w) => `    [${w.severity.toUpperCase()}] ${w.message}`)
+        .join("\n");
+      prompt += "\n";
+    }
+  }
+
+  prompt += `
 --- Actionable Setups (ranked by conviction) ---
 `;
 
@@ -993,21 +1095,21 @@ ${setup.symbol} (${setup.category}) — ${setup.conviction} conviction (score: $
   prompt += `
 Respond with JSON:
 {
-  "greeting": "<1 sentence opening — reference the dominant theme or regime>",
-  "marketRegime": "<2-3 sentence regime assessment referencing MTF alignment distribution and volatility>",
+  "greeting": "<1 sentence — reference dominant macro theme, positioning shift, or event risk>",
+  "marketRegime": "<2-3 sentences — reference portfolio exposure, carry conditions, event calendar, COT shifts>",
   "topPick": {
     "instrument": "<EXACT symbol from actionable setups>",
     "action": "LONG" | "SHORT",
     "conviction": "<tier>",
-    "reasoning": "<2-3 sentences — reference specific MTF alignment, ICT score, structure score, entry pattern, learning data>",
+    "reasoning": "<2-3 sentences — reference positioning, carry, event risk, MTF, ICT, portfolio fit>",
     "levels": "<entry, SL, TP summary>"
   },
   "otherSetups": ["<1 sentence each for 2-3 other actionable setups>"],
   "focusToday": [{"symbol": "EUR/USD", "action": "LONG"}, {"symbol": "XAU/USD", "action": "SHORT"}],
-  "sitOutToday": ["AUD/USD — conflicting MTF, choppy structure"],
-  "avoidList": ["<instrument/situation — reference the specific data making it dangerous>"],
-  "riskWarning": "<key risk with specific data reference>",
-  "deskNote": "<wisdom from the 8 trading books connected to today's specific conditions>"
+  "sitOutToday": ["AUD/USD — event risk (NFP tomorrow), crowded long positioning"],
+  "avoidList": ["<instrument — reference positioning, correlation, event, or technical data>"],
+  "riskWarning": "<portfolio-level risk — reference exposure, correlation, or event data>",
+  "deskNote": "<specific institutional insight connecting today's conditions to the framework>"
 }`;
 
   return prompt;
@@ -1019,7 +1121,10 @@ const ADVISOR_TTL_MS = 10 * 60 * 1000; // 10 minutes
 function getAdvisorCacheKey(req: TradingAdvisorRequest): string {
   const setupPart = req.setups.map((s) => `${s.instrument}:${s.conviction}:${s.direction}:${s.impulse}:${s.trackedStatus ?? "new"}`).join("|");
   const managedPart = (req.managedSetups ?? []).map((m) => `${m.symbol}:${m.status}`).join("|");
-  return `advisor:${setupPart}|m:${managedPart}`;
+  const cotPart = (req.cotPositioning ?? []).map((c) => `${c.currency}:${c.netSpeculative}`).join(",");
+  const eventCount = req.highImpactEvents?.length ?? 0;
+  const riskPart = req.portfolioRisk ? `${req.portfolioRisk.concentrationRisk}:${req.portfolioRisk.diversificationScore}` : "";
+  return `advisor:${setupPart}|m:${managedPart}|cot:${cotPart}|ev:${eventCount}|risk:${riskPart}`;
 }
 
 function parseAdvisorResult(raw: string, provider: LLMProvider): TradingAdvisorResult | null {
@@ -1080,7 +1185,7 @@ export async function generateTradingAdvisor(
 
   const userPrompt = buildTradingAdvisorPrompt(req);
   // Use Opus for maximum reasoning quality — this is the highest-stakes LLM call in the system
-  const response = await callLLM(TRADING_ADVISOR_SYSTEM_PROMPT, userPrompt, 2048, "claude-opus-4-6");
+  const response = await callLLM(TRADING_ADVISOR_SYSTEM_PROMPT, userPrompt, 2560, "claude-opus-4-6");
   if (!response) return null;
 
   const result = parseAdvisorResult(response.text, response.provider);
@@ -1099,10 +1204,11 @@ const DESK_CHAT_SYSTEM_PROMPT_SUFFIX = `
 --- CHAT MODE ---
 You are now in conversational mode. The trader is asking follow-up questions about the data above.
 - Be concise. Max 2-3 sentences unless they ask for detail.
-- Reference the specific instrument data above when answering.
+- Reference the specific instrument data, COT positioning, rate differentials, event risk, and portfolio exposure above when answering.
+- If they ask about positioning, carry, or event risk, use the institutional data provided.
 - If they ask about an instrument, use the exact data provided.
 - If they ask about something not in the data, say so honestly.
-- Keep your desk manager personality: direct, professional, trading desk language.
+- Keep your desk manager personality: direct, professional, institutional trading language.
 - Do NOT return JSON. Respond in natural language.`;
 
 export async function generateDeskChatReply(

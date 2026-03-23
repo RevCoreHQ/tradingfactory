@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import useSWR from "swr";
-import { useFearGreed, useBondYields, useCentralBanks } from "./useMarketData";
+import { useFearGreed, useBondYields, useCentralBanks, useCOTData, useEconomicCalendar } from "./useMarketData";
+import { computeRateDifferentials } from "@/lib/calculations/rate-differentials";
 import { useMarketStore } from "@/lib/store/market-store";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import type { BiasResult } from "@/lib/types/bias";
@@ -149,6 +150,8 @@ export function useMarketSummary() {
   const { data: bondData } = useBondYields();
   const { data: bankData } = useCentralBanks();
   const { data: newsData } = useGeneralNews();
+  const { data: cotData } = useCOTData();
+  const { data: calendarData } = useEconomicCalendar();
   const allBiasResults = useMarketStore((s) => s.allBiasResults);
   const currentResults = allBiasResults.intraday;
 
@@ -223,6 +226,34 @@ export function useMarketSummary() {
       score: n.sentimentScore,
     })),
     instrumentBiases: instrumentBiases.length > 0 ? instrumentBiases : undefined,
+    // Institutional context
+    cotPositioning: cotData?.positions?.map((p) => ({
+      currency: p.currency,
+      netSpeculative: p.netSpeculative,
+      netSpecChange: p.netSpecChange,
+      percentLong: p.percentLong,
+      netCommercial: p.netCommercial,
+    })),
+    highImpactEvents: calendarData?.events
+      ?.filter((e) => e.impact === "high")
+      .slice(0, 8)
+      .map((e) => ({
+        event: e.event,
+        currency: e.currency,
+        date: e.date,
+        time: e.time,
+        forecast: e.forecast,
+        previous: e.previous,
+      })),
+    rateDifferentials: bankData?.banks
+      ? computeRateDifferentials(
+          bankData.banks.map((b) => ({
+            bank: b.bank,
+            currency: b.currency,
+            rate: b.currentRate,
+          }))
+        )
+      : undefined,
   };
 
   // Stable ref so SWR fetcher always uses latest data

@@ -4,8 +4,12 @@ import { useRef } from "react";
 import useSWR from "swr";
 import type { TradeDeskSetup } from "@/lib/types/signals";
 import type { TradingAdvisorRequest, TradingAdvisorResult } from "@/lib/types/llm";
+import type { COTPosition } from "@/lib/types/cot";
+import type { EconomicEvent } from "@/lib/types/market";
+import type { PortfolioRiskAssessment } from "@/lib/types/risk";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import { readCache } from "@/lib/supabase-cache";
+import { computeRateDifferentials } from "@/lib/calculations/rate-differentials";
 
 const CACHE_KEY = "tradingfactory_advisor_cache";
 const CACHE_TTL = 2 * 60 * 1000; // 2 min client-side — keep desk manager near-real-time
@@ -39,7 +43,9 @@ function setClientCache(data: TradingAdvisorResult, hash: string): void {
 
 function buildSetupHash(
   setups: TradeDeskSetup[],
-  trackedStatuses?: Record<string, string>
+  trackedStatuses?: Record<string, string>,
+  cotPositions?: COTPosition[],
+  eventCount?: number
 ): string {
   const statuses = trackedStatuses ?? {};
   const setupPart = setups
@@ -55,7 +61,10 @@ function buildSetupHash(
   const pending = statusValues.filter((s) => s.includes("Await")).length;
   const running = statusValues.filter((s) => s.includes("Running")).length;
 
-  return `${setups.length}:${entryZone}ez:${pending}p:${running}r|${setupPart}`;
+  // Institutional fingerprint — bust cache when positioning or event count changes
+  const cotHash = cotPositions?.slice(0, 3).map((c) => `${c.currency}:${c.netSpeculative}`).join(",") ?? "";
+
+  return `${setups.length}:${entryZone}ez:${pending}p:${running}r|${setupPart}|cot:${cotHash}|ev:${eventCount ?? 0}`;
 }
 
 async function fetchAdvisor(
@@ -166,10 +175,18 @@ interface UseTradingAdvisorParams {
   bondYields: { maturity: string; yield: number; change: number }[];
   riskPercent: number;
   trackedStatuses?: Record<string, string>; // instrumentId -> status label
+  // Institutional context
+  cotPositions?: COTPosition[];
+  highImpactEvents?: EconomicEvent[];
+  portfolioRisk?: PortfolioRiskAssessment;
+  centralBanks?: { bank: string; currency: string; rate: number; direction: string; stance: string }[];
 }
 
 export function useTradingAdvisor(params: UseTradingAdvisorParams | null) {
-  const hash = params && params.setups.length > 0 ? buildSetupHash(params.setups, params.trackedStatuses) : null;
+  const highImpactCount = params?.highImpactEvents?.filter((e) => e.impact === "high").length ?? 0;
+  const hash = params && params.setups.length > 0
+    ? buildSetupHash(params.setups, params.trackedStatuses, params.cotPositions, highImpactCount)
+    : null;
   const advisorRequestRef = useRef<TradingAdvisorRequest | null>(null);
 
   const { data, error, isLoading, mutate } = useSWR(
@@ -283,6 +300,44 @@ export function useTradingAdvisor(params: UseTradingAdvisorParams | null) {
         dxy: params.dxy,
         bondYields: params.bondYields,
         riskPercent: params.riskPercent,
+        // Institutional context
+        cotPositioning: params.cotPositions?.map((p) => ({
+          currency: p.currency,
+          netSpeculative: p.netSpeculative,
+          netSpecChange: p.netSpecChange,
+          percentLong: p.percentLong,
+          netCommercial: p.netCommercial,
+        })),
+        highImpactEvents: params.highImpactEvents
+          ?.filter((e) => e.impact === "high")
+          .slice(0, 8)
+          .map((e) => ({
+            event: e.event,
+            currency: e.currency,
+            date: e.date,
+            time: e.time,
+            forecast: e.forecast,
+            previous: e.previous,
+          })),
+        portfolioRisk: params.portfolioRisk
+          ? {
+              exposures: params.portfolioRisk.exposures.map((e) => ({
+                currency: e.currency,
+                netExposure: e.netExposure,
+              })),
+              warnings: params.portfolioRisk.warnings.map((w) => ({
+                type: w.type,
+                severity: w.severity,
+                message: w.message,
+              })),
+              diversificationScore: params.portfolioRisk.diversificationScore,
+              concentrationRisk: params.portfolioRisk.concentrationRisk,
+            }
+          : undefined,
+        rateDifferentials: params.centralBanks
+          ? computeRateDifferentials(params.centralBanks)
+          : undefined,
+        centralBanks: params.centralBanks,
       };
 
       advisorRequestRef.current = request;
