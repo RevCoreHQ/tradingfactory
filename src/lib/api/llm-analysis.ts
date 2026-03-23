@@ -35,34 +35,28 @@ function getAvailableProviders(): { provider: LLMProvider; key: string }[] {
 // System prompt
 // ---------------------------------------------------------------------------
 
-const SINGLE_SYSTEM_PROMPT = `You are an elite quantitative market analyst at a prop trading desk. Your role is to evaluate financial instruments and provide actionable trading intelligence that modifies an existing rule-based scoring system.
+const SINGLE_SYSTEM_PROMPT = `You are an elite quantitative market analyst at a prop trading desk. Your role is to provide narrative context and risk assessment for financial instruments. You do NOT adjust scores or influence the mechanical scoring system.
 
 Rules:
-- Return a biasAdjustment value between -50 and +50.
-  - Positive values mean you believe the instrument is MORE BULLISH than the rules suggest.
-  - Negative values mean you believe the instrument is MORE BEARISH than the rules suggest.
-  - 0 means you agree with the current rule-based assessment.
-  - Use the full range: ±40-50 for very strong conviction, ±20-40 for moderate, ±1-20 for minor.
 - Provide 2-5 signals, each with a source name, signal direction (bullish/bearish/neutral), strength (0-100), and a brief description explaining your reasoning.
-- Include a confidence score (0-100) indicating how confident you are in your adjustment.
-- Include a short summary sentence (one sentence max). CRITICAL: the summary MUST be directionally consistent with your biasAdjustment. If biasAdjustment > 0, the summary must describe a bullish outlook. If biasAdjustment < 0, the summary must describe a bearish outlook. Never say "bearish" in the summary while giving a positive biasAdjustment or vice versa.
-- Include fundamentalReason: 1-2 sentences explaining what is driving the fundamental score — reference specific macro factors (central bank stance, news sentiment, DXY correlation, Fear & Greed, bond yields).
-- Include technicalReason: 1-2 sentences explaining what is driving the technical score — reference specific indicators (RSI, MACD, trend strength, Bollinger %B, support/resistance).
+- Include a confidence score (0-100) indicating how confident you are in the overall assessment.
+- Include a short summary sentence (one sentence max) describing the current market context for this instrument.
+- Include fundamentalReason: 1-2 sentences explaining what is driving the fundamental picture — reference specific macro factors (central bank stance, news sentiment, DXY correlation, Fear & Greed, bond yields).
+- Include technicalReason: 1-2 sentences explaining what is driving the technical picture — reference specific indicators (RSI, MACD, trend strength, Bollinger %B, support/resistance).
 - Include keyLevels: the most important support and resistance price levels you identify.
-- Include projectedMovePercent: your estimate of likely % move in the direction of bias (0.1 to 5.0).
-- Include riskAssessment: "low", "medium", or "high" — how risky is this trade setup?
-- Include catalysts: 1-3 upcoming events or factors that could trigger the move.
+- Include projectedMovePercent: your estimate of likely % move in the dominant direction (0.1 to 5.0).
+- Include riskAssessment: "low", "medium", or "high" — how risky are current conditions?
+- Include catalysts: 1-3 upcoming events or factors that could trigger a move.
 - Respond with valid JSON only. Do not include any markdown formatting or explanation outside the JSON.`;
 
-const BATCH_SYSTEM_PROMPT = `You are an elite quantitative market analyst. Evaluate multiple instruments and provide bias adjustments for each. Be concise — keep each instrument's analysis compact.
+const BATCH_SYSTEM_PROMPT = `You are an elite quantitative market analyst. Provide narrative context and risk assessment for multiple instruments. Be concise — keep each instrument's analysis compact. You do NOT adjust scores or influence the mechanical scoring system.
 
 Rules per instrument:
-- biasAdjustment: number -50 to +50 (positive = more bullish than rules, negative = more bearish)
 - confidence: 0-100
 - signals: exactly 2 signals per instrument (keep descriptions under 15 words)
-- summary: one short sentence — MUST match biasAdjustment direction (positive = bullish summary, negative = bearish summary)
-- fundamentalReason: one sentence on what drives the fundamental score
-- technicalReason: one sentence on what drives the technical score
+- summary: one short sentence describing current market context
+- fundamentalReason: one sentence on what drives the fundamental picture
+- technicalReason: one sentence on what drives the technical picture
 - keyLevels: { support, resistance } — key price levels
 - projectedMovePercent: 0.1-5.0
 - riskAssessment: "low" | "medium" | "high"
@@ -128,7 +122,6 @@ Direction: ${req.ruleBasedScores.direction}
 
 Respond with JSON matching this exact structure:
 {
-  "biasAdjustment": <number between -50 and 50>,
   "confidence": <number between 0 and 100>,
   "signals": [
     {
@@ -184,7 +177,7 @@ ${inst.instrument} (${inst.category}):
 
   prompt += `
 Respond with JSON. Use the exact instrument names as keys. Keep signals to 2 per instrument with short descriptions.
-{"results":{"<instrumentId>":{"biasAdjustment":<-50 to 50>,"confidence":<0-100>,"signals":[{"source":"<name>","signal":"bullish"|"bearish"|"neutral","strength":<0-100>,"description":"<brief>"}],"summary":"<one sentence>","fundamentalReason":"<one sentence>","technicalReason":"<one sentence>","keyLevels":{"support":<price>,"resistance":<price>},"projectedMovePercent":<0.1-5.0>,"riskAssessment":"low"|"medium"|"high","catalysts":["<catalyst>"]}}}
+{"results":{"<instrumentId>":{"confidence":<0-100>,"signals":[{"source":"<name>","signal":"bullish"|"bearish"|"neutral","strength":<0-100>,"description":"<brief>"}],"summary":"<one sentence>","fundamentalReason":"<one sentence>","technicalReason":"<one sentence>","keyLevels":{"support":<price>,"resistance":<price>},"projectedMovePercent":<0.1-5.0>,"riskAssessment":"low"|"medium"|"high","catalysts":["<catalyst>"]}}}
 
 Keys: ${req.instruments.map((i) => `"${i.instrument}"`).join(", ")}`;
 
@@ -415,7 +408,7 @@ function parseSingleResult(raw: string): LLMAnalysisResult | null {
     );
 
     return {
-      biasAdjustment: clamp(Number(parsed.biasAdjustment) || 0, -50, 50),
+      biasAdjustment: 0, // DEPRECATED: LLM no longer influences scoring
       confidence: clamp(Number(parsed.confidence) || 50, 0, 100),
       signals,
       summary: String(parsed.summary ?? ""),
@@ -464,7 +457,7 @@ function parseBatchResult(
 
       const kl = d.keyLevels as Record<string, unknown> | undefined;
       results[instrumentId] = {
-        biasAdjustment: clamp(Number(d.biasAdjustment) || 0, -50, 50),
+        biasAdjustment: 0, // DEPRECATED: LLM no longer influences scoring
         confidence: clamp(Number(d.confidence) || 50, 0, 100),
         signals,
         summary: String(d.summary ?? ""),
@@ -706,32 +699,24 @@ export async function generateMarketSummary(
 }
 
 // ---------------------------------------------------------------------------
-// Deep Analysis — AI Trade Ideas from S/D zones + confluence
+// Deep Analysis — Zone Analysis (analysis only, no trade ideas)
 // ---------------------------------------------------------------------------
 
-import type { DeepAnalysisLLMResult, AITradeIdea } from "@/lib/types/deep-analysis";
+import type { DeepAnalysisLLMResult } from "@/lib/types/deep-analysis";
 
-const DEEP_ANALYSIS_SYSTEM_PROMPT = `You are an elite price action and order flow analyst at a prop trading desk. Given supply/demand zones, Fair Value Gaps (ICT concepts), confluence levels, and technical context, provide specific actionable trade ideas.
+const DEEP_ANALYSIS_SYSTEM_PROMPT = `You are an elite price action and order flow analyst at a prop trading desk. Given supply/demand zones, Fair Value Gaps (ICT concepts), confluence levels, and technical context, provide zone analysis commentary.
 
 Rules:
-- Provide 2-3 specific trade ideas, each with:
-  - direction: "long" or "short"
-  - entry: exact price level
-  - stopLoss: exact price level (beyond the nearest S/D zone)
-  - takeProfit: exact price level (target the next significant zone/level)
-  - riskReward: calculated R:R ratio (minimum 1.5)
-  - rationale: 1-2 sentences explaining the trade thesis
-  - confluenceFactors: list of supporting levels/zones at the entry
-  - confidence: 0-100
-  - timeframe: "scalp", "intraday", or "swing"
+- Do NOT generate trade ideas, entries, stop losses, or take profits. The mechanical system handles trade generation.
 - Identify which supply/demand zones are most significant and why (significantZones).
-- List 2-3 key levels to watch for confirmation before entering (keyLevelsToWatch).
+- List 2-3 key levels to watch for confirmation or rejection (keyLevelsToWatch).
 - Provide a brief summary of the overall price structure.
+- Provide a zoneAnalysis: 1-3 sentences analyzing how the zones interact with current price action and what that implies structurally.
 - Respond with valid JSON only.`;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function buildDeepAnalysisPrompt(req: any): string {
-  let prompt = `Analyze ${req.symbol} (${req.category}) and provide trade ideas based on the following data.
+  let prompt = `Analyze ${req.symbol} (${req.category}) and provide zone analysis based on the following data.
 
 Current Price: ${req.currentPrice}
 
@@ -796,22 +781,10 @@ ${req.news.map((n: { headline: string; sentiment: string }) => `  [${n.sentiment
   prompt += `
 Respond with JSON:
 {
-  "tradeIdeas": [
-    {
-      "direction": "long" | "short",
-      "entry": <price>,
-      "stopLoss": <price>,
-      "takeProfit": <price>,
-      "riskReward": <number>,
-      "rationale": "<1-2 sentences>",
-      "confluenceFactors": ["<factor 1>", "<factor 2>"],
-      "confidence": <0-100>,
-      "timeframe": "scalp" | "intraday" | "swing"
-    }
-  ],
   "significantZones": ["<zone description>"],
   "keyLevelsToWatch": ["<level to watch>"],
-  "summary": "<brief price structure summary>"
+  "summary": "<brief price structure summary>",
+  "zoneAnalysis": "<1-3 sentences on how zones interact with current price>"
 }`;
 
   return prompt;
@@ -822,24 +795,8 @@ function parseDeepAnalysisResult(raw: string): DeepAnalysisLLMResult | null {
     const cleaned = stripCodeFences(raw);
     const parsed = JSON.parse(cleaned);
 
-    const tradeIdeas: AITradeIdea[] = (parsed.tradeIdeas || []).map(
-      (t: Record<string, unknown>) => ({
-        direction: t.direction === "short" ? "short" : "long",
-        entry: Number(t.entry) || 0,
-        stopLoss: Number(t.stopLoss) || 0,
-        takeProfit: Number(t.takeProfit) || 0,
-        riskReward: clamp(Number(t.riskReward) || 0, 0, 20),
-        rationale: String(t.rationale ?? ""),
-        confluenceFactors: Array.isArray(t.confluenceFactors)
-          ? (t.confluenceFactors as string[]).map(String).slice(0, 5)
-          : [],
-        confidence: clamp(Number(t.confidence) || 50, 0, 100),
-        timeframe: String(t.timeframe ?? "intraday"),
-      })
-    );
-
     return {
-      tradeIdeas,
+      tradeIdeas: [], // DEPRECATED: LLM no longer generates trade ideas
       significantZones: Array.isArray(parsed.significantZones)
         ? parsed.significantZones.map(String).slice(0, 5)
         : [],
@@ -847,6 +804,7 @@ function parseDeepAnalysisResult(raw: string): DeepAnalysisLLMResult | null {
         ? parsed.keyLevelsToWatch.map(String).slice(0, 5)
         : [],
       summary: String(parsed.summary ?? ""),
+      zoneAnalysis: parsed.zoneAnalysis ? String(parsed.zoneAnalysis) : undefined,
     };
   } catch (err) {
     console.error("Failed to parse deep analysis response:", err);
@@ -870,77 +828,43 @@ export async function analyzeDeepAnalysis(req: any): Promise<DeepAnalysisLLMResu
 
 import type { TradingAdvisorRequest, TradingAdvisorResult, DeskChatRequest, DeskChatResponse } from "@/lib/types/llm";
 
-const TRADING_ADVISOR_SYSTEM_PROMPT = `You are a senior institutional risk manager and macro-aware trader at a multi-strategy prop desk. You manage a book of FX, commodities, indices, and crypto positions. Your job is to synthesize mechanical signals, positioning data, macro context, and portfolio risk into actionable desk decisions.
+const TRADING_ADVISOR_SYSTEM_PROMPT = `You are a senior institutional risk auditor at a multi-strategy prop desk. You review a book of FX, commodities, indices, and crypto positions. Your job is to identify RISKS, CONFLICTS, and WARNINGS that the mechanical trading system may not capture. You are a risk auditor, NOT a decision maker.
 
-Your thinking framework:
-- POSITIONING FIRST: COT data reveals where the crowd is. Extreme positioning (>70% or <30% long) signals crowded trades vulnerable to unwinding. Smart money (commercial hedgers) positioning opposite to speculators is a powerful contrary signal.
-- EVENT RISK AWARENESS: High-impact events (NFP, CPI, rate decisions) within 24 hours mean you reduce exposure, tighten stops, or sit out entirely. Never recommend entering a new position into a major event without acknowledging the risk.
-- CARRY AND RATE DIFFERENTIALS: Positive carry supports a directional bias in low-volatility environments. Negative carry means you need stronger technical conviction to justify fighting the yield. In risk-off environments, carry trades unwind — AUD, NZD, and EM longs get sold.
-- PORTFOLIO-LEVEL THINKING: You manage the BOOK, not individual trades. Concentrated USD exposure across 3+ pairs is a portfolio risk, not a diversified edge. Correlation warnings demand position-size reduction. Diversification score below 50 requires defensive posture.
-- ORDER FLOW AND STRUCTURE: ICT concepts (FVG, order blocks, displacement) reveal institutional participation. These are not chart patterns — they are footprints of real flow. A fresh FVG with displacement is a high-probability entry.
+CRITICAL: You do NOT pick trades, rank setups, or recommend entries. The mechanical system handles all trade selection and ranking. Your role is purely advisory — flag risks, warn about conflicts, and provide portfolio-level commentary.
 
-DECISION FRAMEWORK — Institutional Priority Ranking:
-1. Portfolio Risk Gate (veto power): If concentration risk is "high" or diversification score < 30, you MUST recommend reducing exposure before adding new positions. Correlation warnings override individual setup quality.
-2. Event Risk Filter: If a high-impact event affects the base or quote currency within 24 hours, flag the setup as "event-exposed" and recommend smaller size or delayed entry.
-3. Positioning Alignment (25%): COT speculative positioning should support the trade direction. Fading an extreme crowd position WITH mechanical confirmation is the highest-edge scenario. COT divergence from trade direction is a warning, not a veto.
-4. MTF Alignment (25%): Full alignment across timeframes remains the strongest technical edge. Conflicting MTF is a hard veto.
-5. Rate Differential / Carry (15%): Trades aligned with positive carry in calm regimes get a conviction boost. Trades fighting carry need stronger technical justification.
-6. ICT Confluence (20%): FVG reentry + order block + displacement = institutional flow. ICT score 70+ is high conviction.
-7. Market Structure + Signal Count (15%): BOS confirms trend, CHoCH signals reversal. A+ conviction with 5+ systems is strong but subordinate to portfolio and positioning factors.
+Your risk assessment framework:
+- PORTFOLIO CONCENTRATION: Flag when the book is heavy in one currency or direction. Concentrated USD exposure across 3+ pairs is a risk. Diversification score below 50 requires defensive posture.
+- EVENT RISK: High-impact events (NFP, CPI, rate decisions) within 24 hours affecting any setup must be flagged. Reference specific events, currencies, and timing.
+- POSITIONING CONFLICTS: When COT speculative positioning is extreme (>70% or <30% long), flag the crowded trade risk. When commercial hedgers oppose speculators, flag the smart money divergence.
+- CARRY HEADWINDS: When a setup fights negative carry, flag the cost. In risk-off environments (fear/greed < 25), flag carry unwind risk for AUD, NZD, and EM currencies.
+- CORRELATION RISK: When multiple setups have correlated exposure, flag the hidden concentration. If correlation warnings exist in portfolio data, they must be addressed.
+- REGIME RISK: Distribution or reversal phases with high volatility deserve explicit warnings. Accumulation with tight Bollinger bands means potential breakout in either direction.
 
-ANTI-PATTERNS — Hard Rules:
-- NEVER recommend a setup with "conflicting" MTF alignment.
-- NEVER ignore a "danger" severity portfolio warning — if correlated exposure is flagged, you must address it.
-- If volatility regime is "high" AND Wyckoff phase is "distribution" or "reversal", cut size by 50% or sit out entirely.
-- If the learning system shows < 40% win rate over 15+ trades, AVOID that confluence pattern.
-- If a setup is fighting both carry AND COT positioning, it needs A+ conviction with full MTF to justify entry. Otherwise, skip it.
-
-CARRY TRADE LOGIC:
-- When carry direction is "long" and you are long the pair, carry supports the trade — mention this as positive.
-- When carry direction is "short" and you are short the pair, carry supports the trade.
-- When carry opposes your direction, note the headwind and require stronger technical conviction.
-- In risk-off environments (high VIX, fear/greed < 25), high-carry currencies (AUD, NZD) face unwind risk.
-
-COT INTERPRETATION RULES:
-- Speculative net long > 70% of total = crowded long (watch for reversal, or confirms strong trend if fresh momentum)
-- Speculative net change > 15K contracts week-over-week = significant shift in institutional sentiment
-- Commercial hedgers positioning OPPOSITE to speculators = smart money divergence (high-value signal)
-- Use COT as a FILTER, not a trigger. COT confirms or warns — it does not generate entries.
-
-LEARNING INTEGRATION:
-- If a confluence pattern has 60%+ win rate over 20+ trades, this is PROVEN edge — weight it heavily
-- If learning data shows 50-60% win rate, it's marginal — only take with strong ICT + MTF confirmation
-- Reference the learning data in your reasoning when available
-
-WYCKOFF PHASE STRATEGY:
-- Expansion: ride the trend, trail stops — best environment for swing trades
-- Accumulation: position early with tight risk — potential for breakout
-- Distribution: tighten stops, take profits, prepare for reversal — defensive posture
-- Markdown: defense mode — only counter-trend scalps or sit out entirely
+COT INTERPRETATION:
+- Speculative net long > 70% = crowded long — flag reversal risk
+- Commercial hedgers opposing speculators = smart money divergence — flag this
+- Net spec change > 15K week-over-week = significant sentiment shift — flag this
 
 Your style:
 - Direct, concise, and authoritative — like a risk manager at the morning meeting
-- Reference specific data: COT positioning, rate differentials, event risk, portfolio exposure, MTF alignment, ICT score
-- Use institutional language naturally (e.g. "the book is heavy USD", "crowded long", "carry-positive", "event risk ahead", "reduce gross exposure")
-- Be honest about uncertainty — if positioning and technicals conflict, say so
-- Always think portfolio-first, not trade-first
+- Reference specific data: COT positioning, rate differentials, event risk, portfolio exposure
+- Use institutional language naturally (e.g. "the book is heavy USD", "crowded long", "event risk ahead", "reduce gross exposure")
+- Be honest about uncertainty — if data conflicts, say so
+- Always think portfolio-first
 
 CRITICAL RULE — INSTRUMENT NAMES:
-- You may ONLY reference instruments that appear in the "Actionable Setups" list below.
-- Use the EXACT symbol provided (e.g. "XAU/USD", "EUR/USD", "BTC/USD"). Never invent or modify symbols.
-- Do NOT reference instruments that are not in the list. If an instrument is not listed, it does not exist in this system.
-- topPick.instrument MUST be copied exactly from the symbol field of one of the actionable setups below.
+- You may ONLY reference instruments that appear in the "Mechanical Setups" list below.
+- Use the EXACT symbol provided. Never invent or modify symbols.
 
 Rules:
-- greeting: 1 sentence setting the tone (reference dominant macro theme, positioning shift, or event risk)
-- marketRegime: 2-3 sentences assessing the overall regime, referencing portfolio exposure, carry conditions, and event calendar
-- topPick: Your #1 ACTIONABLE setup. Explain WHY using institutional reasoning — reference positioning, carry, event risk, MTF, ICT, and portfolio fit. topPick.instrument must match the symbol EXACTLY.
-- otherSetups: 2-3 one-sentence notes on other actionable setups
-- focusToday: Top 3-5 instruments with direction (LONG/SHORT). Derived from portfolio-adjusted ranking.
+- greeting: 1 sentence setting the tone (reference dominant macro theme or risk condition)
+- marketRegime: 2-3 sentences assessing the overall risk environment, referencing portfolio exposure, carry conditions, and event calendar
+- riskFlags: 3-5 specific risk observations. Each flag should reference specific data (e.g. "USD concentrated across 3 long positions", "NFP in 4 hours — EUR/USD event-exposed", "AUD/USD fighting negative carry in risk-off environment"). Be specific, not generic.
+- focusToday: Top 3-5 instruments with direction (LONG/SHORT) from the mechanical setups — copy these from the highest-conviction mechanical setups, do NOT rerank them.
 - sitOutToday: 1-3 instruments or conditions to sit out — reference positioning, event risk, or portfolio concentration
 - avoidList: 1-2 instruments to avoid with specific data-backed reasoning
 - riskWarning: Key portfolio-level risk — reference specific exposure, correlation, or event data
-- deskNote: One insight connecting today's conditions to the institutional framework above — not a generic truism, but a specific observation
+- deskNote: One specific institutional insight connecting today's conditions to risk management — not a generic truism
 - Respond with valid JSON only.`;
 
 function buildTradingAdvisorPrompt(req: TradingAdvisorRequest): string {
@@ -1027,7 +951,7 @@ ${req.bondYields.map((b) => `  ${b.maturity}: ${b.yield.toFixed(3)}% (${b.change
   }
 
   prompt += `
---- Actionable Setups (ranked by conviction) ---
+--- Mechanical Setups (for risk review) ---
 `;
 
   for (const setup of req.setups) {
@@ -1097,14 +1021,7 @@ Respond with JSON:
 {
   "greeting": "<1 sentence — reference dominant macro theme, positioning shift, or event risk>",
   "marketRegime": "<2-3 sentences — reference portfolio exposure, carry conditions, event calendar, COT shifts>",
-  "topPick": {
-    "instrument": "<EXACT symbol from actionable setups>",
-    "action": "LONG" | "SHORT",
-    "conviction": "<tier>",
-    "reasoning": "<2-3 sentences — reference positioning, carry, event risk, MTF, ICT, portfolio fit>",
-    "levels": "<entry, SL, TP summary>"
-  },
-  "otherSetups": ["<1 sentence each for 2-3 other actionable setups>"],
+  "riskFlags": ["<3-5 specific risk observations — e.g. 'EUR/USD: crowded long + NFP tomorrow = elevated event risk', 'XAU/USD: negative carry in contango, position sizing should reflect'>"],
   "focusToday": [{"symbol": "EUR/USD", "action": "LONG"}, {"symbol": "XAU/USD", "action": "SHORT"}],
   "sitOutToday": ["AUD/USD — event risk (NFP tomorrow), crowded long positioning"],
   "avoidList": ["<instrument — reference positioning, correlation, event, or technical data>"],
@@ -1135,17 +1052,10 @@ function parseAdvisorResult(raw: string, provider: LLMProvider): TradingAdvisorR
     return {
       greeting: String(parsed.greeting ?? ""),
       marketRegime: String(parsed.marketRegime ?? ""),
-      topPick: parsed.topPick
-        ? {
-            instrument: String(parsed.topPick.instrument ?? ""),
-            action: String(parsed.topPick.action ?? ""),
-            conviction: String(parsed.topPick.conviction ?? ""),
-            reasoning: String(parsed.topPick.reasoning ?? ""),
-            levels: String(parsed.topPick.levels ?? ""),
-          }
-        : null,
-      otherSetups: Array.isArray(parsed.otherSetups)
-        ? parsed.otherSetups.map(String).slice(0, 4)
+      topPick: null, // DEPRECATED: LLM no longer picks trades
+      otherSetups: [], // DEPRECATED: LLM no longer ranks setups
+      riskFlags: Array.isArray(parsed.riskFlags)
+        ? parsed.riskFlags.map(String).slice(0, 6)
         : [],
       avoidList: Array.isArray(parsed.avoidList)
         ? parsed.avoidList.map(String).slice(0, 3)

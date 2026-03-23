@@ -13,7 +13,7 @@ import {
   Sparkles,
   Target,
 } from "lucide-react";
-import type { SupplyDemandZone, ConfluenceLevel, AITradeIdea, FairValueGap } from "@/lib/types/deep-analysis";
+import type { SupplyDemandZone, ConfluenceLevel, FairValueGap } from "@/lib/types/deep-analysis";
 
 function FreshnessBadge({ freshness, testCount }: { freshness: string; testCount: number }) {
   if (freshness === "fresh") {
@@ -313,76 +313,12 @@ function ConfluenceLevelsList({ levels, currentPrice, decimals }: {
   );
 }
 
-function TradeIdeaCard({ idea, decimals }: { idea: AITradeIdea; decimals: number }) {
-  const isLong = idea.direction === "long";
-
-  return (
-    <div className={cn(
-      "rounded-lg p-4 border",
-      isLong ? "border-bullish/20 bg-bullish/5" : "border-bearish/20 bg-bearish/5"
-    )}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          {isLong ? (
-            <TrendingUp className="h-4 w-4 text-bullish" />
-          ) : (
-            <TrendingDown className="h-4 w-4 text-bearish" />
-          )}
-          <span className={cn("text-xs font-bold uppercase", isLong ? "text-bullish" : "text-bearish")}>
-            {idea.direction}
-          </span>
-          <span className="text-[9px] font-mono text-muted-foreground/50">{idea.timeframe}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-mono text-muted-foreground">
-            R:R {idea.riskReward.toFixed(1)}
-          </span>
-          <span className={cn(
-            "text-[9px] font-bold px-1.5 py-0.5 rounded",
-            idea.confidence >= 70 ? "bg-bullish/15 text-bullish" :
-            idea.confidence >= 40 ? "bg-amber-500/15 text-amber-500" :
-            "bg-bearish/15 text-bearish"
-          )}>
-            {idea.confidence}%
-          </span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-2 mb-3">
-        <div className="bg-[var(--surface-2)] rounded px-2 py-1.5">
-          <div className="text-[8px] text-muted-foreground/50 uppercase">Entry</div>
-          <div className="text-[11px] font-mono text-foreground">{idea.entry.toFixed(decimals)}</div>
-        </div>
-        <div className="bg-[var(--surface-2)] rounded px-2 py-1.5">
-          <div className="text-[8px] text-muted-foreground/50 uppercase">Stop Loss</div>
-          <div className="text-[11px] font-mono text-bearish">{idea.stopLoss.toFixed(decimals)}</div>
-        </div>
-        <div className="bg-[var(--surface-2)] rounded px-2 py-1.5">
-          <div className="text-[8px] text-muted-foreground/50 uppercase">Target</div>
-          <div className="text-[11px] font-mono text-bullish">{idea.takeProfit.toFixed(decimals)}</div>
-        </div>
-      </div>
-
-      <p className="text-[11px] text-muted-foreground leading-snug mb-2">{idea.rationale}</p>
-
-      <div className="flex items-center gap-1 flex-wrap">
-        {idea.confluenceFactors.map((f, i) => (
-          <span key={i} className="text-[8px] font-mono px-1.5 py-0.5 rounded bg-[var(--surface-3)] text-muted-foreground/60">
-            {f}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function AITradeIdeas({ deepAnalysis, indicators, biasResult }: {
+function AIZoneAnalysis({ deepAnalysis, indicators, biasResult }: {
   deepAnalysis: ReturnType<typeof useDeepAnalysis>["deepAnalysis"];
   indicators: import("@/lib/types/indicators").TechnicalSummary | null;
   biasResult: import("@/lib/types/bias").BiasResult | null;
 }) {
-  const { tradeIdeas, isLoading, generate, retry, isRequested } = useDeepAnalysisLLM(deepAnalysis, indicators, biasResult);
-  const instrument = useMarketStore((s) => s.selectedInstrument);
+  const { tradeIdeas: zoneResult, isLoading, generate, retry, isRequested } = useDeepAnalysisLLM(deepAnalysis, indicators, biasResult);
   const hasIndicators = !!indicators;
 
   return (
@@ -390,7 +326,7 @@ function AITradeIdeas({ deepAnalysis, indicators, biasResult }: {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-neutral-accent" />
-          <h3 className="text-xs font-semibold text-foreground">AI Trade Ideas</h3>
+          <h3 className="text-xs font-semibold text-foreground">AI Zone Analysis</h3>
         </div>
 
         {!isRequested && (
@@ -405,7 +341,7 @@ function AITradeIdeas({ deepAnalysis, indicators, biasResult }: {
             )}
           >
             <Sparkles className="h-3 w-3" />
-            {hasIndicators ? "Generate Ideas" : "Waiting for data..."}
+            {hasIndicators ? "Analyze Zones" : "Waiting for data..."}
           </button>
         )}
       </div>
@@ -413,38 +349,49 @@ function AITradeIdeas({ deepAnalysis, indicators, biasResult }: {
       {!isRequested ? (
         <p className="text-xs text-muted-foreground/50 text-center py-6">
           {hasIndicators
-            ? "Click \"Generate Ideas\" to get AI-powered trade setups based on detected zones and levels"
-            : "Price data loading — AI trade ideas will be available once chart data loads"
+            ? "Click \"Analyze Zones\" for AI commentary on detected supply/demand zones and key levels"
+            : "Price data loading — zone analysis will be available once chart data loads"
           }
         </p>
       ) : isLoading ? (
         <div className="space-y-3">
-          {[1, 2].map((i) => (
-            <div key={i} className="space-y-2">
-              <div className="h-4 w-1/4 shimmer rounded" />
-              <div className="h-16 shimmer rounded-lg" />
-              <div className="h-3 w-3/4 shimmer rounded" />
-            </div>
-          ))}
+          <div className="h-4 w-1/4 shimmer rounded" />
+          <div className="h-16 shimmer rounded-lg" />
+          <div className="h-3 w-3/4 shimmer rounded" />
         </div>
-      ) : tradeIdeas ? (
+      ) : zoneResult ? (
         <div className="space-y-3">
-          {tradeIdeas.summary && (
-            <p className="text-[11px] text-muted-foreground leading-snug border-l-2 border-neutral-accent/30 pl-3 mb-3">
-              {tradeIdeas.summary}
+          {zoneResult.summary && (
+            <p className="text-[11px] text-muted-foreground leading-snug border-l-2 border-neutral-accent/30 pl-3">
+              {zoneResult.summary}
             </p>
           )}
 
-          {tradeIdeas.tradeIdeas.map((idea, i) => (
-            <TradeIdeaCard key={i} idea={idea} decimals={instrument.decimalPlaces} />
-          ))}
+          {zoneResult.zoneAnalysis && (
+            <p className="text-[11px] text-foreground/80 leading-snug">
+              {zoneResult.zoneAnalysis}
+            </p>
+          )}
 
-          {tradeIdeas.keyLevelsToWatch.length > 0 && (
-            <div className="flex items-start gap-2 mt-3">
+          {zoneResult.significantZones.length > 0 && (
+            <div>
+              <span className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-wider">Significant Zones</span>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {zoneResult.significantZones.map((zone, i) => (
+                  <span key={i} className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--surface-2)] text-muted-foreground/60">
+                    {zone}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {zoneResult.keyLevelsToWatch.length > 0 && (
+            <div className="flex items-start gap-2">
               <Target className="h-3.5 w-3.5 text-muted-foreground/40 mt-0.5 shrink-0" />
               <div className="space-y-1">
                 <span className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-wider">Watch</span>
-                {tradeIdeas.keyLevelsToWatch.map((level, i) => (
+                {zoneResult.keyLevelsToWatch.map((level, i) => (
                   <p key={i} className="text-[10px] text-muted-foreground/60">{level}</p>
                 ))}
               </div>
@@ -511,8 +458,8 @@ export function DeepAnalysis() {
         </>
       )}
 
-      {/* AI Trade Ideas — always rendered, works with or without zone data */}
-      <AITradeIdeas deepAnalysis={deepAnalysis} indicators={indicators} biasResult={biasResult} />
+      {/* AI Zone Analysis — analysis only, no trade ideas */}
+      <AIZoneAnalysis deepAnalysis={deepAnalysis} indicators={indicators} biasResult={biasResult} />
     </div>
   );
 }

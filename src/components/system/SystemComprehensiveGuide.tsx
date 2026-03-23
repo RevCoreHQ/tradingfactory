@@ -451,51 +451,46 @@ export function SystemComprehensiveGuide() {
       </GuideSection>
 
       {/* ── 15. AI INTEGRATION ── */}
-      <GuideSection number={15} title="AI Integration — Models and Roles (Stages 14-15)">
-        <h4 className="text-[10px] font-bold text-foreground/70 uppercase tracking-wider">Model Selection Matrix</h4>
-        <div className="bg-surface-2/30 rounded-md overflow-hidden">
-          <TRow cells={["Function", "Model", "Provider", "Max Tokens", "Cache"]} header />
-          <TRow cells={["Trade Advisor (desk briefing)", "Claude Opus 4.6", "Anthropic", "2048", "None"]} />
-          <TRow cells={["Desk Chat (multi-turn)", "Claude Opus 4.6", "Anthropic", "512/reply", "None"]} />
-          <TRow cells={["Market Summary (institutional macro strategist — COT, carry, rate differentials, event risk)", "Claude Opus 4.6", "Anthropic", "1024", "5min"]} />
-          <TRow cells={["Single Instrument Analysis", "Claude Sonnet 4.6", "Anthropic", "1536", "5min"]} />
-          <TRow cells={["Deep Analysis (S/D zones)", "Claude Sonnet 4.6", "Anthropic", "1024", "None"]} />
-          <TRow cells={["Batch Analysis (all 16)", "Claude Haiku 4.5", "Anthropic", "250/instr", "10min"]} />
+      <GuideSection number={15} title="AI Integration — 3 Roles (Stages 14-15)">
+        <h4 className="text-[10px] font-bold text-foreground/70 uppercase tracking-wider">Deterministic Core + LLM Intelligence Shell</h4>
+        <p className="text-[10px]">
+          LLM roles are restricted to <strong className="text-foreground">explanation, risk auditing, and summarization</strong>.
+          LLMs never change scores, rankings, or entries. The system is fully deterministic — same inputs always produce the same outputs.
+        </p>
+        <div className="bg-surface-2/30 rounded-md overflow-hidden mt-2">
+          <TRow cells={["Role", "Model", "Purpose", "Max Tokens"]} header />
+          <TRow cells={["Risk Auditor", "Claude Opus 4.6", "Risk flags, portfolio conflicts, event warnings", "2048"]} />
+          <TRow cells={["Market Summary", "Claude Opus 4.6", "Macro regime, cross-asset themes, COT/carry", "1024"]} />
+          <TRow cells={["Desk Chat", "Claude Opus 4.6", "Multi-turn Q&A about setups and market", "512/reply"]} />
         </div>
         <p className="text-[10px] mt-1">
           <strong className="text-foreground">Fallbacks:</strong> Gemini 2.0 Flash (Google) → GPT-4o Mini (OpenAI) if Anthropic unavailable.
         </p>
 
-        <h4 className="text-[10px] font-bold text-amber-600 dark:text-amber-500/70 uppercase tracking-wider mt-3">Trade Advisor (Claude Opus 4.6)</h4>
+        <h4 className="text-[10px] font-bold text-amber-600 dark:text-amber-500/70 uppercase tracking-wider mt-3">Risk Auditor (Claude Opus 4.6)</h4>
         <p className="text-[10px]">
           Receives all A+/A setups ranked by conviction, plus: regime summary, Fear &amp; Greed, DXY, bond yields,
-          system consensus, impulse distribution, active positions, learning data (win rates, expectancy per pattern),
-          MTF alignment per setup, ICT scores, COT speculative positioning, rate differentials &amp; carry direction,
-          high-impact economic events, central bank rates, portfolio risk metrics (concentration risk, diversification score,
-          directional exposure, correlation warnings).
+          system consensus, impulse distribution, active positions, learning data, MTF alignment, ICT scores,
+          COT speculative positioning, rate differentials, economic events, central bank rates, portfolio risk metrics.
         </p>
         <p className="text-[10px]">
-          <strong className="text-foreground">Priority framework (institutional 7-factor):</strong> Portfolio Risk Gate (veto) &gt; Event Risk Filter (gate) &gt; COT Positioning (25%) &gt; MTF Alignment (25%) &gt; Carry Trade (15%) &gt; ICT Confluence (20%) &gt; Structure + Signals (15%).
+          <strong className="text-foreground">Role:</strong> Identify risk flags, portfolio conflicts, event risk, and positioning warnings.
+          Does NOT pick trades, rank setups, or influence scoring. The mechanical system handles all ranking and selection.
         </p>
         <p className="text-[10px]">
-          <strong className="text-foreground">Returns:</strong> greeting, market regime assessment, top pick (instrument, action, conviction, reasoning, levels),
-          other setups (2-3 notes), avoid list, risk warning, desk note (wisdom from 8 trading books).
-          Additional outputs: focusToday (top 3-5 instruments to watch), sitOutToday (instruments to avoid with reasoning).
-        </p>
-        <p className="text-[10px]">
-          <strong className="text-foreground">The advisor NEVER overrides mechanical signals.</strong> It selects from setups the engine already approved
-          and provides narrative context referencing specific data.
+          <strong className="text-foreground">Returns:</strong> greeting, market regime assessment, risk flags (3-5 specific risk observations),
+          focusToday, sitOutToday, avoid list, risk warning, desk note.
         </p>
 
-        <h4 className="text-[10px] font-bold text-amber-600 dark:text-amber-500/70 uppercase tracking-wider mt-3">Bias Engine (3-Way Weighting)</h4>
+        <h4 className="text-[10px] font-bold text-amber-600 dark:text-amber-500/70 uppercase tracking-wider mt-3">Bias Engine (2-Way Deterministic Weighting)</h4>
         <div className="bg-surface-2/30 rounded-md overflow-hidden">
           <TRow cells={["Component", "Intraday Weight", "Swing Weight"]} header />
-          <TRow cells={["Technical (RSI, MACD, BB, trend)", "60%", "40%"]} />
-          <TRow cells={["Fundamental (news, F&G, rates)", "25%", "45%"]} />
-          <TRow cells={["AI (LLM bias adjustment ±50)", "15%", "15%"]} />
+          <TRow cells={["Technical (RSI, MACD, BB, trend)", "70%", "45%"]} />
+          <TRow cells={["Fundamental (news, F&G, rates)", "30%", "55%"]} />
         </div>
         <p className="text-[10px] mt-1">
-          Maximum AI influence is 15% of the overall bias — it cannot dominate the score.
+          Fully deterministic — no AI weight. LLM provides display-only summary text (fundamentalReason, technicalReason)
+          but never influences the numerical bias score.
         </p>
       </GuideSection>
 

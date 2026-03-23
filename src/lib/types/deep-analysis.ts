@@ -82,6 +82,7 @@ export interface DeepAnalysisResult {
   timestamp: number;
 }
 
+/** @deprecated LLM no longer generates trade ideas */
 export interface AITradeIdea {
   direction: "long" | "short";
   entry: number;
@@ -95,8 +96,9 @@ export interface AITradeIdea {
 }
 
 export interface DeepAnalysisLLMResult {
-  tradeIdeas: AITradeIdea[];
+  tradeIdeas: AITradeIdea[]; // DEPRECATED: Always empty
   significantZones: string[];
   keyLevelsToWatch: string[];
   summary: string;
+  zoneAnalysis?: string; // Narrative analysis of how zones interact with price
 }

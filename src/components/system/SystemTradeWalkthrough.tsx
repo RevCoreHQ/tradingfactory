@@ -331,10 +331,10 @@ const steps: Step[] = [
     number: 12,
     title: "Setup Delivered",
     badge: "AI",
-    summary: "EUR/USD A+ LONG — AI provides narrative",
+    summary: "EUR/USD A+ LONG — Risk Auditor reviews",
     content: (
       <div className="space-y-2">
-        <p>Mechanical engine delivers the final setup. AI Desk Manager narrates:</p>
+        <p>Mechanical engine delivers the final setup. AI Risk Auditor reviews for risk flags:</p>
         <div className="bg-surface-2/30 rounded-md px-3 py-2 font-mono text-[10px] space-y-1">
           <div className="flex justify-between"><span className="text-muted-foreground/50">Setup:</span><span className="text-foreground font-bold">EUR/USD LONG A+</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground/50">Entry:</span><span className="text-foreground">1.0882 - 1.0890</span></div>

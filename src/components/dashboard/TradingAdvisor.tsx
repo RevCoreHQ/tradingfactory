@@ -48,7 +48,7 @@ function AdvisorSkeleton() {
         <div className="h-6 w-6 rounded-md flex items-center justify-center bg-neutral-accent/15">
           <MessageSquare className="h-3.5 w-3.5 text-neutral-accent" />
         </div>
-        <h3 className="text-xs font-semibold text-foreground">Desk Manager</h3>
+        <h3 className="text-xs font-semibold text-foreground">Risk Auditor</h3>
       </div>
       <div className="py-8">
         <AnalysisLoader messages={ADVISOR_LOADING_MESSAGES} speed={20} holdMs={800} />
@@ -120,8 +120,8 @@ function AdvisorContent({ advisor, onRefresh }: { advisor: TradingAdvisorResult;
         <div className="h-6 w-6 rounded-md flex items-center justify-center bg-neutral-accent/15">
           <MessageSquare className="h-3.5 w-3.5 text-neutral-accent" />
         </div>
-        <h3 className="text-xs font-semibold text-foreground">Desk Manager</h3>
-        <span className="text-[10px] text-muted-foreground/40 ml-1">AI Trading Advisor</span>
+        <h3 className="text-xs font-semibold text-foreground">Risk Auditor</h3>
+        <span className="text-[10px] text-muted-foreground/40 ml-1">Risk Auditor</span>
         <span className="text-[10px] text-muted-foreground/30 ml-auto">{timeLabel}</span>
         <button
           onClick={onRefresh}
@@ -216,51 +216,19 @@ function AdvisorContent({ advisor, onRefresh }: { advisor: TradingAdvisorResult;
         </div>
       )}
 
-      {/* Top Pick */}
-      {advisor.topPick && (
-        <div className={cn(
-          "rounded-lg p-3 mb-4 border",
-          advisor.topPick.action === "LONG"
-            ? "bg-bullish/5 border-bullish/20"
-            : "bg-bearish/5 border-bearish/20"
-        )}>
-          <div className="flex items-center gap-2 mb-1.5">
-            <Target className="h-3.5 w-3.5 text-foreground" />
-            <span className="text-xs font-bold text-foreground">Top Pick</span>
-            <span className={cn(
-              "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded",
-              advisor.topPick.action === "LONG"
-                ? "bg-bullish/15 text-bullish"
-                : "bg-bearish/15 text-bearish"
-            )}>
-              {advisor.topPick.action} {advisor.topPick.instrument}
-            </span>
-            <span className="text-[9px] font-bold text-muted-foreground/50 uppercase">
-              {advisor.topPick.conviction}
-            </span>
-          </div>
-          <p className="text-xs text-foreground/80 leading-relaxed mb-1.5">
-            {advisor.topPick.reasoning}
-          </p>
-          <p className="text-[10px] text-muted-foreground/60 font-mono">
-            {advisor.topPick.levels}
-          </p>
-        </div>
-      )}
-
-      {/* Other Setups */}
-      {advisor.otherSetups.length > 0 && (
+      {/* Risk Flags */}
+      {advisor.riskFlags && advisor.riskFlags.length > 0 && (
         <div className="mb-4">
           <div className="flex items-center gap-1.5 mb-1.5">
-            <TrendingUp className="h-3 w-3 text-bullish" />
+            <AlertTriangle className="h-3 w-3 text-[var(--amber)]" />
             <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
-              Other Setups
+              Risk Flags
             </span>
           </div>
           <div className="space-y-1">
-            {advisor.otherSetups.map((setup, i) => (
-              <p key={i} className="text-[11px] text-muted-foreground leading-relaxed pl-4 border-l-2 border-border/30">
-                {setup}
+            {advisor.riskFlags.map((flag, i) => (
+              <p key={i} className="text-[11px] text-muted-foreground leading-relaxed pl-4 border-l-2 border-[var(--amber)]/30">
+                {flag}
               </p>
             ))}
           </div>
@@ -363,7 +331,7 @@ function DeskChat({
       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30">
         <MessageSquare className="h-3 w-3 text-neutral-accent" />
         <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
-          Ask the Desk Manager
+          Ask the risk auditor
         </span>
         {messages.length > 0 && (
           <button
@@ -393,14 +361,14 @@ function DeskChat({
                   "text-[9px] font-semibold uppercase block mb-0.5",
                   msg.role === "user" ? "text-neutral-accent/50" : "text-muted-foreground/40"
                 )}>
-                  {msg.role === "user" ? "You" : "Desk Manager"}
+                  {msg.role === "user" ? "You" : "Risk Auditor"}
                 </span>
                 <p className="whitespace-pre-wrap">{msg.content}</p>
               </div>
             ))}
             {isSending && (
               <div className="text-[10px] text-muted-foreground/40 italic">
-                Desk manager is thinking...
+                Risk auditor is thinking...
               </div>
             )}
             {error && (
@@ -509,7 +477,7 @@ export function TradingAdvisor() {
           <div className="h-6 w-6 rounded-md flex items-center justify-center bg-neutral-accent/15">
             <MessageSquare className="h-3.5 w-3.5 text-neutral-accent" />
           </div>
-          <h3 className="text-xs font-semibold text-foreground">Desk Manager</h3>
+          <h3 className="text-xs font-semibold text-foreground">Risk Auditor</h3>
         </div>
         <p className="text-xs text-muted-foreground/50 text-center py-4">
           Waiting for mechanical signal data to generate advisor briefing...

@@ -8,7 +8,7 @@ export interface LLMSignal {
 }
 
 export interface LLMAnalysisResult {
-  biasAdjustment: number;
+  biasAdjustment: number; // DEPRECATED: Always 0. LLM no longer influences scoring.
   confidence: number;
   signals: LLMSignal[];
   summary: string;
@@ -198,8 +198,9 @@ export interface TradingAdvisorResult {
     conviction: string;
     reasoning: string;
     levels: string;
-  } | null;
-  otherSetups: string[];
+  } | null; // DEPRECATED: Always null. LLM no longer picks trades.
+  otherSetups: string[]; // DEPRECATED: Always []. LLM no longer ranks setups.
+  riskFlags: string[]; // Risk observations from the auditor
   avoidList: string[];
   focusToday: { symbol: string; action: "LONG" | "SHORT" }[];
   sitOutToday: string[];

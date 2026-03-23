@@ -126,55 +126,22 @@ export function AutoImprovement({ result }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [comparisonResult, setComparisonResult] = useState<BacktestResult | null>(null);
 
-  const runAnalysis = useCallback(async () => {
+  const runAnalysis = useCallback(() => {
     setLoading(true);
     setError(null);
     setComparisonResult(null);
 
-    try {
-      // Step 1: Mechanical weakness detection (instant, no LLM)
-      const weaknesses = analyzeWeaknesses(result);
-
-      // Step 2: LLM-powered suggestions
-      const res = await fetch("/api/analysis/backtest-improvement", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          stats: result.stats,
-          weaknesses,
-          systemBreakdown: result.systemBreakdown,
-          regimeBreakdown: result.regimeBreakdown,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || `API error ${res.status}`);
-      }
-
-      const llmResult = await res.json();
-
-      setAnalysis({
-        weaknesses,
-        suggestions: llmResult.suggestions || [],
-        summary: llmResult.summary || "",
-        confidence: llmResult.confidence ?? 50,
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Analysis failed");
-      // Still show weaknesses even if LLM fails
-      const weaknesses = analyzeWeaknesses(result);
-      if (weaknesses.length > 0) {
-        setAnalysis({
-          weaknesses,
-          suggestions: [],
-          summary: "Mechanical analysis complete. LLM suggestions unavailable.",
-          confidence: 0,
-        });
-      }
-    } finally {
-      setLoading(false);
-    }
+    // Mechanical weakness detection only — LLM optimization disabled
+    const weaknesses = analyzeWeaknesses(result);
+    setAnalysis({
+      weaknesses,
+      suggestions: [],
+      summary: weaknesses.length > 0
+        ? "Mechanical analysis complete. Use grid search or manual tuning for parameter optimization."
+        : "",
+      confidence: 0,
+    });
+    setLoading(false);
   }, [result]);
 
   const criticalCount = analysis?.weaknesses.filter((w) => w.severity === "critical").length ?? 0;
@@ -186,7 +153,7 @@ export function AutoImprovement({ result }: Props) {
       <div className="section-card p-4 flex items-center justify-between">
         <div>
           <p className="text-xs text-muted-foreground">
-            Detect systematic weaknesses and generate parameter optimization suggestions.
+            Detect systematic weaknesses in backtest performance.
           </p>
           {analysis && (
             <div className="flex items-center gap-3 mt-1.5">
@@ -221,7 +188,7 @@ export function AutoImprovement({ result }: Props) {
           ) : analysis ? (
             "Re-Analyze"
           ) : (
-            "Analyze & Improve"
+            "Detect Weaknesses"
           )}
         </button>
       </div>

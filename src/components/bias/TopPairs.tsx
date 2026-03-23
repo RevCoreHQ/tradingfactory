@@ -142,14 +142,6 @@ function CardDetailModal({ item, onClose, onNavigate }: {
               <Activity className="h-3 w-3 text-muted-foreground/50" />
               <span className="text-[10px] font-mono text-muted-foreground">T:{Math.round(biasResult.technicalScore.total)}</span>
             </div>
-            {biasResult.aiBias !== 0 && (
-              <div className="flex items-center gap-1 px-2 py-1 rounded bg-neutral-accent/10">
-                <Brain className="h-3 w-3 text-neutral-accent/60" />
-                <span className="text-[10px] font-mono text-neutral-accent">
-                  AI:{biasResult.aiBias > 0 ? "+" : ""}{Math.round(biasResult.aiBias)}
-                </span>
-              </div>
-            )}
             <div className="ml-auto flex items-center gap-2">
               <span className="text-[9px] text-muted-foreground/40">
                 Conf: {Math.round(biasResult.confidence)}%
@@ -268,11 +260,6 @@ function ConvictionCard({ item, rank, onNavigate }: {
         <span className="text-[8px] font-mono px-1 py-0.5 rounded bg-[var(--surface-2)] text-muted-foreground">
           T:{Math.round(biasResult.technicalScore.total)}
         </span>
-        {biasResult.aiBias !== 0 && (
-          <span className="text-[8px] font-mono px-1 py-0.5 rounded bg-neutral-accent/10 text-neutral-accent">
-            AI:{biasResult.aiBias > 0 ? "+" : ""}{Math.round(biasResult.aiBias)}
-          </span>
-        )}
       </div>
 
       {/* Bottom: ADR + Session + Risk */}

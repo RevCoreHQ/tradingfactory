@@ -7,7 +7,6 @@ import type { TradingAdvisorRequest, TradingAdvisorResult } from "@/lib/types/ll
 import type { COTPosition } from "@/lib/types/cot";
 import type { EconomicEvent } from "@/lib/types/market";
 import type { PortfolioRiskAssessment } from "@/lib/types/risk";
-import { INSTRUMENTS } from "@/lib/utils/constants";
 import { readCache } from "@/lib/supabase-cache";
 import { computeRateDifferentials } from "@/lib/calculations/rate-differentials";
 
@@ -82,90 +81,15 @@ async function fetchAdvisor(
 }
 
 /**
- * Validate and fix the LLM advisor response against actual mechanical setups.
- * LLMs can hallucinate instrument names (e.g. "XAG/USD" instead of "XAU/USD")
- * or levels. Override with mechanical truth.
+ * Validate the LLM advisor response. LLM no longer picks trades or ranks setups —
+ * it only provides risk commentary. Enforce deprecated fields are null/empty.
  */
 function validateAdvisorResult(
   result: TradingAdvisorResult,
-  setups: TradeDeskSetup[],
-  trackedStatuses: Record<string, string>
+  _setups: TradeDeskSetup[],
+  _trackedStatuses: Record<string, string>
 ): TradingAdvisorResult {
-  if (!result.topPick || setups.length === 0) return result;
-
-  const validSymbols = new Set(INSTRUMENTS.map((i) => i.symbol));
-  const setupSymbols = new Set(setups.map((s) => s.symbol));
-
-  // Check if the top pick instrument exists in our system
-  const topInstrument = result.topPick.instrument;
-  const matchedSetup = setups.find(
-    (s) =>
-      s.symbol === topInstrument ||
-      s.instrumentId === topInstrument ||
-      s.symbol.replace("/", "") === topInstrument.replace("/", "") ||
-      topInstrument.includes(s.symbol) ||
-      s.symbol.includes(topInstrument)
-  );
-
-  if (matchedSetup) {
-    // Found a match — but check if it's actionable
-    const status = trackedStatuses[matchedSetup.instrumentId];
-    const isActionable = !status || status.includes("Await") || status.includes("Entry");
-
-    if (!isActionable) {
-      // LLM picked a non-actionable setup (e.g. invalidated, running). Swap to best actionable.
-      const fallback = setups.find((s) => {
-        const st = trackedStatuses[s.instrumentId];
-        return !st || st.includes("Await") || st.includes("Entry");
-      });
-      if (!fallback) return { ...result, topPick: null };
-      return {
-        ...result,
-        topPick: {
-          instrument: fallback.symbol,
-          action: fallback.direction === "bullish" ? "LONG" : "SHORT",
-          conviction: fallback.conviction,
-          reasoning: result.topPick.reasoning || `Highest conviction ${fallback.conviction} actionable setup.`,
-          levels: `Entry: ${fallback.entry[0].toFixed(4)} – ${fallback.entry[1].toFixed(4)} | SL: ${fallback.stopLoss.toFixed(4)} | TP1: ${fallback.takeProfit[0].toFixed(4)}, TP2: ${fallback.takeProfit[1].toFixed(4)}, TP3: ${fallback.takeProfit[2].toFixed(4)} | R:R 1:${fallback.riskReward[0]}`,
-        },
-      };
-    }
-
-    // Override levels with mechanical data
-    return {
-      ...result,
-      topPick: {
-        ...result.topPick,
-        instrument: matchedSetup.symbol,
-        action: matchedSetup.direction === "bullish" ? "LONG" : "SHORT",
-        conviction: matchedSetup.conviction,
-        levels: `Entry: ${matchedSetup.entry[0].toFixed(4)} – ${matchedSetup.entry[1].toFixed(4)} | SL: ${matchedSetup.stopLoss.toFixed(4)} | TP1: ${matchedSetup.takeProfit[0].toFixed(4)}, TP2: ${matchedSetup.takeProfit[1].toFixed(4)}, TP3: ${matchedSetup.takeProfit[2].toFixed(4)} | R:R 1:${matchedSetup.riskReward[0]}`,
-        // Keep the LLM's reasoning — that's the value-add
-      },
-    };
-  }
-
-  // No match — LLM hallucinated an instrument. Use the #1 ranked actionable setup.
-  const actionableSetup = setups.find((s) => {
-    const status = trackedStatuses[s.instrumentId];
-    return !status || status.includes("Await") || status.includes("Entry");
-  });
-
-  // If NO actionable setups exist, return null topPick rather than recommending an invalidated one
-  if (!actionableSetup) {
-    return { ...result, topPick: null };
-  }
-
-  return {
-    ...result,
-    topPick: {
-      instrument: actionableSetup.symbol,
-      action: actionableSetup.direction === "bullish" ? "LONG" : "SHORT",
-      conviction: actionableSetup.conviction,
-      reasoning: result.topPick.reasoning || `Highest conviction ${actionableSetup.conviction} setup with ${actionableSetup.consensus.bullish + actionableSetup.consensus.bearish} systems aligned.`,
-      levels: `Entry: ${actionableSetup.entry[0].toFixed(4)} – ${actionableSetup.entry[1].toFixed(4)} | SL: ${actionableSetup.stopLoss.toFixed(4)} | TP1: ${actionableSetup.takeProfit[0].toFixed(4)}, TP2: ${actionableSetup.takeProfit[1].toFixed(4)}, TP3: ${actionableSetup.takeProfit[2].toFixed(4)} | R:R 1:${actionableSetup.riskReward[0]}`,
-    },
-  };
+  return { ...result, topPick: null, otherSetups: [] };
 }
 
 interface UseTradingAdvisorParams {

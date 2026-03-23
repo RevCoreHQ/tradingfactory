@@ -51,7 +51,7 @@ export interface BiasResult {
   confidence: number;
   fundamentalScore: FundamentalScore;
   technicalScore: TechnicalScore;
-  aiBias: number;                // AI/LLM bias component (-100 to +100)
+  aiBias: number;                // DEPRECATED: Always 0. LLM no longer influences scoring.
   fundamentalReason?: string;    // AI explanation of fundamental score drivers
   technicalReason?: string;      // AI explanation of technical score drivers
   timeframe: "intraday" | "intraweek";

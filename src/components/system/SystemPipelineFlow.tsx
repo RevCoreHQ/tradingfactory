@@ -382,27 +382,21 @@ export function SystemPipelineFlow() {
           </p>
         </PipelineStageCard>
 
-        <PipelineStageCard number={14} title="AI Trade Advisor" subtitle="Institutional risk manager — 6 AI roles, 7-factor priority framework" icon={<Sparkles className="h-3.5 w-3.5" />} badge="ai" accentColor="amber" defaultExpanded>
+        <PipelineStageCard number={14} title="AI Risk Auditor" subtitle="3 LLM roles — explanation, risk auditing, summarization only" icon={<Sparkles className="h-3.5 w-3.5" />} badge="ai" accentColor="amber" defaultExpanded>
           <p>
-            <strong>This is where AI enters.</strong> The mechanical engine has already decided the trade ideas.
-            The Desk Manager operates as an <strong>institutional risk manager</strong>, receiving A+/A setups plus
-            COT positioning, rate differentials &amp; carry direction, high-impact economic events, central bank rates,
-            portfolio risk metrics (concentration, diversification, directional exposure, correlation warnings),
-            and managed positions.
+            <strong>This is where AI enters.</strong> The mechanical engine has already decided all trade ideas, rankings, and entries.
+            The Risk Auditor reviews setups for risk flags, portfolio conflicts, event risk, and positioning warnings.
+            LLMs never change scores, rankings, or entries — the system is fully deterministic.
           </p>
           <p>
-            <strong>7-factor institutional priority:</strong> Portfolio Risk Gate (veto) &rarr; Event Risk Filter (gate)
-            &rarr; COT Positioning (25%) &rarr; MTF Alignment (25%) &rarr; Carry Trade (15%) &rarr; ICT Confluence (20%)
-            &rarr; Structure + Signals (15%). Outputs: market regime, top pick, focusToday, sitOutToday, avoid list, risk warnings.
+            <strong>Outputs:</strong> market regime assessment, risk flags (3-5 specific observations),
+            focusToday, sitOutToday, avoid list, risk warnings, desk note.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mt-2">
             {[
-              { name: "Desk Manager", desc: "Institutional risk manager — Opus 4.6" },
+              { name: "Risk Auditor", desc: "Risk flags & warnings — Opus 4.6" },
               { name: "Market Summary", desc: "Macro strategist — Opus 4.6" },
-              { name: "Instrument LLM", desc: "Single-instrument deep analysis — Sonnet" },
-              { name: "Deep Analysis", desc: "S/D zones, FVG, ICT context — Sonnet" },
-              { name: "Batch LLM", desc: "All 16 instruments in parallel — Haiku" },
-              { name: "Desk Chat", desc: "Multi-turn follow-up — Opus 4.6" },
+              { name: "Desk Chat", desc: "Multi-turn Q&A — Opus 4.6" },
             ].map((ai) => (
               <div key={ai.name} className="bg-amber-500/8 border border-amber-500/15 rounded-md px-2.5 py-1.5 text-center">
                 <div className="text-[10px] font-semibold text-amber-700 dark:text-amber-500/80">{ai.name}</div>
