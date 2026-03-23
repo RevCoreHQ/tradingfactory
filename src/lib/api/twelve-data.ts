@@ -96,6 +96,54 @@ export async function fetchTwelveDataPrice(symbol: string): Promise<number | nul
   }
 }
 
+/**
+ * Batch fetch latest prices for multiple symbols in a single API call.
+ * Twelve Data /price supports comma-separated symbols (counts as 1 API credit).
+ * Returns a map of symbol -> price.
+ */
+export async function fetchTwelveDataBatchPrices(symbols: string[]): Promise<Record<string, number>> {
+  const apiKey = getApiKey();
+  if (!apiKey || symbols.length === 0) return {};
+
+  const { allowed } = checkRateLimit("twelvedata");
+  if (!allowed) {
+    console.warn("[TwelveData] Rate limited — skipping batch prices");
+    return {};
+  }
+
+  const url = new URL(`${BASE_URL}/price`);
+  url.searchParams.set("symbol", symbols.join(","));
+  url.searchParams.set("apikey", apiKey);
+
+  try {
+    const res = await fetch(url.toString(), { next: { revalidate: 60 } });
+    if (!res.ok) {
+      console.warn(`[TwelveData] HTTP ${res.status} for batch prices`);
+      return {};
+    }
+    const data = await res.json();
+
+    const result: Record<string, number> = {};
+
+    // Single symbol returns { price: "..." }, multiple returns { "SYM": { price: "..." }, ... }
+    if (symbols.length === 1 && data.price) {
+      result[symbols[0]] = parseFloat(data.price);
+    } else {
+      for (const sym of symbols) {
+        const entry = data[sym];
+        if (entry?.price) {
+          result[sym] = parseFloat(entry.price);
+        }
+      }
+    }
+
+    return result;
+  } catch (err) {
+    console.warn("[TwelveData] Batch price fetch failed:", err);
+    return {};
+  }
+}
+
 // Twelve Data interval map (matches our timeframe strings)
 export const TWELVE_DATA_INTERVALS: Record<string, string> = {
   "1min": "1min",
