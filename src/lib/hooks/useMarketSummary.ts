@@ -8,6 +8,18 @@ import { INSTRUMENTS } from "@/lib/utils/constants";
 import type { BiasResult } from "@/lib/types/bias";
 import type { MarketSummaryResult, SectorOutlook } from "@/lib/types/llm";
 
+/** Signal boot readiness once when market summary is available */
+function useMarketSummaryBootSignal(summary: MarketSummaryResult | null | undefined) {
+  const fired = useRef(false);
+  const setBootReady = useMarketStore((s) => s.setBootReady);
+  useEffect(() => {
+    if (summary && !fired.current) {
+      fired.current = true;
+      setBootReady("marketSummary");
+    }
+  }, [summary, setBootReady]);
+}
+
 const STRONG_CONVICTION_THRESHOLD = 45;
 
 /**
@@ -273,6 +285,9 @@ export function useMarketSummary() {
     cachedRef.current = null;
     setManualRefresh((c) => c + 1);
   }, []);
+
+  // Signal boot when summary is available (cached or fresh)
+  useMarketSummaryBootSignal(summary);
 
   return {
     summary,
