@@ -9,14 +9,17 @@ const BOOT_MESSAGES = [
   "Loading market rates...",
   "Scanning news & sentiment...",
   "Calculating bias scores...",
+  "Running AI analysis...",
+  "Evaluating macro conditions...",
+  "Analyzing instrument confluence...",
   "Preparing your desk...",
 ];
 
 const BOOT_SPEED = 15; // ms per animation step (fast)
 const BOOT_HOLD = 400; // ms hold between messages
 const WELCOME_SPEED = 25; // ms per animation step (dramatic)
-const MIN_BOOT_MS = 3500; // minimum time in boot phase
-const MAX_BOOT_MS = 10000; // max time before forcing welcome
+const MIN_BOOT_MS = 5000; // minimum time in boot phase
+const MAX_BOOT_MS = 20000; // max time before forcing welcome (LLM can take 15s+)
 const FADE_MS = 600;
 
 type Phase = "booting" | "welcome" | "fading" | "done";
@@ -31,7 +34,8 @@ export function PageLoader() {
 
   const bootStatus = useMarketStore((s) => s.bootStatus);
   const readyCount = Object.values(bootStatus).filter(Boolean).length;
-  const dataReady = readyCount >= 3; // 3 of 5 feeds ready
+  // Require LLM batch + at least 3 other feeds (rates, fearGreed, bonds, news, bias)
+  const dataReady = readyCount >= 4 && !!bootStatus.llmBatch;
 
   // Calculate animation duration for current boot message
   const currentMsg = BOOT_MESSAGES[msgIndex % BOOT_MESSAGES.length];

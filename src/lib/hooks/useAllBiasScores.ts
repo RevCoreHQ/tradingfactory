@@ -141,8 +141,14 @@ export function useAllBiasScores() {
       }
     }
     setBatchLLMResults(batchResults);
-    if (llmReady) setBatchLLMReady(true);
-    if (llmApiError) setBatchLLMError(llmApiError);
+    if (llmReady) {
+      setBatchLLMReady(true);
+      setBootReady("llmBatch");
+    }
+    if (llmApiError) {
+      setBatchLLMError(llmApiError);
+      setBootReady("llmBatch"); // unblock boot on error too
+    }
   }, [allResults, batchResults, llmReady, llmApiError, setBiasResult, setAllBiasResults, setBatchLLMResults, setBatchLLMReady, setBatchLLMError, setBootReady]);
 
   return allResults;
