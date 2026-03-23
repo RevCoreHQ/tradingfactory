@@ -39,6 +39,7 @@ interface MarketStore {
   wsConnected: boolean;
   watchlistIds: string[];
   favoriteIds: string[];
+  pinnedIds: string[];
   bootStatus: Record<string, boolean>;
 
   setSelectedInstrument: (instrument: Instrument) => void;
@@ -61,6 +62,7 @@ interface MarketStore {
   addToWatchlist: (id: string) => void;
   removeFromWatchlist: (id: string) => void;
   toggleFavorite: (id: string) => void;
+  togglePin: (id: string) => void;
   setBootReady: (key: string) => void;
 }
 
@@ -68,6 +70,18 @@ function loadFavoriteIds(): string[] {
   if (typeof window === "undefined") return [];
   try {
     const stored = localStorage.getItem("favoriteIds");
+    if (stored) {
+      const ids = JSON.parse(stored) as string[];
+      return ids.filter((id) => INSTRUMENTS.some((i) => i.id === id));
+    }
+  } catch {}
+  return [];
+}
+
+function loadPinnedIds(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const stored = localStorage.getItem("pinnedIds");
     if (stored) {
       const ids = JSON.parse(stored) as string[];
       return ids.filter((id) => INSTRUMENTS.some((i) => i.id === id));
@@ -108,6 +122,7 @@ export const useMarketStore = create<MarketStore>((set) => ({
   wsConnected: false,
   watchlistIds: loadWatchlistIds(),
   favoriteIds: loadFavoriteIds(),
+  pinnedIds: loadPinnedIds(),
   bootStatus: {},
 
   setSelectedInstrument: (instrument) => set({ selectedInstrument: instrument }),
@@ -172,6 +187,14 @@ export const useMarketStore = create<MarketStore>((set) => ({
         : [...state.favoriteIds, id];
       try { localStorage.setItem("favoriteIds", JSON.stringify(next)); } catch {}
       return { favoriteIds: next };
+    }),
+  togglePin: (id) =>
+    set((state) => {
+      const next = state.pinnedIds.includes(id)
+        ? state.pinnedIds.filter((pid) => pid !== id)
+        : [...state.pinnedIds, id];
+      try { localStorage.setItem("pinnedIds", JSON.stringify(next)); } catch {}
+      return { pinnedIds: next };
     }),
   setBootReady: (key) =>
     set((state) => {

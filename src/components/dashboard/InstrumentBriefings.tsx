@@ -19,6 +19,7 @@ import {
   Brain,
   ArrowRight,
   Star,
+  Pin,
   TrendingUp,
   TrendingDown,
 } from "lucide-react";
@@ -90,6 +91,8 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
   const setSelectedInstrument = useMarketStore((s) => s.setSelectedInstrument);
   const favoriteIds = useMarketStore((s) => s.favoriteIds);
   const toggleFavorite = useMarketStore((s) => s.toggleFavorite);
+  const pinnedIds = useMarketStore((s) => s.pinnedIds);
+  const togglePin = useMarketStore((s) => s.togglePin);
 
   const { instrument, biasResult, llmResult, quote } = data;
   const CategoryIcon = categoryIcons[instrument.category] || DollarSign;
@@ -98,6 +101,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
   const isBearish = biasResult.overallBias < 0;
   const color = getBiasColor(biasResult.direction);
   const isFavorite = favoriteIds.includes(instrument.id);
+  const isPinned = pinnedIds.includes(instrument.id);
 
   // AI summary with contradiction check
   const llmSummary = llmResult?.summary || null;
@@ -146,9 +150,10 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
           >
             <CategoryIcon className="h-3 w-3 text-muted-foreground" />
           </div>
-          <div>
+          <div className="flex items-center gap-1.5">
             <span className="text-sm font-bold text-foreground">{instrument.symbol}</span>
-            <span className="text-[9px] text-muted-foreground/40 ml-1.5">{instrument.displayName}</span>
+            {isPinned && <Pin className="h-3 w-3 text-neutral-accent fill-neutral-accent rotate-45" />}
+            <span className="text-[9px] text-muted-foreground/40">{instrument.displayName}</span>
           </div>
         </div>
         <span
@@ -261,16 +266,28 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
           Deep Analysis
           <ArrowRight className="h-3.5 w-3.5" />
         </button>
-        <button
-          onClick={() => toggleFavorite(instrument.id)}
-          className={cn(
-            "flex items-center gap-1 text-[10px] transition-colors",
-            isFavorite ? "text-[#FFD700]" : "text-muted-foreground/40 hover:text-muted-foreground"
-          )}
-        >
-          <Star className={cn("h-3.5 w-3.5", isFavorite && "fill-[#FFD700]")} />
-          {isFavorite ? "Tracked" : "Track"}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => togglePin(instrument.id)}
+            className={cn(
+              "flex items-center gap-1 text-[10px] transition-colors",
+              isPinned ? "text-neutral-accent" : "text-muted-foreground/40 hover:text-muted-foreground"
+            )}
+          >
+            <Pin className={cn("h-3.5 w-3.5", isPinned && "fill-neutral-accent rotate-45")} />
+            {isPinned ? "Pinned" : "Pin"}
+          </button>
+          <button
+            onClick={() => toggleFavorite(instrument.id)}
+            className={cn(
+              "flex items-center gap-1 text-[10px] transition-colors",
+              isFavorite ? "text-[#FFD700]" : "text-muted-foreground/40 hover:text-muted-foreground"
+            )}
+          >
+            <Star className={cn("h-3.5 w-3.5", isFavorite && "fill-[#FFD700]")} />
+            {isFavorite ? "Tracked" : "Track"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -279,6 +296,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
 export function InstrumentBriefings() {
   const allBiasResults = useMarketStore((s) => s.allBiasResults);
   const batchLLMResults = useMarketStore((s) => s.batchLLMResults);
+  const pinnedIds = useMarketStore((s) => s.pinnedIds);
   const { data: ratesData } = useRates();
   const quotes = ratesData?.quotes || {};
   const currentResults = allBiasResults.intraday;
@@ -293,7 +311,14 @@ export function InstrumentBriefings() {
       quote: quotes[inst.id] || null,
     });
     return acc;
-  }, []).sort((a, b) => Math.abs(b.biasResult.overallBias) - Math.abs(a.biasResult.overallBias));
+  }, []).sort((a, b) => {
+    // Pinned instruments always come first
+    const aPinned = pinnedIds.includes(a.instrument.id) ? 1 : 0;
+    const bPinned = pinnedIds.includes(b.instrument.id) ? 1 : 0;
+    if (bPinned !== aPinned) return bPinned - aPinned;
+    // Then sort by conviction (highest absolute bias first)
+    return Math.abs(b.biasResult.overallBias) - Math.abs(a.biasResult.overallBias);
+  });
 
   if (cards.length === 0) {
     return (
