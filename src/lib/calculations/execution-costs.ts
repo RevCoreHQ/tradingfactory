@@ -31,24 +31,63 @@ export interface ExecutionCost {
   totalCostPrice: number;
 }
 
+// ==================== SESSION + EVENT MULTIPLIERS ====================
+
+/**
+ * Session-aware spread multiplier.
+ * During overlap sessions (London-NY), spreads are tightest.
+ * During dead hours (e.g. late NY after London close), spreads widen 2x.
+ */
+export function getSessionSpreadMultiplier(sessionScore: number): number {
+  if (sessionScore >= 75) return 1.0;   // overlap — tightest spreads
+  if (sessionScore >= 40) return 1.2;   // single session
+  if (sessionScore >= 15) return 1.5;   // off-peak
+  return 2.0;                            // dead market
+}
+
+/**
+ * Event risk spread multiplier.
+ * High-impact events (CPI, NFP, rate decisions) cause spread widening
+ * as market makers pull liquidity before the release.
+ */
+export function getEventRiskMultiplier(
+  eventRiskActive: boolean,
+  hoursUntilEvent?: number,
+): number {
+  if (!eventRiskActive) return 1.0;
+  if (hoursUntilEvent !== undefined && hoursUntilEvent <= 2) return 2.5;
+  if (hoursUntilEvent !== undefined && hoursUntilEvent <= 6) return 1.5;
+  return 1.0;
+}
+
 /**
  * Calculate execution cost for an instrument.
  * Slippage model: basePips * (1 + atrPercentile/100 * 0.5)
  * Higher volatility = wider spreads and more slippage.
+ * Session and event multipliers scale the base spread before slippage.
  */
 export function calculateExecutionCost(
   instrumentId: string,
   pipSize: number,
   atrPercentile: number = 50,
+  sessionScore: number = 75,
+  eventRiskActive: boolean = false,
+  hoursUntilEvent?: number,
 ): ExecutionCost {
-  const basePips = SPREAD_TABLE[instrumentId] ?? 2.0;
+  const rawPips = SPREAD_TABLE[instrumentId] ?? 2.0;
+
+  // Apply session + event multipliers to base spread
+  const sessionMult = getSessionSpreadMultiplier(sessionScore);
+  const eventMult = getEventRiskMultiplier(eventRiskActive, hoursUntilEvent);
+  const basePips = rawPips * sessionMult * eventMult;
+
   const spreadPrice = basePips * pipSize;
 
   const slippagePips = basePips * (1 + (atrPercentile / 100) * 0.5);
   const slippagePrice = slippagePips * pipSize;
 
   return {
-    spreadPips: basePips,
+    spreadPips: Number(basePips.toFixed(2)),
     spreadPrice,
     slippagePips: Number(slippagePips.toFixed(2)),
     slippagePrice,

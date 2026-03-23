@@ -145,6 +145,7 @@ export interface TradeDeskSetup {
     multiplier: number;
   };
   dataQualityWarnings?: string[];
+  noTradeResult?: import("@/lib/calculations/no-trade-engine").NoTradeResult;
 }
 
 // ==================== Setup Lifecycle ====================

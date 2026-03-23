@@ -163,20 +163,17 @@ const steps: Step[] = [
   },
   {
     number: 6,
-    title: "8 Systems Fire",
+    title: "3 Systems Fire",
     badge: "MECH",
-    summary: "7/8 bullish — strong agreement",
+    summary: "3/3 bullish — full cluster agreement",
     content: (
       <div className="space-y-2">
-        <p>Each of the 6 mechanical systems independently produces a direction and strength on the <strong>selected timeframe</strong> candles.</p>
+        <p>Each of the 3 mechanical systems (one per cluster) independently produces a direction and strength on the <strong>selected timeframe</strong> candles.</p>
         <div className="space-y-1">
           {[
-            { name: "MACD", dir: "Bullish", str: 85, match: true },
-            { name: "BB Breakout", dir: "Neutral", str: 30, match: false },
+            { name: "Trend Stack", dir: "Bullish", str: 85, match: true },
             { name: "RSI Extremes", dir: "Bullish", str: 78, match: false },
-            { name: "BB MR", dir: "Bullish", str: 82, match: false },
             { name: "Elder Impulse", dir: "Bullish", str: 90, match: true },
-            { name: "Trend Stack", dir: "Bullish", str: 75, match: true },
           ].map((s) => (
             <div key={s.name} className="flex items-center gap-2 text-[10px]">
               <span className="w-24 shrink-0 font-semibold text-foreground/70">{s.name}</span>
@@ -189,7 +186,7 @@ const steps: Step[] = [
             </div>
           ))}
         </div>
-        <p className="text-[10px] text-bullish/70 font-semibold">Result: 7 bullish, 0 bearish, 1 neutral</p>
+        <p className="text-[10px] text-bullish/70 font-semibold">Result: 3 bullish, 0 bearish, 0 neutral — all 3 clusters agree</p>
       </div>
     ),
   },
@@ -233,10 +230,10 @@ const steps: Step[] = [
         <p>The conviction algorithm scores the setup:</p>
         <div className="space-y-1.5">
           {[
-            { factor: "Agreement", calc: "7/7 non-neutral = 100%", pts: 40, max: 40 },
-            { factor: "Regime Match", calc: "5 match trending (≥3 = max)", pts: 25, max: 25 },
+            { factor: "Agreement", calc: "3/3 clusters active = full", pts: 38, max: 40 },
+            { factor: "Regime Match", calc: "2 match trending (TS + EI)", pts: 20, max: 25 },
             { factor: "Impulse", calc: "GREEN + bullish = aligned", pts: 20, max: 20 },
-            { factor: "Strong Signals", calc: "5 signals ≥ 70 (×5 pts each)", pts: 15, max: 15 },
+            { factor: "Strong Signals", calc: "3 signals ≥ 70 (×5 pts each)", pts: 15, max: 15 },
             { factor: "MTF Alignment", calc: "3/4 timeframes aligned = strong", pts: 5, max: 10 },
           ].map((f) => (
             <div key={f.factor} className="flex items-center gap-2">
@@ -249,8 +246,8 @@ const steps: Step[] = [
         <div className="flex items-center gap-3 mt-2 bg-bullish/10 rounded-md px-3 py-2">
           <span className="text-2xl font-black text-bullish">A+</span>
           <div>
-            <div className="text-[10px] font-mono text-foreground/70">Score: 100/100 (base 95 + MTF 5, clamped 0-100)</div>
-            <div className="text-[9px] text-muted-foreground/50">&ge;75 score AND &ge;5 agreeing = A+</div>
+            <div className="text-[10px] font-mono text-foreground/70">Score: 93/100 (base 88 + MTF 5, clamped 0-100)</div>
+            <div className="text-[9px] text-muted-foreground/50">&ge;70 score AND 3 active clusters = A+</div>
           </div>
         </div>
       </div>
@@ -346,7 +343,7 @@ const steps: Step[] = [
           <div className="flex justify-between"><span className="text-muted-foreground/50">Size:</span><span className="text-foreground">0.44 lots (2.5% risk, A+ 1.25x)</span></div>
         </div>
         <div className="bg-amber-500/8 border border-amber-500/15 rounded-md px-3 py-2 text-[10px] text-foreground/70 italic leading-relaxed mt-2">
-          &ldquo;EUR/USD is showing strong bullish momentum with 7/8 systems aligned. COT positioning shows
+          &ldquo;EUR/USD is showing strong bullish momentum with all 3 clusters aligned. COT positioning shows
           specs at 45% long — not crowded. Carry is neutral (ECB 4.5% vs Fed 5.25%), no headwind.
           No high-impact events in next 24h. Portfolio has room — no EUR concentration, diversification score 72.
           MTF 3/4 aligned with Weekly bullish. This is my top focus today.&rdquo;

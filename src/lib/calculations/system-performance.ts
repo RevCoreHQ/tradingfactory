@@ -131,6 +131,102 @@ export function getSystemWeights(
   return weights;
 }
 
+// ==================== SIGNAL HEALTH EVALUATION ====================
+
+export type SignalHealthStatus = "healthy" | "probation" | "killed";
+
+export interface SignalHealthResult {
+  system: string;
+  status: SignalHealthStatus;
+  winRate: number;
+  trades: number;
+  reason: string;
+}
+
+const HEALTH_MIN_TRADES = 30;
+
+/**
+ * Evaluate the health of each signal system based on rolling performance.
+ * Requires 30+ trades (stricter than the 10-trade weight system) to produce
+ * actionable kill/probation decisions.
+ *
+ * Kill:      winRate < 35% over 30+ trades — disabled entirely
+ * Probation: winRate 35-40% OR weight < 0.3 — 50% strength reduction
+ * Healthy:   everything else
+ */
+export function evaluateSignalHealth(
+  performances: Record<string, SystemPerformance>
+): SignalHealthResult[] {
+  const results: SignalHealthResult[] = [];
+
+  for (const [, perf] of Object.entries(performances)) {
+    if (perf.trades < HEALTH_MIN_TRADES) {
+      results.push({
+        system: perf.system,
+        status: "healthy",
+        winRate: perf.winRate,
+        trades: perf.trades,
+        reason: `Insufficient data (${perf.trades}/${HEALTH_MIN_TRADES} trades)`,
+      });
+      continue;
+    }
+
+    if (perf.winRate < 0.35) {
+      results.push({
+        system: perf.system,
+        status: "killed",
+        winRate: perf.winRate,
+        trades: perf.trades,
+        reason: `Win rate ${(perf.winRate * 100).toFixed(0)}% < 35% over ${perf.trades} trades`,
+      });
+    } else if (perf.winRate < 0.40 || perf.weight < 0.3) {
+      results.push({
+        system: perf.system,
+        status: "probation",
+        winRate: perf.winRate,
+        trades: perf.trades,
+        reason: `Win rate ${(perf.winRate * 100).toFixed(0)}% — on probation (50% strength)`,
+      });
+    } else {
+      results.push({
+        system: perf.system,
+        status: "healthy",
+        winRate: perf.winRate,
+        trades: perf.trades,
+        reason: "Performing within acceptable range",
+      });
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Apply signal health decisions to mechanical signals.
+ * Killed → strength 0, direction neutral
+ * Probation → 50% strength
+ * Healthy → unchanged
+ */
+export function applySignalHealth(
+  signals: MechanicalSignal[],
+  health: SignalHealthResult[]
+): MechanicalSignal[] {
+  const healthMap = new Map(health.map((h) => [h.system, h]));
+
+  return signals.map((signal) => {
+    const h = healthMap.get(signal.system);
+    if (!h) return signal;
+
+    if (h.status === "killed") {
+      return { ...signal, strength: 0, direction: "neutral" as const };
+    }
+    if (h.status === "probation") {
+      return { ...signal, strength: Math.round(signal.strength * 0.5) };
+    }
+    return signal;
+  });
+}
+
 // ==================== WEIGHT APPLICATION ====================
 
 /**

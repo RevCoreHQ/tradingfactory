@@ -196,6 +196,7 @@ export function useTradeDeskData(
       // Load optimized params from Weekend Lab if available
       const labOverrides = getOptimizedOverrides(inst.id, effectiveStyle) ?? undefined;
 
+      const sessionRelevance = getSessionRelevance(inst.id);
       const setup = generateTradeDeskSetup(
         candles,
         summary,
@@ -205,7 +206,8 @@ export function useTradeDeskData(
         effectiveStyle,
         undefined,
         labOverrides,
-        previousPhases.current[inst.id]
+        previousPhases.current[inst.id],
+        sessionRelevance.sessionScore,
       );
 
       // Store current phase for next iteration (phase transition detection)
@@ -223,9 +225,13 @@ export function useTradeDeskData(
         setup.convictionScore = Math.max(0, Math.min(100, setup.convictionScore + mtfTrend.convictionModifier));
       }
 
-      // Attach data quality warnings
-      if (qualityCheck.warnings.length > 0) {
-        setup.dataQualityWarnings = qualityCheck.warnings;
+      // Attach data quality warnings + no-trade reasons
+      const warnings = [...qualityCheck.warnings];
+      if (setup.noTradeResult && setup.noTradeResult.reasons.length > 0) {
+        warnings.push(...setup.noTradeResult.reasons);
+      }
+      if (warnings.length > 0) {
+        setup.dataQualityWarnings = warnings;
       }
 
       allSetups.push(setup);

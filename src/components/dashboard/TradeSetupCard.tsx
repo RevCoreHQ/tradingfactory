@@ -100,26 +100,18 @@ function getStrategyLabel(setup: TradeDeskSetup): { name: string; source: string
   const agreeing = setup.signals.filter((s) => s.direction === setup.direction);
   const systems = new Set(agreeing.map((s) => s.system));
 
-  const hasImpulse = systems.has("Elder Impulse");
-  const hasMACD = systems.has("MACD");
-  const hasBBBreak = systems.has("BB Breakout");
   const hasTrendStack = systems.has("Trend Stack");
   const hasRSI = systems.has("RSI Extremes");
-  const hasBBMR = systems.has("BB MR");
+  const hasImpulse = systems.has("Elder Impulse");
 
-  if (hasImpulse && hasMACD && hasTrendStack) return { name: "Triple Confirmation", source: "Elder/Weissman" };
-  if (hasTrendStack && hasBBBreak && hasMACD) return { name: "Structural Breakout", source: "Weissman" };
-  if (hasBBBreak && hasImpulse) return { name: "Momentum Breakout", source: "Weissman" };
-  if (hasMACD && hasTrendStack) return { name: "Trend Continuation", source: "Weissman" };
-  if (hasRSI && hasBBMR) return { name: "MR Pullback", source: "Weissman" };
-  if (hasRSI || hasBBMR) return { name: "Mean Reversion", source: "Weissman" };
+  if (hasTrendStack && hasRSI && hasImpulse) return { name: "Triple Confluence", source: "Multi-Cluster" };
+  if (hasTrendStack && hasImpulse) return { name: "Trend Continuation", source: "Multi-MA/Elder" };
+  if (hasRSI && hasImpulse) return { name: "MR Reversal", source: "RSI/Elder" };
+  if (hasTrendStack) return { name: "Trend Signal", source: "Multi-MA" };
+  if (hasRSI) return { name: "Mean Reversion", source: "RSI Extremes" };
+  if (hasImpulse) return { name: "Momentum Signal", source: "Elder" };
 
-  const counts: Record<string, number> = {};
-  for (const s of agreeing) counts[s.type] = (counts[s.type] || 0) + 1;
-  const dominant = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
-  if (dominant === "trend") return { name: "Trend Signal", source: "Multi" };
-  if (dominant === "momentum") return { name: "Momentum Signal", source: "Elder" };
-  return { name: "Confluence", source: "Multi" };
+  return { name: "Setup", source: "Mixed" };
 }
 
 // ── Main Component ──

@@ -13,19 +13,20 @@ import type {
 } from "@/lib/types/signals";
 import type { MTFTimeframe } from "@/lib/types/mtf";
 import type { Instrument } from "@/lib/types/market";
-import { calcSMA, calcEMA } from "./technical-indicators";
+import { calcSMA } from "./technical-indicators";
 import { applyLearning, adjustedTier } from "./confluence-learning";
 import { buildConfluenceKey, buildRegimeConfluenceKey } from "./setup-tracker";
 import { detectFullRegime } from "./regime-engine";
 import { analyzeMarketStructure } from "./market-structure";
 import { computeDeCorrelatedAgreement, detectClusterConflict } from "./signal-clustering";
-import { applySystemWeights, type SystemPerformance } from "./system-performance";
+import { applySystemWeights, evaluateSignalHealth, applySignalHealth, type SystemPerformance } from "./system-performance";
 import { analyzeEntryOptimization } from "./entry-optimization";
 import { detectFairValueGaps } from "./fair-value-gaps";
 import { detectInstitutionalCandles, detectConsolidationBreakouts } from "./institutional-candles";
 import { detectSupplyDemandZones } from "./supply-demand-zones";
 import { calculateExecutionCost, adjustStopLossForSpread, adjustRiskReward } from "./execution-costs";
 import { calculateVolTargetMultiplier } from "./volatility-targeting";
+import { evaluateNoTrade } from "./no-trade-engine";
 import type { FairValueGap, SupplyDemandZone } from "@/lib/types/deep-analysis";
 import type { MarketStructure } from "@/lib/types/signals";
 
@@ -305,101 +306,6 @@ export function detectRegime(summary: TechnicalSummary, candles?: OHLCV[], previ
 
 // ==================== MECHANICAL SYSTEMS ====================
 
-function macdSignal(summary: TechnicalSummary, regime: MarketRegime): MechanicalSignal {
-  // Weissman: EMA(12)-EMA(26) crossover with signal line
-  const { macd, signal, histogram, crossover } = summary.macd;
-
-  let direction: "bullish" | "bearish" | "neutral" = "neutral";
-  let description = "MACD neutral";
-  let strength = 30;
-
-  if (crossover === "bullish") {
-    direction = "bullish";
-    description = "MACD bullish crossover — signal line break";
-    strength = 85;
-  } else if (crossover === "bearish") {
-    direction = "bearish";
-    description = "MACD bearish crossover — signal line break";
-    strength = 85;
-  } else if (histogram > 0) {
-    direction = "bullish";
-    description = `MACD histogram positive (${histogram.toFixed(5)})`;
-    strength = Math.min(65, 35 + Math.abs(histogram) * 5000);
-  } else if (histogram < 0) {
-    direction = "bearish";
-    description = `MACD histogram negative (${histogram.toFixed(5)})`;
-    strength = Math.min(65, 35 + Math.abs(histogram) * 5000);
-  }
-
-  const isTrending = regime === "trending_up" || regime === "trending_down";
-  if (!isTrending && direction !== "neutral") {
-    return {
-      system: "MACD",
-      type: "trend",
-      direction: "neutral",
-      strength: 0,
-      description: description + " [regime-excluded: non-trending]",
-      regimeMatch: false,
-    };
-  }
-  return {
-    system: "MACD",
-    type: "trend",
-    direction,
-    strength,
-    description,
-    regimeMatch: isTrending,
-  };
-}
-
-function bbBreakoutSignal(summary: TechnicalSummary, regime: MarketRegime): MechanicalSignal {
-  // Weissman: Close > Upper BB = bullish breakout, Close < Lower BB = bearish breakout
-  const { upper, lower, middle, percentB } = summary.bollingerBands;
-  const price = summary.currentPrice;
-
-  let direction: "bullish" | "bearish" | "neutral" = "neutral";
-  let description = "Price within Bollinger Bands";
-  let strength = 20;
-
-  if (price > upper) {
-    direction = "bullish";
-    description = `Price broke above upper BB (${upper.toFixed(4)}) — breakout`;
-    strength = 80;
-  } else if (price < lower) {
-    direction = "bearish";
-    description = `Price broke below lower BB (${lower.toFixed(4)}) — breakdown`;
-    strength = 80;
-  } else if (percentB > 0.9) {
-    direction = "bullish";
-    description = `Price testing upper BB (%B: ${(percentB * 100).toFixed(0)}%)`;
-    strength = 55;
-  } else if (percentB < 0.1) {
-    direction = "bearish";
-    description = `Price testing lower BB (%B: ${(percentB * 100).toFixed(0)}%)`;
-    strength = 55;
-  }
-
-  const isTrending = regime === "trending_up" || regime === "trending_down";
-  if (!isTrending && direction !== "neutral") {
-    return {
-      system: "BB Breakout",
-      type: "trend",
-      direction: "neutral",
-      strength: 0,
-      description: description + " [regime-excluded: non-trending]",
-      regimeMatch: false,
-    };
-  }
-  return {
-    system: "BB Breakout",
-    type: "trend",
-    direction,
-    strength,
-    description,
-    regimeMatch: isTrending,
-  };
-}
-
 function rsiExtremesSignal(
   summary: TechnicalSummary,
   candles: OHLCV[],
@@ -453,65 +359,6 @@ function rsiExtremesSignal(
   }
   return {
     system: "RSI Extremes",
-    type: "mean_reversion",
-    direction,
-    strength,
-    description,
-    regimeMatch,
-  };
-}
-
-function bbMeanReversionSignal(
-  summary: TechnicalSummary,
-  candles: OHLCV[],
-  regime: MarketRegime
-): MechanicalSignal {
-  // Weissman: Close < Lower BB AND Close > SMA(200) = buy
-  const closes = candles.map((c) => c.close);
-  const price = summary.currentPrice;
-  const { lower, upper } = summary.bollingerBands;
-
-  const sma200 = calcSMA(closes, 200);
-  const hasSma200 = sma200.length > 0;
-  const aboveSma200 = hasSma200 && price > sma200[sma200.length - 1];
-  const belowSma200 = hasSma200 && price < sma200[sma200.length - 1];
-
-  let direction: "bullish" | "bearish" | "neutral" = "neutral";
-  let description = "Price within bands";
-  let strength = 20;
-
-  if (price < lower && aboveSma200) {
-    direction = "bullish";
-    description = "Price below lower BB + above SMA(200) — mean reversion buy";
-    strength = 80;
-  } else if (price > upper && belowSma200) {
-    direction = "bearish";
-    description = "Price above upper BB + below SMA(200) — mean reversion sell";
-    strength = 80;
-  } else if (price < lower) {
-    direction = "bullish";
-    description = "Price below lower BB — partial MR signal (no SMA filter)";
-    strength = 45;
-  } else if (price > upper) {
-    direction = "bearish";
-    description = "Price above upper BB — partial MR signal (no SMA filter)";
-    strength = 45;
-  }
-
-  const isRanging = regime === "ranging";
-  const regimeMatch = isRanging || regime === "volatile";
-  if (!regimeMatch && direction !== "neutral") {
-    return {
-      system: "BB MR",
-      type: "mean_reversion",
-      direction: "neutral",
-      strength: 0,
-      description: description + " [regime-excluded: trending market]",
-      regimeMatch: false,
-    };
-  }
-  return {
-    system: "BB MR",
     type: "mean_reversion",
     direction,
     strength,
@@ -728,11 +575,12 @@ function calculateConviction(
   // to inflate conviction. New thresholds require truly independent signal
   // families (trend, momentum, mean_reversion) to agree.
   // Max activeClusters = 3 (one per signal family).
+  // Audit v2: lowered thresholds for 3-signal system (1 signal per cluster)
   let tier: ConvictionTier;
-  if (score >= 75 && activeClusters >= 3) tier = "A+";
-  else if (score >= 60 && activeClusters >= 2) tier = "A";
-  else if (score >= 40 && activeClusters >= 2) tier = "B";
-  else if (score >= 25 && activeClusters >= 1) tier = "C";
+  if (score >= 70 && activeClusters >= 3) tier = "A+";
+  else if (score >= 55 && activeClusters >= 2) tier = "A";
+  else if (score >= 35 && activeClusters >= 2) tier = "B";
+  else if (score >= 20 && activeClusters >= 1) tier = "C";
   else tier = "D";
 
   return { tier, score: Math.max(0, Math.min(100, score)), direction };
@@ -753,7 +601,7 @@ function generateReasonsToExit(
     if (nearestResistance) {
       reasons.push(`Price reaches resistance at ${nearestResistance.price.toFixed(4)}`);
     }
-    reasons.push("MACD bearish crossover develops");
+    reasons.push("Momentum shift (MACD-H slope reversal on Elder Impulse)");
     reasons.push("Elder Impulse turns RED (selling pressure)");
     if (summary.rsi.value > 65) {
       reasons.push(`RSI approaching overbought (${summary.rsi.value.toFixed(0)})`);
@@ -766,7 +614,7 @@ function generateReasonsToExit(
     if (nearestSupport) {
       reasons.push(`Price reaches support at ${nearestSupport.price.toFixed(4)}`);
     }
-    reasons.push("MACD bullish crossover develops");
+    reasons.push("Momentum shift (MACD-H slope reversal on Elder Impulse)");
     reasons.push("Elder Impulse turns GREEN (buying pressure)");
     if (summary.rsi.value < 35) {
       reasons.push(`RSI approaching oversold (${summary.rsi.value.toFixed(0)})`);
@@ -804,7 +652,8 @@ export function generateTradeDeskSetup(
   tradingStyle?: TradingStyle,
   systemPerformance?: Record<string, SystemPerformance>,
   overrideParams?: { slMultiplier?: number; tpMultipliers?: [number, number, number]; entrySpreadMultiplier?: number },
-  previousPhase?: MarketPhase
+  previousPhase?: MarketPhase,
+  sessionScore?: number,
 ): TradeDeskSetup {
   // 1. Detect regime (pass candles for full multi-dimensional regime)
   const { regime, label: regimeLabel, fullRegime } = detectRegime(summary, candles, previousPhase);
@@ -815,14 +664,20 @@ export function generateTradeDeskSetup(
   // signals that contradict the swing structure, then trying to filter them later.
   const marketStructure = analyzeMarketStructure(candles);
 
+  // 2b. No-trade engine — evaluate mechanical blackout conditions
+  const noTradeResult = evaluateNoTrade(
+    sessionScore ?? 75,
+    fullRegime,
+    marketStructure?.structureScore,
+    false, // dataStale is checked at hook level
+  );
+
   // 3. Run all mechanical systems (regime-gated: non-matching signals already excluded)
+  // Audit v2: collapsed from 6 → 3 truly independent signals (1 per cluster)
   let signals: MechanicalSignal[] = [
-    macdSignal(summary, regime),
-    bbBreakoutSignal(summary, regime),
-    rsiExtremesSignal(summary, candles, regime),
-    bbMeanReversionSignal(summary, candles, regime),
-    impulseSignal(summary),
     trendAlignmentSignal(summary, regime),
+    rsiExtremesSignal(summary, candles, regime),
+    impulseSignal(summary),
   ];
 
   // 3b. Apply system performance weights (auto-kill weak systems)
@@ -832,6 +687,10 @@ export function generateTradeDeskSetup(
       weights[key] = perf.weight;
     }
     signals = applySystemWeights(signals, weights);
+
+    // 3b2. Hard kill/probation layer (requires 30+ trades for actionable decisions)
+    const health = evaluateSignalHealth(systemPerformance);
+    signals = applySignalHealth(signals, health);
   }
 
   // 3c. Structure direction gate — filter signals against structure.
@@ -984,7 +843,8 @@ export function generateTradeDeskSetup(
   const execCost = calculateExecutionCost(
     instrument.id,
     instrument.pipSize,
-    fullRegime?.atrPercentile ?? 50
+    fullRegime?.atrPercentile ?? 50,
+    sessionScore ?? 75,
   );
   snapped.stopLoss = adjustStopLossForSpread(snapped.stopLoss, direction, execCost.totalCostPrice);
   snapped.riskReward = adjustRiskReward(
@@ -995,8 +855,8 @@ export function generateTradeDeskSetup(
     direction
   );
 
-  // 5e. Volatility targeting — scale risk inversely to vol
-  const volTarget = calculateVolTargetMultiplier(atr, price);
+  // 5e. Volatility targeting — scale risk inversely to vol (blended ATR + return-based)
+  const volTarget = calculateVolTargetMultiplier(atr, price, 0.10, candles);
 
   // 6. Position sizing — conviction-scaled risk × vol multiplier (Hougaard: size up on best setups)
   const tierRiskMultiplier: Record<ConvictionTier, number> = {
@@ -1006,7 +866,7 @@ export function generateTradeDeskSetup(
     "C":  0.5,  // 1.0% risk
     "D":  0.25, // 0.5% risk
   };
-  const adjustedRisk = riskPercent * tierRiskMultiplier[tier] * volTarget.multiplier;
+  const adjustedRisk = riskPercent * tierRiskMultiplier[tier] * volTarget.multiplier * noTradeResult.positionMultiplier;
   const { lots, riskAmount } = calculatePositionSize(
     adjustedRisk,
     price,
@@ -1056,6 +916,7 @@ export function generateTradeDeskSetup(
       currentVol: volTarget.currentAnnualVol,
       multiplier: volTarget.multiplier,
     },
+    noTradeResult: noTradeResult.severity !== "none" ? noTradeResult : undefined,
   };
 
   if (confluencePatterns) {
@@ -1108,7 +969,9 @@ export function rankSetupsByConviction(setups: TradeDeskSetup[]): TradeDeskSetup
       s.riskReward[0] >= 1.5 &&     // Minimum R:R gate — no edge below 1.5
       // Elder hard gate: NEVER trade against impulse color
       !(s.direction === "bullish" && s.impulse === "red") &&
-      !(s.direction === "bearish" && s.impulse === "green")
+      !(s.direction === "bearish" && s.impulse === "green") &&
+      // No-trade engine hard block: reject setups in dead/stale/volatile-reversal conditions
+      !(s.noTradeResult && !s.noTradeResult.canTrade)
     )
     .sort((a, b) => {
       const tierDiff = tierOrder[b.conviction] - tierOrder[a.conviction];

@@ -193,21 +193,21 @@ export function SystemPipelineFlow() {
         {/* ── SIGNAL GENERATION ── */}
         <LaneDivider label="Signal Generation" color="bg-bullish/10 text-bullish/70 border-bullish/20" />
 
-        <PipelineStageCard number={6} title="8 Mechanical Signal Systems" subtitle="Book-sourced strategies with dynamic system weights" icon={<Cog className="h-3.5 w-3.5" />} badge="mechanical" accentColor="green" defaultExpanded>
+        <PipelineStageCard number={6} title="3 Mechanical Signal Systems" subtitle="One orthogonal signal per cluster with dynamic weights" icon={<Cog className="h-3.5 w-3.5" />} badge="mechanical" accentColor="green" defaultExpanded>
           <p>
-            Six independent systems — each sourced from proven trading books — analyze the indicators and
+            Three independent systems — one per cluster, each providing orthogonal information — analyze the indicators and
             produce a direction (<strong>bullish</strong>, <strong>bearish</strong>, or <strong>neutral</strong>),
             a strength score (0-100), and whether they match the current market regime.
           </p>
           <p>
-            Systems are grouped into three <strong>de-correlation clusters</strong> — Trend (MACD,
-            BB Breakout, Trend Stack), Mean Reversion (RSI Extremes, BB MR), and Momentum (Elder Impulse).
+            Each cluster has exactly one signal: <strong>Trend</strong> (Trend Stack), <strong>Mean Reversion</strong> (RSI Extremes),
+            and <strong>Momentum</strong> (Elder Impulse).
             Signals that don&apos;t match the regime are excluded entirely (strength=0, direction=neutral).
           </p>
           <p>
             <strong>Auto-kill weak systems:</strong> Each system&apos;s historical win rate is tracked. Systems
-            below 30% win rate (after 10+ trades) are disabled. Systems below 40% get a strength penalty.
-            Systems above 60% get a bonus. Weights adapt automatically over a 30-trade rolling window.
+            below 40% win rate (after 30+ trades) are killed. Systems on probation get a 50% strength penalty.
+            Weights adapt automatically based on performance feedback.
           </p>
           <p className="text-bullish/70 font-semibold">
             100% rule-based. Zero AI. Pure math from indicator values.
@@ -216,9 +216,8 @@ export function SystemPipelineFlow() {
 
         <PipelineStageCard number={7} title="Signal De-correlation" subtitle="Cluster-weighted agreement prevents fake confluence" icon={<Fingerprint className="h-3.5 w-3.5" />} badge="mechanical" accentColor="green" defaultExpanded>
           <p>
-            Raw signal agreement (5/8 bullish) can overcount because many systems derive from the same OHLCV data.
-            The de-correlation engine groups signals into <strong>3 clusters</strong> and picks only the best
-            signal per cluster. Each cluster is weighted by the current regime structure:
+            With one signal per cluster, de-correlation is inherent. The engine picks the best
+            signal per cluster and weights each by the current regime structure:
           </p>
           <div className="grid grid-cols-3 gap-1.5 mt-2">
             {[
@@ -234,8 +233,7 @@ export function SystemPipelineFlow() {
           </div>
           <p className="mt-2">
             The weighted cluster score (0-40 pts) replaces the old raw agreement count in conviction scoring.
-            This prevents 4 correlated trend signals from inflating conviction the same way 4 independent
-            signals would.
+            One signal per cluster means zero correlation inflation by design.
           </p>
         </PipelineStageCard>
 
@@ -288,7 +286,7 @@ export function SystemPipelineFlow() {
             expansion aligned = +10. <strong>Structure gate</strong>: Signals opposing market structure are excluded pre-scoring.
           </p>
           <p>
-            <strong>Tiers (cluster-based):</strong> A+ (&ge;75, 3 clusters) &rarr; A (&ge;60, 2+ clusters) &rarr; B (&ge;40, 2+ clusters) &rarr; C (&ge;25, 1+ cluster) &rarr; D (&lt;25)
+            <strong>Tiers (cluster-based):</strong> A+ (&ge;70, 3 clusters) &rarr; A (&ge;55, 2+ clusters) &rarr; B (&ge;35, 2+ clusters) &rarr; C (&ge;20, 1+ cluster) &rarr; D (&lt;20)
           </p>
         </PipelineStageCard>
 

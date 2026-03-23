@@ -96,7 +96,7 @@ export function SystemComprehensiveGuide() {
         </p>
         <p>
           AI (LLM) serves as a <strong className="text-foreground">narrator and advisor layer</strong> — it NEVER generates or modifies trades.
-          The system processes: raw OHLCV data → 20+ indicators → regime classification → 8 mechanical signals → de-correlation →
+          The system processes: raw OHLCV data → 20+ indicators → regime classification → 3 mechanical signals → de-correlation →
           conviction scoring → hard filters → structural level snapping → position sizing → portfolio risk gate → AI narration → learning feedback.
         </p>
       </GuideSection>
@@ -243,20 +243,18 @@ export function SystemComprehensiveGuide() {
         </p>
       </GuideSection>
 
-      {/* ── 7. 8 MECHANICAL SIGNAL SYSTEMS ── */}
-      <GuideSection number={7} title="8 Mechanical Signal Systems (Stage 6)">
+      {/* ── 7. 3 MECHANICAL SIGNAL SYSTEMS ── */}
+      <GuideSection number={7} title="3 Mechanical Signal Systems (Stage 6)">
         <p>
           All 100% rule-based. Each returns: <code className="text-[9px] bg-surface-2/40 px-1 rounded">
           {"{system, type, direction, strength(0-100), regimeMatch}"}
-          </code>
+          </code>. One signal per cluster — maximizes orthogonality, eliminates correlated redundancy.
         </p>
 
         <h4 className="text-[10px] font-bold text-bullish/70 uppercase tracking-wider mt-2">Trend Cluster</h4>
         <div className="space-y-1.5">
           {[
-            { num: "1", name: "MACD", source: "Weissman", desc: "EMA(12)-EMA(26) histogram + signal crossover. Strength 85 on crossover, 35-65 on histogram." },
-            { num: "2", name: "BB Breakout", source: "Bollinger", desc: "Price breaks above/below Bollinger Bands. Strength 80 on breakout, 55 near extremes." },
-            { num: "3", name: "Trend Stack", source: "Custom", desc: "EMA(9) > EMA(21) > EMA(50) > SMA(200) alignment. Full stack = 90, partial (3 EMAs) = 60." },
+            { num: "1", name: "Trend Stack", source: "Custom", desc: "EMA(9) > EMA(21) > EMA(50) > SMA(200) alignment. Full stack = 90, partial (3 EMAs) = 60. Excluded in non-trending regimes." },
           ].map((s) => (
             <div key={s.num} className="flex gap-2 items-start">
               <span className="h-5 w-5 rounded-full bg-bullish/15 text-bullish text-[9px] font-bold flex items-center justify-center shrink-0 mt-0.5">{s.num}</span>
@@ -272,8 +270,7 @@ export function SystemComprehensiveGuide() {
         <h4 className="text-[10px] font-bold text-amber-600 dark:text-amber-500/70 uppercase tracking-wider mt-3">Mean Reversion Cluster</h4>
         <div className="space-y-1.5">
           {[
-            { num: "4", name: "RSI Extremes", source: "Williams", desc: "RSI(14) < 30 (oversold) + above SMA(200) = buy (80). RSI > 70 + below SMA(200) = sell (80). Without SMA filter = weaker (50)." },
-            { num: "5", name: "BB Mean Reversion", source: "Bollinger", desc: "Price below lower BB + above SMA(200) = buy (80). Above upper BB + below SMA(200) = sell (80)." },
+            { num: "2", name: "RSI Extremes", source: "Williams", desc: "RSI(14) < 30 (oversold) + above SMA(200) = buy (80). RSI > 70 + below SMA(200) = sell (80). Without SMA filter = weaker (50). Excluded in trending regimes." },
           ].map((s) => (
             <div key={s.num} className="flex gap-2 items-start">
               <span className="h-5 w-5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-500/70 text-[9px] font-bold flex items-center justify-center shrink-0 mt-0.5">{s.num}</span>
@@ -289,7 +286,7 @@ export function SystemComprehensiveGuide() {
         <h4 className="text-[10px] font-bold text-neutral-accent/70 uppercase tracking-wider mt-3">Momentum Cluster</h4>
         <div className="space-y-1.5">
           {[
-            { num: "6", name: "Elder Impulse", source: "Elder", desc: "EMA(13) slope + MACD histogram slope → GREEN (bullish, shorts prohibited) / RED (bearish, longs prohibited) / BLUE (mixed). Hard gate: NEVER long on RED, NEVER short on GREEN." },
+            { num: "3", name: "Elder Impulse", source: "Elder", desc: "EMA(13) slope + MACD histogram slope → GREEN (bullish, shorts prohibited) / RED (bearish, longs prohibited) / BLUE (mixed). Hard gate: NEVER long on RED, NEVER short on GREEN. Acts as filter/gate, not driver." },
           ].map((s) => (
             <div key={s.num} className="flex gap-2 items-start">
               <span className="h-5 w-5 rounded-full bg-neutral-accent/15 text-neutral-accent text-[9px] font-bold flex items-center justify-center shrink-0 mt-0.5">{s.num}</span>
@@ -361,7 +358,7 @@ export function SystemComprehensiveGuide() {
 
       {/* ── 10. CONVICTION SCORING ── */}
       <GuideSection number={10} title="Conviction Scoring (Stage 9)">
-        <p>Score 0-100 from <strong className="text-foreground">9 independent factors</strong>:</p>
+        <p>Score 0-100 from <strong className="text-foreground">9 factors</strong>:</p>
         <div className="bg-surface-2/30 rounded-md overflow-hidden">
           <TRow cells={["Factor", "Points", "Source"]} header />
           <TRow cells={["Cluster agreement", "0-40", "De-correlated signal strength x regime weights"]} />
@@ -378,11 +375,11 @@ export function SystemComprehensiveGuide() {
         <h4 className="text-[10px] font-bold text-foreground/70 uppercase tracking-wider mt-3">Tier Mapping (Cluster-Based Thresholds)</h4>
         <div className="bg-surface-2/30 rounded-md overflow-hidden">
           <TRow cells={["Tier", "Score", "Clusters Required", "Meaning"]} header />
-          <TRow cells={["A+", ">= 75", "3 (all families agree)", "Maximum conviction"]} />
-          <TRow cells={["A", ">= 60", "2+", "High conviction"]} />
-          <TRow cells={["B", ">= 40", "2+", "Medium (filtered out)"]} />
-          <TRow cells={["C", ">= 25", "1+", "Low (filtered out)"]} />
-          <TRow cells={["D", "< 25", "--", "Rejected"]} />
+          <TRow cells={["A+", ">= 70", "3 (all clusters agree)", "Maximum conviction"]} />
+          <TRow cells={["A", ">= 55", "2+", "High conviction"]} />
+          <TRow cells={["B", ">= 35", "2+", "Medium (filtered out)"]} />
+          <TRow cells={["C", ">= 20", "1+", "Low (filtered out)"]} />
+          <TRow cells={["D", "< 20", "--", "Rejected"]} />
         </div>
       </GuideSection>
 
@@ -631,7 +628,7 @@ export function SystemComprehensiveGuide() {
                        │
                        ▼
 ┌──────────────────────────────────────────────────────────────┐
-│  STAGE 5-6: STYLE + 8 SIGNALS (regime + structure gated)     │
+│  STAGE 5-6: STYLE + 3 SIGNALS (regime + structure gated)     │
 │  Hard regime exclusion: non-matching → strength=0            │
 │  Structure gate: opposing direction → filtered out           │
 └──────────────────────┬──────────────────────────────────────┘
@@ -690,12 +687,12 @@ export function SystemComprehensiveGuide() {
             {
               num: "1",
               title: "AI is a narrator, not a trader",
-              desc: "All 8 signal systems are mechanical. The LLM receives finished setups and provides narrative context — it cannot create, modify, or override trades.",
+              desc: "All 3 signal systems are mechanical. The LLM receives finished setups and provides narrative context — it cannot create, modify, or override trades.",
             },
             {
               num: "2",
               title: "Independence before confluence",
-              desc: "De-correlation clustering ensures 4 correlated trend signals count as 1 observation. Tier thresholds use independent cluster count (max 3), not raw signal count.",
+              desc: "One signal per cluster ensures maximum orthogonality. Tier thresholds use independent cluster count (max 3), not raw signal count.",
             },
             {
               num: "3",
