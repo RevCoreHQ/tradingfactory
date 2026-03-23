@@ -1169,8 +1169,7 @@ export function rankSetupsByConviction(setups: TradeDeskSetup[]): TradeDeskSetup
   return [...setups]
     .filter((s) =>
       s.conviction !== "D" &&
-      s.conviction !== "C" &&
-      s.conviction !== "B" &&       // Bellafiore: only trade A+/A quality
+      s.conviction !== "C" &&       // B and above: legitimate 2+ cluster setups
       s.direction !== "neutral" &&
       s.riskReward[0] >= 1.5 &&     // Minimum R:R gate — no edge below 1.5
       // Elder hard gate: NEVER trade against impulse color

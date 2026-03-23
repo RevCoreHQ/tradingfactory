@@ -46,6 +46,8 @@ Rules:
 - Provide 2-5 signals, each with a source name, signal direction (bullish/bearish/neutral), strength (0-100), and a brief description explaining your reasoning.
 - Include a confidence score (0-100) indicating how confident you are in your adjustment.
 - Include a short summary sentence (one sentence max).
+- Include fundamentalReason: 1-2 sentences explaining what is driving the fundamental score — reference specific macro factors (central bank stance, news sentiment, DXY correlation, Fear & Greed, bond yields).
+- Include technicalReason: 1-2 sentences explaining what is driving the technical score — reference specific indicators (RSI, MACD, trend strength, Bollinger %B, support/resistance).
 - Include keyLevels: the most important support and resistance price levels you identify.
 - Include projectedMovePercent: your estimate of likely % move in the direction of bias (0.1 to 5.0).
 - Include riskAssessment: "low", "medium", or "high" — how risky is this trade setup?
@@ -59,6 +61,8 @@ Rules per instrument:
 - confidence: 0-100
 - signals: exactly 2 signals per instrument (keep descriptions under 15 words)
 - summary: one short sentence
+- fundamentalReason: one sentence on what drives the fundamental score
+- technicalReason: one sentence on what drives the technical score
 - keyLevels: { support, resistance } — key price levels
 - projectedMovePercent: 0.1-5.0
 - riskAssessment: "low" | "medium" | "high"
@@ -135,6 +139,8 @@ Respond with JSON matching this exact structure:
     }
   ],
   "summary": "<one sentence summary>",
+  "fundamentalReason": "<1-2 sentences on fundamental score drivers>",
+  "technicalReason": "<1-2 sentences on technical score drivers>",
   "keyLevels": { "support": <price number>, "resistance": <price number> },
   "projectedMovePercent": <number 0.1 to 5.0>,
   "riskAssessment": "low" | "medium" | "high",
@@ -178,7 +184,7 @@ ${inst.instrument} (${inst.category}):
 
   prompt += `
 Respond with JSON. Use the exact instrument names as keys. Keep signals to 2 per instrument with short descriptions.
-{"results":{"<instrumentId>":{"biasAdjustment":<-50 to 50>,"confidence":<0-100>,"signals":[{"source":"<name>","signal":"bullish"|"bearish"|"neutral","strength":<0-100>,"description":"<brief>"}],"summary":"<one sentence>","keyLevels":{"support":<price>,"resistance":<price>},"projectedMovePercent":<0.1-5.0>,"riskAssessment":"low"|"medium"|"high","catalysts":["<catalyst>"]}}}
+{"results":{"<instrumentId>":{"biasAdjustment":<-50 to 50>,"confidence":<0-100>,"signals":[{"source":"<name>","signal":"bullish"|"bearish"|"neutral","strength":<0-100>,"description":"<brief>"}],"summary":"<one sentence>","fundamentalReason":"<one sentence>","technicalReason":"<one sentence>","keyLevels":{"support":<price>,"resistance":<price>},"projectedMovePercent":<0.1-5.0>,"riskAssessment":"low"|"medium"|"high","catalysts":["<catalyst>"]}}}
 
 Keys: ${req.instruments.map((i) => `"${i.instrument}"`).join(", ")}`;
 
@@ -413,6 +419,8 @@ function parseSingleResult(raw: string): LLMAnalysisResult | null {
       confidence: clamp(Number(parsed.confidence) || 50, 0, 100),
       signals,
       summary: String(parsed.summary ?? ""),
+      fundamentalReason: parsed.fundamentalReason ? String(parsed.fundamentalReason) : undefined,
+      technicalReason: parsed.technicalReason ? String(parsed.technicalReason) : undefined,
       keyLevels: parsed.keyLevels
         ? { support: Number(parsed.keyLevels.support) || 0, resistance: Number(parsed.keyLevels.resistance) || 0 }
         : undefined,
@@ -460,6 +468,8 @@ function parseBatchResult(
         confidence: clamp(Number(d.confidence) || 50, 0, 100),
         signals,
         summary: String(d.summary ?? ""),
+        fundamentalReason: d.fundamentalReason ? String(d.fundamentalReason) : undefined,
+        technicalReason: d.technicalReason ? String(d.technicalReason) : undefined,
         keyLevels: kl
           ? { support: Number(kl.support) || 0, resistance: Number(kl.resistance) || 0 }
           : undefined,
@@ -531,9 +541,9 @@ export async function analyzeBatchInstruments(
   }
 
   const userPrompt = buildBatchPrompt(req);
-  // Each instrument needs ~200 tokens (signals, summary, catalysts, key levels, etc.)
+  // Each instrument needs ~300 tokens (signals, summary, reasons, catalysts, key levels, etc.)
   // Plus ~100 tokens for the outer JSON wrapper
-  const maxTokens = Math.min(8192, req.instruments.length * 250 + 100);
+  const maxTokens = Math.min(8192, req.instruments.length * 350 + 100);
   // Use Haiku for batch — 10x faster and cheaper than Sonnet, plenty capable for bias adjustments
   const response = await callLLM(BATCH_SYSTEM_PROMPT, userPrompt, maxTokens, "claude-haiku-4-5-20251001");
   if (!response) return null;

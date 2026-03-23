@@ -52,6 +52,8 @@ export interface BiasResult {
   fundamentalScore: FundamentalScore;
   technicalScore: TechnicalScore;
   aiBias: number;                // AI/LLM bias component (-100 to +100)
+  fundamentalReason?: string;    // AI explanation of fundamental score drivers
+  technicalReason?: string;      // AI explanation of technical score drivers
   timeframe: "intraday" | "intraweek";
   timestamp: number;
   signals: BiasSignal[];

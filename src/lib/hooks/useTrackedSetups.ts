@@ -83,8 +83,8 @@ export function useTrackedSetups(
         const isStillActionable =
           existing.status === "pending" || existing.status === "active";
 
-        // If conviction dropped below A on an actionable setup, invalidate — no longer tradeable
-        const isBelowA = fresh.conviction === "B" || fresh.conviction === "C" || fresh.conviction === "D";
+        // If conviction dropped below B on an actionable setup, invalidate — no longer tradeable
+        const isBelowA = fresh.conviction === "C" || fresh.conviction === "D";
         if (isStillActionable && isBelowA) {
           changed = true;
           const invalidated: TrackedSetup = {
@@ -222,7 +222,7 @@ export function useTrackedSetups(
         // Only create NEW tracked setups for A+/A conviction with valid impulse and R:R
         // (same hard filters as rankSetupsByConviction)
         const isQualified =
-          (fresh.conviction === "A+" || fresh.conviction === "A") &&
+          (fresh.conviction === "A+" || fresh.conviction === "A" || fresh.conviction === "B") &&
           fresh.direction !== "neutral" &&
           fresh.riskReward[0] >= 1.5 &&
           !(fresh.direction === "bullish" && fresh.impulse === "red") &&

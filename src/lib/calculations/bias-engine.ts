@@ -543,6 +543,8 @@ export function calculateOverallBias(
   instrument: string,
   aiBias?: number, // -100 to +100, from LLM
   allSignals?: BiasSignal[], // all collected signals for agreement calc
+  fundamentalReason?: string,
+  technicalReason?: string,
 ): BiasResult {
   const isFundamentalDefault = Math.abs(fundamentalScore.total - 50) < 2;
   const isTechnicalDefault = Math.abs(technicalScore.total - 50) < 2;
@@ -619,6 +621,8 @@ export function calculateOverallBias(
     fundamentalScore,
     technicalScore,
     aiBias: aiBiasVal,
+    fundamentalReason,
+    technicalReason,
     timeframe,
     timestamp: Date.now(),
     signals: allSignals || [],
@@ -656,7 +660,7 @@ function llmAdjustmentToAiBias(adjustment: number, confidence: number): number {
 
 export function applyLLMAnalysis(
   baseResult: BiasResult,
-  llmResult: { biasAdjustment: number; confidence: number; signals: BiasSignal[]; summary: string } | null,
+  llmResult: { biasAdjustment: number; confidence: number; signals: BiasSignal[]; summary: string; fundamentalReason?: string; technicalReason?: string } | null,
 ): BiasResult {
   if (!llmResult) return baseResult;
 
@@ -685,6 +689,8 @@ export function applyLLMAnalysis(
     baseResult.instrument,
     aiBiasVal,
     allSignals,
+    llmResult.fundamentalReason,
+    llmResult.technicalReason,
   );
 }
 

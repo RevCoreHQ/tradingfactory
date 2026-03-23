@@ -10,6 +10,8 @@ interface BiasBreakdownProps {
   fundamentalScore: FundamentalScore;
   technicalScore: TechnicalScore;
   signals: BiasSignal[];
+  fundamentalReason?: string;
+  technicalReason?: string;
   compact?: boolean;
 }
 
@@ -36,7 +38,7 @@ function ScoreBar({ label, value, weight }: { label: string; value: number; weig
   );
 }
 
-export function BiasBreakdown({ fundamentalScore, technicalScore, signals, compact }: BiasBreakdownProps) {
+export function BiasBreakdown({ fundamentalScore, technicalScore, signals, fundamentalReason, technicalReason, compact }: BiasBreakdownProps) {
   const [signalsExpanded, setSignalsExpanded] = useState(false);
 
   if (compact) {
@@ -72,6 +74,22 @@ export function BiasBreakdown({ fundamentalScore, technicalScore, signals, compa
               />
             </div>
           </div>
+          {(fundamentalReason || technicalReason) && (
+            <div className="space-y-1">
+              {fundamentalReason && (
+                <p className="text-[11px] text-muted-foreground/70 italic leading-relaxed">
+                  <span className="text-muted-foreground/40 font-semibold not-italic text-[9px] uppercase">Fund: </span>
+                  {fundamentalReason}
+                </p>
+              )}
+              {technicalReason && (
+                <p className="text-[11px] text-muted-foreground/70 italic leading-relaxed">
+                  <span className="text-muted-foreground/40 font-semibold not-italic text-[9px] uppercase">Tech: </span>
+                  {technicalReason}
+                </p>
+              )}
+            </div>
+          )}
           <div className="space-y-1.5">
             <ScoreBar label="Trend" value={technicalScore.trendDirection} weight={0.30} />
             <ScoreBar label="Momentum" value={technicalScore.momentum} weight={0.30} />
@@ -128,6 +146,11 @@ export function BiasBreakdown({ fundamentalScore, technicalScore, signals, compa
             className="text-lg font-bold"
           />
         </div>
+        {fundamentalReason && (
+          <p className="text-[11px] text-muted-foreground/70 italic leading-relaxed mb-3">
+            {fundamentalReason}
+          </p>
+        )}
         <div className="space-y-3">
           <ScoreBar label="News Sentiment" value={fundamentalScore.newsSentiment} weight={0.25} />
           <ScoreBar label="Economic Data" value={fundamentalScore.economicData} weight={0.25} />
@@ -148,6 +171,11 @@ export function BiasBreakdown({ fundamentalScore, technicalScore, signals, compa
             className="text-lg font-bold"
           />
         </div>
+        {technicalReason && (
+          <p className="text-[11px] text-muted-foreground/70 italic leading-relaxed mb-3">
+            {technicalReason}
+          </p>
+        )}
         <div className="space-y-3">
           <ScoreBar label="Trend Direction" value={technicalScore.trendDirection} weight={0.30} />
           <ScoreBar label="Momentum" value={technicalScore.momentum} weight={0.30} />

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchForexRates, fetchForexCandles } from "@/lib/api/finnhub";
+import { fetchForexRates, fetchForexCandleData } from "@/lib/api/finnhub";
 import { fetchCryptoPrice } from "@/lib/api/coingecko";
 import { fetchTwelveDataPrice, fetchTwelveDataCandles } from "@/lib/api/twelve-data";
 import { INSTRUMENTS } from "@/lib/utils/constants";
@@ -123,7 +123,7 @@ export async function GET(req: NextRequest) {
       try {
         const now = Math.floor(Date.now() / 1000);
         const fromTs = now - 24 * 60 * 60;
-        const candles = await fetchForexCandles(inst.finnhubSymbol || "", "60", fromTs, now);
+        const candles = await fetchForexCandleData(inst.finnhubSymbol || "", "60", fromTs, now);
         if (candles.length > 0) {
           const latest = candles[candles.length - 1];
           const first = candles[0];
@@ -146,23 +146,58 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // For indices, we use Finnhub candle data as a proxy
+    // Fetch index prices via Finnhub /forex/candle (FOREXCOM symbols)
     const indexInstruments = INSTRUMENTS.filter(
       (i) => i.category === "index" && requestedIds.includes(i.id)
     );
     for (const inst of indexInstruments) {
-      // Placeholder - indices need candle data for price
-      quotes[inst.id] = {
-        instrument: inst.id,
-        bid: 0,
-        ask: 0,
-        mid: 0,
-        timestamp: Date.now(),
-        change: 0,
-        changePercent: 0,
-        high24h: 0,
-        low24h: 0,
-      };
+      // Try Twelve Data first
+      try {
+        const tdSymbol = inst.twelveDataSymbol || inst.symbol;
+        const price = await fetchTwelveDataPrice(tdSymbol);
+        if (price && price > 0) {
+          quotes[inst.id] = {
+            instrument: inst.id,
+            bid: price - inst.pipSize,
+            ask: price + inst.pipSize,
+            mid: price,
+            timestamp: Date.now(),
+            change: 0,
+            changePercent: 0,
+            high24h: price,
+            low24h: price,
+          };
+          continue;
+        }
+      } catch {
+        // Twelve Data failed for this index
+      }
+
+      // Fallback: Finnhub /forex/candle with 24h of 1h candles
+      try {
+        const now = Math.floor(Date.now() / 1000);
+        const fromTs = now - 24 * 60 * 60;
+        const candles = await fetchForexCandleData(inst.finnhubSymbol || "", "60", fromTs, now);
+        if (candles.length > 0) {
+          const latest = candles[candles.length - 1];
+          const first = candles[0];
+          const change = latest.close - first.open;
+          const changePercent = (change / first.open) * 100;
+          quotes[inst.id] = {
+            instrument: inst.id,
+            bid: latest.close - inst.pipSize,
+            ask: latest.close + inst.pipSize,
+            mid: latest.close,
+            timestamp: latest.timestamp,
+            change,
+            changePercent,
+            high24h: Math.max(...candles.map((c) => c.high)),
+            low24h: Math.min(...candles.map((c) => c.low)),
+          };
+        }
+      } catch {
+        // Both providers failed for this index
+      }
     }
 
     return NextResponse.json(

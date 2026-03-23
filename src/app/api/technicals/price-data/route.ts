@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchForexCandles, fetchForexCandleData } from "@/lib/api/finnhub";
+import { fetchForexCandleData } from "@/lib/api/finnhub";
 import { fetchCryptoOHLC } from "@/lib/api/coingecko";
 import { fetchForexDaily, fetchForexIntraday } from "@/lib/api/alpha-vantage";
 import { fetchTwelveDataCandles, TWELVE_DATA_INTERVALS } from "@/lib/api/twelve-data";
@@ -118,7 +118,7 @@ export async function GET(req: NextRequest) {
       if (candles.length === 0) {
         try {
           const resolution = RESOLUTION_MAP[timeframe] || "D";
-          candles = await fetchForexCandles(instrument.finnhubSymbol || "", resolution, from, now);
+          candles = await fetchForexCandleData(instrument.finnhubSymbol || "", resolution, from, now);
         } catch (err) {
           console.warn(`[PriceData] Finnhub failed for index ${instrument.finnhubSymbol}:`, err);
           candles = [];

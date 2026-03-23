@@ -12,6 +12,8 @@ export interface LLMAnalysisResult {
   confidence: number;
   signals: LLMSignal[];
   summary: string;
+  fundamentalReason?: string;
+  technicalReason?: string;
   keyLevels?: { support: number; resistance: number };
   projectedMovePercent?: number;
   riskAssessment?: "low" | "medium" | "high";

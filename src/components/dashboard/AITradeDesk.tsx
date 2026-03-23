@@ -1236,8 +1236,8 @@ function useSetupAlerts(setups: TradeDeskSetup[]) {
       if (seenRef.current.has(key)) continue;
       seenRef.current.add(key);
 
-      // Only alert on A+ and A
-      if (s.conviction !== "A+" && s.conviction !== "A") continue;
+      // Only alert on A+, A, and B setups
+      if (s.conviction !== "A+" && s.conviction !== "A" && s.conviction !== "B") continue;
       if (s.direction === "neutral") continue;
 
       const { name } = getStrategyLabel(s);
