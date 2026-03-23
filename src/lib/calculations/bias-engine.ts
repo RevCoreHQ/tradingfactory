@@ -134,8 +134,10 @@ function scoreMarketSentiment(
   const category = inst?.category || "forex";
 
   if (category === "commodity") {
-    // Gold: fear = safe-haven demand = bullish
-    score = 100 - fgValue;
+    // Gold: fear = moderate safe-haven tilt, NOT full inversion.
+    // Extreme fear (8) → 65 (mildly bullish), not 92.
+    // Price action (technicals) should dominate when sentiment diverges from price.
+    score = 55 + (50 - fgValue) * 0.3;
   } else if (category === "crypto" || category === "index") {
     // Risk assets: greed = bullish
     score = fgValue;
@@ -266,12 +268,14 @@ export function calculateFundamentalScore(
   let newsW = 0.25, econW = 0.25, bankW = 0.20, sentW = 0.15, interW = 0.15;
 
   if (!hasNews && !hasBanks && !hasBonds) {
-    // Only Fear & Greed (free API) is available — give it dominant weight
-    sentW = 0.80;
+    // Only Fear & Greed available — cap at 50% to prevent sentiment from
+    // overwhelming the fundamental score. Spread the rest to intermarket
+    // and econ data (even if default) so the score stays anchored.
+    sentW = 0.50;
     newsW = 0.05;
-    econW = 0.05;
+    econW = 0.15;
     bankW = 0.05;
-    interW = 0.05;
+    interW = 0.25;
   } else if (!hasNews && !hasBanks) {
     sentW = 0.50;
     econW = 0.15;
