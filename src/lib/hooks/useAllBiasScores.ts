@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
+import useSWR from "swr";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import { useMarketStore } from "@/lib/store/market-store";
 import { useMarketNews, useFearGreed, useBondYields, useCentralBanks } from "./useMarketData";
@@ -8,10 +9,13 @@ import { useLLMBatchAnalysis } from "./useLLMAnalysis";
 import { useADRData } from "./useADRData";
 import { calculateFundamentalScore, calculateOverallBias, applyLLMAnalysis } from "@/lib/calculations/bias-engine";
 import { computeADRRanks, calculateTradeSetup } from "@/lib/calculations/trade-setup";
+import type { TechnicalScore } from "@/lib/types/bias";
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 const DEFAULT_FEAR_GREED = { value: 50, label: "Neutral", timestamp: 0, previousClose: 50, previousWeek: 50, previousMonth: 50 };
 const DEFAULT_DXY = { value: 0, change: 0, changePercent: 0, history: [] as { value: number }[] };
-const DEFAULT_TECHNICAL_SCORE = {
+const DEFAULT_TECHNICAL_SCORE: TechnicalScore = {
   total: 50,
   trendDirection: 50,
   momentum: 50,
@@ -32,6 +36,15 @@ export function useAllBiasScores() {
   const { data: bondData } = useBondYields();
   const { data: bankData } = useCentralBanks();
   const { adrData } = useADRData();
+
+  // Fetch real technical scores for all instruments
+  const { data: batchTechData } = useSWR<{
+    scores: Record<string, { score: TechnicalScore; currentPrice: number }>;
+  }>("/api/technicals/batch-scores", fetcher, {
+    refreshInterval: 5 * 60_000, // 5 min
+    revalidateOnFocus: false,
+  });
+  const techScores = batchTechData?.scores || {};
 
   const ruleBasedResults = useMemo(() => {
     const news = newsData?.items || [];
@@ -55,9 +68,11 @@ export function useAllBiasScores() {
         inst.id
       );
 
+      const technicalScore = techScores[inst.id]?.score ?? DEFAULT_TECHNICAL_SCORE;
+
       intradayResults[inst.id] = calculateOverallBias(
         fundamentalResult.score,
-        DEFAULT_TECHNICAL_SCORE,
+        technicalScore,
         "intraday",
         inst.id,
         undefined,
@@ -66,7 +81,7 @@ export function useAllBiasScores() {
     }
 
     return { intraday: intradayResults, intraweek: {} as Record<string, ReturnType<typeof calculateOverallBias>> };
-  }, [newsData, fearGreedData, bondData, bankData]);
+  }, [newsData, fearGreedData, bondData, bankData, techScores]);
 
   // Fetch LLM batch analysis using intraday results
   const currentTimeframeResults = ruleBasedResults.intraday;
