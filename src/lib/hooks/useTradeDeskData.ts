@@ -10,6 +10,8 @@ import { generateTradeDeskSetup, rankSetupsByConviction, selectTradingStyle, STY
 import { getSessionRelevance } from "@/lib/calculations/session-scoring";
 import { calculateMTFTrendSummary, type CandlesByTimeframe } from "@/lib/calculations/mtf-trend";
 import { evaluatePortfolioGate } from "@/lib/calculations/portfolio-risk-gate";
+import { buildCorrelationMatrix, type CorrelationMatrix } from "@/lib/calculations/rolling-correlation";
+import { checkDataQuality } from "@/lib/calculations/data-quality";
 import { getOptimizedOverrides } from "@/lib/storage/backtest-storage";
 
 const RISK_PERCENT_KEY = "tradingfactory_risk_percent";
@@ -145,6 +147,19 @@ export function useTradeDeskData(
       };
     }
 
+    // Build rolling correlation matrix from daily candles (all instruments with ≥30 1d candles)
+    const dailyCandles: Record<string, import("@/lib/types/market").OHLCV[]> = {};
+    for (const [instId, data] of Object.entries(candleMap)) {
+      const d = data.candles["1d"];
+      if (d && d.length >= 30) {
+        dailyCandles[instId] = d;
+      }
+    }
+    const correlationMatrix: CorrelationMatrix | undefined =
+      Object.keys(dailyCandles).length >= 2
+        ? buildCorrelationMatrix(dailyCandles, 30)
+        : undefined;
+
     const allSetups: TradeDeskSetup[] = [];
 
     for (const inst of INSTRUMENTS) {
@@ -173,6 +188,10 @@ export function useTradeDeskData(
       }
 
       const effectiveStyle: TradingStyle = style === "intraday" && candles1h.length >= 30 ? "intraday" : "swing";
+
+      // Stale data check — attach warnings but don't block (data may still be usable)
+      const tfLabel = effectiveStyle === "intraday" ? "1h" : "4h";
+      const qualityCheck = checkDataQuality(candles, tfLabel, false);
 
       // Load optimized params from Weekend Lab if available
       const labOverrides = getOptimizedOverrides(inst.id, effectiveStyle) ?? undefined;
@@ -204,6 +223,11 @@ export function useTradeDeskData(
         setup.convictionScore = Math.max(0, Math.min(100, setup.convictionScore + mtfTrend.convictionModifier));
       }
 
+      // Attach data quality warnings
+      if (qualityCheck.warnings.length > 0) {
+        setup.dataQualityWarnings = qualityCheck.warnings;
+      }
+
       allSetups.push(setup);
     }
 
@@ -213,7 +237,9 @@ export function useTradeDeskData(
         const gate = evaluatePortfolioGate(
           setup,
           activeSetups,
-          historySetups
+          historySetups,
+          undefined,
+          correlationMatrix
         );
         setup.portfolioGate = gate;
 

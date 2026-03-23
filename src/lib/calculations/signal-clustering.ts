@@ -19,14 +19,12 @@ export interface ClusterScore {
 // ==================== CLUSTER MAPPING ====================
 
 const SIGNAL_CLUSTER_MAP: Record<string, SignalCluster> = {
-  "MA Crossover": "trend",
   "MACD": "trend",
   "BB Breakout": "trend",
   "Trend Stack": "trend",
   "RSI Extremes": "mean_reversion",
   "BB MR": "mean_reversion",
   "Elder Impulse": "momentum",
-  "Elder-Ray": "momentum",
 };
 
 // ==================== REGIME-DEPENDENT WEIGHTS ====================

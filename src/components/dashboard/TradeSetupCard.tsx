@@ -101,21 +101,17 @@ function getStrategyLabel(setup: TradeDeskSetup): { name: string; source: string
   const systems = new Set(agreeing.map((s) => s.system));
 
   const hasImpulse = systems.has("Elder Impulse");
-  const hasElderRay = systems.has("Elder-Ray");
   const hasMACD = systems.has("MACD");
-  const hasMA = systems.has("MA Crossover");
   const hasBBBreak = systems.has("BB Breakout");
   const hasTrendStack = systems.has("Trend Stack");
   const hasRSI = systems.has("RSI Extremes");
   const hasBBMR = systems.has("BB MR");
 
-  if (hasImpulse && hasElderRay && (hasMACD || hasMA)) return { name: "Elder Triple Screen", source: "Elder" };
-  if (hasTrendStack && hasBBBreak && hasMA) return { name: "Structural Breakout", source: "Weissman" };
-  if (hasMA && hasMACD && hasTrendStack) return { name: "Trend Continuation", source: "Weissman" };
+  if (hasImpulse && hasMACD && hasTrendStack) return { name: "Triple Confirmation", source: "Elder/Weissman" };
+  if (hasTrendStack && hasBBBreak && hasMACD) return { name: "Structural Breakout", source: "Weissman" };
   if (hasBBBreak && hasImpulse) return { name: "Momentum Breakout", source: "Weissman" };
+  if (hasMACD && hasTrendStack) return { name: "Trend Continuation", source: "Weissman" };
   if (hasRSI && hasBBMR) return { name: "MR Pullback", source: "Weissman" };
-  if (hasImpulse && hasElderRay) return { name: "Elder Momentum", source: "Elder" };
-  if (hasMA && hasTrendStack) return { name: "Trend Follow", source: "Weissman" };
   if (hasRSI || hasBBMR) return { name: "Mean Reversion", source: "Weissman" };
 
   const counts: Record<string, number> = {};

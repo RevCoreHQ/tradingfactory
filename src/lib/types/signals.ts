@@ -135,6 +135,16 @@ export interface TradeDeskSetup {
     consolidationBreakout: boolean;
     ictScore: number; // 0-100
   };
+  executionCost?: {
+    spreadPips: number;
+    slippagePips: number;
+    totalCostPips: number;
+  };
+  volatilityTarget?: {
+    currentVol: number;
+    multiplier: number;
+  };
+  dataQualityWarnings?: string[];
 }
 
 // ==================== Setup Lifecycle ====================
@@ -197,6 +207,14 @@ export interface TrackedSetup {
   entryRefined?: boolean;
   /** Type of refinement applied (e.g. "engulfing", "fvg_reentry", "pullback_to_ema") */
   refinementType?: string | null;
+  /** Projected entry price (mid of entry zone at setup creation) */
+  projectedEntry?: number;
+  /** Actual entry price when status transitioned to "active" */
+  actualEntry?: number | null;
+  /** Slippage in pips between projected and actual entry */
+  slippagePips?: number | null;
+  /** Spread cost in pips from execution cost model */
+  spreadCostPips?: number | null;
 }
 
 // ==================== Confluence Learning ====================

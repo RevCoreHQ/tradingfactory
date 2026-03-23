@@ -14,14 +14,12 @@ interface MechanicalSystem {
 }
 
 const systems: MechanicalSystem[] = [
-  { name: "MA Crossover", book: "Weissman", type: "Trend", cluster: "trend", logic: "SMA(9) crosses SMA(26)", params: "Fast: 9, Slow: 26" },
   { name: "MACD", book: "Weissman", type: "Trend", cluster: "trend", logic: "MACD line crosses signal line", params: "12, 26, 9" },
   { name: "BB Breakout", book: "Weissman", type: "Trend", cluster: "trend", logic: "Price closes beyond BB band", params: "20, StdDev: 2" },
   { name: "Trend Stack", book: "Multiple", type: "Trend", cluster: "trend", logic: "EMA(9) > EMA(21) > EMA(50) > SMA(200)", params: "EMAs: 9, 21, 50, 200" },
   { name: "RSI Extremes", book: "Weissman", type: "Mean Reversion", cluster: "mean_reversion", logic: "RSI(14) < 30 or > 70 with SMA(200) filter", params: "Period: 14" },
   { name: "BB Mean Rev", book: "Weissman", type: "Mean Reversion", cluster: "mean_reversion", logic: "Price touches BB band + SMA(200) confirmation", params: "20, StdDev: 2" },
   { name: "Elder Impulse", book: "Elder", type: "Momentum", cluster: "momentum", logic: "EMA(13) slope + MACD-H slope", params: "EMA: 13" },
-  { name: "Elder-Ray", book: "Elder", type: "Momentum", cluster: "momentum", logic: "Bull/Bear Power relative to EMA(13)", params: "EMA: 13" },
 ];
 
 const clusterConfig = {

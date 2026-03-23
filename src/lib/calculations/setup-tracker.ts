@@ -38,6 +38,7 @@ export function buildRegimeConfluenceKey(setup: TradeDeskSetup): string {
 
 export function createTrackedSetup(setup: TradeDeskSetup): TrackedSetup {
   const now = Date.now();
+  const projectedEntry = (setup.entry[0] + setup.entry[1]) / 2;
   return {
     id: `${setup.instrumentId}:${now}`,
     setup,
@@ -55,6 +56,10 @@ export function createTrackedSetup(setup: TradeDeskSetup): TrackedSetup {
     missedEntry: false,
     entryRefined: !!(setup.entryOptimization?.signals?.length),
     refinementType: setup.entryOptimization?.bestSignal?.type ?? null,
+    projectedEntry,
+    actualEntry: null,
+    slippagePips: null,
+    spreadCostPips: setup.executionCost?.spreadPips ?? null,
   };
 }
 
@@ -122,12 +127,20 @@ export function updateSetupStatus(
   let result: TrackedSetup;
   switch (status) {
     case "pending": {
-      if (priceInEntryZone(currentPrice, setup.entry)) {
-        result = { ...tracked, status: "active", activatedAt: now, peakPrice: currentPrice };
-        return withTimeline(result, currentPrice);
-      }
-      if (priceCrossed(currentPrice, entryMid, setup.direction)) {
-        result = { ...tracked, status: "active", activatedAt: now, peakPrice: currentPrice };
+      if (priceInEntryZone(currentPrice, setup.entry) || priceCrossed(currentPrice, entryMid, setup.direction)) {
+        // Log actual entry for fill tracking
+        const actualEntry = currentPrice;
+        const projEntry = tracked.projectedEntry ?? entryMid;
+        const pipSize = setup.executionCost?.spreadPips ? 1 : 1; // fallback
+        const slippagePips = Math.abs(actualEntry - projEntry) / (setup.atr / 100 || 1);
+        result = {
+          ...tracked,
+          status: "active",
+          activatedAt: now,
+          peakPrice: currentPrice,
+          actualEntry,
+          slippagePips: Number(slippagePips.toFixed(2)),
+        };
         return withTimeline(result, currentPrice);
       }
       return tracked;

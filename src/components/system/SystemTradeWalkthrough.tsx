@@ -168,16 +168,14 @@ const steps: Step[] = [
     summary: "7/8 bullish — strong agreement",
     content: (
       <div className="space-y-2">
-        <p>Each of the 8 mechanical systems independently produces a direction and strength on the <strong>selected timeframe</strong> candles.</p>
+        <p>Each of the 6 mechanical systems independently produces a direction and strength on the <strong>selected timeframe</strong> candles.</p>
         <div className="space-y-1">
           {[
-            { name: "MA Crossover", dir: "Bullish", str: 72, match: true },
             { name: "MACD", dir: "Bullish", str: 85, match: true },
             { name: "BB Breakout", dir: "Neutral", str: 30, match: false },
             { name: "RSI Extremes", dir: "Bullish", str: 78, match: false },
             { name: "BB MR", dir: "Bullish", str: 82, match: false },
             { name: "Elder Impulse", dir: "Bullish", str: 90, match: true },
-            { name: "Elder-Ray", dir: "Bullish", str: 68, match: true },
             { name: "Trend Stack", dir: "Bullish", str: 75, match: true },
           ].map((s) => (
             <div key={s.name} className="flex items-center gap-2 text-[10px]">

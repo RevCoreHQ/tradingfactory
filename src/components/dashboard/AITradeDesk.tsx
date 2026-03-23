@@ -197,48 +197,36 @@ function getStrategyLabel(setup: TradeDeskSetup): { name: string; source: string
   const agreeing = setup.signals.filter((s) => s.direction === setup.direction);
   const systems = new Set(agreeing.map((s) => s.system));
 
-  // Elder Triple Screen: Impulse + Elder-Ray + (MACD or MA)
   const hasImpulse = systems.has("Elder Impulse");
-  const hasElderRay = systems.has("Elder-Ray");
   const hasMACD = systems.has("MACD");
-  const hasMA = systems.has("MA Crossover");
   const hasBBBreak = systems.has("BB Breakout");
   const hasTrendStack = systems.has("Trend Stack");
   const hasRSI = systems.has("RSI Extremes");
   const hasBBMR = systems.has("BB MR");
 
-  if (hasImpulse && hasElderRay && (hasMACD || hasMA)) {
-    return { name: "Elder Triple Screen", source: "Elder" };
+  // Triple Confirmation: Impulse + MACD + Trend Stack
+  if (hasImpulse && hasMACD && hasTrendStack) {
+    return { name: "Triple Confirmation", source: "Elder/Weissman" };
   }
 
-  // Structural Breakout: Trend Stack + BB Breakout + MA
-  if (hasTrendStack && hasBBBreak && hasMA) {
+  // Structural Breakout: Trend Stack + BB Breakout + MACD
+  if (hasTrendStack && hasBBBreak && hasMACD) {
     return { name: "Structural Breakout", source: "Weissman" };
   }
 
-  // Trend Continuation: MA + MACD + Trend Stack (classic trend-following)
-  if (hasMA && hasMACD && hasTrendStack) {
-    return { name: "Trend Continuation", source: "Weissman" };
-  }
-
-  // Momentum Breakout: BB Breakout + Impulse + MACD
+  // Momentum Breakout: BB Breakout + Impulse
   if (hasBBBreak && hasImpulse) {
     return { name: "Momentum Breakout", source: "Weissman" };
+  }
+
+  // Trend Continuation: MACD + Trend Stack
+  if (hasMACD && hasTrendStack) {
+    return { name: "Trend Continuation", source: "Weissman" };
   }
 
   // Mean Reversion Pullback: RSI Extremes + BB MR
   if (hasRSI && hasBBMR) {
     return { name: "MR Pullback", source: "Weissman" };
-  }
-
-  // Elder Momentum: Impulse + Elder-Ray
-  if (hasImpulse && hasElderRay) {
-    return { name: "Elder Momentum", source: "Elder" };
-  }
-
-  // Trend-following stack: MA + Trend Stack
-  if (hasMA && hasTrendStack) {
-    return { name: "Trend Follow", source: "Weissman" };
   }
 
   // RSI-driven mean reversion
@@ -1054,12 +1042,11 @@ function abbreviatePattern(key: string): string {
   const abbrevSystems = (systems ?? "")
     .split("|")
     .map((s) => {
-      if (s === "MA Crossover") return "MA";
       if (s === "BB Breakout") return "BB";
       if (s === "BB MR") return "MR";
       if (s === "RSI Extremes") return "RSI";
       if (s === "Elder Impulse") return "EI";
-      if (s === "Elder-Ray") return "ER";
+      if (s === "MACD") return "MC";
       if (s === "Trend Stack") return "TS";
       return s.slice(0, 4);
     })

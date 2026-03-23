@@ -148,7 +148,6 @@ export function SystemComprehensiveGuide() {
             "ATR (14)",
             "ADX + DI+/DI-",
             "Stochastic RSI",
-            "Elder-Ray (Bull/Bear)",
             "Elder Impulse (G/R/B)",
             "Pivot Points (D+W)",
             "S/R (fractal-based)",
@@ -255,10 +254,9 @@ export function SystemComprehensiveGuide() {
         <h4 className="text-[10px] font-bold text-bullish/70 uppercase tracking-wider mt-2">Trend Cluster</h4>
         <div className="space-y-1.5">
           {[
-            { num: "1", name: "MA Crossover", source: "Weissman", desc: "SMA(9) vs SMA(26) crossover. Strength 85 on fresh cross, 40-70 on separation." },
-            { num: "2", name: "MACD", source: "Weissman", desc: "EMA(12)-EMA(26) histogram + signal crossover. Strength 85 on crossover, 35-65 on histogram." },
-            { num: "3", name: "BB Breakout", source: "Bollinger", desc: "Price breaks above/below Bollinger Bands. Strength 80 on breakout, 55 near extremes." },
-            { num: "4", name: "Trend Stack", source: "Custom", desc: "EMA(9) > EMA(21) > EMA(50) > SMA(200) alignment. Full stack = 90, partial (3 EMAs) = 60." },
+            { num: "1", name: "MACD", source: "Weissman", desc: "EMA(12)-EMA(26) histogram + signal crossover. Strength 85 on crossover, 35-65 on histogram." },
+            { num: "2", name: "BB Breakout", source: "Bollinger", desc: "Price breaks above/below Bollinger Bands. Strength 80 on breakout, 55 near extremes." },
+            { num: "3", name: "Trend Stack", source: "Custom", desc: "EMA(9) > EMA(21) > EMA(50) > SMA(200) alignment. Full stack = 90, partial (3 EMAs) = 60." },
           ].map((s) => (
             <div key={s.num} className="flex gap-2 items-start">
               <span className="h-5 w-5 rounded-full bg-bullish/15 text-bullish text-[9px] font-bold flex items-center justify-center shrink-0 mt-0.5">{s.num}</span>
@@ -274,8 +272,8 @@ export function SystemComprehensiveGuide() {
         <h4 className="text-[10px] font-bold text-amber-600 dark:text-amber-500/70 uppercase tracking-wider mt-3">Mean Reversion Cluster</h4>
         <div className="space-y-1.5">
           {[
-            { num: "5", name: "RSI Extremes", source: "Williams", desc: "RSI(14) < 30 (oversold) + above SMA(200) = buy (80). RSI > 70 + below SMA(200) = sell (80). Without SMA filter = weaker (50)." },
-            { num: "6", name: "BB Mean Reversion", source: "Bollinger", desc: "Price below lower BB + above SMA(200) = buy (80). Above upper BB + below SMA(200) = sell (80)." },
+            { num: "4", name: "RSI Extremes", source: "Williams", desc: "RSI(14) < 30 (oversold) + above SMA(200) = buy (80). RSI > 70 + below SMA(200) = sell (80). Without SMA filter = weaker (50)." },
+            { num: "5", name: "BB Mean Reversion", source: "Bollinger", desc: "Price below lower BB + above SMA(200) = buy (80). Above upper BB + below SMA(200) = sell (80)." },
           ].map((s) => (
             <div key={s.num} className="flex gap-2 items-start">
               <span className="h-5 w-5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-500/70 text-[9px] font-bold flex items-center justify-center shrink-0 mt-0.5">{s.num}</span>
@@ -291,8 +289,7 @@ export function SystemComprehensiveGuide() {
         <h4 className="text-[10px] font-bold text-neutral-accent/70 uppercase tracking-wider mt-3">Momentum Cluster</h4>
         <div className="space-y-1.5">
           {[
-            { num: "7", name: "Elder Impulse", source: "Elder", desc: "EMA(13) slope + MACD histogram slope → GREEN (bullish, shorts prohibited) / RED (bearish, longs prohibited) / BLUE (mixed). Hard gate: NEVER long on RED, NEVER short on GREEN." },
-            { num: "8", name: "Elder-Ray", source: "Elder", desc: "Bull Power = High - EMA(13), Bear Power = Low - EMA(13). EMA rising + Bear Power negative = buy (70). EMA falling + Bull Power positive = sell (70)." },
+            { num: "6", name: "Elder Impulse", source: "Elder", desc: "EMA(13) slope + MACD histogram slope → GREEN (bullish, shorts prohibited) / RED (bearish, longs prohibited) / BLUE (mixed). Hard gate: NEVER long on RED, NEVER short on GREEN." },
           ].map((s) => (
             <div key={s.num} className="flex gap-2 items-start">
               <span className="h-5 w-5 rounded-full bg-neutral-accent/15 text-neutral-accent text-[9px] font-bold flex items-center justify-center shrink-0 mt-0.5">{s.num}</span>

@@ -24,6 +24,8 @@ import { analyzeEntryOptimization } from "./entry-optimization";
 import { detectFairValueGaps } from "./fair-value-gaps";
 import { detectInstitutionalCandles, detectConsolidationBreakouts } from "./institutional-candles";
 import { detectSupplyDemandZones } from "./supply-demand-zones";
+import { calculateExecutionCost, adjustStopLossForSpread, adjustRiskReward } from "./execution-costs";
+import { calculateVolTargetMultiplier } from "./volatility-targeting";
 import type { FairValueGap, SupplyDemandZone } from "@/lib/types/deep-analysis";
 import type { MarketStructure } from "@/lib/types/signals";
 
@@ -303,77 +305,6 @@ export function detectRegime(summary: TechnicalSummary, candles?: OHLCV[], previ
 
 // ==================== MECHANICAL SYSTEMS ====================
 
-function maSignal(candles: OHLCV[], regime: MarketRegime): MechanicalSignal {
-  // Weissman: SMA(9) crosses SMA(26) — best overall trend system
-  const closes = candles.map((c) => c.close);
-  const sma9 = calcSMA(closes, 9);
-  const sma26 = calcSMA(closes, 26);
-
-  if (sma9.length < 2 || sma26.length < 2) {
-    return {
-      system: "MA Crossover",
-      type: "trend",
-      direction: "neutral",
-      strength: 0,
-      description: "Insufficient data",
-      regimeMatch: false,
-    };
-  }
-
-  const offset = sma9.length - sma26.length;
-  const curr9 = sma9[sma9.length - 1];
-  const prev9 = sma9[sma9.length - 2];
-  const curr26 = sma26[sma26.length - 1];
-  const prev26 = sma26[sma26.length - 2];
-
-  let direction: "bullish" | "bearish" | "neutral" = "neutral";
-  let description = "No crossover";
-  let strength = 30;
-
-  // Fresh crossover
-  if (prev9 <= prev26 && curr9 > curr26) {
-    direction = "bullish";
-    description = "SMA(9) crossed above SMA(26) — bullish crossover";
-    strength = 85;
-  } else if (prev9 >= prev26 && curr9 < curr26) {
-    direction = "bearish";
-    description = "SMA(9) crossed below SMA(26) — bearish crossover";
-    strength = 85;
-  } else if (curr9 > curr26) {
-    direction = "bullish";
-    const spread = ((curr9 - curr26) / curr26) * 100;
-    description = `SMA(9) above SMA(26), spread ${spread.toFixed(3)}%`;
-    strength = Math.min(70, 40 + spread * 200);
-  } else if (curr9 < curr26) {
-    direction = "bearish";
-    const spread = ((curr26 - curr9) / curr9) * 100;
-    description = `SMA(9) below SMA(26), spread ${spread.toFixed(3)}%`;
-    strength = Math.min(70, 40 + spread * 200);
-  }
-
-  const isTrending = regime === "trending_up" || regime === "trending_down";
-  // Hard regime gate: trend signals in non-trending markets are excluded entirely.
-  // Soft penalty (0.6x) allowed signals to leak into conviction — this blocks them.
-  if (!isTrending && direction !== "neutral") {
-    return {
-      system: "MA Crossover",
-      type: "trend",
-      direction: "neutral",
-      strength: 0,
-      description: description + " [regime-excluded: non-trending]",
-      regimeMatch: false,
-    };
-  }
-  return {
-    system: "MA Crossover",
-    type: "trend",
-    direction,
-    strength,
-    description,
-    regimeMatch: isTrending,
-  };
-}
-
 function macdSignal(summary: TechnicalSummary, regime: MarketRegime): MechanicalSignal {
   // Weissman: EMA(12)-EMA(26) crossover with signal line
   const { macd, signal, histogram, crossover } = summary.macd;
@@ -621,43 +552,6 @@ function impulseSignal(summary: TechnicalSummary): MechanicalSignal {
   };
 }
 
-function elderRaySignal(summary: TechnicalSummary): MechanicalSignal {
-  // Elder: Bull Power = High - EMA(13), Bear Power = Low - EMA(13)
-  const { bullPower, bearPower } = summary.elderRay;
-
-  let direction: "bullish" | "bearish" | "neutral" = "neutral";
-  let description = "Elder-Ray neutral";
-  let strength = 30;
-
-  // EMA(13) direction from impulse data
-  const emaRising = summary.impulse.emaSlope === "up";
-  const emaFalling = summary.impulse.emaSlope === "down";
-
-  // Best buy: EMA rising + Bear Power negative but rising toward zero
-  if (emaRising && bearPower < 0) {
-    direction = "bullish";
-    description = `EMA(13) rising + Bear Power negative (${bearPower.toFixed(4)}) — buy signal`;
-    strength = 70;
-  } else if (emaFalling && bullPower > 0) {
-    direction = "bearish";
-    description = `EMA(13) falling + Bull Power positive (${bullPower.toFixed(4)}) — sell signal`;
-    strength = 70;
-  } else if (bearPower < 0 && bullPower > 0) {
-    direction = "neutral";
-    description = `Normal conditions — Bull ${bullPower.toFixed(4)}, Bear ${bearPower.toFixed(4)}`;
-    strength = 30;
-  }
-
-  return {
-    system: "Elder-Ray",
-    type: "momentum",
-    direction,
-    strength,
-    description,
-    regimeMatch: true,
-  };
-}
-
 function trendAlignmentSignal(summary: TechnicalSummary, regime: MarketRegime): MechanicalSignal {
   // Multi-MA alignment check: EMA(9) > EMA(21) > EMA(50) > SMA(200) = bullish stack
   const mas = summary.movingAverages;
@@ -749,60 +643,48 @@ function calculateConviction(
   const matched = signals.filter((s) => s.regimeMatch && s.direction === direction).length;
   const activeSignals = signals.filter((s) => s.direction !== "neutral").length;
 
-  // Conviction scoring — 6 independent factor groups (v3)
-  // Removed: Strong Signal Bonus (captured by agreement), Structure Alignment (handled by gate)
+  // Conviction scoring — 4 merged factors (v4, audit response)
+  // Simplified from 6 factors: merged regime+impulse, merged structure+ICT
   let score = 0;
 
-  // 1. De-correlated agreement factor (0-40 pts)
-  // Uses cluster-based scoring: only the best signal per cluster counts,
-  // weighted by regime. This prevents correlated signals from inflating conviction.
+  // Factor 1: De-correlated Agreement (0-40 pts) — UNCHANGED
+  // Only best signal per cluster counts, regime-weighted.
   let activeClusters = 0;
   if (direction !== "neutral" && activeSignals > 0) {
     const clusterResult = computeDeCorrelatedAgreement(signals, direction, fullRegime);
     score += clusterResult.agreement;
     activeClusters = clusterResult.activeClusters;
-
-    // 2. Cluster conflict penalty (0 to -15 pts)
-    // Trend + MR clusters both active = suspicious (regime likely misclassified)
-    const conflict = detectClusterConflict(clusterResult.clusters);
-    score += conflict.penalty;
   }
 
-  // 3. Regime match factor (0-25 pts)
-  if (matched >= 3) score += 25;
-  else if (matched >= 2) score += 15;
-  else if (matched >= 1) score += 8;
+  // Factor 2: Regime + Impulse (0-30 pts) — MERGED old factors 3+4
+  // Regime match: how many signals match the current regime
+  if (matched >= 3) score += 15;
+  else if (matched >= 2) score += 10;
+  else if (matched >= 1) score += 5;
+  // Impulse alignment
+  if (direction === "bullish" && impulseColor === "green") score += 15;
+  else if (direction === "bearish" && impulseColor === "red") score += 15;
+  else if (impulseColor === "blue") score += 3;
+  else if (direction === "bullish" && impulseColor === "red") score -= 10;
+  else if (direction === "bearish" && impulseColor === "green") score -= 10;
 
-  // 4. Impulse alignment (-15 to +20 pts) — Elder: no longs on RED, no shorts on GREEN
-  if (direction === "bullish" && impulseColor === "green") score += 20;
-  else if (direction === "bearish" && impulseColor === "red") score += 20;
-  else if (impulseColor === "blue") score += 5;
-  else if (direction === "bullish" && impulseColor === "red") score -= 15;
-  else if (direction === "bearish" && impulseColor === "green") score -= 15;
-
-  // 5. Phase-aware scoring + transition bonuses (-15 to +20 pts)
+  // Factor 3: Phase Score (0-20 pts) — SIMPLIFIED old factor 5
+  // Phase alignment + transitions only, removed ADX exhaustion penalty
   if (fullRegime) {
-    // Distribution/reversal against bullish signals = strong penalty
     if ((fullRegime.phase === "distribution" || fullRegime.phase === "reversal") && direction === "bullish") {
-      score -= 15;
-    }
-    // Accumulation against bearish signals = penalty
-    if (fullRegime.phase === "accumulation" && direction === "bearish") {
       score -= 10;
     }
-    // Expansion aligned with signal direction = bonus
+    if (fullRegime.phase === "accumulation" && direction === "bearish") {
+      score -= 8;
+    }
     if (fullRegime.phase === "expansion") {
       const expansionAligned =
         (direction === "bullish" && fullRegime.emaSlope > 0) ||
         (direction === "bearish" && fullRegime.emaSlope < 0);
-      if (expansionAligned) score += 10;
-    }
-    // High volatility exhaustion
-    if (fullRegime.volatility === "high" && fullRegime.adxTrend === "falling") {
-      score -= 10;
+      if (expansionAligned) score += 8;
     }
 
-    // Phase transition bonuses — the edge is in TRANSITIONS between phases
+    // Phase transition bonuses
     if (fullRegime.phaseTransition?.isActionable) {
       const t = fullRegime.phaseTransition;
       const key = `${t.from}->${t.to}`;
@@ -811,17 +693,21 @@ function calculateConviction(
       else if (key === "distribution->reversal" && direction === "bearish") score += 8;
       else if (key === "reversal->accumulation" && direction === "bullish") score += 8;
       else if (key === "distribution->accumulation" && direction === "bullish") score += 5;
-      // Counter-transition penalty
       else if (key === "expansion->distribution" && direction === "bullish") score -= 8;
       else if (key === "accumulation->expansion" && direction === "bearish") score -= 8;
     }
   } else {
-    // Legacy fallback: ADX exhaustion penalty
-    if (adx > 50) score -= 10;
+    if (adx > 50) score -= 5;
   }
 
-  // 6. ICT confluence factor (0-7 pts) — reduced from 0-10
-  // Removed displacement (+2, too noisy). Reduced OB from +3 to +2 (overlaps S/D entry).
+  // Factor 4: Structure + ICT (0-10 pts) — MERGED old factors 2+6
+  // Cluster conflict scaled by 0.67 (was -15 max, now -10 max)
+  if (direction !== "neutral" && activeSignals > 0) {
+    const clusterResult = computeDeCorrelatedAgreement(signals, direction, fullRegime);
+    const conflict = detectClusterConflict(clusterResult.clusters);
+    score += Math.round(conflict.penalty * 0.67); // scaled down
+  }
+  // ICT bonus (0-7 pts)
   if (ictContext) {
     let ictBonus = 0;
     if (ictContext.nearestFVG && ictContext.nearestFVG.freshness === "fresh") {
@@ -872,7 +758,7 @@ function generateReasonsToExit(
     if (summary.rsi.value > 65) {
       reasons.push(`RSI approaching overbought (${summary.rsi.value.toFixed(0)})`);
     }
-    reasons.push("SMA(9) crosses below SMA(26)");
+    reasons.push("Trend Stack breaks down (EMA alignment lost)");
     reasons.push("Price closes below entry zone");
     reasons.push("Time stop: no progress after 5 bars");
   } else if (direction === "bearish") {
@@ -885,7 +771,7 @@ function generateReasonsToExit(
     if (summary.rsi.value < 35) {
       reasons.push(`RSI approaching oversold (${summary.rsi.value.toFixed(0)})`);
     }
-    reasons.push("SMA(9) crosses above SMA(26)");
+    reasons.push("Trend Stack breaks down (EMA alignment lost)");
     reasons.push("Price closes above entry zone");
     reasons.push("Time stop: no progress after 5 bars");
   }
@@ -931,13 +817,11 @@ export function generateTradeDeskSetup(
 
   // 3. Run all mechanical systems (regime-gated: non-matching signals already excluded)
   let signals: MechanicalSignal[] = [
-    maSignal(candles, regime),
     macdSignal(summary, regime),
     bbBreakoutSignal(summary, regime),
     rsiExtremesSignal(summary, candles, regime),
     bbMeanReversionSignal(summary, candles, regime),
     impulseSignal(summary),
-    elderRaySignal(summary),
     trendAlignmentSignal(summary, regime),
   ];
 
@@ -1096,7 +980,25 @@ export function generateTradeDeskSetup(
     snapped.entry = entryOpt.refinedEntry;
   }
 
-  // 6. Position sizing — conviction-scaled risk (Hougaard: size up on best setups)
+  // 5d. Execution cost modeling — widen SL by spread + slippage, recalculate R:R
+  const execCost = calculateExecutionCost(
+    instrument.id,
+    instrument.pipSize,
+    fullRegime?.atrPercentile ?? 50
+  );
+  snapped.stopLoss = adjustStopLossForSpread(snapped.stopLoss, direction, execCost.totalCostPrice);
+  snapped.riskReward = adjustRiskReward(
+    (snapped.entry[0] + snapped.entry[1]) / 2,
+    snapped.stopLoss,
+    snapped.takeProfit,
+    execCost.totalCostPrice,
+    direction
+  );
+
+  // 5e. Volatility targeting — scale risk inversely to vol
+  const volTarget = calculateVolTargetMultiplier(atr, price);
+
+  // 6. Position sizing — conviction-scaled risk × vol multiplier (Hougaard: size up on best setups)
   const tierRiskMultiplier: Record<ConvictionTier, number> = {
     "A+": 1.25, // 2.5% risk at base 2%
     "A":  1.0,  // 2.0% risk (base)
@@ -1104,7 +1006,7 @@ export function generateTradeDeskSetup(
     "C":  0.5,  // 1.0% risk
     "D":  0.25, // 0.5% risk
   };
-  const adjustedRisk = riskPercent * tierRiskMultiplier[tier];
+  const adjustedRisk = riskPercent * tierRiskMultiplier[tier] * volTarget.multiplier;
   const { lots, riskAmount } = calculatePositionSize(
     adjustedRisk,
     price,
@@ -1145,6 +1047,15 @@ export function generateTradeDeskSetup(
     marketStructure: marketStructure ?? undefined,
     entryOptimization: entryOpt.signals.length > 0 ? entryOpt : undefined,
     ictContext: ictScore > 0 ? ictContext : undefined,
+    executionCost: {
+      spreadPips: execCost.spreadPips,
+      slippagePips: execCost.slippagePips,
+      totalCostPips: execCost.totalCostPips,
+    },
+    volatilityTarget: {
+      currentVol: volTarget.currentAnnualVol,
+      multiplier: volTarget.multiplier,
+    },
   };
 
   if (confluencePatterns) {

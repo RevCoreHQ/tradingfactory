@@ -1,4 +1,6 @@
 import type { TradeDeskSetup, TrackedSetup } from "@/lib/types/signals";
+import type { CorrelationMatrix } from "./rolling-correlation";
+import { checkDynamicCorrelation } from "./rolling-correlation";
 
 // ==================== TYPES ====================
 
@@ -63,6 +65,8 @@ const INSTRUMENT_CURRENCIES: Record<string, { base: string; quote: string }> = {
   USD_CAD: { base: "USD", quote: "CAD" },
   USD_CHF: { base: "USD", quote: "CHF" },
   XAU_USD: { base: "XAU", quote: "USD" },
+  XAG_USD: { base: "XAG", quote: "USD" },
+  USOIL:   { base: "USOIL", quote: "USD" },
   BTC_USD: { base: "BTC", quote: "USD" },
   ETH_USD: { base: "ETH", quote: "USD" },
   US100:   { base: "US100", quote: "USD" },
@@ -228,7 +232,8 @@ export function evaluatePortfolioGate(
   newSetup: TradeDeskSetup,
   activeSetups: TrackedSetup[],
   historySetups: TrackedSetup[],
-  config: PortfolioGateConfig = DEFAULT_GATE_CONFIG
+  config: PortfolioGateConfig = DEFAULT_GATE_CONFIG,
+  correlationMatrix?: CorrelationMatrix
 ): PortfolioRiskGate {
   const reasons: string[] = [];
   let canOpenNew = true;
@@ -267,18 +272,37 @@ export function evaluatePortfolioGate(
     }
   }
 
-  // 3. Correlation blocking
-  const correlatedCount = countCorrelatedPositions(
-    newSetup.instrumentId,
-    activeSetups
-  );
-  const correlationBlock = correlatedCount >= config.maxCorrelatedPositions;
-
-  if (correlationBlock) {
-    canOpenNew = false;
-    reasons.push(
-      `${correlatedCount} correlated positions already open (max ${config.maxCorrelatedPositions})`
+  // 3. Correlation blocking — dynamic (Pearson) first, static fallback
+  let correlationBlock = false;
+  if (correlationMatrix && correlationMatrix.results.length > 0) {
+    // Dynamic correlation from rolling daily closes
+    const activeIds = activeSetups.map((t) => t.setup.instrumentId);
+    const dynCheck = checkDynamicCorrelation(
+      newSetup.instrumentId,
+      activeIds,
+      correlationMatrix,
+      config.maxCorrelatedPositions
     );
+    correlationBlock = dynCheck.blocked;
+    for (const w of dynCheck.warnings) {
+      reasons.push(w);
+    }
+    if (correlationBlock) {
+      canOpenNew = false;
+    }
+  } else {
+    // Static fallback when insufficient daily data
+    const correlatedCount = countCorrelatedPositions(
+      newSetup.instrumentId,
+      activeSetups
+    );
+    correlationBlock = correlatedCount >= config.maxCorrelatedPositions;
+    if (correlationBlock) {
+      canOpenNew = false;
+      reasons.push(
+        `${correlatedCount} correlated positions already open (max ${config.maxCorrelatedPositions})`
+      );
+    }
   }
 
   // 3b. Directional exposure check

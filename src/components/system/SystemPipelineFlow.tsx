@@ -89,7 +89,7 @@ export function SystemPipelineFlow() {
         <PipelineStageCard number={2} title="Technical Indicators" subtitle="20+ indicators calculated from price data" icon={<BarChart3 className="h-3.5 w-3.5" />} badge="data" accentColor="blue" defaultExpanded>
           <p>Raw candles are transformed into a full technical summary. Every indicator is computed locally — no external API calls for indicator data.</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mt-2">
-            {["EMA (9,13,21,50,200)", "SMA (9,20,26,50,200)", "RSI(14)", "MACD (12,26,9)", "Bollinger Bands", "ATR(14) + Series", "ADX + DI+/DI-", "Stochastic RSI", "Elder-Ray", "Elder Impulse", "Support/Resistance", "Pivot Points"].map((ind) => (
+            {["EMA (9,13,21,50,200)", "SMA (9,20,26,50,200)", "RSI(14)", "MACD (12,26,9)", "Bollinger Bands", "ATR(14) + Series", "ADX + DI+/DI-", "Elder Impulse", "Support/Resistance", "Pivot Points"].map((ind) => (
               <span key={ind} className="text-[9px] font-mono text-neutral-accent/60 bg-neutral-accent/8 px-2 py-1 rounded text-center">{ind}</span>
             ))}
           </div>
@@ -195,13 +195,13 @@ export function SystemPipelineFlow() {
 
         <PipelineStageCard number={6} title="8 Mechanical Signal Systems" subtitle="Book-sourced strategies with dynamic system weights" icon={<Cog className="h-3.5 w-3.5" />} badge="mechanical" accentColor="green" defaultExpanded>
           <p>
-            Eight independent systems — each sourced from proven trading books — analyze the indicators and
+            Six independent systems — each sourced from proven trading books — analyze the indicators and
             produce a direction (<strong>bullish</strong>, <strong>bearish</strong>, or <strong>neutral</strong>),
             a strength score (0-100), and whether they match the current market regime.
           </p>
           <p>
-            Systems are grouped into three <strong>de-correlation clusters</strong> — Trend (MA Crossover, MACD,
-            BB Breakout, Trend Stack), Mean Reversion (RSI Extremes, BB MR), and Momentum (Elder Impulse, Elder-Ray).
+            Systems are grouped into three <strong>de-correlation clusters</strong> — Trend (MACD,
+            BB Breakout, Trend Stack), Mean Reversion (RSI Extremes, BB MR), and Momentum (Elder Impulse).
             Signals that don&apos;t match the regime are excluded entirely (strength=0, direction=neutral).
           </p>
           <p>
