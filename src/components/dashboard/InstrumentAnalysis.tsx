@@ -6,18 +6,10 @@ import { DailyBriefing } from "./DailyBriefing";
 import { SectionHeader } from "./SectionHeader";
 import { BiasBreakdown } from "@/components/bias/BiasBreakdown";
 import { BiasHistory } from "@/components/bias/BiasHistory";
-import { InstrumentBias } from "@/components/bias/InstrumentBias";
-import { NewsFeed } from "@/components/fundamentals/NewsFeed";
-import { EconomicCalendar } from "@/components/fundamentals/EconomicCalendar";
-import { BondYields } from "@/components/fundamentals/BondYields";
-import { CentralBankTracker } from "@/components/fundamentals/CentralBankTracker";
 import { CurrencyStrength } from "@/components/fundamentals/CurrencyStrength";
-import { IntermarketCorrelation } from "@/components/fundamentals/IntermarketCorrelation";
-import { COTPositioning } from "@/components/fundamentals/COTPositioning";
 import { TechnicalOverview } from "@/components/technicals/TechnicalOverview";
 import { DeepAnalysis } from "@/components/technicals/DeepAnalysis";
 import { TradeSetupCard } from "./TradeSetupCard";
-import { GlassCard } from "@/components/common/GlassCard";
 import { useMarketStore } from "@/lib/store/market-store";
 import { useBiasScore } from "@/lib/hooks/useBiasScore";
 import { useTechnicalData } from "@/lib/hooks/useTechnicalData";
@@ -31,8 +23,7 @@ import { generateTradeDeskSetup, selectTradingStyle } from "@/lib/calculations/m
 import { getSessionRelevance } from "@/lib/calculations/session-scoring";
 import { useEffect, useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import type { TradeDeskSetup, ConvictionTier, ImpulseColor, MarketRegime } from "@/lib/types/signals";
-import { Target, BarChart3, AlertTriangle, Globe, History, TrendingUp, TrendingDown, Activity, Minus } from "lucide-react";
+import { BarChart3, History, TrendingUp, TrendingDown, Activity, AlertTriangle, Minus } from "lucide-react";
 
 export function InstrumentAnalysis() {
   useRealtimePrices();
@@ -99,16 +90,77 @@ export function InstrumentAnalysis() {
         <main className="flex-1 min-w-0 px-6 py-4 space-y-6">
           <DailyBriefing />
 
-          {/* ── Section 1: Trade Setup ── */}
+          {/* ── Section 1: Fundamental Context ── */}
           <section>
             <SectionHeader
-              title="Trade Setup"
-              subtitle={`Mechanical signals, conviction, and trade levels — ${instrument.symbol}`}
-              icon={<Target className="h-3.5 w-3.5" />}
+              title="Fundamental Context"
+              subtitle={`Bias breakdown and key signals — ${instrument.symbol}`}
+              icon={<BarChart3 className="h-3.5 w-3.5" />}
               accentColor="green"
             />
+            <BiasBreakdown
+              fundamentalScore={bias.fundamentalScore}
+              technicalScore={bias.technicalScore}
+              signals={bias.signals}
+              fundamentalReason={bias.fundamentalReason}
+              technicalReason={bias.technicalReason}
+              compact
+            />
+          </section>
+
+          {/* ── Section 2: Analysis & Chart ── */}
+          <section>
+            <SectionHeader
+              title="Analysis & Chart"
+              subtitle="Price action and AI analysis"
+              icon={<BarChart3 className="h-3.5 w-3.5" />}
+              accentColor="blue"
+            />
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-              {/* Conviction Display */}
+              {/* Sidebar: Session + MTF + Trade Log */}
+              <div className="lg:col-span-3 space-y-4 min-h-[300px]">
+                <SessionCard instrumentId={instrument.id} />
+                <MTFConfluence />
+                <QuickTradeLog instrumentId={instrument.id} biasResult={biasResult} currentPrice={currentPrice} />
+              </div>
+
+              {/* Chart + Deep Analysis / Technical */}
+              <div className="lg:col-span-9 space-y-4">
+                <div className="flex gap-1 mb-1">
+                  <button
+                    onClick={() => setActiveTab("deep")}
+                    className={cn(
+                      "px-3 py-1 rounded-lg text-[11px] font-semibold transition-colors",
+                      activeTab === "deep"
+                        ? "bg-neutral-accent/15 text-neutral-accent"
+                        : "text-muted-foreground hover:text-foreground hover:bg-[var(--surface-2)]"
+                    )}
+                  >
+                    Deep Analysis
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("technical")}
+                    className={cn(
+                      "px-3 py-1 rounded-lg text-[11px] font-semibold transition-colors",
+                      activeTab === "technical"
+                        ? "bg-neutral-accent/15 text-neutral-accent"
+                        : "text-muted-foreground hover:text-foreground hover:bg-[var(--surface-2)]"
+                    )}
+                  >
+                    Technical
+                  </button>
+                </div>
+
+                {activeTab === "deep" ? (
+                  <DeepAnalysis />
+                ) : (
+                  <TechnicalOverview />
+                )}
+              </div>
+            </div>
+
+            {/* Conviction + Trade Setup — below the chart */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mt-4">
               <div className="lg:col-span-3">
                 <div className="panel rounded-lg p-4">
                   <h3 className="text-xs font-semibold text-muted-foreground mb-4 uppercase tracking-widest text-center">
@@ -184,8 +236,7 @@ export function InstrumentAnalysis() {
                 </div>
               </div>
 
-              {/* Trade Setup */}
-              <div className="lg:col-span-5">
+              <div className="lg:col-span-9">
                 <div className="rounded-xl border-l-[3px]" style={{
                   borderLeftColor: mechanicalSetup
                     ? mechanicalSetup.direction === "bullish" ? "var(--bullish)" : "var(--bearish)"
@@ -194,127 +245,10 @@ export function InstrumentAnalysis() {
                   <TradeSetupCard setup={mechanicalSetup} decimals={instrument.decimalPlaces} />
                 </div>
               </div>
-
-              {/* Fundamental Context */}
-              <div className="lg:col-span-4">
-                <div className="text-[9px] font-semibold text-muted-foreground/40 uppercase tracking-wider mb-1.5 px-1">
-                  Fundamental Context
-                </div>
-                <BiasBreakdown
-                  fundamentalScore={bias.fundamentalScore}
-                  technicalScore={bias.technicalScore}
-                  signals={bias.signals}
-                  fundamentalReason={bias.fundamentalReason}
-                  technicalReason={bias.technicalReason}
-                  compact
-                />
-              </div>
             </div>
           </section>
 
-          {/* ── Section 2: Analysis & Chart ── */}
-          <section>
-            <SectionHeader
-              title="Analysis & Chart"
-              subtitle="Price action, zones, and AI trade ideas"
-              icon={<BarChart3 className="h-3.5 w-3.5" />}
-              accentColor="blue"
-            />
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-              {/* Sidebar: Session + MTF + Trade Log */}
-              <div className="lg:col-span-3 space-y-4 min-h-[300px]">
-                <SessionCard instrumentId={instrument.id} />
-                <MTFConfluence />
-                <QuickTradeLog instrumentId={instrument.id} biasResult={biasResult} currentPrice={currentPrice} />
-              </div>
-
-              {/* Chart + Deep Analysis / Technical */}
-              <div className="lg:col-span-9 space-y-4">
-                <div className="flex gap-1 mb-1">
-                  <button
-                    onClick={() => setActiveTab("deep")}
-                    className={cn(
-                      "px-3 py-1 rounded-lg text-[11px] font-semibold transition-colors",
-                      activeTab === "deep"
-                        ? "bg-neutral-accent/15 text-neutral-accent"
-                        : "text-muted-foreground hover:text-foreground hover:bg-[var(--surface-2)]"
-                    )}
-                  >
-                    Deep Analysis
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("technical")}
-                    className={cn(
-                      "px-3 py-1 rounded-lg text-[11px] font-semibold transition-colors",
-                      activeTab === "technical"
-                        ? "bg-neutral-accent/15 text-neutral-accent"
-                        : "text-muted-foreground hover:text-foreground hover:bg-[var(--surface-2)]"
-                    )}
-                  >
-                    Technical
-                  </button>
-                </div>
-
-                {activeTab === "deep" ? (
-                  <DeepAnalysis />
-                ) : (
-                  <>
-                    <TechnicalOverview />
-                    <IntermarketCorrelation />
-                  </>
-                )}
-              </div>
-            </div>
-          </section>
-
-          {/* ── Section 3: News & Context ── */}
-          <section>
-            <SectionHeader
-              title="News & Context"
-              subtitle="Market news and instrument comparison"
-              icon={<AlertTriangle className="h-3.5 w-3.5" />}
-              accentColor="red"
-            />
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-              <div className="lg:col-span-8">
-                <NewsFeed />
-              </div>
-              <div className="lg:col-span-4">
-                <InstrumentBias />
-              </div>
-            </div>
-          </section>
-
-          {/* ── Section 4: Macro & Positioning ── */}
-          <section>
-            <SectionHeader
-              title="Macro & Positioning"
-              subtitle="Institutional positioning, yields, calendar, and cross-market data"
-              icon={<Globe className="h-3.5 w-3.5" />}
-              accentColor="amber"
-            />
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-              <div className="lg:col-span-4">
-                <COTPositioning />
-              </div>
-              <div className="lg:col-span-4">
-                <EconomicCalendar />
-              </div>
-              <div className="lg:col-span-4">
-                <BondYields />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mt-4">
-              <div className="lg:col-span-6">
-                <CentralBankTracker />
-              </div>
-              <div className="lg:col-span-6">
-                <IntermarketCorrelation />
-              </div>
-            </div>
-          </section>
-
-          {/* ── Section 5: Track Record ── */}
+          {/* ── Section 3: Track Record ── */}
           <section>
             <SectionHeader
               title="Track Record"

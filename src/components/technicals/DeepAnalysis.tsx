@@ -428,36 +428,6 @@ export function DeepAnalysis() {
       {/* TradingView chart always renders — it loads its own data */}
       <TradingViewChart heightClass="h-[400px] lg:h-[500px]" />
 
-      {isLoading ? (
-        <div className="grid grid-cols-2 gap-4">
-          <div className="h-32 shimmer rounded-lg" />
-          <div className="h-32 shimmer rounded-lg" />
-        </div>
-      ) : (
-        <>
-          {deepAnalysis && (
-            <>
-              <ZoneSummary
-                supplyZones={deepAnalysis.supplyZones}
-                demandZones={deepAnalysis.demandZones}
-                decimals={instrument.decimalPlaces}
-              />
-              {deepAnalysis.fairValueGaps && deepAnalysis.fairValueGaps.length > 0 && (
-                <FVGSummary
-                  fairValueGaps={deepAnalysis.fairValueGaps}
-                  decimals={instrument.decimalPlaces}
-                />
-              )}
-              <ConfluenceLevelsList
-                levels={deepAnalysis.confluenceLevels}
-                currentPrice={deepAnalysis.currentPrice}
-                decimals={instrument.decimalPlaces}
-              />
-            </>
-          )}
-        </>
-      )}
-
       {/* AI Zone Analysis — analysis only, no trade ideas */}
       <AIZoneAnalysis deepAnalysis={deepAnalysis} indicators={indicators} biasResult={biasResult} />
     </div>
