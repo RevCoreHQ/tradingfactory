@@ -7,6 +7,7 @@ import { useMarketStore } from "@/lib/store/market-store";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import type { BiasResult } from "@/lib/types/bias";
 import type { MarketSummaryResult, SectorOutlook } from "@/lib/types/llm";
+import { readCache } from "@/lib/supabase-cache";
 
 /** Signal boot readiness once when market summary is available */
 function useMarketSummaryBootSignal(summary: MarketSummaryResult | null | undefined) {
@@ -158,6 +159,22 @@ export function useMarketSummary() {
     cachedRef.current = getCachedSummary() ?? undefined as unknown as null;
   }
 
+  // Supabase cache (async — fills in after ~200ms if localStorage is empty)
+  const [supabaseSummary, setSupabaseSummary] = useState<MarketSummaryResult | null>(null);
+  const supabaseFetched = useRef(false);
+  useEffect(() => {
+    if (supabaseFetched.current) return;
+    supabaseFetched.current = true;
+    readCache<MarketSummaryResult>("market_summary").then((cached) => {
+      if (cached) {
+        setSupabaseSummary(cached);
+        // Backfill localStorage if empty
+        if (!getCachedSummary()) setCachedSummary(cached);
+        if (!cachedRef.current) cachedRef.current = cached;
+      }
+    });
+  }, []);
+
   // Fire when critical data (fear-greed) has arrived along with any other source,
   // OR after 6s timeout (whichever first). Previously fired on ANY data arrival,
   // which caused the LLM to receive the default fearGreed=50 when bonds loaded first.
@@ -214,7 +231,7 @@ export function useMarketSummary() {
 
   const [manualRefresh, setManualRefresh] = useState(0);
 
-  const hasCached = manualRefresh === 0 && !!getCachedSummary();
+  const hasCached = manualRefresh === 0 && (!!getCachedSummary() || !!supabaseSummary);
   const shouldFetch = (hasAnyData || timerReady) && !hasCached;
 
   const { data, error, isLoading } = useSWR<{ summary: MarketSummaryResult | null }>(
@@ -246,9 +263,9 @@ export function useMarketSummary() {
     }
   }, [freshSummary]);
 
-  // Return cached summary immediately, or fresh data when available
+  // Return fresh → localStorage → Supabase
   const cached = getCachedSummary();
-  const baseSummary = freshSummary || cached || cachedRef.current;
+  const baseSummary = freshSummary || cached || supabaseSummary || cachedRef.current;
 
   // ── Single Brain Corrections ──
   // Override LLM outputs with mechanical bias truth so every section of

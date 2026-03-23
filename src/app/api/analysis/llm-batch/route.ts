@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { analyzeBatchInstruments } from "@/lib/api/llm-analysis";
+import { upsertCache } from "@/lib/supabase";
 import type { LLMBatchRequest } from "@/lib/types/llm";
 
 // Allow up to 60 seconds for batch LLM calls on Vercel
@@ -20,6 +21,7 @@ export async function POST(req: NextRequest) {
     }
 
     console.log(`[LLM Batch] Success via ${result.provider}, ${Object.keys(result.results).length} instruments`);
+    upsertCache("llm_batch", result, null, 14_400_000); // 4 hours
     return NextResponse.json(
       { batch: result, timestamp: Date.now() },
       { headers: { "Cache-Control": "s-maxage=600, stale-while-revalidate=120" } }

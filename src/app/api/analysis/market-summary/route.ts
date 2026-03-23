@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateMarketSummary } from "@/lib/api/llm-analysis";
+import { upsertCache } from "@/lib/supabase";
 import type { MarketSummaryRequest } from "@/lib/types/llm";
 
 // Allow up to 60 seconds for market summary LLM calls on Vercel
@@ -20,6 +21,7 @@ export async function POST(req: NextRequest) {
     }
 
     console.log(`[Market Summary] Success via ${result.provider}`);
+    upsertCache("market_summary", result, null, 3_600_000); // 1 hour
     return NextResponse.json(
       { summary: result, timestamp: Date.now() },
       { headers: { "Cache-Control": "s-maxage=600, stale-while-revalidate=120" } }

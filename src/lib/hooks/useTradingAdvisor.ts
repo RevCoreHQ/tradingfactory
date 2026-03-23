@@ -5,6 +5,7 @@ import useSWR from "swr";
 import type { TradeDeskSetup } from "@/lib/types/signals";
 import type { TradingAdvisorRequest, TradingAdvisorResult } from "@/lib/types/llm";
 import { INSTRUMENTS } from "@/lib/utils/constants";
+import { readCache } from "@/lib/supabase-cache";
 
 const CACHE_KEY = "tradingfactory_advisor_cache";
 const CACHE_TTL = 2 * 60 * 1000; // 2 min client-side — keep desk manager near-real-time
@@ -179,6 +180,14 @@ export function useTradingAdvisor(params: UseTradingAdvisorParams | null) {
       // Check client cache first — still validate against current setups
       const cached = getClientCache(hash!);
       if (cached) return validateAdvisorResult(cached, params.setups, params.trackedStatuses ?? {});
+
+      // Supabase fallback — slower than localStorage but survives across devices/sessions
+      const supabaseCached = await readCache<TradingAdvisorResult>("trade_advisor");
+      if (supabaseCached) {
+        const validated = validateAdvisorResult(supabaseCached, params.setups, params.trackedStatuses ?? {});
+        setClientCache(validated, hash!);
+        return validated;
+      }
 
       // Pre-filter: separate actionable vs managed setups
       const trackedStatuses = params.trackedStatuses ?? {};

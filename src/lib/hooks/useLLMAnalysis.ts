@@ -6,8 +6,9 @@ import { useMarketStore } from "@/lib/store/market-store";
 import { useMarketNews, useFearGreed, useBondYields, useCentralBanks } from "./useMarketData";
 import { useTechnicalData } from "./useTechnicalData";
 import { REFRESH_INTERVALS, INSTRUMENTS } from "@/lib/utils/constants";
-import type { LLMAnalysisResult, LLMAnalysisRequest } from "@/lib/types/llm";
+import type { LLMAnalysisResult, LLMAnalysisRequest, LLMBatchResult } from "@/lib/types/llm";
 import type { BiasResult } from "@/lib/types/bias";
+import { readCache } from "@/lib/supabase-cache";
 
 // ---------------------------------------------------------------------------
 // localStorage cache for batch results (4 hours)
@@ -177,8 +178,23 @@ export function useLLMBatchAnalysis(allBiasResults: Record<string, BiasResult>) 
   }, []);
   const ready = hasAnyData || timerReady;
 
-  // Skip API call if we have a valid cached batch
-  const hasCached = typeof window !== "undefined" ? !!getCachedBatch() : false;
+  // Supabase cache (async — fills in after ~200ms if localStorage is empty)
+  const [supabaseBatch, setSupabaseBatch] = useState<Record<string, LLMAnalysisResult> | null>(null);
+  const supabaseFetched = useRef(false);
+  useEffect(() => {
+    if (supabaseFetched.current) return;
+    supabaseFetched.current = true;
+    readCache<LLMBatchResult>("llm_batch").then((cached) => {
+      if (cached?.results) {
+        setSupabaseBatch(cached.results);
+        // Backfill localStorage if empty
+        if (!getCachedBatch()) setCachedBatch(cached.results);
+      }
+    });
+  }, []);
+
+  // Skip API call if we have a valid cached batch (localStorage or Supabase)
+  const hasCached = (typeof window !== "undefined" ? !!getCachedBatch() : false) || !!supabaseBatch;
 
   // Always build request body — uses defaults for any missing data
   const requestBody = {
@@ -230,9 +246,9 @@ export function useLLMBatchAnalysis(allBiasResults: Record<string, BiasResult>) 
     }
   }, [freshResults]);
 
-  // Return cached or fresh
+  // Return fresh → localStorage → Supabase
   const cached = typeof window !== "undefined" ? getCachedBatch() : null;
-  const batchResults = freshResults || cached;
+  const batchResults = freshResults || cached || supabaseBatch;
 
   // Surface API-level error (returned as { batch: null, error: "..." })
   const apiError = data && !data.batch

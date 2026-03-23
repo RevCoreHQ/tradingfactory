@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateTradingAdvisor } from "@/lib/api/llm-analysis";
+import { upsertCache } from "@/lib/supabase";
 import type { TradingAdvisorRequest } from "@/lib/types/llm";
 
 // Allow up to 60 seconds for advisor LLM calls on Vercel
@@ -20,6 +21,7 @@ export async function POST(req: NextRequest) {
     }
 
     console.log(`[Trade Advisor] Success via ${result.provider}`);
+    upsertCache("trade_advisor", result, null, 120_000); // 2 minutes
     return NextResponse.json(
       { advisor: result, timestamp: Date.now() },
       { headers: { "Cache-Control": "s-maxage=600, stale-while-revalidate=120" } }
