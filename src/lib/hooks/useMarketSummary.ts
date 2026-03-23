@@ -107,7 +107,7 @@ function enforceFocusToday(
 }
 
 const CACHE_KEY = "tf_market_summary";
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 function getCachedSummary(): MarketSummaryResult | null {
   try {
@@ -141,7 +141,7 @@ function useGeneralNews() {
   return useSWR<{ items: { headline: string; sentimentLabel: string; sentimentScore: number }[] }>(
     "/api/fundamentals/news",
     fetcher,
-    { revalidateOnFocus: false }
+    { refreshInterval: 5 * 60_000, revalidateOnFocus: false }
   );
 }
 
@@ -262,8 +262,7 @@ export function useMarketSummary() {
 
   const [manualRefresh, setManualRefresh] = useState(0);
 
-  const hasCached = manualRefresh === 0 && (!!getCachedSummary() || !!supabaseSummary);
-  const shouldFetch = (hasAnyData || timerReady) && !hasCached;
+  const shouldFetch = hasAnyData || timerReady;
 
   const { data, error, isLoading } = useSWR<{ summary: MarketSummaryResult | null }>(
     shouldFetch ? `market-summary-${manualRefresh}` : null,

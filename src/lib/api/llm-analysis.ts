@@ -638,11 +638,12 @@ Respond with JSON:
 }
 
 const summaryCache = new Map<string, CacheEntry<MarketSummaryResult>>();
-const SUMMARY_TTL_MS = 10 * 60 * 1000;
+const SUMMARY_TTL_MS = 5 * 60 * 1000;
 
 function getSummaryCacheKey(req: MarketSummaryRequest): string {
   const cotFingerprint = (req.cotPositioning ?? []).slice(0, 3).map((c) => c.netSpeculative).join(",");
-  return `${Math.round(req.dxy.value)}:${req.fearGreed.value}:cot:${cotFingerprint}`;
+  const newsFingerprint = (req.newsHeadlines ?? []).slice(0, 5).map((n) => n.headline.slice(0, 20)).join("|");
+  return `${Math.round(req.dxy.value)}:${req.fearGreed.value}:cot:${cotFingerprint}:news:${newsFingerprint}`;
 }
 
 function parseMarketSummary(
