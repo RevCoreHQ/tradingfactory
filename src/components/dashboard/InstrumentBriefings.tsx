@@ -5,15 +5,34 @@ import { useRouter } from "next/navigation";
 import { useMarketStore } from "@/lib/store/market-store";
 import { useRates } from "@/lib/hooks/useMarketData";
 import { INSTRUMENTS } from "@/lib/utils/constants";
+import { getBiasColor } from "@/lib/utils/formatters";
 import { cn } from "@/lib/utils";
-import type { BiasResult } from "@/lib/types/bias";
+import { SessionBadge } from "@/components/common/SessionIndicator";
+import type { BiasResult, BiasDirection } from "@/lib/types/bias";
 import type { LLMAnalysisResult } from "@/lib/types/llm";
 import type { Instrument, PriceQuote } from "@/lib/types/market";
 import {
+  DollarSign,
+  Bitcoin,
+  BarChart3,
+  Gem,
+  Activity,
+  Brain,
+  ArrowRight,
+  Star,
   Pin,
+  TrendingUp,
+  TrendingDown,
   Clock,
   Sparkles,
 } from "lucide-react";
+
+const categoryIcons: Record<string, typeof DollarSign> = {
+  forex: DollarSign,
+  crypto: Bitcoin,
+  index: BarChart3,
+  commodity: Gem,
+};
 
 interface InstrumentCardData {
   instrument: Instrument;
@@ -35,17 +54,21 @@ function timeAgo(timestamp: number): string {
 function InstrumentCard({ data }: { data: InstrumentCardData }) {
   const router = useRouter();
   const setSelectedInstrument = useMarketStore((s) => s.setSelectedInstrument);
+  const favoriteIds = useMarketStore((s) => s.favoriteIds);
+  const toggleFavorite = useMarketStore((s) => s.toggleFavorite);
   const pinnedIds = useMarketStore((s) => s.pinnedIds);
   const togglePin = useMarketStore((s) => s.togglePin);
   const [expanded, setExpanded] = useState(false);
 
   const { instrument, biasResult, llmResult, quote } = data;
+  const CategoryIcon = categoryIcons[instrument.category] || DollarSign;
   const changePercent = quote?.changePercent || 0;
   const isBullish = biasResult.overallBias > 0;
   const isBearish = biasResult.overallBias < 0;
+  const color = getBiasColor(biasResult.direction);
+  const isFavorite = favoriteIds.includes(instrument.id);
   const isPinned = pinnedIds.includes(instrument.id);
   const confidence = biasResult.confidence;
-  const direction = isBullish ? "Bullish" : isBearish ? "Bearish" : "Neutral";
 
   // AI summary with contradiction check
   const llmSummary = llmResult?.summary || null;
@@ -59,6 +82,13 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
     biasResult.technicalReason ||
     null;
 
+  // Scores
+  const fundScore = biasResult.fundamentalScore.total;
+  const techScore = biasResult.technicalScore.total;
+  const momentum = biasResult.technicalScore.momentum;
+  const trend = biasResult.technicalScore.trendDirection;
+  const dec = instrument.decimalPlaces;
+
   const handleDeepDive = () => {
     setSelectedInstrument(instrument);
     router.push("/instrument");
@@ -66,11 +96,24 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
 
   return (
     <div className="bg-card rounded-xl border border-border p-5 flex flex-col min-h-[320px]">
-      {/* Header: Symbol | Change + Direction */}
-      <div className="flex items-center justify-between mb-4">
+      {/* Header: Symbol + Category | % Change + Direction */}
+      <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
-          <span className="text-base font-bold text-foreground">{instrument.symbol}</span>
-          {isPinned && <Pin className="h-3 w-3 text-neutral-accent fill-neutral-accent rotate-45" />}
+          <div
+            className={cn(
+              "h-6 w-6 rounded-md flex items-center justify-center",
+              instrument.category === "forex" && "bg-neutral-accent/10",
+              instrument.category === "crypto" && "bg-amber/10",
+              instrument.category === "index" && "bg-bullish/10",
+              instrument.category === "commodity" && "bg-bearish/10"
+            )}
+          >
+            <CategoryIcon className="h-3.5 w-3.5 text-muted-foreground" />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-base font-bold text-foreground">{instrument.symbol}</span>
+            {isPinned && <Pin className="h-3 w-3 text-neutral-accent fill-neutral-accent rotate-45" />}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <span
@@ -89,8 +132,17 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
               !isBullish && !isBearish && "bg-neutral-accent/15 text-neutral-accent"
             )}
           >
-            {direction}
+            {isBullish ? "Bullish" : isBearish ? "Bearish" : "Neutral"}
           </span>
+        </div>
+      </div>
+
+      {/* Sub-header: display name + timestamp */}
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-xs text-muted-foreground/40">{instrument.displayName}</span>
+        <div className="flex items-center gap-1 text-xs text-muted-foreground/40">
+          <Clock className="h-3 w-3" />
+          <span>{timeAgo(biasResult.timestamp)}</span>
         </div>
       </div>
 
@@ -111,10 +163,104 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
         </div>
       </div>
 
-      {/* Last Update */}
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground/50 mb-4">
-        <Clock className="h-3 w-3" />
-        <span>Last update: {timeAgo(biasResult.timestamp)}</span>
+      {/* Overall Bias Score */}
+      <div className="flex items-center gap-3 mb-3">
+        <span className="text-3xl font-mono font-bold tabular" style={{ color }}>
+          {isBullish ? "+" : ""}{Math.round(biasResult.overallBias)}
+        </span>
+        <div className="flex flex-col gap-0.5">
+          {biasResult.signalAgreement !== undefined && (
+            <span className="text-xs text-muted-foreground/50">
+              {Math.round(biasResult.signalAgreement * 100)}% signal agreement
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Fundamental vs Technical + Momentum/Trend */}
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <div className="bg-[var(--surface-0)] rounded-lg px-3 py-2">
+          <div className="flex items-center gap-1.5 mb-1">
+            <BarChart3 className="h-3 w-3 text-muted-foreground/50" />
+            <span className="text-xs text-muted-foreground/60">Fundamental</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className={cn("text-lg font-mono font-bold", fundScore > 50 ? "text-bullish" : "text-bearish")}>
+              {Math.round(fundScore)}
+            </span>
+            <div className="w-16 h-1.5 rounded-full bg-[var(--surface-2)] overflow-hidden">
+              <div
+                className={cn("h-full rounded-full", fundScore > 50 ? "bg-bullish" : "bg-bearish")}
+                style={{ width: `${Math.round(fundScore)}%` }}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="bg-[var(--surface-0)] rounded-lg px-3 py-2">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Activity className="h-3 w-3 text-muted-foreground/50" />
+            <span className="text-xs text-muted-foreground/60">Technical</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className={cn("text-lg font-mono font-bold", techScore > 50 ? "text-bullish" : "text-bearish")}>
+              {Math.round(techScore)}
+            </span>
+            <div className="w-16 h-1.5 rounded-full bg-[var(--surface-2)] overflow-hidden">
+              <div
+                className={cn("h-full rounded-full", techScore > 50 ? "bg-bullish" : "bg-bearish")}
+                style={{ width: `${Math.round(techScore)}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Momentum + Trend pills */}
+      <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-1 bg-[var(--surface-0)] px-2.5 py-1 rounded-md text-xs font-mono">
+          {momentum > 50
+            ? <TrendingUp className="h-3 w-3 text-bullish" />
+            : <TrendingDown className="h-3 w-3 text-bearish" />
+          }
+          <span className="text-muted-foreground/60">Mom</span>
+          <span className={cn("font-semibold", momentum > 50 ? "text-bullish" : "text-bearish")}>
+            {Math.round(momentum)}
+          </span>
+        </div>
+        <div className="flex items-center gap-1 bg-[var(--surface-0)] px-2.5 py-1 rounded-md text-xs font-mono">
+          {trend > 50
+            ? <TrendingUp className="h-3 w-3 text-bullish" />
+            : <TrendingDown className="h-3 w-3 text-bearish" />
+          }
+          <span className="text-muted-foreground/60">Trend</span>
+          <span className={cn("font-semibold", trend > 50 ? "text-bullish" : "text-bearish")}>
+            {Math.round(trend)}
+          </span>
+        </div>
+        <SessionBadge instrumentId={instrument.id} />
+      </div>
+
+      {/* Key Levels + Risk */}
+      <div className="flex items-center gap-3 flex-wrap text-xs font-mono text-muted-foreground/50 border-t border-border/20 pt-2 mb-3">
+        {llmResult?.keyLevels && llmResult.keyLevels.support > 0 && (
+          <>
+            <span className="text-bullish/60">S:{llmResult.keyLevels.support.toFixed(dec)}</span>
+            <span className="text-bearish/60">R:{llmResult.keyLevels.resistance.toFixed(dec)}</span>
+          </>
+        )}
+        {biasResult.adr && <span>ADR:{biasResult.adr.pips}p</span>}
+        {llmResult?.riskAssessment && (
+          <span
+            className={cn(
+              "font-bold uppercase px-1 py-0.5 rounded text-[10px]",
+              llmResult.riskAssessment === "low" && "bg-bullish/15 text-bullish",
+              llmResult.riskAssessment === "medium" && "bg-amber/15 text-[var(--amber)]",
+              llmResult.riskAssessment === "high" && "bg-bearish/15 text-bearish"
+            )}
+          >
+            {llmResult.riskAssessment} risk
+          </span>
+        )}
       </div>
 
       {/* AI Analysis — inset container */}
@@ -144,23 +290,35 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
       )}
 
       {/* Action Buttons */}
-      <div className="flex items-center gap-3 mt-auto pt-3">
+      <div className="flex items-center gap-3 mt-auto pt-3 border-t border-border/20">
+        <button
+          onClick={handleDeepDive}
+          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+        >
+          Deep Dive
+          <ArrowRight className="h-3.5 w-3.5" />
+        </button>
         <button
           onClick={() => togglePin(instrument.id)}
           className={cn(
-            "flex-1 py-2.5 rounded-lg text-sm font-medium border transition-colors",
+            "p-2.5 rounded-lg border transition-colors",
             isPinned
               ? "border-neutral-accent/30 text-neutral-accent bg-neutral-accent/10"
-              : "border-border text-muted-foreground hover:text-foreground hover:border-border-bright"
+              : "border-border text-muted-foreground/40 hover:text-muted-foreground hover:border-border-bright"
           )}
         >
-          {isPinned ? "Pinned" : "Quick Overview"}
+          <Pin className={cn("h-4 w-4", isPinned && "fill-neutral-accent rotate-45")} />
         </button>
         <button
-          onClick={handleDeepDive}
-          className="flex-1 py-2.5 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          onClick={() => toggleFavorite(instrument.id)}
+          className={cn(
+            "p-2.5 rounded-lg border transition-colors",
+            isFavorite
+              ? "border-[#FFD700]/30 text-[#FFD700] bg-[#FFD700]/10"
+              : "border-border text-muted-foreground/40 hover:text-muted-foreground hover:border-border-bright"
+          )}
         >
-          Deep Dive
+          <Star className={cn("h-4 w-4", isFavorite && "fill-[#FFD700]")} />
         </button>
       </div>
     </div>
