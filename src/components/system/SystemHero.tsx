@@ -107,7 +107,7 @@ export function SystemHero({ scrollYProgress }: SystemHeroProps) {
               className={`absolute ${node.position} h-11 w-11 rounded-full border flex items-center justify-center ${node.bg} backdrop-blur-sm`}
             >
               <node.icon className={`h-4 w-4 ${node.color}`} />
-              <span className={`absolute -bottom-5 text-[8px] font-semibold ${node.color} opacity-60 whitespace-nowrap`}>
+              <span className={`absolute -bottom-5 text-[10px] font-semibold ${node.color} opacity-60 whitespace-nowrap`}>
                 {node.label}
               </span>
             </div>
@@ -155,7 +155,7 @@ export function SystemHero({ scrollYProgress }: SystemHeroProps) {
             ].map((stat) => (
               <span
                 key={stat.label}
-                className={`text-[10px] font-semibold px-3 py-1.5 rounded-full border ${stat.color}`}
+                className={`text-[12px] font-semibold px-3 py-1.5 rounded-full border ${stat.color}`}
               >
                 {stat.label}
               </span>

@@ -24,7 +24,7 @@ function ScoreBar({ label, value, weight }: { label: string; value: number; weig
       <div className="flex items-center justify-between text-xs">
         <span className="text-muted-foreground">{label}</span>
         <div className="flex items-center gap-2">
-          <span className="text-muted-foreground/60 text-[10px]">{(weight * 100).toFixed(0)}%w</span>
+          <span className="text-muted-foreground/60 text-[12px]">{(weight * 100).toFixed(0)}%w</span>
           <span className={cn("font-mono font-medium", textColor)}>{value.toFixed(0)}</span>
         </div>
       </div>
@@ -51,11 +51,11 @@ export function BiasBreakdown({ fundamentalScore, technicalScore, signals, funda
         <div className="space-y-3">
           {/* Score summary */}
           <div className="flex items-center justify-between">
-            <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Scores</h3>
+            <h3 className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Scores</h3>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex-1 text-center">
-              <div className="text-[9px] text-muted-foreground/60 uppercase">Fund</div>
+              <div className="text-[11px] text-muted-foreground/60 uppercase">Fund</div>
               <AnimatedNumber
                 value={fundamentalScore.total}
                 format={(n) => n.toFixed(0)}
@@ -65,7 +65,7 @@ export function BiasBreakdown({ fundamentalScore, technicalScore, signals, funda
             </div>
             <div className="w-px h-6 bg-border/30" />
             <div className="flex-1 text-center">
-              <div className="text-[9px] text-muted-foreground/60 uppercase">Tech</div>
+              <div className="text-[11px] text-muted-foreground/60 uppercase">Tech</div>
               <AnimatedNumber
                 value={technicalScore.total}
                 format={(n) => n.toFixed(0)}
@@ -77,14 +77,14 @@ export function BiasBreakdown({ fundamentalScore, technicalScore, signals, funda
           {(fundamentalReason || technicalReason) && (
             <div className="space-y-1">
               {fundamentalReason && (
-                <p className="text-[11px] text-muted-foreground/70 italic leading-relaxed">
-                  <span className="text-muted-foreground/40 font-semibold not-italic text-[9px] uppercase">Fund: </span>
+                <p className="text-[13px] text-muted-foreground/70 italic leading-relaxed">
+                  <span className="text-muted-foreground/40 font-semibold not-italic text-[11px] uppercase">Fund: </span>
                   {fundamentalReason}
                 </p>
               )}
               {technicalReason && (
-                <p className="text-[11px] text-muted-foreground/70 italic leading-relaxed">
-                  <span className="text-muted-foreground/40 font-semibold not-italic text-[9px] uppercase">Tech: </span>
+                <p className="text-[13px] text-muted-foreground/70 italic leading-relaxed">
+                  <span className="text-muted-foreground/40 font-semibold not-italic text-[11px] uppercase">Tech: </span>
                   {technicalReason}
                 </p>
               )}
@@ -101,10 +101,10 @@ export function BiasBreakdown({ fundamentalScore, technicalScore, signals, funda
           {signals.length > 0 && (
             <>
               <div className="h-px bg-border/20" />
-              <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Key Signals</h3>
+              <h3 className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Key Signals</h3>
               <div className="space-y-1.5">
                 {visibleSignals.map((signal, i) => (
-                  <div key={i} className="flex items-start gap-1.5 text-[10px]">
+                  <div key={i} className="flex items-start gap-1.5 text-[12px]">
                     <span
                       className={cn(
                         "mt-1 h-1.5 w-1.5 rounded-full shrink-0",
@@ -121,7 +121,7 @@ export function BiasBreakdown({ fundamentalScore, technicalScore, signals, funda
               {hasMore && (
                 <button
                   onClick={() => setSignalsExpanded(!signalsExpanded)}
-                  className="text-[10px] text-neutral-accent hover:text-foreground transition-colors"
+                  className="text-[12px] text-neutral-accent hover:text-foreground transition-colors"
                 >
                   {signalsExpanded ? "Show less" : `+${signals.length - COLLAPSED_COUNT} more`}
                 </button>
@@ -147,7 +147,7 @@ export function BiasBreakdown({ fundamentalScore, technicalScore, signals, funda
           />
         </div>
         {fundamentalReason && (
-          <p className="text-[11px] text-muted-foreground/70 italic leading-relaxed mb-3">
+          <p className="text-[13px] text-muted-foreground/70 italic leading-relaxed mb-3">
             {fundamentalReason}
           </p>
         )}
@@ -172,7 +172,7 @@ export function BiasBreakdown({ fundamentalScore, technicalScore, signals, funda
           />
         </div>
         {technicalReason && (
-          <p className="text-[11px] text-muted-foreground/70 italic leading-relaxed mb-3">
+          <p className="text-[13px] text-muted-foreground/70 italic leading-relaxed mb-3">
             {technicalReason}
           </p>
         )}

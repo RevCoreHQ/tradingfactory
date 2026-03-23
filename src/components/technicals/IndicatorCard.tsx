@@ -40,8 +40,8 @@ export function IndicatorCard({
         className="text-xl font-bold"
         colorize
       />
-      <p className="text-[10px] text-muted-foreground mt-1">{description}</p>
-      {detail && <p className="text-[10px] text-muted-foreground/60 mt-0.5">{detail}</p>}
+      <p className="text-[12px] text-muted-foreground mt-1">{description}</p>
+      {detail && <p className="text-[12px] text-muted-foreground/60 mt-0.5">{detail}</p>}
     </GlassCard>
   );
 }

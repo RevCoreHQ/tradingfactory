@@ -121,8 +121,8 @@ function AdvisorContent({ advisor, onRefresh }: { advisor: TradingAdvisorResult;
           <MessageSquare className="h-3.5 w-3.5 text-neutral-accent" />
         </div>
         <h3 className="text-xs font-semibold text-foreground">Risk Auditor</h3>
-        <span className="text-[10px] text-muted-foreground/40 ml-1">Risk Auditor</span>
-        <span className="text-[10px] text-muted-foreground/30 ml-auto">{timeLabel}</span>
+        <span className="text-[12px] text-muted-foreground/40 ml-1">Risk Auditor</span>
+        <span className="text-[12px] text-muted-foreground/30 ml-auto">{timeLabel}</span>
         <button
           onClick={onRefresh}
           className="p-1 rounded hover:bg-surface-2/80 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
@@ -144,7 +144,7 @@ function AdvisorContent({ advisor, onRefresh }: { advisor: TradingAdvisorResult;
         <div className="mb-4 pb-4 border-b border-border/30">
           {focusToday.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+              <div className="text-[12px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
                 <Target className="h-3 w-3 text-neutral-accent" />
                 Focus Today
               </div>
@@ -160,7 +160,7 @@ function AdvisorContent({ advisor, onRefresh }: { advisor: TradingAdvisorResult;
                   <span
                     key={i}
                     className={cn(
-                      "inline-flex items-center gap-1.5 text-[11px] font-medium text-foreground px-2.5 py-1 rounded-md border",
+                      "inline-flex items-center gap-1.5 text-[13px] font-medium text-foreground px-2.5 py-1 rounded-md border",
                       isShort
                         ? "bg-bearish/10 border-bearish/20"
                         : "bg-bullish/10 border-bullish/20"
@@ -173,7 +173,7 @@ function AdvisorContent({ advisor, onRefresh }: { advisor: TradingAdvisorResult;
                       <TrendingUp className="h-3 w-3 text-bullish" />
                     )}
                     <span className={cn(
-                      "text-[9px] font-bold uppercase tracking-wider",
+                      "text-[11px] font-bold uppercase tracking-wider",
                       isShort ? "text-bearish" : "text-bullish"
                     )}>
                       {item.action}
@@ -187,12 +187,12 @@ function AdvisorContent({ advisor, onRefresh }: { advisor: TradingAdvisorResult;
 
           {sitOutToday.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap mt-2">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <div className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                 <Ban className="h-3 w-3" />
                 Sit Out
               </div>
               {sitOutToday.map((note, i) => (
-                <span key={i} className="text-[11px] text-muted-foreground bg-[var(--surface-2)] px-2.5 py-1 rounded-md border border-border/30">
+                <span key={i} className="text-[13px] text-muted-foreground bg-[var(--surface-2)] px-2.5 py-1 rounded-md border border-border/30">
                   {note}
                 </span>
               ))}
@@ -206,7 +206,7 @@ function AdvisorContent({ advisor, onRefresh }: { advisor: TradingAdvisorResult;
         <div className="mb-4">
           <div className="flex items-center gap-1.5 mb-1">
             <Shield className="h-3 w-3 text-neutral-accent" />
-            <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
+            <span className="text-[12px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
               Market Regime
             </span>
           </div>
@@ -221,13 +221,13 @@ function AdvisorContent({ advisor, onRefresh }: { advisor: TradingAdvisorResult;
         <div className="mb-4">
           <div className="flex items-center gap-1.5 mb-1.5">
             <AlertTriangle className="h-3 w-3 text-[var(--amber)]" />
-            <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
+            <span className="text-[12px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
               Risk Flags
             </span>
           </div>
           <div className="space-y-1">
             {advisor.riskFlags.map((flag, i) => (
-              <p key={i} className="text-[11px] text-muted-foreground leading-relaxed pl-4 border-l-2 border-[var(--amber)]/30">
+              <p key={i} className="text-[13px] text-muted-foreground leading-relaxed pl-4 border-l-2 border-[var(--amber)]/30">
                 {flag}
               </p>
             ))}
@@ -240,13 +240,13 @@ function AdvisorContent({ advisor, onRefresh }: { advisor: TradingAdvisorResult;
         <div className="mb-4">
           <div className="flex items-center gap-1.5 mb-1.5">
             <Ban className="h-3 w-3 text-bearish" />
-            <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
+            <span className="text-[12px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
               Avoid
             </span>
           </div>
           <div className="space-y-1">
             {advisor.avoidList.map((item, i) => (
-              <p key={i} className="text-[11px] text-muted-foreground/70 leading-relaxed pl-4 border-l-2 border-bearish/20">
+              <p key={i} className="text-[13px] text-muted-foreground/70 leading-relaxed pl-4 border-l-2 border-bearish/20">
                 {item}
               </p>
             ))}
@@ -259,11 +259,11 @@ function AdvisorContent({ advisor, onRefresh }: { advisor: TradingAdvisorResult;
         <div className="mb-4 rounded-md bg-amber/5 border border-amber/15 px-3 py-2">
           <div className="flex items-center gap-1.5 mb-0.5">
             <AlertTriangle className="h-3 w-3 text-[var(--amber)]" />
-            <span className="text-[10px] font-semibold text-[var(--amber)] uppercase tracking-wider">
+            <span className="text-[12px] font-semibold text-[var(--amber)] uppercase tracking-wider">
               Risk Warning
             </span>
           </div>
-          <p className="text-[11px] text-muted-foreground leading-relaxed">
+          <p className="text-[13px] text-muted-foreground leading-relaxed">
             {advisor.riskWarning}
           </p>
         </div>
@@ -274,11 +274,11 @@ function AdvisorContent({ advisor, onRefresh }: { advisor: TradingAdvisorResult;
         <div className="rounded-md bg-surface-2/50 border border-border/30 px-3 py-2">
           <div className="flex items-center gap-1.5 mb-0.5">
             <BookOpen className="h-3 w-3 text-neutral-accent" />
-            <span className="text-[10px] font-semibold text-neutral-accent/70 uppercase tracking-wider">
+            <span className="text-[12px] font-semibold text-neutral-accent/70 uppercase tracking-wider">
               Desk Note
             </span>
           </div>
-          <p className="text-[11px] text-muted-foreground/80 leading-relaxed italic">
+          <p className="text-[13px] text-muted-foreground/80 leading-relaxed italic">
             &ldquo;{advisor.deskNote}&rdquo;
           </p>
         </div>
@@ -330,13 +330,13 @@ function DeskChat({
       {/* Chat header */}
       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/30">
         <MessageSquare className="h-3 w-3 text-neutral-accent" />
-        <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
+        <span className="text-[12px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
           Ask the risk auditor
         </span>
         {messages.length > 0 && (
           <button
             onClick={clear}
-            className="ml-auto text-[10px] text-muted-foreground/30 hover:text-muted-foreground transition-colors"
+            className="ml-auto text-[12px] text-muted-foreground/30 hover:text-muted-foreground transition-colors"
           >
             Clear
           </button>
@@ -358,7 +358,7 @@ function DeskChat({
                 )}
               >
                 <span className={cn(
-                  "text-[9px] font-semibold uppercase block mb-0.5",
+                  "text-[11px] font-semibold uppercase block mb-0.5",
                   msg.role === "user" ? "text-neutral-accent/50" : "text-muted-foreground/40"
                 )}>
                   {msg.role === "user" ? "You" : "Risk Auditor"}
@@ -367,12 +367,12 @@ function DeskChat({
               </div>
             ))}
             {isSending && (
-              <div className="text-[10px] text-muted-foreground/40 italic">
+              <div className="text-[12px] text-muted-foreground/40 italic">
                 Risk auditor is thinking...
               </div>
             )}
             {error && (
-              <p className="text-[10px] text-bearish/70">{error}</p>
+              <p className="text-[12px] text-bearish/70">{error}</p>
             )}
           </div>
         </ScrollArea>

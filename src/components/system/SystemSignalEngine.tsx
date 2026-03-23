@@ -57,7 +57,7 @@ export function SystemSignalEngine() {
           text="TF"
           className="w-full max-h-[160px]"
         />
-        <p className="text-center text-[10px] text-muted-foreground/50 mt-2">
+        <p className="text-center text-[12px] text-muted-foreground/50 mt-2">
           3 independent systems fire in parallel through the signal processing core
         </p>
       </div>
@@ -79,10 +79,10 @@ export function SystemSignalEngine() {
             >
               <div className="flex items-center gap-2">
                 <span className={cn("h-2.5 w-2.5 rounded-full", config.dot)} />
-                <span className="text-[11px] font-semibold text-foreground">
+                <span className="text-[13px] font-semibold text-foreground">
                   {config.label}
                 </span>
-                <span className={cn("ml-auto text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full border", config.badgeColor)}>
+                <span className={cn("ml-auto text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full border", config.badgeColor)}>
                   {clusterSystems.length} signals
                 </span>
               </div>
@@ -93,11 +93,11 @@ export function SystemSignalEngine() {
                     className="glass-card rounded-lg px-3 py-2 space-y-0.5"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-semibold text-foreground">{sys.name}</span>
-                      <span className="text-[8px] font-mono text-muted-foreground/40">{sys.book}</span>
+                      <span className="text-[12px] font-semibold text-foreground">{sys.name}</span>
+                      <span className="text-[10px] font-mono text-muted-foreground/40">{sys.book}</span>
                     </div>
-                    <p className="text-[9px] text-muted-foreground/60">{sys.logic}</p>
-                    <p className="text-[8px] text-muted-foreground/40">{sys.params}</p>
+                    <p className="text-[11px] text-muted-foreground/60">{sys.logic}</p>
+                    <p className="text-[10px] text-muted-foreground/40">{sys.params}</p>
                   </div>
                 ))}
               </div>
@@ -113,16 +113,16 @@ export function SystemSignalEngine() {
         viewport={{ once: true }}
         className="glass-card rounded-xl p-4"
       >
-        <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-3">
+        <h4 className="text-[12px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-3">
           Regime-Adaptive Cluster Weights
         </h4>
         <div className="grid grid-cols-3 gap-3">
           {clusterWeights.map((w) => (
             <div key={w.regime} className="space-y-2">
-              <div className="text-[10px] font-semibold text-foreground text-center">{w.regime}</div>
+              <div className="text-[12px] font-semibold text-foreground text-center">{w.regime}</div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-[8px] text-muted-foreground/50 w-8">T</span>
+                  <span className="text-[10px] text-muted-foreground/50 w-8">T</span>
                   <div className="flex-1 h-2 bg-surface-2/50 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
@@ -131,10 +131,10 @@ export function SystemSignalEngine() {
                       className="h-full bg-neutral-accent/50 rounded-full"
                     />
                   </div>
-                  <span className="text-[8px] font-mono text-muted-foreground/40 w-6">{w.trend}</span>
+                  <span className="text-[10px] font-mono text-muted-foreground/40 w-6">{w.trend}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[8px] text-muted-foreground/50 w-8">MR</span>
+                  <span className="text-[10px] text-muted-foreground/50 w-8">MR</span>
                   <div className="flex-1 h-2 bg-surface-2/50 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
@@ -143,10 +143,10 @@ export function SystemSignalEngine() {
                       className="h-full bg-amber-500/50 rounded-full"
                     />
                   </div>
-                  <span className="text-[8px] font-mono text-muted-foreground/40 w-6">{w.mr}</span>
+                  <span className="text-[10px] font-mono text-muted-foreground/40 w-6">{w.mr}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[8px] text-muted-foreground/50 w-8">M</span>
+                  <span className="text-[10px] text-muted-foreground/50 w-8">M</span>
                   <div className="flex-1 h-2 bg-surface-2/50 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
@@ -155,7 +155,7 @@ export function SystemSignalEngine() {
                       className="h-full bg-bullish/50 rounded-full"
                     />
                   </div>
-                  <span className="text-[8px] font-mono text-muted-foreground/40 w-6">{w.mom}</span>
+                  <span className="text-[10px] font-mono text-muted-foreground/40 w-6">{w.mom}</span>
                 </div>
               </div>
             </div>
@@ -165,7 +165,7 @@ export function SystemSignalEngine() {
 
       {/* Auto-kill callout */}
       <div className="glass-card rounded-xl px-4 py-3 border-l-[3px] border-l-[var(--bearish)]">
-        <p className="text-[10px] text-muted-foreground leading-relaxed">
+        <p className="text-[12px] text-muted-foreground leading-relaxed">
           <strong className="text-foreground">Auto-kill weak systems:</strong> Each system&apos;s win rate is tracked over a 30-trade window.
           Below 30% = disabled. Below 40% = penalized. Above 60% = bonus. Weights adapt automatically.
         </p>

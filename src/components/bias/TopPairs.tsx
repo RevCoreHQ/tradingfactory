@@ -25,7 +25,7 @@ function DirectionBadge({ direction }: { direction: BiasDirection }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider leading-none",
+        "inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider leading-none",
         isBullish && "bg-bullish/15 text-bullish",
         isBearish && "bg-bearish/15 text-bearish",
         !isBullish && !isBearish && "bg-neutral-accent/15 text-neutral-accent"
@@ -45,7 +45,7 @@ function RiskBadge({ sizing, className }: { sizing: RiskSizing; className?: stri
   const Icon = config.icon;
 
   return (
-    <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider leading-none", config.cls, className)}>
+    <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider leading-none", config.cls, className)}>
       <Icon className="h-2.5 w-2.5" />
       {config.label}
     </span>
@@ -83,7 +83,7 @@ function RiskLabel({ risk }: { risk: string }) {
   }[risk] || { cls: "bg-[var(--surface-2)] text-muted-foreground", label: risk };
 
   return (
-    <span className={cn("text-[9px] font-bold uppercase px-1.5 py-0.5 rounded", cfg.cls)}>
+    <span className={cn("text-[11px] font-bold uppercase px-1.5 py-0.5 rounded", cfg.cls)}>
       {cfg.label}
     </span>
   );
@@ -123,7 +123,7 @@ function CardDetailModal({ item, onClose, onNavigate }: {
                 <span className="text-base font-bold">{instrument.symbol}</span>
                 <DirectionBadge direction={biasResult.direction} />
               </div>
-              <span className="text-[10px] text-muted-foreground/50">{instrument.category}</span>
+              <span className="text-[12px] text-muted-foreground/50">{instrument.category}</span>
             </div>
             <div className="text-right">
               <span className="text-3xl font-mono font-bold tabular" style={{ color }}>
@@ -136,18 +136,18 @@ function CardDetailModal({ item, onClose, onNavigate }: {
           <motion.div variants={fadeUp} className="flex items-center gap-2 flex-wrap">
             <div className="flex items-center gap-1 px-2 py-1 rounded bg-[var(--surface-2)]">
               <BarChart3 className="h-3 w-3 text-muted-foreground/50" />
-              <span className="text-[10px] font-mono text-muted-foreground">F:{Math.round(biasResult.fundamentalScore.total)}</span>
+              <span className="text-[12px] font-mono text-muted-foreground">F:{Math.round(biasResult.fundamentalScore.total)}</span>
             </div>
             <div className="flex items-center gap-1 px-2 py-1 rounded bg-[var(--surface-2)]">
               <Activity className="h-3 w-3 text-muted-foreground/50" />
-              <span className="text-[10px] font-mono text-muted-foreground">T:{Math.round(biasResult.technicalScore.total)}</span>
+              <span className="text-[12px] font-mono text-muted-foreground">T:{Math.round(biasResult.technicalScore.total)}</span>
             </div>
             <div className="ml-auto flex items-center gap-2">
-              <span className="text-[9px] text-muted-foreground/40">
+              <span className="text-[11px] text-muted-foreground/40">
                 Conf: {Math.round(biasResult.confidence)}%
               </span>
               {biasResult.signalAgreement !== undefined && (
-                <span className="text-[9px] text-muted-foreground/40">
+                <span className="text-[11px] text-muted-foreground/40">
                   Agree: {Math.round(biasResult.signalAgreement * 100)}%
                 </span>
               )}
@@ -159,10 +159,10 @@ function CardDetailModal({ item, onClose, onNavigate }: {
             <motion.div variants={fadeUp} className="space-y-1.5">
               <div className="flex items-center gap-1.5">
                 <Brain className="h-3.5 w-3.5 text-neutral-accent" />
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">AI Analysis</span>
+                <span className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">AI Analysis</span>
                 {item.llmRisk && <RiskLabel risk={item.llmRisk} />}
               </div>
-              <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
+              <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
                 {item.llmSummary}
               </p>
             </motion.div>
@@ -171,10 +171,10 @@ function CardDetailModal({ item, onClose, onNavigate }: {
           {/* Catalysts */}
           {item.llmCatalysts && item.llmCatalysts.length > 0 && (
             <motion.div variants={fadeUp} className="space-y-1.5">
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Catalysts</span>
+              <span className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">Catalysts</span>
               <div className="flex flex-wrap gap-1.5">
                 {item.llmCatalysts.map((c, i) => (
-                  <span key={i} className="text-[10px] px-2 py-1 rounded bg-[var(--surface-2)] text-muted-foreground/60">
+                  <span key={i} className="text-[12px] px-2 py-1 rounded bg-[var(--surface-2)] text-muted-foreground/60">
                     {c}
                   </span>
                 ))}
@@ -184,13 +184,13 @@ function CardDetailModal({ item, onClose, onNavigate }: {
 
           {/* Key Levels */}
           {item.llmKeyLevels && item.llmKeyLevels.support > 0 && (
-            <motion.div variants={fadeUp} className="flex items-center gap-4 text-[10px] font-mono">
+            <motion.div variants={fadeUp} className="flex items-center gap-4 text-[12px] font-mono">
               <div className="flex items-center gap-1.5">
-                <span className="text-[9px] font-bold text-bullish/60">S</span>
+                <span className="text-[11px] font-bold text-bullish/60">S</span>
                 <span className="text-foreground/70">{formatPriceValue(item.llmKeyLevels.support, dec)}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-[9px] font-bold text-bearish/60">R</span>
+                <span className="text-[11px] font-bold text-bearish/60">R</span>
                 <span className="text-foreground/70">{formatPriceValue(item.llmKeyLevels.resistance, dec)}</span>
               </div>
             </motion.div>
@@ -235,7 +235,7 @@ function ConvictionCard({ item, rank, onNavigate }: {
     >
       {/* Top: Rank + Symbol + Direction */}
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-[10px] text-muted-foreground/40 font-mono">{rank}</span>
+        <span className="text-[12px] text-muted-foreground/40 font-mono">{rank}</span>
         <span className={cn("font-bold truncate", isTopPick ? "text-sm" : "text-xs")}>
           {instrument.symbol}
         </span>
@@ -254,16 +254,16 @@ function ConvictionCard({ item, rank, onNavigate }: {
 
       {/* Score pills */}
       <div className="flex items-center gap-1 justify-center my-1.5 flex-wrap">
-        <span className="text-[8px] font-mono px-1 py-0.5 rounded bg-[var(--surface-2)] text-muted-foreground">
+        <span className="text-[10px] font-mono px-1 py-0.5 rounded bg-[var(--surface-2)] text-muted-foreground">
           F:{Math.round(biasResult.fundamentalScore.total)}
         </span>
-        <span className="text-[8px] font-mono px-1 py-0.5 rounded bg-[var(--surface-2)] text-muted-foreground">
+        <span className="text-[10px] font-mono px-1 py-0.5 rounded bg-[var(--surface-2)] text-muted-foreground">
           T:{Math.round(biasResult.technicalScore.total)}
         </span>
       </div>
 
       {/* Bottom: ADR + Session + Risk */}
-      <div className="flex items-center justify-between text-[9px] text-muted-foreground/60 mt-auto pt-1.5 border-t border-border/30">
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground/60 mt-auto pt-1.5 border-t border-border/30">
         <div className="flex items-center gap-1.5">
           {adr && <span className="font-mono">{adr.pips}p</span>}
           {biasResult.tradeSetup && (
@@ -332,7 +332,7 @@ export function TopPairs() {
         borderWidth={2}
       />
       <div className="flex items-center justify-between mb-4">
-        <span className="text-[10px] font-mono text-muted-foreground/40">
+        <span className="text-[12px] font-mono text-muted-foreground/40">
           {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
         </span>
       </div>
@@ -362,7 +362,7 @@ export function TopPairs() {
       {hasAnyBias && ranked.length > 5 && (
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors mt-3"
+          className="flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground transition-colors mt-3"
         >
           {expanded ? (
             <>Show top 5 <ChevronUp className="h-3 w-3" /></>

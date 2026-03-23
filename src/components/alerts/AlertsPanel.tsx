@@ -30,7 +30,7 @@ export function AlertsBell() {
       >
         <Bell className="h-4 w-4" />
         {activeCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 h-3.5 min-w-[14px] flex items-center justify-center rounded-full bg-bearish text-white text-[8px] font-bold px-0.5">
+          <span className="absolute -top-0.5 -right-0.5 h-3.5 min-w-[14px] flex items-center justify-center rounded-full bg-bearish text-white text-[10px] font-bold px-0.5">
             {activeCount}
           </span>
         )}
@@ -85,7 +85,7 @@ function AlertsDropdown({ onClose }: { onClose: () => void }) {
         {active.length === 0 ? (
           <div className="text-center py-8">
             <Bell className="h-5 w-5 text-muted-foreground/30 mx-auto mb-2" />
-            <p className="text-[10px] text-muted-foreground/50">No active alerts</p>
+            <p className="text-[12px] text-muted-foreground/50">No active alerts</p>
           </div>
         ) : (
           active.map((alert) => {
@@ -107,7 +107,7 @@ function AlertsDropdown({ onClose }: { onClose: () => void }) {
                 <Icon className={cn("h-3.5 w-3.5 mt-0.5 shrink-0", cfg.cls)} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-1">
-                    <span className="text-[10px] font-bold truncate">{alert.title}</span>
+                    <span className="text-[12px] font-bold truncate">{alert.title}</span>
                     <button
                       onClick={() => dismissAlert(alert.id)}
                       className="p-0.5 rounded hover:bg-[var(--surface-2)] shrink-0"
@@ -115,8 +115,8 @@ function AlertsDropdown({ onClose }: { onClose: () => void }) {
                       <X className="h-2.5 w-2.5 text-muted-foreground/40" />
                     </button>
                   </div>
-                  <p className="text-[9px] text-muted-foreground/60 leading-relaxed">{alert.message}</p>
-                  <span className="text-[8px] text-muted-foreground/40">{ageLabel}</span>
+                  <p className="text-[11px] text-muted-foreground/60 leading-relaxed">{alert.message}</p>
+                  <span className="text-[10px] text-muted-foreground/40">{ageLabel}</span>
                 </div>
               </div>
             );

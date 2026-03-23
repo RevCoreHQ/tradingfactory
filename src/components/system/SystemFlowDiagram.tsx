@@ -88,12 +88,12 @@ function FlowNode({ icon, label, subtitle, color, badge, large }: FlowNodeProps)
     >
       <div className="flex items-center gap-1.5">
         <span className={c.icon}>{icon}</span>
-        <span className={cn("text-[11px] font-semibold text-foreground leading-tight", large && "text-xs")}>
+        <span className={cn("text-[13px] font-semibold text-foreground leading-tight", large && "text-xs")}>
           {label}
         </span>
       </div>
       {subtitle && (
-        <p className="text-[8px] text-muted-foreground/50 leading-tight max-w-[180px]">{subtitle}</p>
+        <p className="text-[10px] text-muted-foreground/50 leading-tight max-w-[180px]">{subtitle}</p>
       )}
       {badge && (
         <span
@@ -128,7 +128,7 @@ function TierDivider({ label, color }: { label: string; color: NodeColor }) {
   return (
     <div className="flex items-center gap-4 w-full">
       <div className={cn("h-px flex-1 border-t border-dashed", bc[color])} />
-      <span className={cn("text-[8px] font-bold uppercase tracking-[0.2em] whitespace-nowrap", tc[color])}>
+      <span className={cn("text-[10px] font-bold uppercase tracking-[0.2em] whitespace-nowrap", tc[color])}>
         {label}
       </span>
       <div className={cn("h-px flex-1 border-t border-dashed", bc[color])} />

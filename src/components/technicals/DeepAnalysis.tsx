@@ -18,13 +18,13 @@ import type { SupplyDemandZone, ConfluenceLevel, FairValueGap } from "@/lib/type
 function FreshnessBadge({ freshness, testCount }: { freshness: string; testCount: number }) {
   if (freshness === "fresh") {
     return (
-      <span className="text-[8px] font-bold uppercase px-1.5 py-0.5 rounded bg-bullish/15 text-bullish">
+      <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-bullish/15 text-bullish">
         FRESH
       </span>
     );
   }
   return (
-    <span className="text-[8px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-500">
+    <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-500">
       TESTED ×{testCount}
     </span>
   );
@@ -39,7 +39,7 @@ function StrengthBar({ strength }: { strength: number }) {
           style={{ width: `${strength}%`, opacity: 0.7 + (strength / 100) * 0.3 }}
         />
       </div>
-      <span className="text-[9px] font-mono text-muted-foreground/60 w-6 text-right">
+      <span className="text-[11px] font-mono text-muted-foreground/60 w-6 text-right">
         {strength}
       </span>
     </div>
@@ -65,14 +65,14 @@ function ZoneCard({ zone, decimals }: { zone: SupplyDemandZone; decimals: number
           ) : (
             <TrendingUp className="h-3 w-3 text-bullish" />
           )}
-          <span className={cn("text-[10px] font-bold uppercase", isSupply ? "text-bearish" : "text-bullish")}>
+          <span className={cn("text-[12px] font-bold uppercase", isSupply ? "text-bearish" : "text-bullish")}>
             {zone.type}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
           <FreshnessBadge freshness={zone.freshness} testCount={zone.testCount} />
           {zone.isOrderBlock && (
-            <span className="text-[8px] font-bold uppercase px-1.5 py-0.5 rounded bg-neutral-accent/15 text-neutral-accent">
+            <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-neutral-accent/15 text-neutral-accent">
               OB
             </span>
           )}
@@ -83,7 +83,7 @@ function ZoneCard({ zone, decimals }: { zone: SupplyDemandZone; decimals: number
         <span className="text-xs font-mono text-foreground">
           {zone.priceLow.toFixed(decimals)} – {zone.priceHigh.toFixed(decimals)}
         </span>
-        <span className="text-[9px] font-mono text-muted-foreground/50">
+        <span className="text-[11px] font-mono text-muted-foreground/50">
           {zone.impulseMagnitude.toFixed(1)}× ATR
         </span>
       </div>
@@ -103,7 +103,7 @@ function ZoneSummary({ supplyZones, demandZones, decimals }: {
       <div className="flex items-center gap-2 mb-3">
         <Layers className="h-4 w-4 text-neutral-accent" />
         <h3 className="text-xs font-semibold text-foreground">Supply & Demand Zones</h3>
-        <span className="text-[9px] font-mono text-muted-foreground/40 ml-auto">
+        <span className="text-[11px] font-mono text-muted-foreground/40 ml-auto">
           {supplyZones.length + demandZones.length} zones detected
         </span>
       </div>
@@ -115,9 +115,9 @@ function ZoneSummary({ supplyZones, demandZones, decimals }: {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-2">
-            <span className="text-[9px] font-bold text-bearish uppercase tracking-wider">Supply Zones</span>
+            <span className="text-[11px] font-bold text-bearish uppercase tracking-wider">Supply Zones</span>
             {supplyZones.length === 0 ? (
-              <p className="text-[10px] text-muted-foreground/40">None detected</p>
+              <p className="text-[12px] text-muted-foreground/40">None detected</p>
             ) : (
               supplyZones.slice(0, 4).map((z, i) => (
                 <ZoneCard key={`s-${i}`} zone={z} decimals={decimals} />
@@ -125,9 +125,9 @@ function ZoneSummary({ supplyZones, demandZones, decimals }: {
             )}
           </div>
           <div className="space-y-2">
-            <span className="text-[9px] font-bold text-bullish uppercase tracking-wider">Demand Zones</span>
+            <span className="text-[11px] font-bold text-bullish uppercase tracking-wider">Demand Zones</span>
             {demandZones.length === 0 ? (
-              <p className="text-[10px] text-muted-foreground/40">None detected</p>
+              <p className="text-[12px] text-muted-foreground/40">None detected</p>
             ) : (
               demandZones.slice(0, 4).map((z, i) => (
                 <ZoneCard key={`d-${i}`} zone={z} decimals={decimals} />
@@ -156,12 +156,12 @@ function FVGCard({ fvg, decimals }: { fvg: FairValueGap; decimals: number }) {
           ) : (
             <TrendingDown className="h-3 w-3 text-bearish" />
           )}
-          <span className={cn("text-[10px] font-bold uppercase", isBullish ? "text-bullish" : "text-bearish")}>
+          <span className={cn("text-[12px] font-bold uppercase", isBullish ? "text-bullish" : "text-bearish")}>
             {fvg.type} FVG
           </span>
         </div>
         <span className={cn(
-          "text-[8px] font-bold uppercase px-1.5 py-0.5 rounded",
+          "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
           fvg.freshness === "fresh" ? "bg-bullish/15 text-bullish" : "bg-amber-500/15 text-amber-700 dark:text-amber-500"
         )}>
           {fvg.freshness === "fresh" ? "FRESH" : `${fvg.fillPercent.toFixed(0)}% FILLED`}
@@ -172,12 +172,12 @@ function FVGCard({ fvg, decimals }: { fvg: FairValueGap; decimals: number }) {
         <span className="text-xs font-mono text-foreground">
           {fvg.low.toFixed(decimals)} – {fvg.high.toFixed(decimals)}
         </span>
-        <span className="text-[9px] font-mono text-muted-foreground/50">
+        <span className="text-[11px] font-mono text-muted-foreground/50">
           {fvg.sizeATR.toFixed(1)}× ATR
         </span>
       </div>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[9px] text-muted-foreground/60">
+        <span className="text-[11px] text-muted-foreground/60">
           CE: <span className="font-mono text-foreground/80">{fvg.midpoint.toFixed(decimals)}</span>
         </span>
       </div>
@@ -201,16 +201,16 @@ function FVGSummary({ fairValueGaps, decimals }: {
       <div className="flex items-center gap-2 mb-3">
         <Target className="h-4 w-4 text-amber-700 dark:text-amber-500" />
         <h3 className="text-xs font-semibold text-foreground">Fair Value Gaps</h3>
-        <span className="text-[9px] font-mono text-muted-foreground/40 ml-auto">
+        <span className="text-[11px] font-mono text-muted-foreground/40 ml-auto">
           {fairValueGaps.length} FVGs detected
         </span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-2">
-          <span className="text-[9px] font-bold text-bullish uppercase tracking-wider">Bullish FVGs</span>
+          <span className="text-[11px] font-bold text-bullish uppercase tracking-wider">Bullish FVGs</span>
           {bullishFVGs.length === 0 ? (
-            <p className="text-[10px] text-muted-foreground/40">None detected</p>
+            <p className="text-[12px] text-muted-foreground/40">None detected</p>
           ) : (
             bullishFVGs.slice(0, 4).map((f, i) => (
               <FVGCard key={`bf-${i}`} fvg={f} decimals={decimals} />
@@ -218,9 +218,9 @@ function FVGSummary({ fairValueGaps, decimals }: {
           )}
         </div>
         <div className="space-y-2">
-          <span className="text-[9px] font-bold text-bearish uppercase tracking-wider">Bearish FVGs</span>
+          <span className="text-[11px] font-bold text-bearish uppercase tracking-wider">Bearish FVGs</span>
           {bearishFVGs.length === 0 ? (
-            <p className="text-[10px] text-muted-foreground/40">None detected</p>
+            <p className="text-[12px] text-muted-foreground/40">None detected</p>
           ) : (
             bearishFVGs.slice(0, 4).map((f, i) => (
               <FVGCard key={`bef-${i}`} fvg={f} decimals={decimals} />
@@ -242,7 +242,7 @@ function ConfluenceLevelsList({ levels, currentPrice, decimals }: {
       <div className="flex items-center gap-2 mb-3">
         <Crosshair className="h-4 w-4 text-neutral-accent" />
         <h3 className="text-xs font-semibold text-foreground">Confluence Levels</h3>
-        <span className="text-[9px] font-mono text-muted-foreground/40 ml-auto">
+        <span className="text-[11px] font-mono text-muted-foreground/40 ml-auto">
           {levels.length} key levels
         </span>
       </div>
@@ -268,7 +268,7 @@ function ConfluenceLevelsList({ levels, currentPrice, decimals }: {
               >
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span className={cn(
-                    "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded",
+                    "text-[11px] font-bold uppercase px-1.5 py-0.5 rounded",
                     isSupport ? "bg-bullish/15 text-bullish" : "bg-bearish/15 text-bearish"
                   )}>
                     {level.type === "support" ? "S" : "R"}
@@ -276,7 +276,7 @@ function ConfluenceLevelsList({ levels, currentPrice, decimals }: {
                   <span className="text-xs font-mono font-bold text-foreground">
                     {level.price.toFixed(decimals)}
                   </span>
-                  <span className="text-[9px] font-mono text-muted-foreground/50">
+                  <span className="text-[11px] font-mono text-muted-foreground/50">
                     {distanceStr}
                   </span>
                 </div>
@@ -285,7 +285,7 @@ function ConfluenceLevelsList({ levels, currentPrice, decimals }: {
                   {level.sources.map((s, j) => (
                     <span
                       key={j}
-                      className="text-[8px] font-mono px-1 py-0.5 rounded bg-[var(--surface-3)] text-muted-foreground/60"
+                      className="text-[10px] font-mono px-1 py-0.5 rounded bg-[var(--surface-3)] text-muted-foreground/60"
                     >
                       {s.name}
                     </span>
@@ -334,7 +334,7 @@ function AIZoneAnalysis({ deepAnalysis, indicators, biasResult }: {
             onClick={generate}
             disabled={!hasIndicators}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-semibold transition-colors",
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-colors",
               hasIndicators
                 ? "bg-neutral-accent/15 text-neutral-accent hover:bg-neutral-accent/25"
                 : "bg-[var(--surface-2)] text-muted-foreground/40 cursor-not-allowed"
@@ -362,23 +362,23 @@ function AIZoneAnalysis({ deepAnalysis, indicators, biasResult }: {
       ) : zoneResult ? (
         <div className="space-y-3">
           {zoneResult.summary && (
-            <p className="text-[11px] text-muted-foreground leading-snug border-l-2 border-neutral-accent/30 pl-3">
+            <p className="text-[13px] text-muted-foreground leading-snug border-l-2 border-neutral-accent/30 pl-3">
               {zoneResult.summary}
             </p>
           )}
 
           {zoneResult.zoneAnalysis && (
-            <p className="text-[11px] text-foreground/80 leading-snug">
+            <p className="text-[13px] text-foreground/80 leading-snug">
               {zoneResult.zoneAnalysis}
             </p>
           )}
 
           {zoneResult.significantZones.length > 0 && (
             <div>
-              <span className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-wider">Significant Zones</span>
+              <span className="text-[11px] font-bold text-muted-foreground/50 uppercase tracking-wider">Significant Zones</span>
               <div className="flex flex-wrap gap-1 mt-1">
                 {zoneResult.significantZones.map((zone, i) => (
-                  <span key={i} className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--surface-2)] text-muted-foreground/60">
+                  <span key={i} className="text-[11px] px-1.5 py-0.5 rounded bg-[var(--surface-2)] text-muted-foreground/60">
                     {zone}
                   </span>
                 ))}
@@ -390,9 +390,9 @@ function AIZoneAnalysis({ deepAnalysis, indicators, biasResult }: {
             <div className="flex items-start gap-2">
               <Target className="h-3.5 w-3.5 text-muted-foreground/40 mt-0.5 shrink-0" />
               <div className="space-y-1">
-                <span className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-wider">Watch</span>
+                <span className="text-[11px] font-bold text-muted-foreground/50 uppercase tracking-wider">Watch</span>
                 {zoneResult.keyLevelsToWatch.map((level, i) => (
-                  <p key={i} className="text-[10px] text-muted-foreground/60">{level}</p>
+                  <p key={i} className="text-[12px] text-muted-foreground/60">{level}</p>
                 ))}
               </div>
             </div>
@@ -406,7 +406,7 @@ function AIZoneAnalysis({ deepAnalysis, indicators, biasResult }: {
           {hasIndicators && (
             <button
               onClick={retry}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-neutral-accent/15 text-neutral-accent hover:bg-neutral-accent/25 transition-colors mx-auto"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold bg-neutral-accent/15 text-neutral-accent hover:bg-neutral-accent/25 transition-colors mx-auto"
             >
               <Sparkles className="h-3 w-3" />
               Retry

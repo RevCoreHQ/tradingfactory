@@ -21,7 +21,7 @@ function OutcomeBadge({ outcome }: { outcome: BacktestTrade["outcome"] }) {
   };
   const c = config[outcome] ?? config.expired;
   return (
-    <span className={cn("text-[8px] font-bold uppercase px-1.5 py-0.5 rounded", c.classes)}>
+    <span className={cn("text-[10px] font-bold uppercase px-1.5 py-0.5 rounded", c.classes)}>
       {c.label}
     </span>
   );
@@ -66,7 +66,7 @@ export function TradeLog({ trades }: Props) {
     <div className="section-card">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border/20">
         <span className="text-xs font-semibold text-foreground">Trade Log</span>
-        <span className="text-[9px] font-mono text-muted-foreground/40">
+        <span className="text-[11px] font-mono text-muted-foreground/40">
           {trades.length} trades
         </span>
       </div>
@@ -75,24 +75,24 @@ export function TradeLog({ trades }: Props) {
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-border/20">
-              <th className="px-3 py-2 text-left text-[8px] font-bold text-muted-foreground/50 uppercase cursor-pointer" onClick={() => toggleSort("index")}>
+              <th className="px-3 py-2 text-left text-[10px] font-bold text-muted-foreground/50 uppercase cursor-pointer" onClick={() => toggleSort("index")}>
                 # {sortKey === "index" && <SortIcon className="inline h-3 w-3" />}
               </th>
-              <th className="px-2 py-2 text-left text-[8px] font-bold text-muted-foreground/50 uppercase">Time</th>
-              <th className="px-2 py-2 text-left text-[8px] font-bold text-muted-foreground/50 uppercase">Dir</th>
-              <th className="px-2 py-2 text-left text-[8px] font-bold text-muted-foreground/50 uppercase cursor-pointer" onClick={() => toggleSort("conviction")}>
+              <th className="px-2 py-2 text-left text-[10px] font-bold text-muted-foreground/50 uppercase">Time</th>
+              <th className="px-2 py-2 text-left text-[10px] font-bold text-muted-foreground/50 uppercase">Dir</th>
+              <th className="px-2 py-2 text-left text-[10px] font-bold text-muted-foreground/50 uppercase cursor-pointer" onClick={() => toggleSort("conviction")}>
                 Conv {sortKey === "conviction" && <SortIcon className="inline h-3 w-3" />}
               </th>
-              <th className="px-2 py-2 text-right text-[8px] font-bold text-muted-foreground/50 uppercase">Entry</th>
-              <th className="px-2 py-2 text-right text-[8px] font-bold text-muted-foreground/50 uppercase">Exit</th>
-              <th className="px-2 py-2 text-center text-[8px] font-bold text-muted-foreground/50 uppercase">Outcome</th>
-              <th className="px-2 py-2 text-right text-[8px] font-bold text-muted-foreground/50 uppercase cursor-pointer" onClick={() => toggleSort("rMultiple")}>
+              <th className="px-2 py-2 text-right text-[10px] font-bold text-muted-foreground/50 uppercase">Entry</th>
+              <th className="px-2 py-2 text-right text-[10px] font-bold text-muted-foreground/50 uppercase">Exit</th>
+              <th className="px-2 py-2 text-center text-[10px] font-bold text-muted-foreground/50 uppercase">Outcome</th>
+              <th className="px-2 py-2 text-right text-[10px] font-bold text-muted-foreground/50 uppercase cursor-pointer" onClick={() => toggleSort("rMultiple")}>
                 R {sortKey === "rMultiple" && <SortIcon className="inline h-3 w-3" />}
               </th>
-              <th className="px-2 py-2 text-right text-[8px] font-bold text-muted-foreground/50 uppercase cursor-pointer" onClick={() => toggleSort("barsInTrade")}>
+              <th className="px-2 py-2 text-right text-[10px] font-bold text-muted-foreground/50 uppercase cursor-pointer" onClick={() => toggleSort("barsInTrade")}>
                 Bars {sortKey === "barsInTrade" && <SortIcon className="inline h-3 w-3" />}
               </th>
-              <th className="px-2 py-2 text-left text-[8px] font-bold text-muted-foreground/50 uppercase">Systems</th>
+              <th className="px-2 py-2 text-left text-[10px] font-bold text-muted-foreground/50 uppercase">Systems</th>
             </tr>
           </thead>
           <tbody>
@@ -101,13 +101,13 @@ export function TradeLog({ trades }: Props) {
                 <td className="px-3 py-2 font-mono text-muted-foreground/50">{idx + 1}</td>
                 <td className="px-2 py-2 font-mono text-muted-foreground/60">{fmtDate(trade.signalTimestamp)}</td>
                 <td className="px-2 py-2">
-                  <span className={cn("font-semibold uppercase text-[10px]", trade.direction === "bullish" ? "text-bullish" : "text-bearish")}>
+                  <span className={cn("font-semibold uppercase text-[12px]", trade.direction === "bullish" ? "text-bullish" : "text-bearish")}>
                     {trade.direction === "bullish" ? "LONG" : "SHORT"}
                   </span>
                 </td>
                 <td className="px-2 py-2">
-                  <span className="text-[10px] font-bold text-foreground">{trade.conviction}</span>
-                  <span className="text-[9px] text-muted-foreground/40 ml-1">{trade.convictionScore}</span>
+                  <span className="text-[12px] font-bold text-foreground">{trade.conviction}</span>
+                  <span className="text-[11px] text-muted-foreground/40 ml-1">{trade.convictionScore}</span>
                 </td>
                 <td className="px-2 py-2 text-right font-mono">{trade.entryPrice?.toFixed(4) ?? "—"}</td>
                 <td className="px-2 py-2 text-right font-mono">{trade.exitPrice?.toFixed(4) ?? "—"}</td>
@@ -116,7 +116,7 @@ export function TradeLog({ trades }: Props) {
                   {trade.rMultiple > 0 ? "+" : ""}{trade.rMultiple.toFixed(2)}R
                 </td>
                 <td className="px-2 py-2 text-right font-mono text-muted-foreground/50">{trade.barsInTrade}</td>
-                <td className="px-2 py-2 text-[9px] text-muted-foreground/40 max-w-32 truncate">
+                <td className="px-2 py-2 text-[11px] text-muted-foreground/40 max-w-32 truncate">
                   {trade.agreeingSystems.join(", ")}
                 </td>
               </tr>
@@ -128,7 +128,7 @@ export function TradeLog({ trades }: Props) {
       {trades.length > 50 && !showAll && (
         <button
           onClick={() => setShowAll(true)}
-          className="w-full py-2 text-[10px] text-neutral-accent hover:text-neutral-accent/80 font-medium transition-colors border-t border-border/20"
+          className="w-full py-2 text-[12px] text-neutral-accent hover:text-neutral-accent/80 font-medium transition-colors border-t border-border/20"
         >
           Show all {trades.length} trades
         </button>

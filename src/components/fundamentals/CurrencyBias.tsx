@@ -94,7 +94,7 @@ export function CurrencyBias() {
         <div className="mb-4 p-3 rounded-lg bg-[var(--surface-2)] border border-border/30 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold font-mono">DXY</span>
-            <span className="text-[10px] text-muted-foreground">US Dollar Index</span>
+            <span className="text-[12px] text-muted-foreground">US Dollar Index</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm font-mono font-bold text-foreground">
@@ -102,7 +102,7 @@ export function CurrencyBias() {
             </span>
             <span
               className={cn(
-                "text-[10px] font-mono font-medium px-1.5 py-0.5 rounded",
+                "text-[12px] font-mono font-medium px-1.5 py-0.5 rounded",
                 dxy.change > 0 ? "text-bullish bg-bullish/10" : dxy.change < 0 ? "text-bearish bg-bearish/10" : "text-muted-foreground"
               )}
             >
@@ -137,7 +137,7 @@ export function CurrencyBias() {
                     <span className="text-xs font-bold font-mono">{item.currency}</span>
                   </div>
                   <span
-                    className="text-[9px] font-bold uppercase tracking-wider"
+                    className="text-[11px] font-bold uppercase tracking-wider"
                     style={{ color }}
                   >
                     {getBiasLabel(item.direction)}
@@ -168,7 +168,7 @@ export function CurrencyBias() {
                   {item.contributingPairs.slice(0, 2).map((p) => (
                     <div
                       key={p.symbol}
-                      className="text-[9px] text-muted-foreground/50 truncate font-mono"
+                      className="text-[11px] text-muted-foreground/50 truncate font-mono"
                     >
                       {p.symbol}: {p.bias > 0 ? "+" : ""}
                       {p.bias.toFixed(0)}

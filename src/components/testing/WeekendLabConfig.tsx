@@ -55,7 +55,7 @@ export function WeekendLabConfig({
     <div className="glass-card rounded-2xl border border-border/30 p-6 space-y-5">
       {/* Category Filter */}
       <div>
-        <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider block mb-2">
+        <label className="text-[12px] font-bold text-muted-foreground/60 uppercase tracking-wider block mb-2">
           Instruments
         </label>
         <div className="flex flex-wrap gap-2">
@@ -65,14 +65,14 @@ export function WeekendLabConfig({
               onClick={() => handleCategoryFilter(cat.id)}
               disabled={isRunning}
               className={cn(
-                "px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all",
+                "px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-all",
                 selectedCategory === cat.id
                   ? "bg-foreground text-background"
                   : "glass-card border border-border/30 text-muted-foreground hover:text-foreground"
               )}
             >
               {cat.label}
-              <span className="ml-1 text-[9px] opacity-50">
+              <span className="ml-1 text-[11px] opacity-50">
                 ({cat.id === "all" ? INSTRUMENTS.length : INSTRUMENTS.filter((i) => i.category === cat.id).length})
               </span>
             </button>
@@ -83,7 +83,7 @@ export function WeekendLabConfig({
       {/* Timeframe + Style */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div>
-          <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider block mb-2">
+          <label className="text-[12px] font-bold text-muted-foreground/60 uppercase tracking-wider block mb-2">
             Timeframe
           </label>
           <div className="flex gap-1">
@@ -93,7 +93,7 @@ export function WeekendLabConfig({
                 onClick={() => onConfigChange({ ...config, timeframe: tf })}
                 disabled={isRunning}
                 className={cn(
-                  "flex-1 px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold transition-all",
+                  "flex-1 px-3 py-1.5 rounded-lg text-[13px] font-mono font-bold transition-all",
                   config.timeframe === tf
                     ? "bg-foreground text-background"
                     : "glass-card border border-border/30 text-muted-foreground"
@@ -106,7 +106,7 @@ export function WeekendLabConfig({
         </div>
 
         <div>
-          <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider block mb-2">
+          <label className="text-[12px] font-bold text-muted-foreground/60 uppercase tracking-wider block mb-2">
             Style
           </label>
           <div className="flex gap-1">
@@ -116,7 +116,7 @@ export function WeekendLabConfig({
                 onClick={() => onConfigChange({ ...config, tradingStyle: style })}
                 disabled={isRunning}
                 className={cn(
-                  "flex-1 px-3 py-1.5 rounded-lg text-[11px] font-semibold capitalize transition-all",
+                  "flex-1 px-3 py-1.5 rounded-lg text-[13px] font-semibold capitalize transition-all",
                   config.tradingStyle === style
                     ? "bg-foreground text-background"
                     : "glass-card border border-border/30 text-muted-foreground"
@@ -130,14 +130,14 @@ export function WeekendLabConfig({
 
         {/* Auto-Improve Toggle */}
         <div>
-          <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider block mb-2">
+          <label className="text-[12px] font-bold text-muted-foreground/60 uppercase tracking-wider block mb-2">
             Auto-Improve
           </label>
           <button
             onClick={() => onConfigChange({ ...config, autoImprove: !config.autoImprove })}
             disabled={isRunning}
             className={cn(
-              "w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all",
+              "w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-all",
               config.autoImprove
                 ? "bg-bullish/20 border border-bullish/30 text-bullish"
                 : "glass-card border border-border/30 text-muted-foreground"
@@ -150,14 +150,14 @@ export function WeekendLabConfig({
 
         {/* Feed Confluence Toggle */}
         <div>
-          <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider block mb-2">
+          <label className="text-[12px] font-bold text-muted-foreground/60 uppercase tracking-wider block mb-2">
             Feed Confluence
           </label>
           <button
             onClick={() => onConfigChange({ ...config, feedConfluence: !config.feedConfluence })}
             disabled={isRunning}
             className={cn(
-              "w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all",
+              "w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-all",
               config.feedConfluence
                 ? "bg-bullish/20 border border-bullish/30 text-bullish"
                 : "glass-card border border-border/30 text-muted-foreground"
@@ -193,7 +193,7 @@ export function WeekendLabConfig({
         {/* Progress */}
         {isRunning && (
           <div className="flex-1 space-y-1.5">
-            <div className="flex items-center justify-between text-[10px]">
+            <div className="flex items-center justify-between text-[12px]">
               <span className="flex items-center gap-1.5 text-foreground font-semibold">
                 <Loader2 className="h-3 w-3 animate-spin" />
                 {progress.currentInstrument}
@@ -218,13 +218,13 @@ export function WeekendLabConfig({
         )}
 
         {progress.status === "complete" && (
-          <span className="text-[11px] font-semibold text-bullish">
+          <span className="text-[13px] font-semibold text-bullish">
             Complete
           </span>
         )}
 
         {progress.status === "error" && (
-          <span className="text-[11px] font-semibold text-bearish">
+          <span className="text-[13px] font-semibold text-bearish">
             {progress.errorMessage ?? "Error"}
           </span>
         )}

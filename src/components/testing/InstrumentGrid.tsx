@@ -72,7 +72,7 @@ export function InstrumentGrid({ results }: InstrumentGridProps) {
           <button
             key={col.key}
             onClick={() => handleSort(col.key)}
-            className="flex items-center gap-1 text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider hover:text-foreground transition-colors text-left"
+            className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground/60 uppercase tracking-wider hover:text-foreground transition-colors text-left"
           >
             {col.label}
             {sortKey === col.key ? (
@@ -97,36 +97,36 @@ export function InstrumentGrid({ results }: InstrumentGridProps) {
               onClick={() => toggleExpand(r.instrumentId)}
               className="grid grid-cols-[1fr_0.7fr_0.6fr_0.7fr_0.8fr_0.5fr_0.7fr_0.5fr_2rem] gap-2 px-4 py-3 hover:bg-surface-2/20 cursor-pointer transition-colors items-center"
             >
-              <span className="text-[11px] font-bold text-foreground">{r.symbol}</span>
-              <span className="text-[10px] text-muted-foreground capitalize">{r.category}</span>
-              <span className="text-[11px] font-mono text-foreground">{finalStats.totalTrades}</span>
+              <span className="text-[13px] font-bold text-foreground">{r.symbol}</span>
+              <span className="text-[12px] text-muted-foreground capitalize">{r.category}</span>
+              <span className="text-[13px] font-mono text-foreground">{finalStats.totalTrades}</span>
               <span className={cn(
-                "text-[11px] font-mono",
+                "text-[13px] font-mono",
                 finalStats.winRate >= 0.5 ? "text-bullish" : "text-bearish"
               )}>
                 {(finalStats.winRate * 100).toFixed(1)}%
               </span>
               <div className="flex items-center gap-1">
                 <span className={cn(
-                  "text-[11px] font-mono font-bold",
+                  "text-[13px] font-mono font-bold",
                   finalStats.expectancy > 0 ? "text-bullish" : "text-bearish"
                 )}>
                   {finalStats.expectancy.toFixed(2)}R
                 </span>
                 {hasImprovement && r.improvement!.expectancyDelta > 0 && (
-                  <span className="text-[8px] font-mono text-bullish bg-bullish/10 px-1 rounded">
+                  <span className="text-[10px] font-mono text-bullish bg-bullish/10 px-1 rounded">
                     +{(r.improvement!.expectancyDelta).toFixed(2)}
                   </span>
                 )}
               </div>
               <span className={cn(
-                "text-[11px] font-mono",
+                "text-[13px] font-mono",
                 finalStats.profitFactor >= 1 ? "text-foreground" : "text-bearish"
               )}>
                 {finalStats.profitFactor.toFixed(2)}
               </span>
               <span className={cn(
-                "text-[11px] font-mono",
+                "text-[13px] font-mono",
                 finalStats.maxDrawdownPercent < 15 ? "text-foreground" : "text-bearish"
               )}>
                 {finalStats.maxDrawdownPercent.toFixed(1)}%
@@ -177,11 +177,11 @@ export function InstrumentGrid({ results }: InstrumentGridProps) {
                 {/* Sweep Variants Table */}
                 {r.sweepVariants.length > 0 && (
                   <div>
-                    <h5 className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">
+                    <h5 className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">
                       Parameter Sweep ({r.sweepVariants.length} variants tested)
                     </h5>
                     <div className="rounded-lg border border-border/15 overflow-hidden">
-                      <div className="grid grid-cols-[1.2fr_0.7fr_0.8fr_0.7fr_0.6fr_0.5fr] gap-1 px-3 py-1.5 bg-surface-2/30 text-[8px] font-bold text-muted-foreground/50 uppercase tracking-wider">
+                      <div className="grid grid-cols-[1.2fr_0.7fr_0.8fr_0.7fr_0.6fr_0.5fr] gap-1 px-3 py-1.5 bg-surface-2/30 text-[10px] font-bold text-muted-foreground/50 uppercase tracking-wider">
                         <span>Variant</span>
                         <span>Trades</span>
                         <span>Win Rate</span>
@@ -190,7 +190,7 @@ export function InstrumentGrid({ results }: InstrumentGridProps) {
                         <span>Score</span>
                       </div>
                       {/* Baseline row */}
-                      <div className="grid grid-cols-[1.2fr_0.7fr_0.8fr_0.7fr_0.6fr_0.5fr] gap-1 px-3 py-1 text-[9px] font-mono border-t border-border/10 bg-surface-2/10">
+                      <div className="grid grid-cols-[1.2fr_0.7fr_0.8fr_0.7fr_0.6fr_0.5fr] gap-1 px-3 py-1 text-[11px] font-mono border-t border-border/10 bg-surface-2/10">
                         <span className="font-semibold text-muted-foreground">Baseline</span>
                         <span className="text-muted-foreground">{r.baselineResult.stats.totalTrades}</span>
                         <span className="text-muted-foreground">{(r.baselineResult.stats.winRate * 100).toFixed(1)}%</span>
@@ -207,7 +207,7 @@ export function InstrumentGrid({ results }: InstrumentGridProps) {
                             <div
                               key={vi}
                               className={cn(
-                                "grid grid-cols-[1.2fr_0.7fr_0.8fr_0.7fr_0.6fr_0.5fr] gap-1 px-3 py-1 text-[9px] font-mono border-t border-border/10",
+                                "grid grid-cols-[1.2fr_0.7fr_0.8fr_0.7fr_0.6fr_0.5fr] gap-1 px-3 py-1 text-[11px] font-mono border-t border-border/10",
                                 isBest && "bg-bullish/5"
                               )}
                             >
@@ -235,7 +235,7 @@ export function InstrumentGrid({ results }: InstrumentGridProps) {
                 {/* Weaknesses */}
                 {r.weaknesses.length > 0 && (
                   <div>
-                    <h5 className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">
+                    <h5 className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5">
                       Weaknesses ({r.weaknesses.length})
                     </h5>
                     <div className="space-y-1">
@@ -246,8 +246,8 @@ export function InstrumentGrid({ results }: InstrumentGridProps) {
                             w.severity === "critical" ? "text-bearish" : "text-amber-500"
                           )} />
                           <div>
-                            <span className="text-[10px] font-semibold text-foreground">{w.area}</span>
-                            <span className="text-[9px] text-muted-foreground/60 ml-1.5">{w.description}</span>
+                            <span className="text-[12px] font-semibold text-foreground">{w.area}</span>
+                            <span className="text-[11px] text-muted-foreground/60 ml-1.5">{w.description}</span>
                           </div>
                         </div>
                       ))}
@@ -261,7 +261,7 @@ export function InstrumentGrid({ results }: InstrumentGridProps) {
       })}
 
       {results.length === 0 && (
-        <div className="px-4 py-8 text-center text-[11px] text-muted-foreground/40">
+        <div className="px-4 py-8 text-center text-[13px] text-muted-foreground/40">
           No results yet. Run the Weekend Lab to see instrument data.
         </div>
       )}
@@ -286,9 +286,9 @@ function DeltaBadge({
       "rounded-lg p-2 border text-center",
       isPositive ? "border-bullish/20 bg-bullish/5" : "border-bearish/20 bg-bearish/5"
     )}>
-      <span className="text-[8px] font-bold text-muted-foreground/50 uppercase block">{label}</span>
+      <span className="text-[10px] font-bold text-muted-foreground/50 uppercase block">{label}</span>
       <span className={cn(
-        "text-[11px] font-mono font-bold",
+        "text-[13px] font-mono font-bold",
         isPositive ? "text-bullish" : "text-bearish"
       )}>
         {delta > 0 ? "+" : ""}{format(delta)}

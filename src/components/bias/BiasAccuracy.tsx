@@ -43,7 +43,7 @@ export function BiasAccuracyCard({ instrumentId }: { instrumentId: string }) {
       {/* Streak */}
       <div className="flex items-center gap-2 mb-4 px-1">
         <Flame className="h-3.5 w-3.5 text-[var(--amber)]" />
-        <span className="text-[10px] text-muted-foreground">Streak</span>
+        <span className="text-[12px] text-muted-foreground">Streak</span>
         <span className={cn(
           "text-xs font-bold tabular",
           streak > 0 ? "text-bullish" : streak < 0 ? "text-bearish" : "text-muted-foreground"
@@ -55,14 +55,14 @@ export function BiasAccuracyCard({ instrumentId }: { instrumentId: string }) {
       {/* Recent Predictions */}
       {recentWithOutcomes.length > 0 && (
         <div className="space-y-1.5">
-          <h4 className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-wider px-1">
+          <h4 className="text-[11px] font-bold text-muted-foreground/50 uppercase tracking-wider px-1">
             Recent Predictions
           </h4>
           <div className="space-y-1">
             {recentWithOutcomes.slice(0, 5).map((entry, i) => (
               <div
                 key={i}
-                className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-[var(--surface-2)] text-[10px]"
+                className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-[var(--surface-2)] text-[12px]"
               >
                 <span className="text-muted-foreground/60 font-mono w-14 shrink-0">
                   {format(new Date(entry.timestamp), "MMM dd")}
@@ -105,7 +105,7 @@ export function BiasAccuracySummary() {
   if (!stats || stats.total === 0) return null;
 
   return (
-    <div className="flex items-center gap-4 px-3 py-2 rounded-lg bg-[var(--surface-2)] text-[10px]">
+    <div className="flex items-center gap-4 px-3 py-2 rounded-lg bg-[var(--surface-2)] text-[12px]">
       <div className="flex items-center gap-1.5">
         <Target className="h-3 w-3 text-neutral-accent" />
         <span className="text-muted-foreground">Bias Accuracy</span>
@@ -147,11 +147,11 @@ function WinRateGauge({ label, winRate, total, correct }: { label: string; winRa
 
   return (
     <div className={cn("rounded-lg p-3 text-center", bgColor)}>
-      <span className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-wider">{label}</span>
+      <span className="text-[11px] font-bold text-muted-foreground/50 uppercase tracking-wider">{label}</span>
       <div className={cn("text-2xl font-bold tabular mt-1", color)}>
         {winRate}%
       </div>
-      <span className="text-[9px] text-muted-foreground/60">{correct}/{total}</span>
+      <span className="text-[11px] text-muted-foreground/60">{correct}/{total}</span>
     </div>
   );
 }

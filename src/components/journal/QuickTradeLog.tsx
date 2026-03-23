@@ -63,7 +63,7 @@ export function QuickTradeLog({
           setDirection(biasResult && biasResult.overallBias > 0 ? "long" : "short");
           setOpen(true);
         }}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-neutral-accent/15 text-neutral-accent hover:bg-neutral-accent/25 transition-colors"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold bg-neutral-accent/15 text-neutral-accent hover:bg-neutral-accent/25 transition-colors"
       >
         <BookOpen className="h-3 w-3" />
         Log Trade
@@ -105,7 +105,7 @@ export function QuickTradeLog({
 
           {/* Entry price */}
           <div className="mt-3">
-            <label className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
+            <label className="text-[12px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
               Entry Price
             </label>
             <input
@@ -120,7 +120,7 @@ export function QuickTradeLog({
 
           {/* Notes */}
           <div className="mt-2">
-            <label className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
+            <label className="text-[12px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
               Notes (optional)
             </label>
             <input
@@ -134,7 +134,7 @@ export function QuickTradeLog({
 
           {/* Bias context */}
           {biasResult && (
-            <div className="mt-2 px-2 py-1.5 rounded bg-[var(--surface-2)] text-[10px] text-muted-foreground/60">
+            <div className="mt-2 px-2 py-1.5 rounded bg-[var(--surface-2)] text-[12px] text-muted-foreground/60">
               Bias: {biasResult.overallBias > 0 ? "+" : ""}{Math.round(biasResult.overallBias)} ({biasResult.direction}) — Conf: {Math.round(biasResult.confidence)}%
             </div>
           )}

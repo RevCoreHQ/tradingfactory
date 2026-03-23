@@ -25,7 +25,7 @@ import {
 function LaneDivider({ label, color }: { label: string; color: string }) {
   return (
     <div className="pipeline-lane-divider my-3 ml-8">
-      <span className={cn("text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border", color)}>
+      <span className={cn("text-[11px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border", color)}>
         {label}
       </span>
     </div>
@@ -81,7 +81,7 @@ export function SystemPipelineFlow() {
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mt-2">
             {["Finnhub", "Twelve Data", "FMP", "Alternative.me"].map((src) => (
-              <span key={src} className="text-[9px] font-mono text-neutral-accent/60 bg-neutral-accent/8 px-2 py-1 rounded text-center">{src}</span>
+              <span key={src} className="text-[11px] font-mono text-neutral-accent/60 bg-neutral-accent/8 px-2 py-1 rounded text-center">{src}</span>
             ))}
           </div>
         </PipelineStageCard>
@@ -90,7 +90,7 @@ export function SystemPipelineFlow() {
           <p>Raw candles are transformed into a full technical summary. Every indicator is computed locally — no external API calls for indicator data.</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mt-2">
             {["EMA (9,13,21,50,200)", "SMA (9,20,26,50,200)", "RSI(14)", "MACD (12,26,9)", "Bollinger Bands", "ATR(14) + Series", "ADX + DI+/DI-", "Elder Impulse", "Support/Resistance", "Pivot Points"].map((ind) => (
-              <span key={ind} className="text-[9px] font-mono text-neutral-accent/60 bg-neutral-accent/8 px-2 py-1 rounded text-center">{ind}</span>
+              <span key={ind} className="text-[11px] font-mono text-neutral-accent/60 bg-neutral-accent/8 px-2 py-1 rounded text-center">{ind}</span>
             ))}
           </div>
         </PipelineStageCard>
@@ -111,9 +111,9 @@ export function SystemPipelineFlow() {
               { axis: "Phase", values: "Accumulation / Expansion / Distribution / Reversal", source: "Wyckoff-inspired: ADX direction + price vs EMA50" },
             ].map((a) => (
               <div key={a.axis} className="bg-bullish/8 border border-bullish/15 rounded-md px-2.5 py-1.5">
-                <div className="text-[10px] font-semibold text-bullish/80">{a.axis}</div>
-                <div className="text-[9px] font-mono text-foreground/60">{a.values}</div>
-                <div className="text-[8px] text-muted-foreground/50 mt-0.5">{a.source}</div>
+                <div className="text-[12px] font-semibold text-bullish/80">{a.axis}</div>
+                <div className="text-[11px] font-mono text-foreground/60">{a.values}</div>
+                <div className="text-[10px] text-muted-foreground/50 mt-0.5">{a.source}</div>
               </div>
             ))}
           </div>
@@ -136,12 +136,12 @@ export function SystemPipelineFlow() {
               { event: "CHoCH (Change of Character)", desc: "Price breaks a swing against the trend — potential reversal warning", color: "text-bearish/80" },
             ].map((e) => (
               <div key={e.event} className="bg-neutral-accent/8 border border-neutral-accent/15 rounded-md px-2.5 py-1.5">
-                <div className={`text-[10px] font-semibold ${e.color}`}>{e.event}</div>
-                <div className="text-[9px] text-muted-foreground/50">{e.desc}</div>
+                <div className={`text-[12px] font-semibold ${e.color}`}>{e.event}</div>
+                <div className="text-[11px] text-muted-foreground/50">{e.desc}</div>
               </div>
             ))}
           </div>
-          <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mt-3 mb-1.5">ICT Concepts</h4>
+          <h4 className="text-[12px] font-bold text-muted-foreground/60 uppercase tracking-wider mt-3 mb-1.5">ICT Concepts</h4>
           <div className="grid grid-cols-2 gap-1.5">
             {[
               { name: "Fair Value Gaps", desc: "3-candle imbalances where price skipped — CE midpoint acts as institutional magnet", color: "text-amber-700 dark:text-amber-500" },
@@ -150,8 +150,8 @@ export function SystemPipelineFlow() {
               { name: "Consolidation Breakouts", desc: "Tight ranges (< 1.5x ATR, ≥ 5 bars) before institutional moves — retest zones", color: "text-amber-700 dark:text-amber-500" },
             ].map((c) => (
               <div key={c.name} className="bg-amber-500/8 border border-amber-500/15 rounded-md px-2.5 py-1.5">
-                <div className={`text-[10px] font-semibold ${c.color}`}>{c.name}</div>
-                <div className="text-[9px] text-muted-foreground/50">{c.desc}</div>
+                <div className={`text-[12px] font-semibold ${c.color}`}>{c.name}</div>
+                <div className="text-[11px] text-muted-foreground/50">{c.desc}</div>
               </div>
             ))}
           </div>
@@ -176,9 +176,9 @@ export function SystemPipelineFlow() {
               { condition: "Breakout structure", result: "Intraday", reason: "Capture initial momentum" },
               { condition: "Range structure", result: "Intraday", reason: "Mean reversion plays" },
             ].map((r) => (
-              <div key={r.condition} className="flex items-center gap-2 text-[10px]">
+              <div key={r.condition} className="flex items-center gap-2 text-[12px]">
                 <span className="font-mono text-muted-foreground/60 w-36 shrink-0">{r.condition}</span>
-                <span className="text-[8px] font-bold text-foreground/60">&rarr;</span>
+                <span className="text-[10px] font-bold text-foreground/60">&rarr;</span>
                 <span className={r.result === "Intraday" ? "text-neutral-accent font-semibold w-14" : "text-muted-foreground font-semibold w-14"}>{r.result}</span>
                 <span className="text-muted-foreground/50">{r.reason}</span>
               </div>
@@ -226,8 +226,8 @@ export function SystemPipelineFlow() {
               { regime: "Breakout", trend: "0.35", mr: "0.10", mom: "0.55" },
             ].map((r) => (
               <div key={r.regime} className="bg-neutral-accent/8 border border-neutral-accent/15 rounded-md px-2.5 py-1.5 text-center">
-                <div className="text-[10px] font-semibold text-neutral-accent/80">{r.regime}</div>
-                <div className="text-[8px] font-mono text-muted-foreground/50">T:{r.trend} MR:{r.mr} M:{r.mom}</div>
+                <div className="text-[12px] font-semibold text-neutral-accent/80">{r.regime}</div>
+                <div className="text-[10px] font-mono text-muted-foreground/50">T:{r.trend} MR:{r.mr} M:{r.mom}</div>
               </div>
             ))}
           </div>
@@ -251,8 +251,8 @@ export function SystemPipelineFlow() {
               { label: "Against (<2)", mod: "-10", color: "bg-bearish/8 border-bearish/15 text-bearish/70" },
             ].map((a) => (
               <div key={a.label} className={`rounded-md px-2.5 py-1.5 text-center border ${a.color}`}>
-                <div className="text-[10px] font-semibold">{a.label}</div>
-                <div className="text-[9px] font-mono opacity-70">{a.mod} pts</div>
+                <div className="text-[12px] font-semibold">{a.label}</div>
+                <div className="text-[11px] font-mono opacity-70">{a.mod} pts</div>
               </div>
             ))}
           </div>
@@ -273,11 +273,11 @@ export function SystemPipelineFlow() {
               { label: "ICT Confluence", range: "0-10 pts", width: "10%", color: "bg-amber-500/30" },
             ].map((f) => (
               <div key={f.label} className="flex items-center gap-2">
-                <span className="w-28 text-[9px] font-bold text-muted-foreground/60 uppercase shrink-0">{f.label}</span>
+                <span className="w-28 text-[11px] font-bold text-muted-foreground/60 uppercase shrink-0">{f.label}</span>
                 <div className="flex-1 h-3 bg-surface-2/30 rounded-full overflow-hidden">
                   <div className={`h-full rounded-full ${f.color}`} style={{ width: f.width }} />
                 </div>
-                <span className="text-[9px] font-mono text-muted-foreground/60 w-16 text-right shrink-0">{f.range}</span>
+                <span className="text-[11px] font-mono text-muted-foreground/60 w-16 text-right shrink-0">{f.range}</span>
               </div>
             ))}
           </div>
@@ -303,8 +303,8 @@ export function SystemPipelineFlow() {
               { rule: "Non-neutral direction", desc: "Must have clear bullish or bearish bias" },
             ].map((f) => (
               <div key={f.rule} className="bg-bearish/8 border border-bearish/15 rounded-md px-2.5 py-1.5">
-                <div className="text-[10px] font-semibold text-bearish/80">{f.rule}</div>
-                <div className="text-[9px] text-muted-foreground/50">{f.desc}</div>
+                <div className="text-[12px] font-semibold text-bearish/80">{f.rule}</div>
+                <div className="text-[11px] text-muted-foreground/50">{f.desc}</div>
               </div>
             ))}
           </div>
@@ -327,8 +327,8 @@ export function SystemPipelineFlow() {
               { name: "Refined Entry Zone", desc: "Tightened when pattern quality > 60" },
             ].map((p) => (
               <div key={p.name} className="bg-bullish/8 border border-bullish/15 rounded-md px-2.5 py-1.5">
-                <div className="text-[10px] font-semibold text-bullish/80">{p.name}</div>
-                <div className="text-[9px] text-muted-foreground/50">{p.desc}</div>
+                <div className="text-[12px] font-semibold text-bullish/80">{p.name}</div>
+                <div className="text-[11px] text-muted-foreground/50">{p.desc}</div>
               </div>
             ))}
           </div>
@@ -350,7 +350,7 @@ export function SystemPipelineFlow() {
             ].map((t) => (
               <div key={t.tier} className="flex-1 bg-bullish/8 border border-bullish/15 rounded-md px-3 py-2 text-center">
                 <div className={`text-lg font-black ${t.color}`}>{t.tier}</div>
-                <div className="text-[9px] text-muted-foreground/60">{t.mult} base &rarr; {t.risk} risk</div>
+                <div className="text-[11px] text-muted-foreground/60">{t.mult} base &rarr; {t.risk} risk</div>
               </div>
             ))}
           </div>
@@ -371,8 +371,8 @@ export function SystemPipelineFlow() {
               { check: "Concentration + diversification", desc: "Score 0-100. Score < 30 triggers desk manager veto" },
             ].map((c) => (
               <div key={c.check} className="bg-bearish/8 border border-bearish/15 rounded-md px-2.5 py-1.5">
-                <div className="text-[10px] font-semibold text-bearish/80">{c.check}</div>
-                <div className="text-[9px] text-muted-foreground/50">{c.desc}</div>
+                <div className="text-[12px] font-semibold text-bearish/80">{c.check}</div>
+                <div className="text-[11px] text-muted-foreground/50">{c.desc}</div>
               </div>
             ))}
           </div>
@@ -399,8 +399,8 @@ export function SystemPipelineFlow() {
               { name: "Desk Chat", desc: "Multi-turn Q&A — Opus 4.6" },
             ].map((ai) => (
               <div key={ai.name} className="bg-amber-500/8 border border-amber-500/15 rounded-md px-2.5 py-1.5 text-center">
-                <div className="text-[10px] font-semibold text-amber-700 dark:text-amber-500/80">{ai.name}</div>
-                <div className="text-[9px] text-muted-foreground/50">{ai.desc}</div>
+                <div className="text-[12px] font-semibold text-amber-700 dark:text-amber-500/80">{ai.name}</div>
+                <div className="text-[11px] text-muted-foreground/50">{ai.desc}</div>
               </div>
             ))}
           </div>
@@ -420,17 +420,17 @@ export function SystemPipelineFlow() {
               { step: "4", label: "Kelly fraction capped", desc: "Position sizing suggestion capped at 25% of Kelly criterion" },
             ].map((s) => (
               <div key={s.step} className="flex items-start gap-2">
-                <span className="h-5 w-5 rounded-full bg-bullish/15 text-bullish text-[9px] font-bold flex items-center justify-center shrink-0 mt-0.5">{s.step}</span>
+                <span className="h-5 w-5 rounded-full bg-bullish/15 text-bullish text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">{s.step}</span>
                 <div>
-                  <span className="text-[10px] font-semibold text-foreground">{s.label}</span>
-                  <p className="text-[9px] text-muted-foreground/50">{s.desc}</p>
+                  <span className="text-[12px] font-semibold text-foreground">{s.label}</span>
+                  <p className="text-[11px] text-muted-foreground/50">{s.desc}</p>
                 </div>
               </div>
             ))}
           </div>
           <div className="mt-2 bg-bullish/8 border border-bullish/15 rounded-md px-3 py-2">
-            <div className="text-[10px] font-semibold text-bullish/80">Threshold: 20+ trades</div>
-            <p className="text-[9px] text-muted-foreground/50">
+            <div className="text-[12px] font-semibold text-bullish/80">Threshold: 20+ trades</div>
+            <p className="text-[11px] text-muted-foreground/50">
               Learning kicks in after 20 completed trades. EV &gt; 1.0R &rarr; 1.5x risk, EV 0.5-1.0R &rarr; 1.25x, EV &lt; 0 &rarr; 0.5x.
               Regime-specific keys preferred when available. Falls back to legacy keys when data insufficient.
             </p>

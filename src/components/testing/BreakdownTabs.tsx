@@ -20,7 +20,7 @@ function TableHeader({ columns }: { columns: string[] }) {
         <span
           key={col}
           className={cn(
-            "text-[8px] font-bold text-muted-foreground/50 uppercase tracking-wider",
+            "text-[10px] font-bold text-muted-foreground/50 uppercase tracking-wider",
             i === 0 ? "flex-1" : "w-16 text-right"
           )}
         >
@@ -104,7 +104,7 @@ export function BreakdownTabs({ systemBreakdown, regimeBreakdown, convictionBrea
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all",
+              "px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all",
               activeTab === tab.id
                 ? "bg-neutral-accent/15 text-neutral-accent"
                 : "text-muted-foreground hover:text-foreground hover:bg-[var(--surface-2)]"

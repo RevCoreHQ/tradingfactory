@@ -57,15 +57,15 @@ export function NewsFeed() {
                 </h4>
                 <StatusBadge
                   variant={item.sentimentLabel === "bullish" ? "bullish" : item.sentimentLabel === "bearish" ? "bearish" : "neutral"}
-                  className="shrink-0 text-[10px]"
+                  className="shrink-0 text-[12px]"
                 >
                   {item.sentimentLabel}
                 </StatusBadge>
               </div>
               <div className="flex items-center gap-2 mt-1.5">
-                <span className="text-[10px] text-muted-foreground">{item.source}</span>
-                <span className="text-[10px] text-muted-foreground/50">·</span>
-                <span className="text-[10px] text-muted-foreground">{formatRelativeTime(item.publishedAt)}</span>
+                <span className="text-[12px] text-muted-foreground">{item.source}</span>
+                <span className="text-[12px] text-muted-foreground/50">·</span>
+                <span className="text-[12px] text-muted-foreground">{formatRelativeTime(item.publishedAt)}</span>
               </div>
             </a>
           ))}

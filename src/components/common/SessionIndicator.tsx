@@ -28,7 +28,7 @@ export function SessionBadge({ instrumentId }: { instrumentId: string }) {
         }}
       />
       <span className={cn(
-        "text-[9px]",
+        "text-[11px]",
         relevance.isOptimalNow ? "text-bullish font-medium" : "text-muted-foreground/60"
       )}>
         {relevance.isOptimalNow ? "Active" : `in ${relevance.nextOptimalIn}`}
@@ -47,7 +47,7 @@ export function SessionCard({ instrumentId }: { instrumentId: string }) {
           <Clock className="h-3.5 w-3.5 text-muted-foreground/40" />
           <h3 className="text-xs font-semibold text-muted-foreground">Session Window</h3>
         </div>
-        <p className="text-[10px] text-muted-foreground/50">Loading session data...</p>
+        <p className="text-[12px] text-muted-foreground/50">Loading session data...</p>
       </GlassCard>
     );
   }
@@ -71,7 +71,7 @@ export function SessionCard({ instrumentId }: { instrumentId: string }) {
           <Clock className="h-3.5 w-3.5 text-muted-foreground/60" />
           <h3 className="text-xs font-semibold">Session Window</h3>
         </div>
-        <div className={cn("px-2 py-0.5 rounded text-[10px] font-bold tabular", scoreBg, scoreColor)}>
+        <div className={cn("px-2 py-0.5 rounded text-[12px] font-bold tabular", scoreBg, scoreColor)}>
           {relevance.sessionScore}
         </div>
       </div>
@@ -86,7 +86,7 @@ export function SessionCard({ instrumentId }: { instrumentId: string }) {
             <div
               key={sessionKey}
               className={cn(
-                "flex items-center gap-1 px-2 py-1 rounded-md text-[10px] border",
+                "flex items-center gap-1 px-2 py-1 rounded-md text-[12px] border",
                 isActive
                   ? "border-bullish/30 bg-bullish/10"
                   : "border-border bg-[var(--surface-2)]"
@@ -105,7 +105,7 @@ export function SessionCard({ instrumentId }: { instrumentId: string }) {
       </div>
 
       {/* Status */}
-      <div className="flex items-center gap-2 text-[10px]">
+      <div className="flex items-center gap-2 text-[12px]">
         {relevance.isOptimalNow ? (
           <>
             <Zap className="h-3 w-3 text-bullish" />
@@ -121,7 +121,7 @@ export function SessionCard({ instrumentId }: { instrumentId: string }) {
         )}
       </div>
 
-      <p className="text-[9px] text-muted-foreground/50 mt-2">{relevance.reason}</p>
+      <p className="text-[11px] text-muted-foreground/50 mt-2">{relevance.reason}</p>
     </GlassCard>
   );
 }

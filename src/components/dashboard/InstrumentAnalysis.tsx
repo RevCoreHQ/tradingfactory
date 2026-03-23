@@ -130,7 +130,7 @@ export function InstrumentAnalysis() {
                   <button
                     onClick={() => setActiveTab("deep")}
                     className={cn(
-                      "px-3 py-1 rounded-lg text-[11px] font-semibold transition-colors",
+                      "px-3 py-1 rounded-lg text-[13px] font-semibold transition-colors",
                       activeTab === "deep"
                         ? "bg-neutral-accent/15 text-neutral-accent"
                         : "text-muted-foreground hover:text-foreground hover:bg-[var(--surface-2)]"
@@ -141,7 +141,7 @@ export function InstrumentAnalysis() {
                   <button
                     onClick={() => setActiveTab("technical")}
                     className={cn(
-                      "px-3 py-1 rounded-lg text-[11px] font-semibold transition-colors",
+                      "px-3 py-1 rounded-lg text-[13px] font-semibold transition-colors",
                       activeTab === "technical"
                         ? "bg-neutral-accent/15 text-neutral-accent"
                         : "text-muted-foreground hover:text-foreground hover:bg-[var(--surface-2)]"
@@ -194,7 +194,7 @@ export function InstrumentAnalysis() {
                       </div>
                       <div className="flex flex-col items-center gap-1.5 mt-1">
                         <span className={cn(
-                          "inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider",
+                          "inline-flex items-center gap-1 px-2 py-1 rounded-md text-[12px] font-bold uppercase tracking-wider",
                           mechanicalSetup.regime === "trending_up" && "bg-bullish/15 text-bullish",
                           mechanicalSetup.regime === "trending_down" && "bg-bearish/15 text-bearish",
                           mechanicalSetup.regime === "ranging" && "bg-neutral-accent/15 text-neutral-accent",
@@ -207,7 +207,7 @@ export function InstrumentAnalysis() {
                           {mechanicalSetup.regimeLabel}
                         </span>
                         <span className={cn(
-                          "inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider cursor-help",
+                          "inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wider cursor-help",
                           mechanicalSetup.impulse === "green" && "text-bullish",
                           mechanicalSetup.impulse === "red" && "text-bearish",
                           mechanicalSetup.impulse === "blue" && "text-neutral-accent",
@@ -230,7 +230,7 @@ export function InstrumentAnalysis() {
                     <div className="flex flex-col items-center py-6 text-center">
                       <Minus className="h-8 w-8 text-muted-foreground/20 mb-2" />
                       <p className="text-xs text-muted-foreground/40">No qualifying setup</p>
-                      <p className="text-[10px] text-muted-foreground/30 mt-1">Below B conviction</p>
+                      <p className="text-[12px] text-muted-foreground/30 mt-1">Below B conviction</p>
                     </div>
                   )}
                 </div>

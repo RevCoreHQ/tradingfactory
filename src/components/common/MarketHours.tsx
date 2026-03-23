@@ -30,11 +30,11 @@ export function MarketHoursStrip() {
   return (
     <div className="border-b border-border/50 bg-[var(--surface-0)] px-6 py-2">
       <div className="max-w-[1400px] mx-auto flex items-center justify-center gap-6 overflow-x-auto scrollbar-none">
-        <span className="text-[10px] font-mono text-muted-foreground/60 shrink-0">
+        <span className="text-[12px] font-mono text-muted-foreground/60 shrink-0">
           {now.toUTCString().slice(17, 25)} UTC
         </span>
         {!marketOpen && (
-          <span className="text-[11px] font-medium text-muted-foreground/50">Markets Closed — Weekend</span>
+          <span className="text-[13px] font-medium text-muted-foreground/50">Markets Closed — Weekend</span>
         )}
         {sessions.map((session) => (
           <div key={session.key} className={cn("flex items-center gap-2 shrink-0", !marketOpen && "opacity-30")}>
@@ -43,14 +43,14 @@ export function MarketHoursStrip() {
               style={{ backgroundColor: session.color, opacity: session.active ? 1 : 0.2 }}
             />
             <span className={cn(
-              "text-[11px]",
+              "text-[13px]",
               session.active ? "text-foreground font-medium" : "text-muted-foreground/60"
             )}>
               {session.name}
             </span>
             {marketOpen && (
               <span className={cn(
-                "text-[10px] font-mono",
+                "text-[12px] font-mono",
                 session.active ? "text-foreground/70" : "text-muted-foreground/40"
               )}>
                 {session.active ? session.timeLeft : `in ${session.timeLeft}`}
@@ -88,7 +88,7 @@ export function MarketHours() {
     <GlassCard delay={0.1}>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Market Hours</h3>
-        <span className="text-[10px] text-muted-foreground font-mono">
+        <span className="text-[12px] text-muted-foreground font-mono">
           {now.toUTCString().slice(17, 25)} UTC
         </span>
       </div>
@@ -114,7 +114,7 @@ export function MarketHours() {
                 {session.name}
               </span>
             </div>
-            <div className="flex items-center justify-between text-[10px]">
+            <div className="flex items-center justify-between text-[12px]">
               <span className={cn(session.active ? "text-foreground font-medium" : "text-muted-foreground")}>
                 {session.active ? "Closes in" : "Opens in"}
               </span>

@@ -28,9 +28,9 @@ export function SystemRiskManagement() {
         >
           <div className="flex items-center gap-2">
             <Scale className="h-4 w-4 text-neutral-accent/60" />
-            <h4 className="text-[11px] font-semibold text-foreground">Position Sizing</h4>
+            <h4 className="text-[13px] font-semibold text-foreground">Position Sizing</h4>
           </div>
-          <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
+          <p className="text-[12px] text-muted-foreground/60 leading-relaxed">
             Conviction-scaled risk. Higher tier = more capital allocated.
           </p>
           <div className="space-y-2">
@@ -39,18 +39,18 @@ export function SystemRiskManagement() {
               { tier: "A", mult: "1.0x", risk: "2.0%", color: "bg-bullish/60" },
             ].map((t) => (
               <div key={t.tier} className="flex items-center gap-2">
-                <span className={cn("h-6 w-8 rounded text-[10px] font-black text-white flex items-center justify-center", t.color)}>
+                <span className={cn("h-6 w-8 rounded text-[12px] font-black text-white flex items-center justify-center", t.color)}>
                   {t.tier}
                 </span>
                 <div className="flex-1">
-                  <span className="text-[10px] font-semibold text-foreground">{t.mult}</span>
-                  <span className="text-[9px] text-muted-foreground/40 ml-1">&rarr; {t.risk} risk</span>
+                  <span className="text-[12px] font-semibold text-foreground">{t.mult}</span>
+                  <span className="text-[11px] text-muted-foreground/40 ml-1">&rarr; {t.risk} risk</span>
                 </div>
               </div>
             ))}
           </div>
           <div className="bg-surface-2/30 rounded-md px-3 py-2">
-            <p className="text-[8px] font-mono text-muted-foreground/50">
+            <p className="text-[10px] font-mono text-muted-foreground/50">
               lots = (equity &times; risk% &times; mult) / (pips &times; pipValue)
             </p>
           </div>
@@ -66,9 +66,9 @@ export function SystemRiskManagement() {
         >
           <div className="flex items-center gap-2">
             <ShieldAlert className="h-4 w-4 text-bearish/60" />
-            <h4 className="text-[11px] font-semibold text-foreground">Risk Per Trade</h4>
+            <h4 className="text-[13px] font-semibold text-foreground">Risk Per Trade</h4>
           </div>
-          <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
+          <p className="text-[12px] text-muted-foreground/60 leading-relaxed">
             Fixed % risk scaled by conviction, expectancy, and drawdown throttle.
           </p>
           <div className="space-y-2">
@@ -79,10 +79,10 @@ export function SystemRiskManagement() {
             ].map((r) => (
               <div key={r.label} className="space-y-0.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-semibold text-foreground">{r.label}</span>
-                  <span className="text-[9px] font-mono text-neutral-accent/70">{r.value}</span>
+                  <span className="text-[12px] font-semibold text-foreground">{r.label}</span>
+                  <span className="text-[11px] font-mono text-neutral-accent/70">{r.value}</span>
                 </div>
-                <span className="text-[8px] text-muted-foreground/40">{r.sub}</span>
+                <span className="text-[10px] text-muted-foreground/40">{r.sub}</span>
               </div>
             ))}
           </div>
@@ -98,9 +98,9 @@ export function SystemRiskManagement() {
         >
           <div className="flex items-center gap-2">
             <RefreshCw className="h-4 w-4 text-bullish/60" />
-            <h4 className="text-[11px] font-semibold text-foreground">Expectancy Learning</h4>
+            <h4 className="text-[13px] font-semibold text-foreground">Expectancy Learning</h4>
           </div>
-          <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
+          <p className="text-[12px] text-muted-foreground/60 leading-relaxed">
             R-multiple tracking with 30-day time decay.
           </p>
           <div className="space-y-1.5">
@@ -111,18 +111,18 @@ export function SystemRiskManagement() {
               { step: "4", label: "Kelly fraction", desc: "Optimal sizing capped at 25%" },
             ].map((s) => (
               <div key={s.step} className="flex items-start gap-2">
-                <span className="h-4 w-4 rounded-full bg-bullish/15 text-bullish text-[8px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                <span className="h-4 w-4 rounded-full bg-bullish/15 text-bullish text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
                   {s.step}
                 </span>
                 <div>
-                  <span className="text-[9px] font-semibold text-foreground">{s.label}</span>
-                  <p className="text-[8px] text-muted-foreground/40">{s.desc}</p>
+                  <span className="text-[11px] font-semibold text-foreground">{s.label}</span>
+                  <p className="text-[10px] text-muted-foreground/40">{s.desc}</p>
                 </div>
               </div>
             ))}
           </div>
           <div className="bg-bullish/8 border border-bullish/15 rounded-md px-3 py-1.5">
-            <span className="text-[9px] font-semibold text-bullish/80">20+ trades threshold</span>
+            <span className="text-[11px] font-semibold text-bullish/80">20+ trades threshold</span>
           </div>
         </motion.div>
       </div>
@@ -137,8 +137,8 @@ export function SystemRiskManagement() {
       >
         <div className="flex items-center gap-2 mb-4">
           <ShieldCheck className="h-4 w-4 text-bearish/60" />
-          <h4 className="text-[11px] font-semibold text-foreground">Portfolio Risk Gate</h4>
-          <p className="text-[10px] text-muted-foreground/50 ml-2">
+          <h4 className="text-[13px] font-semibold text-foreground">Portfolio Risk Gate</h4>
+          <p className="text-[12px] text-muted-foreground/50 ml-2">
             Every setup must pass all 7 constraints
           </p>
         </div>
@@ -153,12 +153,12 @@ export function SystemRiskManagement() {
               className="bg-bearish/8 border border-bearish/15 rounded-lg px-3 py-2.5 pipeline-node-glow pipeline-node-glow-red"
             >
               <div className="flex items-center gap-1.5 mb-1">
-                <span className="h-5 w-5 rounded bg-bearish/20 text-bearish text-[9px] font-bold flex items-center justify-center shrink-0">
+                <span className="h-5 w-5 rounded bg-bearish/20 text-bearish text-[11px] font-bold flex items-center justify-center shrink-0">
                   {c.icon}
                 </span>
-                <span className="text-[10px] font-semibold text-bearish/80">{c.check}</span>
+                <span className="text-[12px] font-semibold text-bearish/80">{c.check}</span>
               </div>
-              <p className="text-[9px] text-muted-foreground/50">{c.desc}</p>
+              <p className="text-[11px] text-muted-foreground/50">{c.desc}</p>
             </motion.div>
           ))}
         </div>

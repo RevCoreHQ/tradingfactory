@@ -28,7 +28,7 @@ export function SystemConviction() {
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
       {/* Left: Scoring factors */}
       <div className="lg:col-span-5">
-        <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-3">
+        <h4 className="text-[12px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-3">
           9 Scoring Factors (0-100 pts)
         </h4>
         <div className="space-y-2.5">
@@ -42,8 +42,8 @@ export function SystemConviction() {
               className="space-y-1"
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-semibold text-foreground">{f.name}</span>
-                <span className="text-[9px] font-mono text-muted-foreground/50">{f.range}</span>
+                <span className="text-[12px] font-semibold text-foreground">{f.name}</span>
+                <span className="text-[11px] font-mono text-muted-foreground/50">{f.range}</span>
               </div>
               <div className="h-2 bg-surface-2/50 rounded-full overflow-hidden">
                 <motion.div
@@ -54,7 +54,7 @@ export function SystemConviction() {
                   className={cn("h-full rounded-full", f.color)}
                 />
               </div>
-              <p className="text-[8px] text-muted-foreground/40">{f.desc}</p>
+              <p className="text-[10px] text-muted-foreground/40">{f.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -62,7 +62,7 @@ export function SystemConviction() {
 
       {/* Right: Tier ladder */}
       <div className="lg:col-span-7">
-        <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-3">
+        <h4 className="text-[12px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-3">
           Conviction Tiers
         </h4>
         <div className="space-y-2.5">
@@ -90,9 +90,9 @@ export function SystemConviction() {
               </span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-mono text-foreground/70">Score {t.score}</span>
-                  <span className="text-[9px] text-muted-foreground/30">|</span>
-                  <span className="text-[10px] font-mono text-foreground/70">{t.signals} signals</span>
+                  <span className="text-[12px] font-mono text-foreground/70">Score {t.score}</span>
+                  <span className="text-[11px] text-muted-foreground/30">|</span>
+                  <span className="text-[12px] font-mono text-foreground/70">{t.signals} signals</span>
                 </div>
                 <div className="h-1.5 bg-surface-2/50 rounded-full overflow-hidden">
                   <motion.div
@@ -106,10 +106,10 @@ export function SystemConviction() {
                     )}
                   />
                 </div>
-                <p className="text-[9px] text-muted-foreground/50 mt-0.5">{t.desc}</p>
+                <p className="text-[11px] text-muted-foreground/50 mt-0.5">{t.desc}</p>
               </div>
               {!t.highlight && (
-                <span className="text-[8px] font-bold text-bearish/60 uppercase tracking-wider shrink-0">
+                <span className="text-[10px] font-bold text-bearish/60 uppercase tracking-wider shrink-0">
                   Filtered
                 </span>
               )}

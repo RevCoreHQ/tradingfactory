@@ -31,7 +31,7 @@ export function BacktestPage() {
           <button
             onClick={() => setMode("single")}
             className={cn(
-              "flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-semibold transition-all",
+              "flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-semibold transition-all",
               mode === "single"
                 ? "bg-foreground text-background shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
@@ -43,7 +43,7 @@ export function BacktestPage() {
           <button
             onClick={() => setMode("lab")}
             className={cn(
-              "flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-semibold transition-all",
+              "flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-semibold transition-all",
               mode === "lab"
                 ? "bg-foreground text-background shadow-sm"
                 : "text-muted-foreground hover:text-foreground"

@@ -90,7 +90,7 @@ export function JournalPage() {
               {/* Day headers */}
               <div className="grid grid-cols-7 gap-1 mb-2">
                 {DAY_LABELS.map((d) => (
-                  <div key={d} className="text-[10px] font-medium text-muted-foreground text-center">
+                  <div key={d} className="text-[12px] font-medium text-muted-foreground text-center">
                     {d}
                   </div>
                 ))}
@@ -122,7 +122,7 @@ export function JournalPage() {
                       )}
                     >
                       <span className={cn(
-                        "text-[11px] font-medium",
+                        "text-[13px] font-medium",
                         isToday ? "text-neutral-accent" : isWeekend ? "text-muted-foreground/40" : "text-muted-foreground"
                       )}>
                         {day}
@@ -136,15 +136,15 @@ export function JournalPage() {
               <div className="flex items-center gap-4 mt-4 pt-3 border-t border-border/30">
                 <div className="flex items-center gap-1.5">
                   <div className="h-2.5 w-2.5 rounded-sm bg-bullish/30" />
-                  <span className="text-[10px] text-muted-foreground">Profitable</span>
+                  <span className="text-[12px] text-muted-foreground">Profitable</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="h-2.5 w-2.5 rounded-sm bg-bearish/30" />
-                  <span className="text-[10px] text-muted-foreground">Loss</span>
+                  <span className="text-[12px] text-muted-foreground">Loss</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="h-2.5 w-2.5 rounded-sm bg-neutral-accent/30" />
-                  <span className="text-[10px] text-muted-foreground">Breakeven</span>
+                  <span className="text-[12px] text-muted-foreground">Breakeven</span>
                 </div>
               </div>
             </div>
@@ -155,7 +155,7 @@ export function JournalPage() {
             <div className="section-card p-8 flex flex-col items-center text-center">
               <BookOpen className="h-8 w-8 text-muted-foreground/30 mb-3" />
               <h3 className="text-sm font-semibold text-foreground mb-1">No trades logged yet</h3>
-              <p className="text-[11px] text-muted-foreground max-w-md">
+              <p className="text-[13px] text-muted-foreground max-w-md">
                 This journal will track trades you actually take. Manual logging coming soon —
                 for now, visit the <span className="text-neutral-accent font-medium">Desk</span> to review setups.
               </p>

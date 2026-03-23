@@ -94,22 +94,22 @@ export function WeekendLab() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Runtime: Save to localStorage */}
               <div className="space-y-2">
-                <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">
+                <h4 className="text-[12px] font-bold text-muted-foreground/60 uppercase tracking-wider">
                   Runtime Override
                 </h4>
-                <p className="text-[10px] text-muted-foreground/50">
+                <p className="text-[12px] text-muted-foreground/50">
                   Saves optimized params to localStorage. The desk will auto-load them as overrides per instrument.
                   Resets on clear storage.
                 </p>
                 {paramsApplied ? (
-                  <div className="flex items-center gap-1.5 text-[11px] text-bullish font-semibold">
+                  <div className="flex items-center gap-1.5 text-[13px] text-bullish font-semibold">
                     <Check className="h-3.5 w-3.5" />
                     {improvementCount} profiles saved — desk will use them automatically
                   </div>
                 ) : (
                   <button
                     onClick={applyOptimizedParams}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-foreground text-background text-[11px] font-bold transition-all hover:opacity-90"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-foreground text-background text-[13px] font-bold transition-all hover:opacity-90"
                   >
                     <Zap className="h-3.5 w-3.5" />
                     Apply to Desk ({improvementCount})
@@ -119,15 +119,15 @@ export function WeekendLab() {
 
               {/* Permanent: Copy prompt for Claude */}
               <div className="space-y-2">
-                <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">
+                <h4 className="text-[12px] font-bold text-muted-foreground/60 uppercase tracking-wider">
                   Permanent Code Change
                 </h4>
-                <p className="text-[10px] text-muted-foreground/50">
+                <p className="text-[12px] text-muted-foreground/50">
                   Copies a prompt with the exact STYLE_PARAMS changes. Paste into Claude to update the code permanently.
                 </p>
                 <button
                   onClick={handleCopyPrompt}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border/30 text-foreground text-[11px] font-bold transition-all hover:bg-surface-2/30"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border/30 text-foreground text-[13px] font-bold transition-all hover:bg-surface-2/30"
                 >
                   {copied ? (
                     <>
@@ -159,17 +159,17 @@ export function WeekendLab() {
           <div className="glass-card rounded-2xl border border-border/30 p-6">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <p className="text-[11px] text-foreground">
+                <p className="text-[13px] text-foreground">
                   <span className="font-bold">{confluencePreview.totalTrades}</span> trades across{" "}
                   <span className="font-bold">{confluencePreview.uniquePatterns}</span> unique confluence patterns
                 </p>
-                <p className="text-[9px] text-muted-foreground/50">
+                <p className="text-[11px] text-muted-foreground/50">
                   {Object.entries(confluencePreview.byCategory)
                     .map(([cat, count]) => `${cat}: ${count}`)
                     .join(" | ")}
                 </p>
                 {confluenceFed && (
-                  <p className="text-[10px] text-bullish font-semibold mt-1">
+                  <p className="text-[12px] text-bullish font-semibold mt-1">
                     Confluence patterns updated successfully
                   </p>
                 )}
@@ -178,7 +178,7 @@ export function WeekendLab() {
               {!confluenceFed && (
                 <button
                   onClick={applyConfluenceFeedback}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-foreground text-background text-[11px] font-bold transition-all hover:opacity-90"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-foreground text-background text-[13px] font-bold transition-all hover:opacity-90"
                 >
                   <Brain className="h-3.5 w-3.5" />
                   Apply to Brain

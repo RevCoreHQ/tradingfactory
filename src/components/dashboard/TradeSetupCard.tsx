@@ -71,7 +71,7 @@ function RegimeBadge({ regime, adx }: { regime: MarketRegime; adx: number }) {
   const c = config[regime];
   const Icon = c.icon;
   return (
-    <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider", c.cls)}>
+    <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-md text-[12px] font-bold uppercase tracking-wider", c.cls)}>
       <Icon className="h-3 w-3" />
       {c.label}
       {adx > 0 && <span className="opacity-60 ml-0.5">ADX {adx.toFixed(0)}</span>}
@@ -87,7 +87,7 @@ function ImpulseBadge({ color }: { color: ImpulseColor }) {
   };
   const c = config[color];
   return (
-    <span className={cn("inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider cursor-help", c.cls)} title={c.tooltip}>
+    <span className={cn("inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wider cursor-help", c.cls)} title={c.tooltip}>
       <span className={cn("h-2 w-2 rounded-full animate-pulse", c.dot)} />
       {c.label}
     </span>
@@ -131,7 +131,7 @@ export function TradeSetupCard({ setup, decimals = 5 }: { setup: TradeDeskSetup 
           <p className="text-xs text-muted-foreground/50">
             No qualifying setup. Conviction below A tier or impulse misaligned.
           </p>
-          <p className="text-[10px] text-muted-foreground/30 mt-1">
+          <p className="text-[12px] text-muted-foreground/30 mt-1">
             Wait for higher confluence — quality over quantity.
           </p>
         </div>
@@ -153,7 +153,7 @@ export function TradeSetupCard({ setup, decimals = 5 }: { setup: TradeDeskSetup 
             Trade Setup
           </h3>
           <span className={cn(
-            "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border",
+            "text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border",
             setup.tradingStyle === "intraday"
               ? "text-neutral-accent/70 bg-neutral-accent/8 border-neutral-accent/20"
               : "text-muted-foreground/40 bg-muted/5 border-border/20"
@@ -163,12 +163,12 @@ export function TradeSetupCard({ setup, decimals = 5 }: { setup: TradeDeskSetup 
         </div>
         <div className="flex items-center gap-2">
           <span
-            className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted/10 cursor-help"
+            className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted/10 cursor-help"
             title={`Strategy: ${strategy.name} — derived from ${strategy.source}'s methodology`}
           >
             {strategy.name}
           </span>
-          <span className="text-[9px] font-mono text-muted-foreground/40">
+          <span className="text-[11px] font-mono text-muted-foreground/40">
             {setup.convictionScore.toFixed(0)}/100
           </span>
         </div>
@@ -201,7 +201,7 @@ export function TradeSetupCard({ setup, decimals = 5 }: { setup: TradeDeskSetup 
 
       {/* 8 Mechanical Systems */}
       <div>
-        <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1.5">
+        <div className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1.5">
           Mechanical Systems
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5">
@@ -209,7 +209,7 @@ export function TradeSetupCard({ setup, decimals = 5 }: { setup: TradeDeskSetup 
             <div
               key={i}
               className={cn(
-                "px-2 py-1.5 rounded-md text-[10px] border",
+                "px-2 py-1.5 rounded-md text-[12px] border",
                 sig.direction === "bullish" && "bg-bullish/8 border-bullish/20 text-bullish",
                 sig.direction === "bearish" && "bg-bearish/8 border-bearish/20 text-bearish",
                 sig.direction === "neutral" && "bg-muted/10 border-border/30 text-muted-foreground/60"
@@ -217,7 +217,7 @@ export function TradeSetupCard({ setup, decimals = 5 }: { setup: TradeDeskSetup 
             >
               <div className="flex items-center justify-between">
                 <span className="font-semibold">{sig.system}</span>
-                {sig.regimeMatch && <span className="text-[8px] opacity-60">MATCH</span>}
+                {sig.regimeMatch && <span className="text-[10px] opacity-60">MATCH</span>}
               </div>
             </div>
           ))}
@@ -227,7 +227,7 @@ export function TradeSetupCard({ setup, decimals = 5 }: { setup: TradeDeskSetup 
       {/* Price Levels */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between bg-[var(--surface-2)] rounded px-3 py-2">
-          <span className="text-[11px] font-medium text-muted-foreground">Entry Zone</span>
+          <span className="text-[13px] font-medium text-muted-foreground">Entry Zone</span>
           <span className="text-[12px] font-mono font-bold text-foreground flex items-center gap-1">
             <CopyPrice value={setup.entry[0].toFixed(dec)} />
             <span className="text-muted-foreground/40">–</span>
@@ -236,15 +236,15 @@ export function TradeSetupCard({ setup, decimals = 5 }: { setup: TradeDeskSetup 
         </div>
 
         <div className="flex items-center justify-between bg-bearish/5 rounded px-3 py-2 border border-bearish/10">
-          <span className="text-[11px] font-medium text-bearish">Stop Loss</span>
+          <span className="text-[13px] font-medium text-bearish">Stop Loss</span>
           <CopyPrice value={setup.stopLoss.toFixed(dec)} className="text-[12px] font-bold text-bearish" />
         </div>
 
         {setup.takeProfit.map((tp, i) => (
           <div key={i} className="flex items-center justify-between bg-bullish/5 rounded px-3 py-2 border border-bullish/10">
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-medium text-bullish">TP{i + 1}</span>
-              <span className="text-[10px] font-mono text-bullish/60">1:{setup.riskReward[i]}</span>
+              <span className="text-[13px] font-medium text-bullish">TP{i + 1}</span>
+              <span className="text-[12px] font-mono text-bullish/60">1:{setup.riskReward[i]}</span>
             </div>
             <CopyPrice value={tp.toFixed(dec)} className="text-[12px] font-bold text-bullish" />
           </div>
@@ -253,7 +253,7 @@ export function TradeSetupCard({ setup, decimals = 5 }: { setup: TradeDeskSetup 
 
       {/* Position Sizing */}
       <div className="flex items-center justify-between bg-[var(--surface-2)] rounded px-3 py-2">
-        <span className="text-[11px] font-medium text-muted-foreground">Position Size</span>
+        <span className="text-[13px] font-medium text-muted-foreground">Position Size</span>
         <div className="text-[12px] font-mono">
           <span className="font-bold text-foreground">{setup.positionSizeLots} lots</span>
           <span className="text-muted-foreground/60 ml-2">Risk: ${setup.riskAmount}</span>
@@ -263,13 +263,13 @@ export function TradeSetupCard({ setup, decimals = 5 }: { setup: TradeDeskSetup 
       {/* Reasons to Exit */}
       {setup.reasonsToExit.length > 0 && (
         <div className="border-t border-border/50 pt-2">
-          <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
+          <div className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
             Reasons to Exit
           </div>
           <div className="space-y-0.5">
             {setup.reasonsToExit.map((reason, i) => (
-              <div key={i} className="text-[10px] text-muted-foreground/70 flex items-start gap-1">
-                <span className="text-[8px] mt-0.5 text-[var(--amber)] shrink-0">●</span>
+              <div key={i} className="text-[12px] text-muted-foreground/70 flex items-start gap-1">
+                <span className="text-[10px] mt-0.5 text-[var(--amber)] shrink-0">●</span>
                 {reason}
               </div>
             ))}

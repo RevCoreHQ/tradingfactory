@@ -32,7 +32,7 @@ function SmallGauge({ bias, direction }: { bias: number; direction: BiasDirectio
           style={{ width: `${absBias}%`, backgroundColor: color, opacity: 0.7 }}
         />
       </div>
-      <span className="text-[9px] uppercase tracking-wider font-medium" style={{ color }}>
+      <span className="text-[11px] uppercase tracking-wider font-medium" style={{ color }}>
         {getBiasLabel(direction)}
       </span>
     </div>
@@ -95,7 +95,7 @@ function LargeGauge({ bias, confidence, direction }: { bias: number; confidence:
         </span>
 
         {/* Scale reference */}
-        <div className="flex items-center gap-3 mt-4 text-[10px] font-mono text-muted-foreground/50">
+        <div className="flex items-center gap-3 mt-4 text-[12px] font-mono text-muted-foreground/50">
           <span>-100</span>
           <div className="flex-1 h-px bg-border" />
           <span>0</span>

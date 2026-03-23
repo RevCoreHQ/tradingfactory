@@ -116,7 +116,7 @@ export function DataFeedStatus() {
             {data && (
               <span
                 className={cn(
-                  "text-[10px] font-medium px-1.5 py-0.5 rounded-full",
+                  "text-[12px] font-medium px-1.5 py-0.5 rounded-full",
                   overallStatus === "healthy"
                     ? "bg-bullish/10 text-bullish"
                     : overallStatus === "degraded"
@@ -164,13 +164,13 @@ export function DataFeedStatus() {
                     </div>
                     <div className="flex items-center gap-2">
                       {p.latencyMs !== null && p.status === "ok" && (
-                        <span className="text-[10px] font-mono text-muted-foreground/40">
+                        <span className="text-[12px] font-mono text-muted-foreground/40">
                           {p.latencyMs}ms
                         </span>
                       )}
                       <span
                         className={cn(
-                          "text-[10px] font-medium",
+                          "text-[12px] font-medium",
                           STATUS_COLOR[p.status]
                         )}
                       >
@@ -179,15 +179,15 @@ export function DataFeedStatus() {
                     </div>
                   </div>
                   <div className="mt-1 pl-5.5 space-y-0.5">
-                    <p className="text-[10px] text-muted-foreground/50">{p.provides}</p>
-                    <p className="text-[10px] text-muted-foreground/30">{p.tier}</p>
+                    <p className="text-[12px] text-muted-foreground/50">{p.provides}</p>
+                    <p className="text-[12px] text-muted-foreground/30">{p.tier}</p>
                     {p.status === "error" && p.message && (
-                      <p className="text-[10px] text-bearish/70 font-mono truncate">
+                      <p className="text-[12px] text-bearish/70 font-mono truncate">
                         {p.message}
                       </p>
                     )}
                     {p.fallback && p.status !== "ok" && (
-                      <p className="text-[10px] text-[var(--amber)]/60">
+                      <p className="text-[12px] text-[var(--amber)]/60">
                         Fallback: {p.fallback}
                       </p>
                     )}
@@ -200,7 +200,7 @@ export function DataFeedStatus() {
 
         {/* Footer */}
         {lastChecked && (
-          <div className="px-3 py-1.5 border-t border-border/30 text-[10px] text-muted-foreground/30">
+          <div className="px-3 py-1.5 border-t border-border/30 text-[12px] text-muted-foreground/30">
             Last checked {lastChecked.toLocaleTimeString()}
           </div>
         )}

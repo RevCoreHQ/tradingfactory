@@ -33,7 +33,7 @@ function MoodBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-semibold",
+        "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[12px] font-semibold",
         outlook === "bullish" && "bg-bullish/10 text-bullish",
         outlook === "bearish" && "bg-bearish/10 text-bearish",
         outlook === "neutral" && "bg-neutral-accent/10 text-neutral-accent"
@@ -56,7 +56,7 @@ function OutlookBadge({ outlook }: { outlook: "bullish" | "bearish" | "neutral" 
   return (
     <span
       className={cn(
-        "inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider",
+        "inline-flex items-center px-2.5 py-1 rounded-md text-[12px] font-bold uppercase tracking-wider",
         outlook === "bullish" && "bg-bullish/15 text-bullish glow-bullish",
         outlook === "bearish" && "bg-bearish/15 text-bearish glow-bearish",
         outlook === "neutral" && "bg-neutral-accent/15 text-neutral-accent glow-primary"
@@ -89,7 +89,7 @@ function SectorCard({
       )}
     >
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[11px] font-semibold capitalize text-foreground">
+        <span className="text-[13px] font-semibold capitalize text-foreground">
           {sector.sector}
         </span>
         <div className="flex items-center gap-1.5">
@@ -104,7 +104,7 @@ function SectorCard({
       </div>
 
       {!expanded && sector.keyAssets.length > 0 && (
-        <p className="text-[10px] text-muted-foreground leading-snug truncate">
+        <p className="text-[12px] text-muted-foreground leading-snug truncate">
           {sector.keyAssets[0]}
         </p>
       )}
@@ -125,7 +125,7 @@ function SectorCard({
                   initial={{ opacity: 0, x: -4 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.05, duration: 0.2 }}
-                  className="text-[11px] text-muted-foreground leading-snug"
+                  className="text-[13px] text-muted-foreground leading-snug"
                 >
                   <span className="text-muted-foreground/30 mr-1.5">&bull;</span>
                   {asset}
@@ -133,13 +133,13 @@ function SectorCard({
               ))}
               {sector.focusPairs && sector.focusPairs.length > 0 && (
                 <div className="mt-2 pt-2 border-t border-border/30">
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-bullish">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-bullish">
                     Focus
                   </span>
                   {sector.focusPairs.map((fp, j) => (
                     <p
                       key={j}
-                      className="text-[10px] text-bullish/80 leading-snug pl-3"
+                      className="text-[12px] text-bullish/80 leading-snug pl-3"
                     >
                       &bull; {fp}
                     </p>
@@ -148,13 +148,13 @@ function SectorCard({
               )}
               {sector.avoidPairs && sector.avoidPairs.length > 0 && (
                 <div className="mt-1">
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                     Avoid
                   </span>
                   {sector.avoidPairs.map((ap, j) => (
                     <p
                       key={j}
-                      className="text-[10px] text-muted-foreground/60 leading-snug pl-3"
+                      className="text-[12px] text-muted-foreground/60 leading-snug pl-3"
                     >
                       &bull; {ap}
                     </p>
@@ -182,7 +182,7 @@ function SectorBreakdown({
 }) {
   return (
     <div className="mt-5 pt-4 border-t border-border/50">
-      <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">
+      <div className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground mb-3">
         Sector Breakdown
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -242,7 +242,7 @@ export function AIMarketSummary() {
           <h3 className="text-xs font-semibold text-foreground">
             AI Market Summary
           </h3>
-          <span className="text-[10px] text-muted-foreground/50 ml-auto">
+          <span className="text-[12px] text-muted-foreground/50 ml-auto">
             {apiError
               ? `AI error: ${apiError}`
               : "AI analysis unavailable — check API keys in Vercel settings"}
@@ -279,7 +279,7 @@ export function AIMarketSummary() {
       {/* Top bar: Date + Mood + Provider/Refresh */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <span className="text-[11px] font-mono text-muted-foreground/60">
+          <span className="text-[13px] font-mono text-muted-foreground/60">
             {dateStr}
           </span>
           <MoodBadge
@@ -289,7 +289,7 @@ export function AIMarketSummary() {
           />
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[9px] font-mono text-muted-foreground/40 px-1.5 py-0.5 bg-[var(--surface-2)] rounded">
+          <span className="text-[11px] font-mono text-muted-foreground/40 px-1.5 py-0.5 bg-[var(--surface-2)] rounded">
             {summary.provider === "gemini"
               ? "Gemini Flash"
               : summary.provider === "anthropic"
@@ -297,7 +297,7 @@ export function AIMarketSummary() {
                 : "GPT-4o Mini"}
           </span>
           {timeSince && (
-            <span className="text-[9px] font-mono text-muted-foreground/40">
+            <span className="text-[11px] font-mono text-muted-foreground/40">
               {timeSince}
             </span>
           )}
@@ -337,14 +337,14 @@ export function AIMarketSummary() {
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5">
               <AlertTriangle className="h-2.5 w-2.5 text-bearish" />
-              <span className="text-[9px] font-bold uppercase tracking-wider text-bearish">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-bearish">
                 Key Risks
               </span>
             </div>
             {summary.risks.map((risk, i) => (
               <p
                 key={i}
-                className="text-[11px] text-foreground/70 leading-snug pl-3 relative before:absolute before:left-0 before:top-[6px] before:h-1 before:w-1 before:rounded-full before:bg-bearish/40"
+                className="text-[13px] text-foreground/70 leading-snug pl-3 relative before:absolute before:left-0 before:top-[6px] before:h-1 before:w-1 before:rounded-full before:bg-bearish/40"
               >
                 {risk}
               </p>
@@ -356,14 +356,14 @@ export function AIMarketSummary() {
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5">
               <Zap className="h-2.5 w-2.5 text-bullish" />
-              <span className="text-[9px] font-bold uppercase tracking-wider text-bullish">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-bullish">
                 Opportunities
               </span>
             </div>
             {summary.opportunities.map((opp, i) => (
               <p
                 key={i}
-                className="text-[11px] text-foreground/70 leading-snug pl-3 relative before:absolute before:left-0 before:top-[6px] before:h-1 before:w-1 before:rounded-full before:bg-bullish/40"
+                className="text-[13px] text-foreground/70 leading-snug pl-3 relative before:absolute before:left-0 before:top-[6px] before:h-1 before:w-1 before:rounded-full before:bg-bullish/40"
               >
                 {opp}
               </p>

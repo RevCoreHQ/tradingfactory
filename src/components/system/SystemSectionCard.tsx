@@ -64,7 +64,7 @@ export function SystemSectionCard({
         <div>
           <h3 className="text-sm font-semibold text-foreground">{title}</h3>
           {subtitle && (
-            <p className="text-[11px] text-muted-foreground/60">{subtitle}</p>
+            <p className="text-[13px] text-muted-foreground/60">{subtitle}</p>
           )}
         </div>
       </div>

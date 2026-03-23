@@ -75,7 +75,7 @@ export function MarketPulse() {
             <div className="h-6 w-6 rounded-md flex items-center justify-center" style={{ background: `${fgColor}20` }}>
               <Activity className="h-3.5 w-3.5" style={{ color: fgColor }} />
             </div>
-            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Sentiment</span>
+            <span className="text-[13px] font-medium text-muted-foreground uppercase tracking-wider">Sentiment</span>
           </div>
           <div className="flex items-baseline gap-2">
             <AnimatedNumber
@@ -108,13 +108,13 @@ export function MarketPulse() {
           <div className="px-3 py-2.5 border-b border-border/30 flex items-center justify-between">
             <div>
               <span className="text-xs font-semibold">Why {fg.label}?</span>
-              <span className="text-[10px] text-muted-foreground/50 ml-2">Top drivers</span>
+              <span className="text-[12px] text-muted-foreground/50 ml-2">Top drivers</span>
             </div>
-            <span className="text-[10px] font-mono text-muted-foreground/40">F&G: {fg.value}</span>
+            <span className="text-[12px] font-mono text-muted-foreground/40">F&G: {fg.value}</span>
           </div>
           <div className="max-h-[280px] overflow-y-auto">
             {(!newsData?.items || newsData.items.length === 0) ? (
-              <div className="px-3 py-6 text-center text-[11px] text-muted-foreground/50">
+              <div className="px-3 py-6 text-center text-[13px] text-muted-foreground/50">
                 No recent headlines
               </div>
             ) : (
@@ -127,9 +127,9 @@ export function MarketPulse() {
                       item.sentimentLabel === "bearish" ? "bg-bearish" : "bg-muted-foreground/40"
                     )} />
                     <div>
-                      <p className="text-[11px] text-foreground/80 leading-snug">{item.headline}</p>
+                      <p className="text-[13px] text-foreground/80 leading-snug">{item.headline}</p>
                       <span className={cn(
-                        "text-[9px] font-bold uppercase tracking-wider",
+                        "text-[11px] font-bold uppercase tracking-wider",
                         item.sentimentLabel === "bullish" ? "text-bullish" :
                         item.sentimentLabel === "bearish" ? "text-bearish" : "text-muted-foreground/50"
                       )}>
@@ -150,7 +150,7 @@ export function MarketPulse() {
           <div className="h-6 w-6 rounded-md flex items-center justify-center bg-neutral-accent/15">
             <DollarSign className="h-3.5 w-3.5 text-neutral-accent" />
           </div>
-          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Dollar Index</span>
+          <span className="text-[13px] font-medium text-muted-foreground uppercase tracking-wider">Dollar Index</span>
         </div>
         <div className="flex items-baseline gap-2">
           <span className="text-2xl font-bold font-mono">
@@ -162,7 +162,7 @@ export function MarketPulse() {
             </span>
           )}
         </div>
-        <div className="text-[10px] text-muted-foreground/60 mt-2 font-mono">
+        <div className="text-[12px] text-muted-foreground/60 mt-2 font-mono">
           {dxy.change > 0.3 ? "USD Strength" : dxy.change < -0.3 ? "USD Weakness" : "Stable"}
         </div>
       </div>
@@ -173,7 +173,7 @@ export function MarketPulse() {
           <div className="h-6 w-6 rounded-md flex items-center justify-center bg-bullish/15">
             <BarChart3 className="h-3.5 w-3.5 text-bullish" />
           </div>
-          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Market Bias</span>
+          <span className="text-[13px] font-medium text-muted-foreground uppercase tracking-wider">Market Bias</span>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
@@ -187,18 +187,18 @@ export function MarketPulse() {
           </div>
         </div>
         <Popover>
-          <PopoverTrigger className="text-[10px] text-muted-foreground/60 mt-2 cursor-pointer hover:text-muted-foreground transition-colors underline decoration-dotted underline-offset-2 flex items-center gap-1">
+          <PopoverTrigger className="text-[12px] text-muted-foreground/60 mt-2 cursor-pointer hover:text-muted-foreground transition-colors underline decoration-dotted underline-offset-2 flex items-center gap-1">
             {strongConviction > 0 && <Star className="h-2.5 w-2.5 fill-[#FFD700] text-[#FFD700]" />}
             {strongConviction} of {totalInstruments} strong conviction
           </PopoverTrigger>
           <PopoverContent side="bottom" align="start" sideOffset={8} className="w-64 p-0">
             <div className="px-3 py-2.5 border-b border-border/30">
               <span className="text-xs font-semibold">Strong Conviction</span>
-              <span className="text-[10px] text-muted-foreground/50 ml-2">|bias| &ge; 45</span>
+              <span className="text-[12px] text-muted-foreground/50 ml-2">|bias| &ge; 45</span>
             </div>
             <div className="max-h-[240px] overflow-y-auto">
               {strongConvictionInstruments.length === 0 ? (
-                <div className="px-3 py-4 text-center text-[11px] text-muted-foreground/50">
+                <div className="px-3 py-4 text-center text-[13px] text-muted-foreground/50">
                   No strong conviction instruments
                 </div>
               ) : (
@@ -210,10 +210,10 @@ export function MarketPulse() {
                       ) : (
                         <TrendingDown className="h-3 w-3 text-bearish" />
                       )}
-                      <span className="text-[11px] font-medium">{sc.symbol}</span>
+                      <span className="text-[13px] font-medium">{sc.symbol}</span>
                     </div>
                     <span className={cn(
-                      "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded",
+                      "text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded",
                       sc.direction === "bullish" ? "bg-bullish/12 text-bullish" : "bg-bearish/12 text-bearish"
                     )}>
                       {sc.direction === "bullish" ? "LONG" : "SHORT"}
@@ -232,7 +232,7 @@ export function MarketPulse() {
           <div className="h-6 w-6 rounded-md flex items-center justify-center bg-foreground/10">
             <TrendingUp className="h-3.5 w-3.5 text-foreground/60" />
           </div>
-          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Key Markets</span>
+          <span className="text-[13px] font-medium text-muted-foreground uppercase tracking-wider">Key Markets</span>
         </div>
         <div className="space-y-1.5">
           {KEY_MARKETS.map((m) => {
@@ -241,12 +241,12 @@ export function MarketPulse() {
             const pct = q?.changePercent || 0;
             return (
               <div key={m.id} className="flex items-center justify-between">
-                <span className="text-[11px] font-medium text-muted-foreground">{m.label}</span>
+                <span className="text-[13px] font-medium text-muted-foreground">{m.label}</span>
                 <div className="flex items-center gap-1.5">
-                  <span className={cn("text-[11px] font-mono font-semibold", change > 0 ? "text-bullish" : change < 0 ? "text-bearish" : "text-muted-foreground")}>
+                  <span className={cn("text-[13px] font-mono font-semibold", change > 0 ? "text-bullish" : change < 0 ? "text-bearish" : "text-muted-foreground")}>
                     {change > 0 ? "+" : ""}{change.toFixed(m.decimals)}
                   </span>
-                  <span className={cn("text-[9px] font-mono px-1 py-0.5 rounded", pct > 0 ? "bg-bullish/12 text-bullish" : pct < 0 ? "bg-bearish/12 text-bearish" : "bg-muted text-muted-foreground")}>
+                  <span className={cn("text-[11px] font-mono px-1 py-0.5 rounded", pct > 0 ? "bg-bullish/12 text-bullish" : pct < 0 ? "bg-bearish/12 text-bearish" : "bg-muted text-muted-foreground")}>
                     {pct > 0 ? "+" : ""}{pct.toFixed(2)}%
                   </span>
                 </div>

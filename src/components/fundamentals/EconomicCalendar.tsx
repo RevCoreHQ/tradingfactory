@@ -26,7 +26,7 @@ export function EconomicCalendar() {
     <GlassCard delay={0.2}>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold">Economic Calendar</h3>
-        <span className="text-[10px] text-muted-foreground">
+        <span className="text-[12px] text-muted-foreground">
           {highImpact.length} high impact
         </span>
       </div>

@@ -60,11 +60,11 @@ export function MarketContext() {
       <div className="space-y-3">
         {rows.map((row) => (
           <div key={row.label} className="flex items-center justify-between">
-            <span className="text-[11px] text-muted-foreground">{row.label}</span>
+            <span className="text-[13px] text-muted-foreground">{row.label}</span>
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-mono font-medium text-foreground">{row.value}</span>
               {row.extra && (
-                <span className={cn("text-[10px] font-mono", row.extraClass)}>{row.extra}</span>
+                <span className={cn("text-[12px] font-mono", row.extraClass)}>{row.extra}</span>
               )}
             </div>
           </div>

@@ -103,7 +103,7 @@ export function EquityCurveChart({ equityCurve, trades }: Props) {
         {yLabels.map((l, i) => (
           <g key={i}>
             <line x1={60} y1={l.y} x2={780} y2={l.y} className="stroke-border/20" strokeWidth={0.5} />
-            <text x={55} y={l.y + 3} textAnchor="end" className="fill-muted-foreground/40 text-[9px]" style={{ fontSize: "9px" }}>
+            <text x={55} y={l.y + 3} textAnchor="end" className="fill-muted-foreground/40 text-[11px]" style={{ fontSize: "9px" }}>
               {l.label}
             </text>
           </g>

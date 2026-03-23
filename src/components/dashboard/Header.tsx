@@ -102,7 +102,7 @@ export function Header({ mode = "analysis" }: HeaderProps) {
               wsConnected ? "bg-bullish" : "bg-amber-500"
             )} />
             <span className={cn(
-              "text-[10px] font-medium",
+              "text-[12px] font-medium",
               wsConnected ? "text-bullish" : "text-amber-500"
             )}>
               {wsConnected ? "Live" : "Polling"}

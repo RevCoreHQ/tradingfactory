@@ -47,7 +47,7 @@ export function SystemFundamentals() {
             <Brain className="h-6 w-6 text-amber-600 dark:text-amber-500" />
           </div>
           <div className="absolute inset-0 h-16 w-16 rounded-full border border-amber-600/15 pulse-ring" />
-          <p className="text-[10px] font-semibold text-amber-700 dark:text-amber-500/80 text-center mt-2">Bias Engine</p>
+          <p className="text-[12px] font-semibold text-amber-700 dark:text-amber-500/80 text-center mt-2">Bias Engine</p>
         </motion.div>
       </div>
 
@@ -65,12 +65,12 @@ export function SystemFundamentals() {
             <div className="flex items-center gap-2">
               <span className="text-amber-600 dark:text-amber-500/70">{src.icon}</span>
               <div className="min-w-0">
-                <div className="text-[10px] font-semibold text-foreground truncate">{src.name}</div>
-                <div className="text-[8px] font-mono text-muted-foreground/40">{src.provider}</div>
+                <div className="text-[12px] font-semibold text-foreground truncate">{src.name}</div>
+                <div className="text-[10px] font-mono text-muted-foreground/40">{src.provider}</div>
               </div>
             </div>
-            <p className="text-[9px] text-muted-foreground/60 leading-relaxed">{src.measures}</p>
-            <p className="text-[8px] text-amber-700/70 dark:text-amber-500/50 leading-relaxed">{src.feedsInto}</p>
+            <p className="text-[11px] text-muted-foreground/60 leading-relaxed">{src.measures}</p>
+            <p className="text-[10px] text-amber-700/70 dark:text-amber-500/50 leading-relaxed">{src.feedsInto}</p>
           </motion.div>
         ))}
       </div>

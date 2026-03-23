@@ -49,7 +49,7 @@ export function RedNewsWeek() {
           </div>
           <h3 className="text-xs font-semibold text-foreground">Red News This Week</h3>
         </div>
-        <span className="text-[10px] text-muted-foreground font-mono px-2 py-0.5 bg-bearish/10 rounded-md text-bearish">
+        <span className="text-[12px] text-muted-foreground font-mono px-2 py-0.5 bg-bearish/10 rounded-md text-bearish">
           {redEvents.length} events
         </span>
       </div>
@@ -77,34 +77,34 @@ export function RedNewsWeek() {
               >
                 <div className="flex items-center gap-2 mb-2">
                   <span className={cn(
-                    "text-[10px] font-bold uppercase tracking-wider",
+                    "text-[12px] font-bold uppercase tracking-wider",
                     isToday ? "text-bearish" : "text-muted-foreground"
                   )}>
                     {dayName} {dayNum}
                   </span>
                   {isToday && (
-                    <span className="text-[9px] font-bold text-bearish bg-bearish/15 px-1.5 py-0.5 rounded ml-auto">TODAY</span>
+                    <span className="text-[11px] font-bold text-bearish bg-bearish/15 px-1.5 py-0.5 rounded ml-auto">TODAY</span>
                   )}
                 </div>
                 <div className="space-y-1.5">
                   {dayEvents.map((event) => (
-                    <div key={event.id} className="flex items-center gap-2 text-[11px]">
-                      <span className="text-muted-foreground/60 shrink-0 w-11 font-mono text-[10px]">
+                    <div key={event.id} className="flex items-center gap-2 text-[13px]">
+                      <span className="text-muted-foreground/60 shrink-0 w-11 font-mono text-[12px]">
                         {event.time || "\u2014"}
                       </span>
-                      <span className="text-[10px] font-mono bg-[var(--surface-3)] px-1.5 py-0.5 rounded shrink-0">
+                      <span className="text-[12px] font-mono bg-[var(--surface-3)] px-1.5 py-0.5 rounded shrink-0">
                         {event.country}
                       </span>
                       <span className="text-foreground font-medium truncate flex-1">
                         {event.event}
                       </span>
                       {event.forecast != null && (
-                        <span className="text-muted-foreground font-mono text-[10px] shrink-0">
+                        <span className="text-muted-foreground font-mono text-[12px] shrink-0">
                           {event.forecast}
                         </span>
                       )}
                       {event.previous != null && (
-                        <span className="text-muted-foreground/50 font-mono text-[10px] shrink-0">
+                        <span className="text-muted-foreground/50 font-mono text-[12px] shrink-0">
                           prev: {event.previous}
                         </span>
                       )}

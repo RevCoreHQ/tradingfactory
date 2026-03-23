@@ -62,7 +62,7 @@ export function TradeJournal({ onClose }: { onClose: () => void }) {
           </div>
 
           {stats.closedTrades > 0 && (
-            <div className="flex gap-3 mt-2 text-[9px]">
+            <div className="flex gap-3 mt-2 text-[11px]">
               <span className="text-muted-foreground/60">
                 With bias: <span className={cn("font-bold", stats.biasAlignedWinRate >= 50 ? "text-bullish" : "text-bearish")}>{stats.biasAlignedWinRate}%</span> win
               </span>
@@ -80,7 +80,7 @@ export function TradeJournal({ onClose }: { onClose: () => void }) {
               key={f}
               onClick={() => setFilter(f)}
               className={cn(
-                "px-2 py-1 rounded text-[10px] font-semibold transition-colors",
+                "px-2 py-1 rounded text-[12px] font-semibold transition-colors",
                 filter === f
                   ? "bg-neutral-accent/15 text-neutral-accent"
                   : "text-muted-foreground hover:text-foreground"
@@ -96,7 +96,7 @@ export function TradeJournal({ onClose }: { onClose: () => void }) {
           {filtered.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-xs text-muted-foreground">No trades recorded yet.</p>
-              <p className="text-[10px] text-muted-foreground/50 mt-1">
+              <p className="text-[12px] text-muted-foreground/50 mt-1">
                 Use &quot;Log Trade&quot; on any instrument to start tracking.
               </p>
             </div>
@@ -127,7 +127,7 @@ export function TradeJournal({ onClose }: { onClose: () => void }) {
                       )}
                       <span className="text-xs font-bold">{inst?.symbol || trade.instrumentId}</span>
                       <span className={cn(
-                        "text-[8px] font-bold uppercase px-1 py-0.5 rounded",
+                        "text-[10px] font-bold uppercase px-1 py-0.5 rounded",
                         trade.direction === "long" ? "bg-bullish/15 text-bullish" : "bg-bearish/15 text-bearish"
                       )}>
                         {trade.direction}
@@ -136,7 +136,7 @@ export function TradeJournal({ onClose }: { onClose: () => void }) {
                     <div className="flex items-center gap-1">
                       {trade.outcome && (
                         <span className={cn(
-                          "text-[9px] font-bold px-1.5 py-0.5 rounded",
+                          "text-[11px] font-bold px-1.5 py-0.5 rounded",
                           trade.outcome === "win"
                             ? "bg-bullish/15 text-bullish"
                             : trade.outcome === "loss"
@@ -147,7 +147,7 @@ export function TradeJournal({ onClose }: { onClose: () => void }) {
                         </span>
                       )}
                       {isOpen && (
-                        <span className="text-[8px] font-bold text-neutral-accent bg-neutral-accent/15 px-1 py-0.5 rounded">
+                        <span className="text-[10px] font-bold text-neutral-accent bg-neutral-accent/15 px-1 py-0.5 rounded">
                           OPEN
                         </span>
                       )}
@@ -160,17 +160,17 @@ export function TradeJournal({ onClose }: { onClose: () => void }) {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 text-[10px] text-muted-foreground/60">
+                  <div className="flex items-center gap-3 text-[12px] text-muted-foreground/60">
                     <span className="font-mono">@ {trade.entryPrice}</span>
                     {trade.exitPrice && <span className="font-mono">→ {trade.exitPrice}</span>}
                     <span>{format(new Date(trade.entryTime), "MMM dd HH:mm")}</span>
                   </div>
 
                   {trade.notes && (
-                    <p className="text-[10px] text-muted-foreground/50 mt-1">{trade.notes}</p>
+                    <p className="text-[12px] text-muted-foreground/50 mt-1">{trade.notes}</p>
                   )}
 
-                  <div className="flex items-center gap-1 mt-1.5 text-[9px] text-muted-foreground/40">
+                  <div className="flex items-center gap-1 mt-1.5 text-[11px] text-muted-foreground/40">
                     <span>Bias: {trade.biasAtEntry.overallBias > 0 ? "+" : ""}{Math.round(trade.biasAtEntry.overallBias)}</span>
                     <span>({trade.biasAtEntry.direction})</span>
                     <span>Conf: {Math.round(trade.biasAtEntry.confidence)}%</span>
@@ -190,7 +190,7 @@ function StatPill({ label, value, icon, color }: { label: string; value: string;
     <div className="text-center">
       <div className="flex items-center justify-center gap-1 text-muted-foreground/50 mb-0.5">
         {icon}
-        <span className="text-[8px] uppercase">{label}</span>
+        <span className="text-[10px] uppercase">{label}</span>
       </div>
       <span className={cn("text-sm font-bold tabular", color || "text-foreground")}>{value}</span>
     </div>

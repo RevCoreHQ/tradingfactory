@@ -94,7 +94,7 @@ export function SessionClock() {
             className="absolute top-0 h-full w-px bg-[var(--surface-3)]"
             style={{ left: `${(hour / 24) * 100}%` }}
           >
-            <span className="absolute -bottom-4 -translate-x-1/2 text-[10px] text-muted-foreground">
+            <span className="absolute -bottom-4 -translate-x-1/2 text-[12px] text-muted-foreground">
               {hour.toString().padStart(2, "0")}
             </span>
           </div>

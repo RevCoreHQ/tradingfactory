@@ -20,7 +20,7 @@ export function MonthlyReturnsGrid({ monthlyReturns }: Props) {
 
   return (
     <div className="section-card p-4">
-      <div className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-3">
+      <div className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-3">
         Monthly Returns
       </div>
       <div className="space-y-1.5">
@@ -30,7 +30,7 @@ export function MonthlyReturnsGrid({ monthlyReturns }: Props) {
 
           return (
             <div key={m.month} className="flex items-center gap-2">
-              <span className="text-[10px] font-mono text-muted-foreground/60 w-14 shrink-0">
+              <span className="text-[12px] font-mono text-muted-foreground/60 w-14 shrink-0">
                 {m.month}
               </span>
               <div className="flex-1 h-5 rounded-sm overflow-hidden bg-[var(--surface-2)]/30 relative">
@@ -42,13 +42,13 @@ export function MonthlyReturnsGrid({ monthlyReturns }: Props) {
                   style={{ width: `${intensity * 100}%` }}
                 />
                 <span className={cn(
-                  "absolute inset-0 flex items-center px-2 text-[9px] font-mono font-bold",
+                  "absolute inset-0 flex items-center px-2 text-[11px] font-mono font-bold",
                   isPositive ? "text-bullish" : "text-bearish"
                 )}>
                   {isPositive ? "+" : ""}{m.returnPercent.toFixed(1)}%
                 </span>
               </div>
-              <span className="text-[9px] font-mono text-muted-foreground/40 w-8 text-right shrink-0">
+              <span className="text-[11px] font-mono text-muted-foreground/40 w-8 text-right shrink-0">
                 {m.trades}
               </span>
             </div>
@@ -56,7 +56,7 @@ export function MonthlyReturnsGrid({ monthlyReturns }: Props) {
         })}
       </div>
       <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/20">
-        <span className="text-[8px] text-muted-foreground/40 uppercase">Total</span>
+        <span className="text-[10px] text-muted-foreground/40 uppercase">Total</span>
         <span className={cn(
           "text-xs font-bold font-mono",
           monthlyReturns.reduce((s, m) => s + m.returnPercent, 0) >= 0 ? "text-bullish" : "text-bearish"

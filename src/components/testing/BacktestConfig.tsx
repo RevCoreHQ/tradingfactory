@@ -26,7 +26,7 @@ export function BacktestConfig({ config, onConfigChange, progress, onRun, onStop
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         {/* Instrument */}
         <div>
-          <label className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5 block">
+          <label className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5 block">
             Instrument
           </label>
           <select
@@ -45,7 +45,7 @@ export function BacktestConfig({ config, onConfigChange, progress, onRun, onStop
 
         {/* Timeframe */}
         <div>
-          <label className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5 block">
+          <label className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5 block">
             Timeframe
           </label>
           <div className="flex gap-1">
@@ -69,7 +69,7 @@ export function BacktestConfig({ config, onConfigChange, progress, onRun, onStop
 
         {/* Trading Style */}
         <div>
-          <label className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5 block">
+          <label className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5 block">
             Style
           </label>
           <div className="flex gap-1">
@@ -93,7 +93,7 @@ export function BacktestConfig({ config, onConfigChange, progress, onRun, onStop
 
         {/* Equity */}
         <div>
-          <label className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5 block">
+          <label className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5 block">
             Equity ($)
           </label>
           <input
@@ -107,7 +107,7 @@ export function BacktestConfig({ config, onConfigChange, progress, onRun, onStop
 
         {/* Risk % */}
         <div>
-          <label className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5 block">
+          <label className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5 block">
             Risk %
           </label>
           <input
@@ -122,7 +122,7 @@ export function BacktestConfig({ config, onConfigChange, progress, onRun, onStop
 
         {/* Min Conviction */}
         <div>
-          <label className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5 block">
+          <label className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-1.5 block">
             Min Conviction
           </label>
           <select
@@ -152,7 +152,7 @@ export function BacktestConfig({ config, onConfigChange, progress, onRun, onStop
         </label>
 
         <div className="flex items-center gap-2">
-          <span className="text-[9px] font-bold text-muted-foreground/60 uppercase">Min R:R</span>
+          <span className="text-[11px] font-bold text-muted-foreground/60 uppercase">Min R:R</span>
           <input
             type="number"
             value={config.minRiskReward ?? 1.5}
@@ -164,7 +164,7 @@ export function BacktestConfig({ config, onConfigChange, progress, onRun, onStop
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[9px] font-bold text-muted-foreground/60 uppercase">Window</span>
+          <span className="text-[11px] font-bold text-muted-foreground/60 uppercase">Window</span>
           <input
             type="number"
             value={config.windowSize}
@@ -199,11 +199,11 @@ export function BacktestConfig({ config, onConfigChange, progress, onRun, onStop
       {(progress.status === "running" || progress.status === "fetching") && (
         <div className="mt-3">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] text-muted-foreground/60 flex items-center gap-1.5">
+            <span className="text-[12px] text-muted-foreground/60 flex items-center gap-1.5">
               <Loader2 className="h-3 w-3 animate-spin" />
               {progress.status === "fetching" ? "Fetching historical data..." : `Processing bar ${progress.currentBar} / ${progress.totalBars}`}
             </span>
-            <span className="text-[10px] font-mono text-muted-foreground/60">
+            <span className="text-[12px] font-mono text-muted-foreground/60">
               {progress.tradesFound} trades found
             </span>
           </div>

@@ -24,10 +24,10 @@ function GuideSection({
         onClick={() => setExpanded(!expanded)}
         className="w-full py-3 flex items-center gap-3 hover:bg-surface-2/30 transition-colors text-left px-1"
       >
-        <span className="text-[9px] font-mono text-neutral-accent/50 w-5 shrink-0 text-center">
+        <span className="text-[11px] font-mono text-neutral-accent/50 w-5 shrink-0 text-center">
           {number}
         </span>
-        <span className="flex-1 text-[11px] font-semibold text-foreground">{title}</span>
+        <span className="flex-1 text-[13px] font-semibold text-foreground">{title}</span>
         {expanded ? (
           <ChevronUp className="h-3 w-3 text-muted-foreground/40 shrink-0" />
         ) : (
@@ -58,7 +58,7 @@ function TRow({ cells, header = false }: { cells: string[]; header?: boolean }) 
   return (
     <div className={cn("grid gap-px", header && "border-b border-border/30 pb-1 mb-1")} style={{ gridTemplateColumns: `repeat(${cells.length}, minmax(0, 1fr))` }}>
       {cells.map((cell, i) => (
-        <span key={i} className={cn("text-[9px] px-2 py-1", header ? "font-bold text-foreground/70 uppercase tracking-wider" : "text-muted-foreground/70 font-mono")}>
+        <span key={i} className={cn("text-[11px] px-2 py-1", header ? "font-bold text-foreground/70 uppercase tracking-wider" : "text-muted-foreground/70 font-mono")}>
           {cell}
         </span>
       ))}
@@ -75,7 +75,7 @@ function Pill({ children, color = "blue" }: { children: ReactNode; color?: "blue
     red: "bg-bearish/10 text-bearish/70 border-bearish/20",
   };
   return (
-    <span className={cn("text-[9px] font-mono px-2 py-0.5 rounded border inline-block", colors[color])}>
+    <span className={cn("text-[11px] font-mono px-2 py-0.5 rounded border inline-block", colors[color])}>
       {children}
     </span>
   );
@@ -103,7 +103,7 @@ export function SystemComprehensiveGuide() {
 
       {/* ── 2. DATA SOURCES ── */}
       <GuideSection number={2} title="Data Sources (Stage 1)">
-        <h4 className="text-[10px] font-bold text-foreground/70 uppercase tracking-wider">Market Data</h4>
+        <h4 className="text-[12px] font-bold text-foreground/70 uppercase tracking-wider">Market Data</h4>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
           {[
             { src: "Twelve Data", role: "Primary — OHLCV candles across 4 TFs", tier: "Paid" },
@@ -111,16 +111,16 @@ export function SystemComprehensiveGuide() {
             { src: "Alpha Vantage", role: "Secondary fallback for price data", tier: "Free" },
           ].map((s) => (
             <div key={s.src} className="bg-neutral-accent/8 border border-neutral-accent/15 rounded-md px-2.5 py-1.5">
-              <div className="text-[10px] font-semibold text-neutral-accent/80">{s.src}</div>
-              <div className="text-[9px] text-muted-foreground/50">{s.role}</div>
+              <div className="text-[12px] font-semibold text-neutral-accent/80">{s.src}</div>
+              <div className="text-[11px] text-muted-foreground/50">{s.role}</div>
             </div>
           ))}
         </div>
-        <p className="text-[10px]">
+        <p className="text-[12px]">
           <strong className="text-foreground">Timeframes:</strong> Signal engine uses 1H (intraday) or 4H (swing). MTF alignment uses style-specific TFs: Swing = Weekly/Daily/4H/1H, Intraday = 4H/1H/15M/5M.
         </p>
 
-        <h4 className="text-[10px] font-bold text-foreground/70 uppercase tracking-wider mt-2">Fundamental Data (Parallel Track — Separate From Signals)</h4>
+        <h4 className="text-[12px] font-bold text-foreground/70 uppercase tracking-wider mt-2">Fundamental Data (Parallel Track — Separate From Signals)</h4>
         <div className="bg-surface-2/30 rounded-md overflow-hidden">
           <TRow cells={["Source", "Data", "API"]} header />
           <TRow cells={["Finnhub", "News headlines + sentiment", "REST"]} />
@@ -129,7 +129,7 @@ export function SystemComprehensiveGuide() {
           <TRow cells={["FMP", "Economic calendar (CPI, GDP, NFP)", "REST"]} />
           <TRow cells={["Derived", "Rate differentials per pair", "Calculated"]} />
         </div>
-        <p className="text-[10px]">
+        <p className="text-[12px]">
           Fundamentals feed the <strong className="text-foreground">bias engine</strong> and <strong className="text-foreground">AI advisor</strong> —
           they do NOT feed the mechanical signal systems directly.
         </p>
@@ -155,11 +155,11 @@ export function SystemComprehensiveGuide() {
             "VWAP",
             "Force Index",
           ].map((ind) => (
-            <span key={ind} className="text-[9px] font-mono text-neutral-accent/60 bg-neutral-accent/8 px-2 py-1 rounded text-center">{ind}</span>
+            <span key={ind} className="text-[11px] font-mono text-neutral-accent/60 bg-neutral-accent/8 px-2 py-1 rounded text-center">{ind}</span>
           ))}
         </div>
-        <p className="text-[10px]">
-          Output: <code className="text-[9px] bg-surface-2/40 px-1 rounded">TechnicalSummary</code> object per instrument per timeframe.
+        <p className="text-[12px]">
+          Output: <code className="text-[11px] bg-surface-2/40 px-1 rounded">TechnicalSummary</code> object per instrument per timeframe.
         </p>
       </GuideSection>
 
@@ -172,11 +172,11 @@ export function SystemComprehensiveGuide() {
           <TRow cells={["Structure", "ADX + EMA slope + BB width", "trend, range, breakout"]} />
           <TRow cells={["Phase (Wyckoff)", "ADX direction + price vs EMA50", "accumulation, expansion, distribution, reversal"]} />
         </div>
-        <p className="text-[10px]">
+        <p className="text-[12px]">
           Also computes a <strong className="text-foreground">legacy regime</strong> for backward compatibility:
           <Pill>trending_up</Pill> <Pill>trending_down</Pill> <Pill>ranging</Pill> <Pill>volatile</Pill>
         </p>
-        <p className="text-[10px]">
+        <p className="text-[12px]">
           The regime feeds into: trading style selection, signal weighting, cluster weights, conviction scoring, and learning system tracking.
         </p>
       </GuideSection>
@@ -193,22 +193,22 @@ export function SystemComprehensiveGuide() {
           ].map((s) => (
             <div key={s.label} className="bg-surface-2/30 border border-border/20 rounded-md px-2.5 py-1.5 text-center">
               <div className={cn("text-sm font-black", s.color)}>{s.label}</div>
-              <div className="text-[8px] text-muted-foreground/50">{s.desc}</div>
+              <div className="text-[10px] text-muted-foreground/50">{s.desc}</div>
             </div>
           ))}
         </div>
         <div className="grid grid-cols-2 gap-1.5 mt-1">
           <div className="bg-bullish/8 border border-bullish/15 rounded-md px-2.5 py-1.5">
-            <div className="text-[10px] font-semibold text-bullish/80">BOS (Break of Structure)</div>
-            <div className="text-[9px] text-muted-foreground/50">Price breaks swing in trend direction — continuation confirmed</div>
+            <div className="text-[12px] font-semibold text-bullish/80">BOS (Break of Structure)</div>
+            <div className="text-[11px] text-muted-foreground/50">Price breaks swing in trend direction — continuation confirmed</div>
           </div>
           <div className="bg-bearish/8 border border-bearish/15 rounded-md px-2.5 py-1.5">
-            <div className="text-[10px] font-semibold text-bearish/80">CHoCH (Change of Character)</div>
-            <div className="text-[9px] text-muted-foreground/50">Price breaks swing against trend — potential reversal</div>
+            <div className="text-[12px] font-semibold text-bearish/80">CHoCH (Change of Character)</div>
+            <div className="text-[11px] text-muted-foreground/50">Price breaks swing against trend — potential reversal</div>
           </div>
         </div>
         <div className="bg-amber-500/8 border border-amber-500/15 rounded-md px-3 py-2 mt-1">
-          <div className="text-[10px] font-semibold text-amber-600 dark:text-amber-500/80 mb-1">ICT Concepts</div>
+          <div className="text-[12px] font-semibold text-amber-600 dark:text-amber-500/80 mb-1">ICT Concepts</div>
           <div className="grid grid-cols-2 gap-1">
             {[
               "Fair Value Gaps — 3-candle imbalances, min 0.3x ATR",
@@ -216,11 +216,11 @@ export function SystemComprehensiveGuide() {
               "Institutional Candles — body > 2x ATR displacement moves",
               "Consolidation Breakouts — tight range (<1.5x ATR, 5+ bars)",
             ].map((c) => (
-              <span key={c} className="text-[8px] text-muted-foreground/60">{c}</span>
+              <span key={c} className="text-[10px] text-muted-foreground/60">{c}</span>
             ))}
           </div>
         </div>
-        <p className="text-[10px]">
+        <p className="text-[12px]">
           <strong className="text-foreground">Structure Direction Gate:</strong> If structure is bullish, ALL bearish signals are excluded
           before scoring. If bearish, ALL bullish signals excluded. Neutral structure allows both.
         </p>
@@ -238,7 +238,7 @@ export function SystemComprehensiveGuide() {
           <TRow cells={["Breakout structure", "Intraday", "1.5x ATR", "8h"]} />
           <TRow cells={["Range structure", "Intraday", "1.5x ATR", "8h"]} />
         </div>
-        <p className="text-[10px] mt-2">
+        <p className="text-[12px] mt-2">
           <strong className="text-foreground">Style-specific MTF alignment:</strong> Swing uses Weekly (40%), Daily (30%), 4H (20%), 1H (10%). Intraday uses 4H (40%), 1H (30%), 15M (20%), 5M (10%).
         </p>
       </GuideSection>
@@ -246,62 +246,62 @@ export function SystemComprehensiveGuide() {
       {/* ── 7. 3 MECHANICAL SIGNAL SYSTEMS ── */}
       <GuideSection number={7} title="3 Mechanical Signal Systems (Stage 6)">
         <p>
-          All 100% rule-based. Each returns: <code className="text-[9px] bg-surface-2/40 px-1 rounded">
+          All 100% rule-based. Each returns: <code className="text-[11px] bg-surface-2/40 px-1 rounded">
           {"{system, type, direction, strength(0-100), regimeMatch}"}
           </code>. One signal per cluster — maximizes orthogonality, eliminates correlated redundancy.
         </p>
 
-        <h4 className="text-[10px] font-bold text-bullish/70 uppercase tracking-wider mt-2">Trend Cluster</h4>
+        <h4 className="text-[12px] font-bold text-bullish/70 uppercase tracking-wider mt-2">Trend Cluster</h4>
         <div className="space-y-1.5">
           {[
             { num: "1", name: "Trend Stack", source: "Custom", desc: "EMA(9) > EMA(21) > EMA(50) > SMA(200) alignment. Full stack = 90, partial (3 EMAs) = 60. Excluded in non-trending regimes." },
           ].map((s) => (
             <div key={s.num} className="flex gap-2 items-start">
-              <span className="h-5 w-5 rounded-full bg-bullish/15 text-bullish text-[9px] font-bold flex items-center justify-center shrink-0 mt-0.5">{s.num}</span>
+              <span className="h-5 w-5 rounded-full bg-bullish/15 text-bullish text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">{s.num}</span>
               <div>
-                <span className="text-[10px] font-semibold text-foreground">{s.name}</span>
-                <span className="text-[9px] text-muted-foreground/50 ml-1">({s.source})</span>
-                <p className="text-[9px] text-muted-foreground/60">{s.desc}</p>
+                <span className="text-[12px] font-semibold text-foreground">{s.name}</span>
+                <span className="text-[11px] text-muted-foreground/50 ml-1">({s.source})</span>
+                <p className="text-[11px] text-muted-foreground/60">{s.desc}</p>
               </div>
             </div>
           ))}
         </div>
 
-        <h4 className="text-[10px] font-bold text-amber-600 dark:text-amber-500/70 uppercase tracking-wider mt-3">Mean Reversion Cluster</h4>
+        <h4 className="text-[12px] font-bold text-amber-600 dark:text-amber-500/70 uppercase tracking-wider mt-3">Mean Reversion Cluster</h4>
         <div className="space-y-1.5">
           {[
             { num: "2", name: "RSI Extremes", source: "Williams", desc: "RSI(14) < 30 (oversold) + above SMA(200) = buy (80). RSI > 70 + below SMA(200) = sell (80). Without SMA filter = weaker (50). Excluded in trending regimes." },
           ].map((s) => (
             <div key={s.num} className="flex gap-2 items-start">
-              <span className="h-5 w-5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-500/70 text-[9px] font-bold flex items-center justify-center shrink-0 mt-0.5">{s.num}</span>
+              <span className="h-5 w-5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-500/70 text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">{s.num}</span>
               <div>
-                <span className="text-[10px] font-semibold text-foreground">{s.name}</span>
-                <span className="text-[9px] text-muted-foreground/50 ml-1">({s.source})</span>
-                <p className="text-[9px] text-muted-foreground/60">{s.desc}</p>
+                <span className="text-[12px] font-semibold text-foreground">{s.name}</span>
+                <span className="text-[11px] text-muted-foreground/50 ml-1">({s.source})</span>
+                <p className="text-[11px] text-muted-foreground/60">{s.desc}</p>
               </div>
             </div>
           ))}
         </div>
 
-        <h4 className="text-[10px] font-bold text-neutral-accent/70 uppercase tracking-wider mt-3">Momentum Cluster</h4>
+        <h4 className="text-[12px] font-bold text-neutral-accent/70 uppercase tracking-wider mt-3">Momentum Cluster</h4>
         <div className="space-y-1.5">
           {[
             { num: "3", name: "Elder Impulse", source: "Elder", desc: "EMA(13) slope + MACD histogram slope → GREEN (bullish, shorts prohibited) / RED (bearish, longs prohibited) / BLUE (mixed). Hard gate: NEVER long on RED, NEVER short on GREEN. Acts as filter/gate, not driver." },
           ].map((s) => (
             <div key={s.num} className="flex gap-2 items-start">
-              <span className="h-5 w-5 rounded-full bg-neutral-accent/15 text-neutral-accent text-[9px] font-bold flex items-center justify-center shrink-0 mt-0.5">{s.num}</span>
+              <span className="h-5 w-5 rounded-full bg-neutral-accent/15 text-neutral-accent text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">{s.num}</span>
               <div>
-                <span className="text-[10px] font-semibold text-foreground">{s.name}</span>
-                <span className="text-[9px] text-muted-foreground/50 ml-1">({s.source})</span>
-                <p className="text-[9px] text-muted-foreground/60">{s.desc}</p>
+                <span className="text-[12px] font-semibold text-foreground">{s.name}</span>
+                <span className="text-[11px] text-muted-foreground/50 ml-1">({s.source})</span>
+                <p className="text-[11px] text-muted-foreground/60">{s.desc}</p>
               </div>
             </div>
           ))}
         </div>
 
         <div className="bg-bearish/8 border border-bearish/15 rounded-md px-3 py-2 mt-3">
-          <div className="text-[10px] font-semibold text-bearish/80">Hard Regime Exclusion</div>
-          <p className="text-[9px] text-muted-foreground/50">
+          <div className="text-[12px] font-semibold text-bearish/80">Hard Regime Exclusion</div>
+          <p className="text-[11px] text-muted-foreground/50">
             Trend signals in non-trending markets → excluded entirely (strength=0, direction=neutral).
             Mean reversion signals in trending markets → excluded entirely.
             Momentum signals → allowed in all regimes.
@@ -321,9 +321,9 @@ export function SystemComprehensiveGuide() {
           <TRow cells={["Range", "15%", "45%", "40%"]} />
           <TRow cells={["Breakout", "35%", "10%", "55%"]} />
         </div>
-        <p className="text-[10px] mt-1">
-          Output: de-correlated agreement score (0-40 pts) + <code className="text-[9px] bg-surface-2/40 px-1 rounded">activeClusters</code> count (0-3).
-          The <code className="text-[9px] bg-surface-2/40 px-1 rounded">activeClusters</code> count replaces raw signal count in tier thresholds.
+        <p className="text-[12px] mt-1">
+          Output: de-correlated agreement score (0-40 pts) + <code className="text-[11px] bg-surface-2/40 px-1 rounded">activeClusters</code> count (0-3).
+          The <code className="text-[11px] bg-surface-2/40 px-1 rounded">activeClusters</code> count replaces raw signal count in tier thresholds.
         </p>
       </GuideSection>
 
@@ -337,9 +337,9 @@ export function SystemComprehensiveGuide() {
           <TRow cells={["Style-dependent", "—", "Swing = 1W(40%)/1D(30%)/4H(20%)/1H(10%), Intraday = 4H(40%)/1H(30%)/15M(20%)/5M(10%)"]} />
         </div>
         <div className="space-y-1 mt-2">
-          <p className="text-[10px]"><strong className="text-foreground">EMA slope quality:</strong> Strong slope = 1.2x weight boost, weak slope = 0.8x penalty.</p>
-          <p className="text-[10px]"><strong className="text-foreground">Overextension detection:</strong> Price &gt; 2.5 ATR from EMA50 → reduces confidence even if aligned.</p>
-          <p className="text-[10px]"><strong className="text-foreground">Pullback completion:</strong> Lower TF flips back to daily direction after pullback.</p>
+          <p className="text-[12px]"><strong className="text-foreground">EMA slope quality:</strong> Strong slope = 1.2x weight boost, weak slope = 0.8x penalty.</p>
+          <p className="text-[12px]"><strong className="text-foreground">Overextension detection:</strong> Price &gt; 2.5 ATR from EMA50 → reduces confidence even if aligned.</p>
+          <p className="text-[12px]"><strong className="text-foreground">Pullback completion:</strong> Lower TF flips back to daily direction after pullback.</p>
         </div>
         <div className="grid grid-cols-4 gap-1.5 mt-2">
           {[
@@ -349,8 +349,8 @@ export function SystemComprehensiveGuide() {
             { label: "Conflicting", mod: "0.85x", color: "bg-bearish/8 border-bearish/15 text-bearish/70" },
           ].map((a) => (
             <div key={a.label} className={cn("rounded-md px-2 py-1.5 text-center border", a.color)}>
-              <div className="text-[10px] font-semibold">{a.label}</div>
-              <div className="text-[8px] font-mono opacity-70">{a.mod}</div>
+              <div className="text-[12px] font-semibold">{a.label}</div>
+              <div className="text-[10px] font-mono opacity-70">{a.mod}</div>
             </div>
           ))}
         </div>
@@ -372,7 +372,7 @@ export function SystemComprehensiveGuide() {
           <TRow cells={["ICT confluence", "0-10", "Fresh FVG(5) + OB(3) + Displacement(2)"]} />
         </div>
 
-        <h4 className="text-[10px] font-bold text-foreground/70 uppercase tracking-wider mt-3">Tier Mapping (Cluster-Based Thresholds)</h4>
+        <h4 className="text-[12px] font-bold text-foreground/70 uppercase tracking-wider mt-3">Tier Mapping (Cluster-Based Thresholds)</h4>
         <div className="bg-surface-2/30 rounded-md overflow-hidden">
           <TRow cells={["Tier", "Score", "Clusters Required", "Meaning"]} header />
           <TRow cells={["A+", ">= 70", "3 (all clusters agree)", "Maximum conviction"]} />
@@ -394,8 +394,8 @@ export function SystemComprehensiveGuide() {
             { rule: "Non-neutral direction", desc: "Must have clear bullish or bearish bias" },
           ].map((f) => (
             <div key={f.rule} className="bg-bearish/8 border border-bearish/15 rounded-md px-2.5 py-1.5">
-              <div className="text-[10px] font-semibold text-bearish/80">{f.rule}</div>
-              <div className="text-[9px] text-muted-foreground/50">{f.desc}</div>
+              <div className="text-[12px] font-semibold text-bearish/80">{f.rule}</div>
+              <div className="text-[11px] text-muted-foreground/50">{f.desc}</div>
             </div>
           ))}
         </div>
@@ -403,16 +403,16 @@ export function SystemComprehensiveGuide() {
 
       {/* ── 12. ENTRY OPT + LEVEL SNAPPING ── */}
       <GuideSection number={12} title="Entry Optimization + Structural Level Snapping (Stages 11-12)">
-        <h4 className="text-[10px] font-bold text-foreground/70 uppercase tracking-wider">Entry Optimization</h4>
+        <h4 className="text-[12px] font-bold text-foreground/70 uppercase tracking-wider">Entry Optimization</h4>
         <p>Refines the ATR-based entry zone using candle patterns:</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
           {["Hammer / Shooting Star", "Engulfing", "Pin Bar", "Inside Bar", "Pullback to EMA(21)", "FVG Re-entry", "OB Retest"].map((p) => (
-            <span key={p} className="text-[9px] font-mono text-bullish/60 bg-bullish/8 px-2 py-1 rounded text-center">{p}</span>
+            <span key={p} className="text-[11px] font-mono text-bullish/60 bg-bullish/8 px-2 py-1 rounded text-center">{p}</span>
           ))}
         </div>
-        <p className="text-[10px] mt-1">Pattern quality &gt; 60% → tightens entry to exact pattern level.</p>
+        <p className="text-[12px] mt-1">Pattern quality &gt; 60% → tightens entry to exact pattern level.</p>
 
-        <h4 className="text-[10px] font-bold text-foreground/70 uppercase tracking-wider mt-3">Level Snapping</h4>
+        <h4 className="text-[12px] font-bold text-foreground/70 uppercase tracking-wider mt-3">Level Snapping</h4>
         <p>ATR-based levels are snapped to the nearest strong structural level:</p>
         <div className="bg-surface-2/30 rounded-md overflow-hidden">
           <TRow cells={["Level Type", "Used For"]} header />
@@ -421,7 +421,7 @@ export function SystemComprehensiveGuide() {
           <TRow cells={["Fibonacci (0.236, 0.382, 0.5, 0.618, 0.786)", "TP"]} />
           <TRow cells={["FVG midpoints (Consequent Encroachment)", "Entry, SL"]} />
         </div>
-        <p className="text-[10px] mt-1">
+        <p className="text-[12px] mt-1">
           SL placed 0.3x ATR past the structural level. Each TP must achieve minimum R:R (1.5, 2.0, 2.5).
         </p>
       </GuideSection>
@@ -452,8 +452,8 @@ export function SystemComprehensiveGuide() {
 
       {/* ── 15. AI INTEGRATION ── */}
       <GuideSection number={15} title="AI Integration — 3 Roles (Stages 14-15)">
-        <h4 className="text-[10px] font-bold text-foreground/70 uppercase tracking-wider">Deterministic Core + LLM Intelligence Shell</h4>
-        <p className="text-[10px]">
+        <h4 className="text-[12px] font-bold text-foreground/70 uppercase tracking-wider">Deterministic Core + LLM Intelligence Shell</h4>
+        <p className="text-[12px]">
           LLM roles are restricted to <strong className="text-foreground">explanation, risk auditing, and summarization</strong>.
           LLMs never change scores, rankings, or entries. The system is fully deterministic — same inputs always produce the same outputs.
         </p>
@@ -463,32 +463,32 @@ export function SystemComprehensiveGuide() {
           <TRow cells={["Market Summary", "Claude Opus 4.6", "Macro regime, cross-asset themes, COT/carry", "1024"]} />
           <TRow cells={["Desk Chat", "Claude Opus 4.6", "Multi-turn Q&A about setups and market", "512/reply"]} />
         </div>
-        <p className="text-[10px] mt-1">
+        <p className="text-[12px] mt-1">
           <strong className="text-foreground">Fallbacks:</strong> Gemini 2.0 Flash (Google) → GPT-4o Mini (OpenAI) if Anthropic unavailable.
         </p>
 
-        <h4 className="text-[10px] font-bold text-amber-600 dark:text-amber-500/70 uppercase tracking-wider mt-3">Risk Auditor (Claude Opus 4.6)</h4>
-        <p className="text-[10px]">
+        <h4 className="text-[12px] font-bold text-amber-600 dark:text-amber-500/70 uppercase tracking-wider mt-3">Risk Auditor (Claude Opus 4.6)</h4>
+        <p className="text-[12px]">
           Receives all A+/A setups ranked by conviction, plus: regime summary, Fear &amp; Greed, DXY, bond yields,
           system consensus, impulse distribution, active positions, learning data, MTF alignment, ICT scores,
           COT speculative positioning, rate differentials, economic events, central bank rates, portfolio risk metrics.
         </p>
-        <p className="text-[10px]">
+        <p className="text-[12px]">
           <strong className="text-foreground">Role:</strong> Identify risk flags, portfolio conflicts, event risk, and positioning warnings.
           Does NOT pick trades, rank setups, or influence scoring. The mechanical system handles all ranking and selection.
         </p>
-        <p className="text-[10px]">
+        <p className="text-[12px]">
           <strong className="text-foreground">Returns:</strong> greeting, market regime assessment, risk flags (3-5 specific risk observations),
           focusToday, sitOutToday, avoid list, risk warning, desk note.
         </p>
 
-        <h4 className="text-[10px] font-bold text-amber-600 dark:text-amber-500/70 uppercase tracking-wider mt-3">Bias Engine (2-Way Deterministic Weighting)</h4>
+        <h4 className="text-[12px] font-bold text-amber-600 dark:text-amber-500/70 uppercase tracking-wider mt-3">Bias Engine (2-Way Deterministic Weighting)</h4>
         <div className="bg-surface-2/30 rounded-md overflow-hidden">
           <TRow cells={["Component", "Intraday Weight", "Swing Weight"]} header />
           <TRow cells={["Technical (RSI, MACD, BB, trend)", "70%", "45%"]} />
           <TRow cells={["Fundamental (news, F&G, rates)", "30%", "55%"]} />
         </div>
-        <p className="text-[10px] mt-1">
+        <p className="text-[12px] mt-1">
           Fully deterministic — no AI weight. LLM provides display-only summary text (fundamentalReason, technicalReason)
           but never influences the numerical bias score.
         </p>
@@ -498,14 +498,14 @@ export function SystemComprehensiveGuide() {
       <GuideSection number={16} title="Expectancy-Based Learning (Stage 15)">
         <p>
           Every completed trade is recorded by <strong className="text-foreground">confluence key</strong>:
-          <code className="text-[9px] bg-surface-2/40 px-1 rounded ml-1">instrument + regime + direction + conviction + impulse + style</code>
+          <code className="text-[11px] bg-surface-2/40 px-1 rounded ml-1">instrument + regime + direction + conviction + impulse + style</code>
         </p>
-        <p className="text-[10px]">
+        <p className="text-[12px]">
           With <strong className="text-foreground">regime-specific keys</strong> (preferred when &ge; 20 trades accumulated):
-          <code className="text-[9px] bg-surface-2/40 px-1 rounded ml-1">instrument + structure + phase + direction + conviction</code>
+          <code className="text-[11px] bg-surface-2/40 px-1 rounded ml-1">instrument + structure + phase + direction + conviction</code>
         </p>
 
-        <h4 className="text-[10px] font-bold text-foreground/70 uppercase tracking-wider mt-2">Learning Computation (requires &ge; 20 trades)</h4>
+        <h4 className="text-[12px] font-bold text-foreground/70 uppercase tracking-wider mt-2">Learning Computation (requires &ge; 20 trades)</h4>
         <div className="space-y-1.5">
           {[
             { step: "1", label: "Time-decayed win rate", desc: "30-day exponential half-life — recent trades weighted higher" },
@@ -513,16 +513,16 @@ export function SystemComprehensiveGuide() {
             { step: "3", label: "Kelly fraction", desc: "(WR x AvgWin - (1-WR) x AvgLoss) / AvgWin, capped at 25%" },
           ].map((s) => (
             <div key={s.step} className="flex gap-2 items-start">
-              <span className="h-5 w-5 rounded-full bg-bullish/15 text-bullish text-[9px] font-bold flex items-center justify-center shrink-0 mt-0.5">{s.step}</span>
+              <span className="h-5 w-5 rounded-full bg-bullish/15 text-bullish text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">{s.step}</span>
               <div>
-                <span className="text-[10px] font-semibold text-foreground">{s.label}</span>
-                <p className="text-[9px] text-muted-foreground/50">{s.desc}</p>
+                <span className="text-[12px] font-semibold text-foreground">{s.label}</span>
+                <p className="text-[11px] text-muted-foreground/50">{s.desc}</p>
               </div>
             </div>
           ))}
         </div>
 
-        <h4 className="text-[10px] font-bold text-foreground/70 uppercase tracking-wider mt-3">Adjustments Applied to Future Setups</h4>
+        <h4 className="text-[12px] font-bold text-foreground/70 uppercase tracking-wider mt-3">Adjustments Applied to Future Setups</h4>
         <div className="bg-surface-2/30 rounded-md overflow-hidden">
           <TRow cells={["EV", "Risk Multiplier", "Conviction Adjust"]} header />
           <TRow cells={["> 1.0R", "1.5x", "+15 pts"]} />
@@ -535,14 +535,14 @@ export function SystemComprehensiveGuide() {
 
       {/* ── 17. REAL-TIME TRACKING ── */}
       <GuideSection number={17} title="Real-Time Setup Tracking">
-        <h4 className="text-[10px] font-bold text-foreground/70 uppercase tracking-wider">State Machine</h4>
-        <pre className="text-[9px] font-mono text-muted-foreground/60 bg-surface-2/30 rounded-md px-3 py-2 overflow-x-auto whitespace-pre">
+        <h4 className="text-[12px] font-bold text-foreground/70 uppercase tracking-wider">State Machine</h4>
+        <pre className="text-[11px] font-mono text-muted-foreground/60 bg-surface-2/30 rounded-md px-3 py-2 overflow-x-auto whitespace-pre">
 {`pending → active → breakeven → tp1_hit → tp2_hit → tp3_hit
                                     ↘ sl_hit
   ↘ expired
   ↘ invalidated`}
         </pre>
-        <h4 className="text-[10px] font-bold text-foreground/70 uppercase tracking-wider mt-2">Partial Exit Management</h4>
+        <h4 className="text-[12px] font-bold text-foreground/70 uppercase tracking-wider mt-2">Partial Exit Management</h4>
         <div className="space-y-0.5">
           {[
             "TP1 hit → close 33%, move SL to breakeven",
@@ -550,10 +550,10 @@ export function SystemComprehensiveGuide() {
             "TP3 hit → close remaining 34%",
             "SL hit after TP1 → counted as WIN (banked partial profit)",
           ].map((line) => (
-            <p key={line} className="text-[9px] text-muted-foreground/60 font-mono">{line}</p>
+            <p key={line} className="text-[11px] text-muted-foreground/60 font-mono">{line}</p>
           ))}
         </div>
-        <p className="text-[10px] mt-1">
+        <p className="text-[12px] mt-1">
           <strong className="text-foreground">Persistence:</strong> localStorage + IndexedDB (client-side).
           Timeline of all status changes with timestamps and prices. Peak price tracking for scale-in detection.
         </p>
@@ -572,15 +572,15 @@ export function SystemComprehensiveGuide() {
             { step: "6", label: "Outcome recording", desc: "Win/loss/breakeven + R-multiple + P&L" },
           ].map((s) => (
             <div key={s.step} className="flex gap-2 items-start">
-              <span className="h-5 w-5 rounded-full bg-neutral-accent/15 text-neutral-accent text-[9px] font-bold flex items-center justify-center shrink-0 mt-0.5">{s.step}</span>
+              <span className="h-5 w-5 rounded-full bg-neutral-accent/15 text-neutral-accent text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">{s.step}</span>
               <div>
-                <span className="text-[10px] font-semibold text-foreground">{s.label}</span>
-                <p className="text-[9px] text-muted-foreground/50">{s.desc}</p>
+                <span className="text-[12px] font-semibold text-foreground">{s.label}</span>
+                <p className="text-[11px] text-muted-foreground/50">{s.desc}</p>
               </div>
             </div>
           ))}
         </div>
-        <p className="text-[10px] mt-1">
+        <p className="text-[12px] mt-1">
           <strong className="text-foreground">Statistics:</strong> Win rate, avg P&amp;L, Sharpe ratio, max drawdown,
           per-system breakdown, per-regime breakdown, per-conviction-tier breakdown, monthly returns grid, equity curve.
           Results feed into the confluence bridge → updates learning patterns.
@@ -589,7 +589,7 @@ export function SystemComprehensiveGuide() {
 
       {/* ── 19. COMPLETE DATA FLOW DIAGRAM ── */}
       <GuideSection number={19} title="Complete Data Flow Diagram">
-        <pre className="text-[8px] sm:text-[9px] font-mono text-muted-foreground/60 bg-surface-2/30 rounded-md px-3 py-3 overflow-x-auto whitespace-pre leading-relaxed">
+        <pre className="text-[10px] sm:text-[11px] font-mono text-muted-foreground/60 bg-surface-2/30 rounded-md px-3 py-3 overflow-x-auto whitespace-pre leading-relaxed">
 {`┌─────────────────────────────────────────────────────────────┐
 │                    EXTERNAL DATA SOURCES                     │
 │  Twelve Data ─── OHLCV candles (5M-Weekly, style-dependent) │
@@ -706,12 +706,12 @@ export function SystemComprehensiveGuide() {
             },
           ].map((p) => (
             <div key={p.num} className="flex gap-3 items-start">
-              <span className="h-6 w-6 rounded-full bg-neutral-accent/15 text-neutral-accent text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+              <span className="h-6 w-6 rounded-full bg-neutral-accent/15 text-neutral-accent text-[12px] font-bold flex items-center justify-center shrink-0 mt-0.5">
                 {p.num}
               </span>
               <div>
-                <span className="text-[11px] font-semibold text-foreground">{p.title}</span>
-                <p className="text-[9px] text-muted-foreground/60 mt-0.5">{p.desc}</p>
+                <span className="text-[13px] font-semibold text-foreground">{p.title}</span>
+                <p className="text-[11px] text-muted-foreground/60 mt-0.5">{p.desc}</p>
               </div>
             </div>
           ))}

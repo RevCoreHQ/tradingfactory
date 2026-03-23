@@ -47,7 +47,7 @@ export function AggregateScorecard({ stats, results }: AggregateScorecardProps) 
           <div className="glass-card rounded-xl border border-bullish/20 p-4">
             <div className="flex items-center gap-2 mb-2">
               <Trophy className="h-3.5 w-3.5 text-bullish" />
-              <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">Best</span>
+              <span className="text-[12px] font-bold text-muted-foreground/60 uppercase tracking-wider">Best</span>
             </div>
             <span className="text-lg font-black text-foreground">{stats.bestInstrument.symbol}</span>
             <span className="ml-2 text-sm font-mono text-bullish">
@@ -61,7 +61,7 @@ export function AggregateScorecard({ stats, results }: AggregateScorecardProps) 
           <div className="glass-card rounded-xl border border-bearish/20 p-4">
             <div className="flex items-center gap-2 mb-2">
               <TrendingDown className="h-3.5 w-3.5 text-bearish" />
-              <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">Worst</span>
+              <span className="text-[12px] font-bold text-muted-foreground/60 uppercase tracking-wider">Worst</span>
             </div>
             <span className="text-lg font-black text-foreground">{stats.worstInstrument.symbol}</span>
             <span className="ml-2 text-sm font-mono text-bearish">
@@ -74,7 +74,7 @@ export function AggregateScorecard({ stats, results }: AggregateScorecardProps) 
         <div className="glass-card rounded-xl border border-border/30 p-4">
           <div className="flex items-center gap-2 mb-2">
             <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">Total Trades</span>
+            <span className="text-[12px] font-bold text-muted-foreground/60 uppercase tracking-wider">Total Trades</span>
           </div>
           <span className="text-lg font-black text-foreground">{stats.totalTrades}</span>
           <span className="ml-2 text-sm font-mono text-muted-foreground/60">
@@ -85,7 +85,7 @@ export function AggregateScorecard({ stats, results }: AggregateScorecardProps) 
 
       {/* Heat Map Grid */}
       <div>
-        <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-2">
+        <h4 className="text-[12px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-2">
           Instrument Heat Map
         </h4>
         <div className="grid grid-cols-4 md:grid-cols-8 gap-1.5">
@@ -104,12 +104,12 @@ export function AggregateScorecard({ stats, results }: AggregateScorecardProps) 
                       : "border-border/20 bg-surface-2/30"
                 )}
               >
-                <span className="text-[10px] font-bold text-foreground block truncate">
+                <span className="text-[12px] font-bold text-foreground block truncate">
                   {r.symbol}
                 </span>
                 <span
                   className={cn(
-                    "text-[9px] font-mono block",
+                    "text-[11px] font-mono block",
                     exp > 0 ? "text-bullish" : exp < 0 ? "text-bearish" : "text-muted-foreground"
                   )}
                 >
@@ -124,26 +124,26 @@ export function AggregateScorecard({ stats, results }: AggregateScorecardProps) 
       {/* Category Breakdown */}
       {stats.byCategory.length > 0 && (
         <div>
-          <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-2">
+          <h4 className="text-[12px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-2">
             By Category
           </h4>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             {stats.byCategory.map((cat) => (
               <div key={cat.category} className="glass-card rounded-lg border border-border/20 p-3">
-                <span className="text-[10px] font-bold text-foreground capitalize block">
+                <span className="text-[12px] font-bold text-foreground capitalize block">
                   {cat.category}
                 </span>
                 <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-[10px] font-mono text-muted-foreground">
+                  <span className="text-[12px] font-mono text-muted-foreground">
                     {cat.instruments} inst
                   </span>
                   <span className={cn(
-                    "text-[10px] font-mono",
+                    "text-[12px] font-mono",
                     cat.avgExpectancy > 0 ? "text-bullish" : "text-bearish"
                   )}>
                     {cat.avgExpectancy.toFixed(2)}R
                   </span>
-                  <span className="text-[10px] font-mono text-muted-foreground/50">
+                  <span className="text-[12px] font-mono text-muted-foreground/50">
                     {(cat.avgWinRate * 100).toFixed(0)}% WR
                   </span>
                 </div>
@@ -177,7 +177,7 @@ function StatCard({
     <div className={cn("glass-card rounded-xl border p-4", colors[accent].split(" ")[0])}>
       <div className="flex items-center gap-1.5 mb-1">
         <span className={colors[accent].split(" ")[1]}>{icon}</span>
-        <span className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider">
+        <span className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-wider">
           {label}
         </span>
       </div>

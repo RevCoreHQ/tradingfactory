@@ -42,7 +42,7 @@ export function CentralBankTracker() {
                   <span className="text-lg">{BANK_FLAGS[bank.currency] || "🏦"}</span>
                   <div>
                     <div className="text-xs font-medium text-foreground">{bank.bank}</div>
-                    <div className="text-[10px] text-muted-foreground">{bank.currency}</div>
+                    <div className="text-[12px] text-muted-foreground">{bank.currency}</div>
                   </div>
                 </div>
                 <StatusBadge
@@ -60,7 +60,7 @@ export function CentralBankTracker() {
                   <DirectionIcon className={cn("h-4 w-4", directionColor)} />
                 </div>
                 <div className="text-right">
-                  <div className="text-[10px] text-muted-foreground">Next meeting</div>
+                  <div className="text-[12px] text-muted-foreground">Next meeting</div>
                   <div className="text-xs font-medium">
                     {daysUntil > 0 ? `${daysUntil}d` : "Today"}
                   </div>

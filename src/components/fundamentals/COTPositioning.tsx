@@ -11,7 +11,7 @@ import { Users, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight } from "l
 function PositionBar({ percentLong }: { percentLong: number }) {
   return (
     <div className="flex items-center gap-2 w-full">
-      <span className="text-[9px] font-mono text-bullish w-8 text-right">{percentLong}%</span>
+      <span className="text-[11px] font-mono text-bullish w-8 text-right">{percentLong}%</span>
       <div className="flex-1 h-2 rounded-full bg-[var(--surface-3)] overflow-hidden flex">
         <div
           className="h-full bg-bullish/70 rounded-l-full transition-all duration-500"
@@ -22,7 +22,7 @@ function PositionBar({ percentLong }: { percentLong: number }) {
           style={{ width: `${100 - percentLong}%` }}
         />
       </div>
-      <span className="text-[9px] font-mono text-bearish w-8">{100 - percentLong}%</span>
+      <span className="text-[11px] font-mono text-bearish w-8">{100 - percentLong}%</span>
     </div>
   );
 }
@@ -45,7 +45,7 @@ function CurrencyRow({ position, isRelevant }: { position: COTPosition; isReleva
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-foreground">{position.currency}</span>
           <span className={cn(
-            "flex items-center gap-0.5 text-[10px] font-semibold",
+            "flex items-center gap-0.5 text-[12px] font-semibold",
             isNetLong ? "text-bullish" : "text-bearish"
           )}>
             {isNetLong ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
@@ -53,12 +53,12 @@ function CurrencyRow({ position, isRelevant }: { position: COTPosition; isReleva
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-mono text-muted-foreground">
+          <span className="text-[12px] font-mono text-muted-foreground">
             {formatContracts(position.netSpeculative)}
           </span>
           {position.netSpecChange !== 0 && (
             <span className={cn(
-              "flex items-center gap-0.5 text-[9px] font-mono",
+              "flex items-center gap-0.5 text-[11px] font-mono",
               changePositive ? "text-bullish" : "text-bearish"
             )}>
               {changePositive ? <ArrowUpRight className="h-2.5 w-2.5" /> : <ArrowDownRight className="h-2.5 w-2.5" />}
@@ -98,7 +98,7 @@ export function COTPositioning() {
           <Users className="h-4 w-4 text-neutral-accent" />
           <h3 className="text-xs font-semibold text-foreground">COT Positioning</h3>
         </div>
-        <p className="text-[10px] text-muted-foreground/50 text-center py-4">
+        <p className="text-[12px] text-muted-foreground/50 text-center py-4">
           No COT data available — CFTC reports update weekly (Tuesdays)
         </p>
       </GlassCard>
@@ -142,7 +142,7 @@ export function COTPositioning() {
           <Users className="h-4 w-4 text-neutral-accent" />
           <h3 className="text-xs font-semibold text-foreground">COT Positioning</h3>
         </div>
-        <span className="text-[9px] font-mono text-muted-foreground/50">
+        <span className="text-[11px] font-mono text-muted-foreground/50">
           {data?.lastUpdated ? `Report: ${data.lastUpdated}` : ""}
         </span>
       </div>
@@ -151,8 +151,8 @@ export function COTPositioning() {
       {cotSignal && (
         <div className="rounded-lg bg-[var(--surface-2)] px-3 py-2 mb-3 border border-border/30">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-semibold text-muted-foreground">{instrument.symbol}:</span>
-            <span className={cn("text-[10px] font-semibold", cotColor)}>{cotSignal}</span>
+            <span className="text-[12px] font-semibold text-muted-foreground">{instrument.symbol}:</span>
+            <span className={cn("text-[12px] font-semibold", cotColor)}>{cotSignal}</span>
           </div>
         </div>
       )}

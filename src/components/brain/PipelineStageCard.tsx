@@ -57,15 +57,15 @@ export function PipelineStageCard({
         onClick={() => setExpanded(!expanded)}
         className="w-full px-4 py-3 flex items-center gap-3 hover:bg-surface-2/50 transition-colors text-left"
       >
-        <span className="text-[10px] font-mono text-muted-foreground/50 w-5 shrink-0 text-center">
+        <span className="text-[12px] font-mono text-muted-foreground/50 w-5 shrink-0 text-center">
           {number}
         </span>
         <span className="text-muted-foreground/60 shrink-0">{icon}</span>
         <div className="flex-1 min-w-0">
           <span className="text-xs font-semibold text-foreground">{title}</span>
-          <span className="text-[10px] text-muted-foreground/60 ml-2 hidden sm:inline">{subtitle}</span>
+          <span className="text-[12px] text-muted-foreground/60 ml-2 hidden sm:inline">{subtitle}</span>
         </div>
-        <span className={cn("text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border shrink-0", config.className)}>
+        <span className={cn("text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border shrink-0", config.className)}>
           {config.label}
         </span>
         {expanded ? (

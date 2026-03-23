@@ -45,7 +45,7 @@ export function Watchlist() {
     <aside className="w-56 shrink-0 sticky top-12 h-[calc(100vh-3rem)] overflow-y-auto bg-background/60 backdrop-blur-xl border-r border-border/20">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/20">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        <span className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground">
           Watchlist
         </span>
         <button
@@ -66,7 +66,7 @@ export function Watchlist() {
       {addPanelOpen && availableToAdd.length > 0 && (
         <div className="border-b border-border/20 bg-[var(--surface-1)] py-1.5">
           <div className="px-4 py-1">
-            <span className="text-[9px] text-muted-foreground/50 uppercase tracking-widest">Add instrument</span>
+            <span className="text-[11px] text-muted-foreground/50 uppercase tracking-widest">Add instrument</span>
           </div>
           <div className="max-h-48 overflow-y-auto">
             {CATEGORIES.map((cat) => {
@@ -75,7 +75,7 @@ export function Watchlist() {
               return (
                 <div key={cat.key}>
                   <div className="px-4 py-0.5">
-                    <span className="text-[8px] text-muted-foreground/40 uppercase tracking-wider">{cat.label}</span>
+                    <span className="text-[10px] text-muted-foreground/40 uppercase tracking-wider">{cat.label}</span>
                   </div>
                   {available.map((inst) => (
                     <button
@@ -99,7 +99,7 @@ export function Watchlist() {
 
       {addPanelOpen && availableToAdd.length === 0 && (
         <div className="border-b border-border/20 bg-[var(--surface-1)] px-4 py-3">
-          <span className="text-[10px] text-muted-foreground/50">All instruments added</span>
+          <span className="text-[12px] text-muted-foreground/50">All instruments added</span>
         </div>
       )}
 
@@ -112,7 +112,7 @@ export function Watchlist() {
             <div key={cat.key}>
               {catIdx > 0 && instruments.length > 0 && <div className="h-px bg-border/20 mx-3 my-1.5" />}
               <div className="px-4 py-1.5">
-                <span className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/50">
                   {cat.label}
                 </span>
               </div>
@@ -164,21 +164,21 @@ export function Watchlist() {
                       <div className="flex flex-col items-end">
                         {displayPrice > 0 ? (
                           <>
-                            <span className="font-mono text-[11px] text-foreground">
+                            <span className="font-mono text-[13px] text-foreground">
                               <AnimatedNumber
                                 value={displayPrice}
                                 format={(n) => n.toFixed(Math.min(inst.decimalPlaces, 4))}
-                                className="text-[11px]"
+                                className="text-[13px]"
                               />
                             </span>
                             {changePercent !== 0 && (
-                              <span className={cn("font-mono text-[9px]", getChangeClass(changePercent))}>
+                              <span className={cn("font-mono text-[11px]", getChangeClass(changePercent))}>
                                 {changePercent > 0 ? "+" : ""}{changePercent.toFixed(2)}%
                               </span>
                             )}
                           </>
                         ) : (
-                          <span className="text-[10px] text-muted-foreground/30">--</span>
+                          <span className="text-[12px] text-muted-foreground/30">--</span>
                         )}
                       </div>
                     </button>

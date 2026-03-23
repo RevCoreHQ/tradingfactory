@@ -61,8 +61,8 @@ export function IntermarketCorrelation() {
               )}
               title={`${selectedInstrument.symbol} vs ${inst.symbol}: ${corr.toFixed(2)}`}
             >
-              <span className="font-mono text-[10px] text-muted-foreground">{inst.symbol}</span>
-              <span className={cn("font-mono text-[11px] font-medium", getCorrelationText(corr))}>
+              <span className="font-mono text-[12px] text-muted-foreground">{inst.symbol}</span>
+              <span className={cn("font-mono text-[13px] font-medium", getCorrelationText(corr))}>
                 {corr > 0 ? "+" : ""}{corr.toFixed(2)}
               </span>
             </div>
@@ -73,15 +73,15 @@ export function IntermarketCorrelation() {
       <div className="flex items-center justify-center gap-4 mt-3">
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 rounded bg-bearish/60" />
-          <span className="text-[9px] text-muted-foreground">Strong -</span>
+          <span className="text-[11px] text-muted-foreground">Strong -</span>
         </div>
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 rounded bg-[var(--surface-3)]" />
-          <span className="text-[9px] text-muted-foreground">Neutral</span>
+          <span className="text-[11px] text-muted-foreground">Neutral</span>
         </div>
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 rounded bg-bullish/60" />
-          <span className="text-[9px] text-muted-foreground">Strong +</span>
+          <span className="text-[11px] text-muted-foreground">Strong +</span>
         </div>
       </div>
     </GlassCard>

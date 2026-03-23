@@ -95,7 +95,7 @@ function StatusBadge({ status }: { status: SetupStatus }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider",
+        "inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider",
         config[status].cls
       )}
     >
@@ -117,7 +117,7 @@ function RegimeBadge({ regime, adx }: { regime: MarketRegime; adx: number }) {
   const Icon = c.icon;
 
   return (
-    <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider", c.cls)}>
+    <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-md text-[12px] font-bold uppercase tracking-wider", c.cls)}>
       <Icon className="h-3 w-3" />
       {c.label}
       {adx > 0 && <span className="opacity-60 ml-0.5">ADX {adx.toFixed(0)}</span>}
@@ -149,7 +149,7 @@ function ImpulseBadge({ color }: { color: ImpulseColor }) {
   const c = config[color];
   return (
     <span
-      className={cn("inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider cursor-help", c.cls)}
+      className={cn("inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wider cursor-help", c.cls)}
       title={c.tooltip}
     >
       <span className={cn("h-2 w-2 rounded-full animate-pulse", c.dot)} />
@@ -167,7 +167,7 @@ function ConvictionBadge({ tier }: { tier: ConvictionTier }) {
     "D": { cls: "bg-muted/20 text-muted-foreground" },
   };
   return (
-    <span className={cn("inline-flex items-center justify-center h-6 min-w-[28px] px-1.5 rounded text-[10px] font-black tracking-wider", config[tier].cls)}>
+    <span className={cn("inline-flex items-center justify-center h-6 min-w-[28px] px-1.5 rounded text-[12px] font-black tracking-wider", config[tier].cls)}>
       {tier}
     </span>
   );
@@ -215,7 +215,7 @@ function StrategyBadge({ setup }: { setup: TradeDeskSetup }) {
   const { name, source } = getStrategyLabel(setup);
   return (
     <span
-      className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted/10 cursor-help"
+      className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted/10 cursor-help"
       title={`Strategy: ${name} — derived from ${source}'s methodology`}
     >
       {name}
@@ -255,9 +255,9 @@ function SetupProgress({ tracked }: { tracked: TrackedSetup }) {
       {/* P&L display for running trades */}
       {isRunningStatus(tracked.status) && (
         <div className="flex items-center justify-between mb-1">
-          <span className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Progress</span>
+          <span className="text-[11px] text-muted-foreground/50 uppercase tracking-wider">Progress</span>
           <span className={cn(
-            "text-[10px] font-bold font-mono",
+            "text-[12px] font-bold font-mono",
             pnlPercent >= 0 ? "text-bullish" : "text-bearish"
           )}>
             {pnlPercent >= 0 ? "+" : ""}{pnlPercent.toFixed(2)}%
@@ -296,7 +296,7 @@ function SetupProgress({ tracked }: { tracked: TrackedSetup }) {
           style={{ left: `${entryPos}%` }}
         />
       </div>
-      <div className="flex justify-between mt-1 text-[8px] text-muted-foreground/40 font-mono">
+      <div className="flex justify-between mt-1 text-[10px] text-muted-foreground/40 font-mono">
         <span>SL</span>
         <span>Entry</span>
         <span className={tracked.highestTpHit >= 1 ? "text-bullish font-bold" : ""}>TP1</span>
@@ -339,7 +339,7 @@ function ScaleInBanner({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Layers className="h-3.5 w-3.5 text-neutral-accent" />
-          <span className="text-[10px] font-bold text-neutral-accent uppercase tracking-wider">
+          <span className="text-[12px] font-bold text-neutral-accent uppercase tracking-wider">
             Scale-In Window
           </span>
         </div>
@@ -350,7 +350,7 @@ function ScaleInBanner({
           <X className="h-2.5 w-2.5" />
         </button>
       </div>
-      <div className="grid grid-cols-4 gap-2 mt-2 text-[10px]">
+      <div className="grid grid-cols-4 gap-2 mt-2 text-[12px]">
         <div>
           <span className="text-muted-foreground/50">Pullback</span>
           <div className="font-mono font-semibold text-foreground">{scaleIn.pullbackPercent}%</div>
@@ -389,11 +389,11 @@ function MTFTrendBar({ mtf }: { mtf: MTFTrendSummary }) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-1.5">
-        <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
+        <div className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
           Multi-Timeframe Trend
         </div>
         <span className={cn(
-          "text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded",
+          "text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded",
           mtf.alignment === "full" && "bg-bullish/12 text-bullish",
           mtf.alignment === "strong" && "bg-bullish/8 text-bullish/70",
           mtf.alignment === "partial" && "bg-[var(--amber)]/10 text-[var(--amber)]",
@@ -409,7 +409,7 @@ function MTFTrendBar({ mtf }: { mtf: MTFTrendSummary }) {
           )}
         </span>
         {mtf.pullbackComplete && (
-          <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-neutral-accent/12 text-neutral-accent flex items-center gap-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-neutral-accent/12 text-neutral-accent flex items-center gap-1">
             <Zap className="h-2.5 w-2.5" />
             Pullback Complete
             {mtf.pullbackTimeframe && (
@@ -421,14 +421,14 @@ function MTFTrendBar({ mtf }: { mtf: MTFTrendSummary }) {
       <div className="flex items-center gap-1">
         {mtf.trends.map((t, i) => (
           <div key={t.timeframe} className="flex items-center gap-1">
-            {i > 0 && <span className="text-muted-foreground/20 text-[10px]">&rarr;</span>}
+            {i > 0 && <span className="text-muted-foreground/20 text-[12px]">&rarr;</span>}
             <div className={cn(
-              "flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold border",
+              "flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[12px] font-semibold border",
               t.direction === "bullish" && "bg-bullish/8 border-bullish/20 text-bullish",
               t.direction === "bearish" && "bg-bearish/8 border-bearish/20 text-bearish",
               t.direction === "neutral" && "bg-muted/10 border-border/30 text-muted-foreground/60"
             )}>
-              <span className="text-[9px] font-mono opacity-60">{t.label}</span>
+              <span className="text-[11px] font-mono opacity-60">{t.label}</span>
               {t.direction === "bullish" ? (
                 <TrendingUp className="h-2.5 w-2.5" />
               ) : t.direction === "bearish" ? (
@@ -494,27 +494,27 @@ function SetupCard({
         onClick={() => setExpanded(!expanded)}
         className="w-full px-4 py-3 flex items-center gap-3 hover:bg-surface-2/50 transition-colors text-left"
       >
-        <span className="text-[10px] font-mono text-muted-foreground/50 w-4 shrink-0">
+        <span className="text-[12px] font-mono text-muted-foreground/50 w-4 shrink-0">
           {rank}
         </span>
 
         <div className="flex items-center gap-1 shrink-0">
           <ConvictionBadge tier={setup.conviction} />
           {isStrongConviction && <Star className="h-3 w-3 fill-[#FFD700] text-[#FFD700]" />}
-          <span className="text-[9px] font-mono text-muted-foreground/40">{setup.convictionScore}</span>
+          <span className="text-[11px] font-mono text-muted-foreground/40">{setup.convictionScore}</span>
         </div>
 
         <div className="flex items-center gap-2 min-w-[110px]">
           <DirectionArrow direction={setup.direction} />
           <div>
             <span className="text-xs font-semibold text-foreground">{setup.symbol}</span>
-            <span className="text-[10px] text-muted-foreground/60 ml-1.5">{setup.displayName}</span>
+            <span className="text-[12px] text-muted-foreground/60 ml-1.5">{setup.displayName}</span>
           </div>
         </div>
 
         <span
           className={cn(
-            "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded",
+            "text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded",
             isBullish ? "bg-bullish/12 text-bullish" : "bg-bearish/12 text-bearish"
           )}
         >
@@ -525,7 +525,7 @@ function SetupCard({
 
         {/* Running indicator with elapsed time */}
         {running && (
-          <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-bullish/10 text-bullish">
+          <span className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-bullish/10 text-bullish">
             <Clock className="h-2.5 w-2.5" />
             {formatElapsed(elapsedMs)}
           </span>
@@ -533,21 +533,21 @@ function SetupCard({
 
         {/* Missed entry badge */}
         {tracked.missedEntry && (
-          <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber/15 text-[var(--amber)]">
+          <span className="text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber/15 text-[var(--amber)]">
             Missed
           </span>
         )}
 
         {/* Scale-in indicator */}
         {activeScaleIns.length > 0 && (
-          <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-neutral-accent/10 text-neutral-accent">
+          <span className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-neutral-accent/10 text-neutral-accent">
             <Layers className="h-2.5 w-2.5" />
             Scale-In
           </span>
         )}
 
         <span className={cn(
-          "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border",
+          "text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border",
           setup.tradingStyle === "intraday"
             ? "text-neutral-accent/70 bg-neutral-accent/8 border-neutral-accent/20"
             : "text-muted-foreground/40 bg-muted/5 border-border/20"
@@ -570,9 +570,9 @@ function SetupCard({
           <div className="hidden lg:flex items-center gap-0.5">
             {setup.mtfTrend.trends.map((t, i) => (
               <div key={t.timeframe} className="flex items-center gap-0.5">
-                {i > 0 && <span className="text-muted-foreground/15 text-[8px]">&rarr;</span>}
+                {i > 0 && <span className="text-muted-foreground/15 text-[10px]">&rarr;</span>}
                 <span className={cn(
-                  "text-[8px] font-mono font-bold px-1 py-0.5 rounded",
+                  "text-[10px] font-mono font-bold px-1 py-0.5 rounded",
                   t.direction === "bullish" && "text-bullish bg-bullish/8",
                   t.direction === "bearish" && "text-bearish bg-bearish/8",
                   t.direction === "neutral" && "text-muted-foreground/50 bg-muted/10"
@@ -612,7 +612,7 @@ function SetupCard({
           {setup.mtfTrend && <MTFTrendBar mtf={setup.mtfTrend} />}
 
           <div>
-            <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1.5">
+            <div className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1.5">
               Mechanical Systems
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5">
@@ -620,7 +620,7 @@ function SetupCard({
                 <div
                   key={i}
                   className={cn(
-                    "px-2 py-1.5 rounded-md text-[10px] border",
+                    "px-2 py-1.5 rounded-md text-[12px] border",
                     sig.direction === "bullish" && "bg-bullish/8 border-bullish/20 text-bullish",
                     sig.direction === "bearish" && "bg-bearish/8 border-bearish/20 text-bearish",
                     sig.direction === "neutral" && "bg-muted/10 border-border/30 text-muted-foreground/60"
@@ -628,9 +628,9 @@ function SetupCard({
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-semibold">{sig.system}</span>
-                    {sig.regimeMatch && <span className="text-[8px] opacity-60">MATCH</span>}
+                    {sig.regimeMatch && <span className="text-[10px] opacity-60">MATCH</span>}
                   </div>
-                  <div className="text-[9px] opacity-70 mt-0.5 leading-tight">{sig.description}</div>
+                  <div className="text-[11px] opacity-70 mt-0.5 leading-tight">{sig.description}</div>
                 </div>
               ))}
             </div>
@@ -638,7 +638,7 @@ function SetupCard({
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
+              <div className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
                 Entry Zone
               </div>
               <div className="text-xs text-foreground flex items-center gap-1">
@@ -648,30 +648,30 @@ function SetupCard({
               </div>
             </div>
             <div>
-              <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
+              <div className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
                 Stop Loss
               </div>
               <CopyPrice value={setup.stopLoss.toFixed(decimals)} className="text-xs text-bearish" />
             </div>
             <div>
-              <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
+              <div className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
                 Take Profit
               </div>
               <div className="text-xs space-y-0.5">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-muted-foreground/50 text-[9px] w-5">TP1</span>
+                  <span className="text-muted-foreground/50 text-[11px] w-5">TP1</span>
                   <CopyPrice value={setup.takeProfit[0].toFixed(decimals)} className="text-bullish" />
-                  <span className="text-muted-foreground/40 font-mono text-[9px]">1:{setup.riskReward[0]}</span>
+                  <span className="text-muted-foreground/40 font-mono text-[11px]">1:{setup.riskReward[0]}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-muted-foreground/50 text-[9px] w-5">TP2</span>
+                  <span className="text-muted-foreground/50 text-[11px] w-5">TP2</span>
                   <CopyPrice value={setup.takeProfit[1].toFixed(decimals)} className="text-bullish opacity-70" />
-                  <span className="text-muted-foreground/40 font-mono text-[9px]">1:{setup.riskReward[1]}</span>
+                  <span className="text-muted-foreground/40 font-mono text-[11px]">1:{setup.riskReward[1]}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-muted-foreground/50 text-[9px] w-5">TP3</span>
+                  <span className="text-muted-foreground/50 text-[11px] w-5">TP3</span>
                   <CopyPrice value={setup.takeProfit[2].toFixed(decimals)} className="text-bullish opacity-50" />
-                  <span className="text-muted-foreground/40 font-mono text-[9px]">1:{setup.riskReward[2]}</span>
+                  <span className="text-muted-foreground/40 font-mono text-[11px]">1:{setup.riskReward[2]}</span>
                 </div>
               </div>
             </div>
@@ -679,7 +679,7 @@ function SetupCard({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
+              <div className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
                 Position Sizing (2% Rule)
               </div>
               <div className="text-xs text-foreground">
@@ -689,7 +689,7 @@ function SetupCard({
               {setup.learningApplied && (
                 <div className="flex items-center gap-1 mt-1">
                   <Brain className="h-2.5 w-2.5 text-neutral-accent" />
-                  <span className="text-[9px] text-neutral-accent">
+                  <span className="text-[11px] text-neutral-accent">
                     {setup.learningApplied.riskMultiplier > 1 ? "↑" : setup.learningApplied.riskMultiplier < 1 ? "↓" : "→"}{" "}
                     {setup.learningApplied.riskMultiplier}x risk ({(setup.learningApplied.winRate * 100).toFixed(0)}% WR, {setup.learningApplied.trades} trades)
                   </span>
@@ -697,13 +697,13 @@ function SetupCard({
               )}
             </div>
             <div>
-              <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
+              <div className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
                 Reasons to Exit
               </div>
               <div className="space-y-0.5">
                 {setup.reasonsToExit.map((reason, i) => (
-                  <div key={i} className="text-[10px] text-muted-foreground/70 flex items-start gap-1">
-                    <span className="text-[8px] mt-0.5 text-amber shrink-0">●</span>
+                  <div key={i} className="text-[12px] text-muted-foreground/70 flex items-start gap-1">
+                    <span className="text-[10px] mt-0.5 text-amber shrink-0">●</span>
                     {reason}
                   </div>
                 ))}
@@ -713,7 +713,7 @@ function SetupCard({
 
           <button
             onClick={handleNavigate}
-            className="text-[10px] text-neutral-accent hover:text-neutral-accent/80 font-semibold flex items-center gap-1 pt-1"
+            className="text-[12px] text-neutral-accent hover:text-neutral-accent/80 font-semibold flex items-center gap-1 pt-1"
           >
             View full analysis →
           </button>
@@ -751,17 +751,17 @@ function StatsRow({
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       <div className="glass-card p-3">
-        <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
+        <div className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
           Market Regime
         </div>
         {dominantRegime && <RegimeBadge regime={dominantRegime[0]} adx={0} />}
-        <div className="text-[10px] text-muted-foreground/50 mt-1">
+        <div className="text-[12px] text-muted-foreground/50 mt-1">
           {regimeCounts.trending_up + regimeCounts.trending_down} trending · {regimeCounts.ranging} ranging · {regimeCounts.volatile} volatile
         </div>
       </div>
 
       <div className="glass-card p-3">
-        <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
+        <div className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
           System Consensus
         </div>
         <div className="flex items-center gap-2 text-xs">
@@ -780,7 +780,7 @@ function StatsRow({
       </div>
 
       <div className="glass-card p-3">
-        <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
+        <div className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
           Impulse Distribution
         </div>
         <div className="flex items-center gap-3 text-xs">
@@ -800,7 +800,7 @@ function StatsRow({
       </div>
 
       <div className="glass-card p-3">
-        <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
+        <div className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
           Risk Per Trade
         </div>
         <div className="text-xs font-bold font-mono text-foreground">
@@ -834,17 +834,17 @@ function HistoryTab({ history }: { history: TrackedSetup[] }) {
     <div className="space-y-3">
       <div className="grid grid-cols-4 gap-3">
         <div className="section-card p-3">
-          <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">Total</div>
+          <div className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">Total</div>
           <div className="text-sm font-bold text-foreground">{history.length}</div>
         </div>
         <div className="section-card p-3">
-          <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">Win Rate</div>
+          <div className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">Win Rate</div>
           <div className={cn("text-sm font-bold", winRate >= 50 ? "text-bullish" : "text-bearish")}>
             {winRate.toFixed(0)}%
           </div>
         </div>
         <div className="section-card p-3">
-          <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">W / L / BE</div>
+          <div className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">W / L / BE</div>
           <div className="text-xs">
             <span className="text-bullish font-semibold">{wins}</span>
             <span className="text-muted-foreground/40"> / </span>
@@ -854,7 +854,7 @@ function HistoryTab({ history }: { history: TrackedSetup[] }) {
           </div>
         </div>
         <div className="section-card p-3">
-          <div className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">Avg P&L</div>
+          <div className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">Avg P&L</div>
           <div className={cn("text-sm font-bold font-mono", avgPnl >= 0 ? "text-bullish" : "text-bearish")}>
             {avgPnl >= 0 ? "+" : ""}{avgPnl.toFixed(2)}%
           </div>
@@ -862,7 +862,7 @@ function HistoryTab({ history }: { history: TrackedSetup[] }) {
       </div>
 
       <div className="section-card overflow-hidden">
-        <div className="px-4 py-2 border-b border-border/30 grid grid-cols-8 text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-wider">
+        <div className="px-4 py-2 border-b border-border/30 grid grid-cols-8 text-[11px] font-semibold text-muted-foreground/50 uppercase tracking-wider">
           <span>Instrument</span>
           <span>Direction</span>
           <span>Outcome</span>
@@ -888,18 +888,18 @@ function HistoryTab({ history }: { history: TrackedSetup[] }) {
               <div
                 key={h.id}
                 className={cn(
-                  "px-4 py-2 grid grid-cols-8 items-center text-[11px] hover:bg-surface-2/30",
+                  "px-4 py-2 grid grid-cols-8 items-center text-[13px] hover:bg-surface-2/30",
                   h.outcome === "win" && "bg-bullish/[0.02]",
                   h.outcome === "loss" && "bg-bearish/[0.02]"
                 )}
               >
                 <span className="font-semibold text-foreground">{h.setup.symbol}</span>
-                <span className={cn("font-bold uppercase text-[9px]", isBull ? "text-bullish" : "text-bearish")}>
+                <span className={cn("font-bold uppercase text-[11px]", isBull ? "text-bullish" : "text-bearish")}>
                   {isBull ? "LONG" : "SHORT"}
                 </span>
                 <span
                   className={cn(
-                    "font-bold uppercase text-[9px] px-1.5 py-0.5 rounded w-fit",
+                    "font-bold uppercase text-[11px] px-1.5 py-0.5 rounded w-fit",
                     h.outcome === "win" && "bg-bullish/15 text-bullish",
                     h.outcome === "loss" && "bg-bearish/15 text-bearish",
                     h.outcome === "breakeven" && "bg-muted/20 text-muted-foreground"
@@ -910,13 +910,13 @@ function HistoryTab({ history }: { history: TrackedSetup[] }) {
                 <span className={cn("font-mono", (h.pnlPercent ?? 0) >= 0 ? "text-bullish" : "text-bearish")}>
                   {h.pnlPercent !== null ? `${h.pnlPercent >= 0 ? "+" : ""}${h.pnlPercent.toFixed(2)}%` : "—"}
                 </span>
-                <span className="text-muted-foreground/60 text-[10px] font-mono">
+                <span className="text-muted-foreground/60 text-[12px] font-mono">
                   {tpPath}
                 </span>
-                <span className="text-muted-foreground/50 text-[10px] font-mono">
+                <span className="text-muted-foreground/50 text-[12px] font-mono">
                   {duration > 0 ? formatElapsed(duration) : "—"}
                 </span>
-                <span className="text-muted-foreground/50 text-[10px]">
+                <span className="text-muted-foreground/50 text-[12px]">
                   {scaleInCount > 0 ? (
                     <span className="flex items-center gap-1">
                       <Layers className="h-2.5 w-2.5 text-neutral-accent" />
@@ -924,7 +924,7 @@ function HistoryTab({ history }: { history: TrackedSetup[] }) {
                     </span>
                   ) : "—"}
                 </span>
-                <span className="text-muted-foreground/40 text-[10px]">
+                <span className="text-muted-foreground/40 text-[12px]">
                   {date ? `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, "0")}` : "—"}
                 </span>
               </div>
@@ -954,13 +954,13 @@ function LearningTab({ patterns }: { patterns: Record<string, ConfluencePattern>
     <div className="space-y-3">
       <div className="section-card px-3 py-2 flex items-center gap-2">
         <Brain className="h-3 w-3 text-neutral-accent" />
-        <span className="text-[10px] text-muted-foreground/60">
+        <span className="text-[12px] text-muted-foreground/60">
           Risk and conviction adjustments activate after 5 trades per pattern
         </span>
       </div>
 
       <div className="section-card overflow-hidden">
-        <div className="px-4 py-2 border-b border-border/30 grid grid-cols-6 text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-wider">
+        <div className="px-4 py-2 border-b border-border/30 grid grid-cols-6 text-[11px] font-semibold text-muted-foreground/50 uppercase tracking-wider">
           <span className="col-span-2">Pattern</span>
           <span>Trades</span>
           <span>Win Rate</span>
@@ -974,11 +974,11 @@ function LearningTab({ patterns }: { patterns: Record<string, ConfluencePattern>
               <div
                 key={p.key}
                 className={cn(
-                  "px-4 py-2 grid grid-cols-6 items-center text-[11px] hover:bg-surface-2/30",
+                  "px-4 py-2 grid grid-cols-6 items-center text-[13px] hover:bg-surface-2/30",
                   !active && "opacity-50"
                 )}
               >
-                <span className="col-span-2 font-mono text-[9px] text-foreground truncate" title={p.key}>
+                <span className="col-span-2 font-mono text-[11px] text-foreground truncate" title={p.key}>
                   {abbreviatePattern(p.key)}
                 </span>
                 <span className="text-foreground font-semibold">{p.trades}</span>
@@ -1052,7 +1052,7 @@ function TabBar({
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-semibold uppercase tracking-wider transition-colors",
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-semibold uppercase tracking-wider transition-colors",
               isActive
                 ? "bg-foreground/10 text-foreground"
                 : "text-muted-foreground/50 hover:text-muted-foreground hover:bg-surface-2/50"
@@ -1061,7 +1061,7 @@ function TabBar({
             <Icon className="h-3 w-3" />
             {tab.label}
             {tab.count !== undefined && tab.count > 0 && (
-              <span className="text-[9px] text-muted-foreground/40 ml-0.5">{tab.count}</span>
+              <span className="text-[11px] text-muted-foreground/40 ml-0.5">{tab.count}</span>
             )}
           </button>
         );
@@ -1279,12 +1279,12 @@ function SetupAlertBanner({ alerts, onDismiss }: { alerts: SetupAlert[]; onDismi
                 New {alert.conviction} Setup
               </span>
               <span className={cn(
-                "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded",
+                "text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded",
                 alert.direction === "bullish" ? "bg-bullish/15 text-bullish" : "bg-bearish/15 text-bearish"
               )}>
                 {alert.direction === "bullish" ? "LONG" : "SHORT"} {alert.symbol}
               </span>
-              <span className="text-[9px] text-muted-foreground/60">
+              <span className="text-[11px] text-muted-foreground/60">
                 {alert.strategy} · Score {alert.score}
               </span>
             </div>
@@ -1361,7 +1361,7 @@ export function AITradeDesk() {
               ? "No qualifying setups — no instruments meet A+/A conviction right now"
               : "No candle data received — check data provider status (Finnhub, Twelve Data)"}
         </p>
-        <p className="text-[10px] text-muted-foreground/40 mt-1 font-mono">
+        <p className="text-[12px] text-muted-foreground/40 mt-1 font-mono">
           Data: {instrumentsWithData}/{allInstrumentCount} instruments
         </p>
       </div>
@@ -1386,7 +1386,7 @@ export function AITradeDesk() {
           patternCount={patternCount}
         />
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-muted-foreground/40">{timeAgo}</span>
+          <span className="text-[12px] text-muted-foreground/40">{timeAgo}</span>
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
@@ -1411,10 +1411,10 @@ export function AITradeDesk() {
             {actionable.length > 0 && (
               <div className={running.length > 0 ? "mb-4" : ""}>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-[10px] font-bold text-neutral-accent uppercase tracking-wider">
+                  <span className="text-[12px] font-bold text-neutral-accent uppercase tracking-wider">
                     New Setups
                   </span>
-                  <span className="text-[9px] text-muted-foreground/40">{actionable.length}</span>
+                  <span className="text-[11px] text-muted-foreground/40">{actionable.length}</span>
                 </div>
                 <div className="space-y-1.5">
                   {actionable.slice(0, 8).map((tracked, i) => (
@@ -1428,10 +1428,10 @@ export function AITradeDesk() {
             {running.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-[10px] font-bold text-bullish uppercase tracking-wider">
+                  <span className="text-[12px] font-bold text-bullish uppercase tracking-wider">
                     Core Trades Running
                   </span>
-                  <span className="text-[9px] text-muted-foreground/40">{running.length}</span>
+                  <span className="text-[11px] text-muted-foreground/40">{running.length}</span>
                 </div>
                 <div className="space-y-1.5">
                   {running.map((tracked, i) => (

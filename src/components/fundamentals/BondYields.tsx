@@ -87,7 +87,7 @@ export function BondYields() {
             <span className="text-muted-foreground">{y.maturity} Treasury</span>
             <div className="flex items-center gap-2">
               <AnimatedNumber value={y.yield} format={(n) => `${n.toFixed(2)}%`} className="font-medium" />
-              <span className={cn("font-mono text-[10px]", getChangeClass(y.change))}>
+              <span className={cn("font-mono text-[12px]", getChangeClass(y.change))}>
                 {getSignPrefix(y.change)}{y.change.toFixed(3)}
               </span>
             </div>
@@ -112,7 +112,7 @@ export function BondYields() {
             {dxy.value > 0 && (
               <>
                 <AnimatedNumber value={dxy.value} format={(n) => n.toFixed(2)} className="text-xs font-medium" />
-                <span className={cn("text-[10px] font-mono", getChangeClass(dxy.change))}>
+                <span className={cn("text-[12px] font-mono", getChangeClass(dxy.change))}>
                   {getSignPrefix(dxy.change)}{dxy.changePercent.toFixed(2)}%
                 </span>
               </>

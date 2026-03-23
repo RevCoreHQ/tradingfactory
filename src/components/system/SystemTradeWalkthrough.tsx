@@ -35,13 +35,13 @@ const steps: Step[] = [
     content: (
       <div className="space-y-2">
         <p>The system fetches OHLCV candles using a <strong>two-phase approach</strong>: first 1H/4H/Daily (common), then style-specific extras.</p>
-        <div className="bg-surface-2/30 rounded-md px-3 py-2 font-mono text-[9px] text-muted-foreground/60 space-y-0.5">
+        <div className="bg-surface-2/30 rounded-md px-3 py-2 font-mono text-[11px] text-muted-foreground/60 space-y-0.5">
           <div>Instrument: EUR_USD</div>
           <div>Style: Swing → TFs: Weekly, Daily, 4H, 1H</div>
           <div>Latest close: 1.0845</div>
           <div>Session: London-NY overlap (score: 100)</div>
         </div>
-        <p className="text-[10px] text-muted-foreground/60">Swing uses Weekly/Daily/4H/1H for MTF alignment. Intraday uses 4H/1H/15M/5M. Signal engine uses 4H (swing) or 1H (intraday).</p>
+        <p className="text-[12px] text-muted-foreground/60">Swing uses Weekly/Daily/4H/1H for MTF alignment. Intraday uses 4H/1H/15M/5M. Signal engine uses 4H (swing) or 1H (intraday).</p>
       </div>
     ),
   },
@@ -63,8 +63,8 @@ const steps: Step[] = [
             { name: "Impulse", value: "GREEN" },
           ].map((ind) => (
             <div key={ind.name} className="bg-surface-2/30 rounded px-2 py-1">
-              <span className="text-[9px] text-muted-foreground/50">{ind.name}</span>
-              <div className="text-[10px] font-mono text-foreground/80">{ind.value}</div>
+              <span className="text-[11px] text-muted-foreground/50">{ind.name}</span>
+              <div className="text-[12px] font-mono text-foreground/80">{ind.value}</div>
             </div>
           ))}
         </div>
@@ -86,13 +86,13 @@ const steps: Step[] = [
             { axis: "Phase", value: "Expansion", source: "ADX rising + price > EMA50" },
           ].map((r) => (
             <div key={r.axis} className="bg-bullish/8 border border-bullish/15 rounded-md px-2.5 py-1.5">
-              <div className="text-[10px] font-semibold text-bullish/80">{r.axis}</div>
-              <div className="text-[10px] font-mono text-foreground/70">{r.value}</div>
-              <div className="text-[8px] text-muted-foreground/50">{r.source}</div>
+              <div className="text-[12px] font-semibold text-bullish/80">{r.axis}</div>
+              <div className="text-[12px] font-mono text-foreground/70">{r.value}</div>
+              <div className="text-[10px] text-muted-foreground/50">{r.source}</div>
             </div>
           ))}
         </div>
-        <div className="bg-surface-2/30 rounded-md px-3 py-2 font-mono text-[10px]">
+        <div className="bg-surface-2/30 rounded-md px-3 py-2 font-mono text-[12px]">
           <div className="flex justify-between">
             <span className="text-muted-foreground/50">Legacy regime:</span>
             <span className="text-foreground font-bold">trending_up</span>
@@ -115,12 +115,12 @@ const steps: Step[] = [
             { event: "CHoCH", desc: "None detected — no reversal warning", color: "text-muted-foreground/50" },
           ].map((e) => (
             <div key={e.event} className="bg-neutral-accent/8 border border-neutral-accent/15 rounded-md px-2.5 py-1.5">
-              <div className={`text-[10px] font-semibold ${e.color}`}>{e.event}</div>
-              <div className="text-[9px] text-muted-foreground/50">{e.desc}</div>
+              <div className={`text-[12px] font-semibold ${e.color}`}>{e.event}</div>
+              <div className="text-[11px] text-muted-foreground/50">{e.desc}</div>
             </div>
           ))}
         </div>
-        <div className="bg-surface-2/30 rounded-md px-3 py-2 font-mono text-[10px]">
+        <div className="bg-surface-2/30 rounded-md px-3 py-2 font-mono text-[12px]">
           <div className="flex justify-between">
             <span className="text-muted-foreground/50">Last 4 swings:</span>
             <span className="text-foreground">HH, HL, HH, HL</span>
@@ -147,14 +147,14 @@ const steps: Step[] = [
             { rule: "Distribution phase", result: "Intraday", matched: false },
             { rule: "Expansion + trend", result: "Swing", matched: true },
           ].map((r) => (
-            <div key={r.rule} className="flex items-center gap-2 text-[10px]">
+            <div key={r.rule} className="flex items-center gap-2 text-[12px]">
               <span className={cn("h-2 w-2 rounded-full shrink-0", r.matched ? "bg-bullish" : "bg-muted-foreground/20")} />
               <span className={cn("w-32 shrink-0 font-mono", r.matched ? "text-foreground font-semibold" : "text-muted-foreground/50")}>{r.rule}</span>
               <span className={cn("font-semibold", r.result === "Swing" ? "text-neutral-accent" : "text-amber-500")}>{r.result}</span>
             </div>
           ))}
         </div>
-        <div className="bg-surface-2/30 rounded-md px-3 py-2 font-mono text-[10px] space-y-1 mt-2">
+        <div className="bg-surface-2/30 rounded-md px-3 py-2 font-mono text-[12px] space-y-1 mt-2">
           <div className="flex justify-between"><span className="text-muted-foreground/50">Selected:</span><span className="text-foreground font-bold">4H Swing</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground/50">Params:</span><span className="text-muted-foreground/70">SL 2.0 ATR | TPs 3.0/5.0/7.0 ATR | Expiry 24h</span></div>
         </div>
@@ -175,18 +175,18 @@ const steps: Step[] = [
             { name: "RSI Extremes", dir: "Bullish", str: 78, match: false },
             { name: "Elder Impulse", dir: "Bullish", str: 90, match: true },
           ].map((s) => (
-            <div key={s.name} className="flex items-center gap-2 text-[10px]">
+            <div key={s.name} className="flex items-center gap-2 text-[12px]">
               <span className="w-24 shrink-0 font-semibold text-foreground/70">{s.name}</span>
               <span className={cn("w-14 font-semibold", s.dir === "Bullish" ? "text-bullish" : s.dir === "Bearish" ? "text-bearish" : "text-muted-foreground/40")}>{s.dir}</span>
               <div className="flex-1 h-1.5 bg-surface-2/50 rounded-full overflow-hidden">
                 <div className="h-full bg-bullish/40 rounded-full" style={{ width: `${s.str}%` }} />
               </div>
-              <span className="text-[9px] font-mono text-muted-foreground/40 w-6 text-right">{s.str}</span>
-              {s.match && <span className="text-[8px] text-bullish/60">MATCH</span>}
+              <span className="text-[11px] font-mono text-muted-foreground/40 w-6 text-right">{s.str}</span>
+              {s.match && <span className="text-[10px] text-bullish/60">MATCH</span>}
             </div>
           ))}
         </div>
-        <p className="text-[10px] text-bullish/70 font-semibold">Result: 3 bullish, 0 bearish, 0 neutral — all 3 clusters agree</p>
+        <p className="text-[12px] text-bullish/70 font-semibold">Result: 3 bullish, 0 bearish, 0 neutral — all 3 clusters agree</p>
       </div>
     ),
   },
@@ -205,13 +205,13 @@ const steps: Step[] = [
             { cluster: "Momentum", pick: "Elder Impulse (65)", weight: "0.40" },
           ].map((c) => (
             <div key={c.cluster} className="bg-neutral-accent/8 border border-neutral-accent/15 rounded-md px-2.5 py-1.5 text-center">
-              <div className="text-[10px] font-semibold text-neutral-accent/80">{c.cluster}</div>
-              <div className="text-[9px] font-mono text-foreground/60">{c.pick}</div>
-              <div className="text-[8px] text-muted-foreground/50">Weight: {c.weight}</div>
+              <div className="text-[12px] font-semibold text-neutral-accent/80">{c.cluster}</div>
+              <div className="text-[11px] font-mono text-foreground/60">{c.pick}</div>
+              <div className="text-[10px] text-muted-foreground/50">Weight: {c.weight}</div>
             </div>
           ))}
         </div>
-        <div className="bg-surface-2/30 rounded-md px-3 py-2 font-mono text-[10px]">
+        <div className="bg-surface-2/30 rounded-md px-3 py-2 font-mono text-[12px]">
           <div className="flex justify-between">
             <span className="text-muted-foreground/50">Weighted agreement:</span>
             <span className="text-foreground font-bold">34.5 / 40 pts</span>
@@ -237,17 +237,17 @@ const steps: Step[] = [
             { factor: "MTF Alignment", calc: "3/4 timeframes aligned = strong", pts: 5, max: 10 },
           ].map((f) => (
             <div key={f.factor} className="flex items-center gap-2">
-              <span className="w-28 text-[10px] font-semibold text-foreground/70">{f.factor}</span>
-              <span className="flex-1 text-[9px] text-muted-foreground/50">{f.calc}</span>
-              <span className="text-[10px] font-mono font-bold text-bullish">{f.pts}/{f.max}</span>
+              <span className="w-28 text-[12px] font-semibold text-foreground/70">{f.factor}</span>
+              <span className="flex-1 text-[11px] text-muted-foreground/50">{f.calc}</span>
+              <span className="text-[12px] font-mono font-bold text-bullish">{f.pts}/{f.max}</span>
             </div>
           ))}
         </div>
         <div className="flex items-center gap-3 mt-2 bg-bullish/10 rounded-md px-3 py-2">
           <span className="text-2xl font-black text-bullish">A+</span>
           <div>
-            <div className="text-[10px] font-mono text-foreground/70">Score: 93/100 (base 88 + MTF 5, clamped 0-100)</div>
-            <div className="text-[9px] text-muted-foreground/50">&ge;70 score AND 3 active clusters = A+</div>
+            <div className="text-[12px] font-mono text-foreground/70">Score: 93/100 (base 88 + MTF 5, clamped 0-100)</div>
+            <div className="text-[11px] text-muted-foreground/50">&ge;70 score AND 3 active clusters = A+</div>
           </div>
         </div>
       </div>
@@ -268,8 +268,8 @@ const steps: Step[] = [
             { check: "R:R ≥ 1.5", result: "R:R = 2.1 — PASS", pass: true },
             { check: "Non-neutral", result: "Bullish — PASS", pass: true },
           ].map((c) => (
-            <div key={c.check} className="flex items-center gap-2 text-[10px]">
-              <span className={cn("h-4 w-4 rounded-full flex items-center justify-center text-[8px] font-bold", c.pass ? "bg-bullish/20 text-bullish" : "bg-bearish/20 text-bearish")}>
+            <div key={c.check} className="flex items-center gap-2 text-[12px]">
+              <span className={cn("h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-bold", c.pass ? "bg-bullish/20 text-bullish" : "bg-bearish/20 text-bearish")}>
                 {c.pass ? "\u2713" : "\u2717"}
               </span>
               <span className="w-28 text-foreground/70">{c.check}</span>
@@ -277,7 +277,7 @@ const steps: Step[] = [
             </div>
           ))}
         </div>
-        <p className="text-[10px] text-bullish font-semibold mt-1">All gates passed. Setup proceeds to desk.</p>
+        <p className="text-[12px] text-bullish font-semibold mt-1">All gates passed. Setup proceeds to desk.</p>
       </div>
     ),
   },
@@ -289,7 +289,7 @@ const steps: Step[] = [
     content: (
       <div className="space-y-2">
         <p>1H candle shows a <strong>bullish engulfing</strong> pattern (1.4x previous body). Entry zone refined:</p>
-        <div className="bg-surface-2/30 rounded-md px-3 py-2 font-mono text-[10px] space-y-1">
+        <div className="bg-surface-2/30 rounded-md px-3 py-2 font-mono text-[12px] space-y-1">
           <div className="flex justify-between"><span className="text-muted-foreground/50">Original zone:</span><span className="text-foreground">[1.0880, 1.0895]</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground/50">Refined zone:</span><span className="text-bullish font-semibold">[1.0882, 1.0890]</span></div>
           <div className="border-t border-border/20 my-1" />
@@ -314,8 +314,8 @@ const steps: Step[] = [
             { check: "Correlated < 2", value: "0 EUR pairs open", pass: true },
             { check: "Consecutive losses", value: "0 (full size)", pass: true },
           ].map((c) => (
-            <div key={c.check} className="flex items-center gap-2 text-[10px]">
-              <span className={cn("h-4 w-4 rounded-full flex items-center justify-center text-[8px] font-bold", c.pass ? "bg-bullish/20 text-bullish" : "bg-bearish/20 text-bearish")}>
+            <div key={c.check} className="flex items-center gap-2 text-[12px]">
+              <span className={cn("h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-bold", c.pass ? "bg-bullish/20 text-bullish" : "bg-bearish/20 text-bearish")}>
                 {c.pass ? "\u2713" : "\u2717"}
               </span>
               <span className="w-32 text-foreground/70">{c.check}</span>
@@ -323,7 +323,7 @@ const steps: Step[] = [
             </div>
           ))}
         </div>
-        <p className="text-[10px] text-bullish font-semibold mt-1">Full position size approved.</p>
+        <p className="text-[12px] text-bullish font-semibold mt-1">Full position size approved.</p>
       </div>
     ),
   },
@@ -335,20 +335,20 @@ const steps: Step[] = [
     content: (
       <div className="space-y-2">
         <p>Mechanical engine delivers the final setup. AI Risk Auditor reviews for risk flags:</p>
-        <div className="bg-surface-2/30 rounded-md px-3 py-2 font-mono text-[10px] space-y-1">
+        <div className="bg-surface-2/30 rounded-md px-3 py-2 font-mono text-[12px] space-y-1">
           <div className="flex justify-between"><span className="text-muted-foreground/50">Setup:</span><span className="text-foreground font-bold">EUR/USD LONG A+</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground/50">Entry:</span><span className="text-foreground">1.0882 - 1.0890</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground/50">SL:</span><span className="text-bearish">1.0758</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground/50">TP1/TP2/TP3:</span><span className="text-bullish">1.1020 / 1.1090 / 1.1160</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground/50">Size:</span><span className="text-foreground">0.44 lots (2.5% risk, A+ 1.25x)</span></div>
         </div>
-        <div className="bg-amber-500/8 border border-amber-500/15 rounded-md px-3 py-2 text-[10px] text-foreground/70 italic leading-relaxed mt-2">
+        <div className="bg-amber-500/8 border border-amber-500/15 rounded-md px-3 py-2 text-[12px] text-foreground/70 italic leading-relaxed mt-2">
           &ldquo;EUR/USD is showing strong bullish momentum with all 3 clusters aligned. COT positioning shows
           specs at 45% long — not crowded. Carry is neutral (ECB 4.5% vs Fed 5.25%), no headwind.
           No high-impact events in next 24h. Portfolio has room — no EUR concentration, diversification score 72.
           MTF 3/4 aligned with Weekly bullish. This is my top focus today.&rdquo;
         </div>
-        <p className="text-[9px] text-muted-foreground/60 font-semibold">
+        <p className="text-[11px] text-muted-foreground/60 font-semibold">
           The AI did not create this trade idea. It explained the mechanical output in human-readable form.
         </p>
       </div>
@@ -398,13 +398,13 @@ export function SystemTradeWalkthrough() {
               )}
             >
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-[9px] font-mono text-muted-foreground/40">{step.number}</span>
+                <span className="text-[11px] font-mono text-muted-foreground/40">{step.number}</span>
                 <span className={cn("text-[7px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full border", badgeColors[step.badge])}>
                   {step.badge}
                 </span>
               </div>
-              <h5 className="text-[11px] font-semibold text-foreground mb-1">{step.title}</h5>
-              <p className="text-[9px] text-muted-foreground/60 leading-relaxed">{step.summary}</p>
+              <h5 className="text-[13px] font-semibold text-foreground mb-1">{step.title}</h5>
+              <p className="text-[11px] text-muted-foreground/60 leading-relaxed">{step.summary}</p>
             </motion.button>
           );
         })}
@@ -425,9 +425,9 @@ export function SystemTradeWalkthrough() {
               accentBorders[steps[activeStep - 1].badge]
             )}>
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-[10px] font-mono text-muted-foreground/40">Step {activeStep}</span>
+                <span className="text-[12px] font-mono text-muted-foreground/40">Step {activeStep}</span>
                 <span className="text-xs font-semibold text-foreground">{steps[activeStep - 1].title}</span>
-                <span className={cn("text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border", badgeColors[steps[activeStep - 1].badge])}>
+                <span className={cn("text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border", badgeColors[steps[activeStep - 1].badge])}>
                   {steps[activeStep - 1].badge}
                 </span>
               </div>

@@ -65,7 +65,7 @@ export function InstrumentBias() {
 
             {quote && quote.changePercent !== 0 && (
               <div className="text-center mt-1">
-                <span className={cn("text-[10px] font-mono", quote.changePercent > 0 ? "text-bullish" : "text-bearish")}>
+                <span className={cn("text-[12px] font-mono", quote.changePercent > 0 ? "text-bullish" : "text-bearish")}>
                   {formatPercent(quote.changePercent)}
                 </span>
               </div>

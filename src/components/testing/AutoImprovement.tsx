@@ -18,7 +18,7 @@ function SeverityBadge({ severity }: { severity: Weakness["severity"] }) {
   };
   const c = config[severity];
   return (
-    <span className={cn("text-[8px] font-bold uppercase px-1.5 py-0.5 rounded", c.classes)}>
+    <span className={cn("text-[10px] font-bold uppercase px-1.5 py-0.5 rounded", c.classes)}>
       {c.label}
     </span>
   );
@@ -32,7 +32,7 @@ function ImpactBadge({ impact }: { impact: ParameterAdjustment["impact"] }) {
   };
   const c = config[impact];
   return (
-    <span className={cn("text-[8px] font-bold uppercase px-1.5 py-0.5 rounded", c.classes)}>
+    <span className={cn("text-[10px] font-bold uppercase px-1.5 py-0.5 rounded", c.classes)}>
       {c.label}
     </span>
   );
@@ -57,16 +57,16 @@ function WeaknessCard({ weakness }: { weakness: Weakness }) {
           </button>
         </div>
       </div>
-      <p className="text-[11px] text-muted-foreground leading-relaxed">{weakness.description}</p>
+      <p className="text-[13px] text-muted-foreground leading-relaxed">{weakness.description}</p>
       {expanded && (
         <div className="space-y-1.5 pt-1 border-t border-border/20">
           <div>
-            <span className="text-[9px] font-bold text-muted-foreground/50 uppercase">Evidence</span>
-            <p className="text-[10px] font-mono text-muted-foreground/70">{weakness.evidence}</p>
+            <span className="text-[11px] font-bold text-muted-foreground/50 uppercase">Evidence</span>
+            <p className="text-[12px] font-mono text-muted-foreground/70">{weakness.evidence}</p>
           </div>
           <div>
-            <span className="text-[9px] font-bold text-muted-foreground/50 uppercase">Suggested Fix</span>
-            <p className="text-[10px] text-muted-foreground/70">{weakness.suggestedFix}</p>
+            <span className="text-[11px] font-bold text-muted-foreground/50 uppercase">Suggested Fix</span>
+            <p className="text-[12px] text-muted-foreground/70">{weakness.suggestedFix}</p>
           </div>
         </div>
       )}
@@ -83,7 +83,7 @@ function SuggestionCard({ suggestion }: { suggestion: ParameterAdjustment }) {
           <span className="text-xs font-semibold text-foreground font-mono">{suggestion.parameter}</span>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <span className="text-[8px] font-bold uppercase px-1.5 py-0.5 rounded bg-[var(--surface-1)] text-muted-foreground/60">{suggestion.category}</span>
+          <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-[var(--surface-1)] text-muted-foreground/60">{suggestion.category}</span>
           <ImpactBadge impact={suggestion.impact} />
         </div>
       </div>
@@ -94,7 +94,7 @@ function SuggestionCard({ suggestion }: { suggestion: ParameterAdjustment }) {
         <span className="font-mono font-bold text-bullish">{String(suggestion.suggestedValue)}</span>
       </div>
 
-      <p className="text-[10px] text-muted-foreground/70 leading-relaxed">{suggestion.reasoning}</p>
+      <p className="text-[12px] text-muted-foreground/70 leading-relaxed">{suggestion.reasoning}</p>
     </div>
   );
 }
@@ -110,7 +110,7 @@ function StatDelta({ label, before, after, format, invert }: {
   const isGood = invert ? delta < 0 : delta > 0;
   return (
     <div className="text-center">
-      <div className="text-[9px] font-bold text-muted-foreground/50 uppercase mb-1">{label}</div>
+      <div className="text-[11px] font-bold text-muted-foreground/50 uppercase mb-1">{label}</div>
       <div className="text-xs font-mono text-muted-foreground/60">{format(before)}</div>
       <div className={cn("text-sm font-mono font-bold", isGood ? "text-bullish" : delta === 0 ? "text-muted-foreground" : "text-bearish")}>
         {delta > 0 ? "+" : ""}{format(delta)}
@@ -158,12 +158,12 @@ export function AutoImprovement({ result }: Props) {
           {analysis && (
             <div className="flex items-center gap-3 mt-1.5">
               {criticalCount > 0 && (
-                <span className="text-[10px] font-bold text-bearish">{criticalCount} critical</span>
+                <span className="text-[12px] font-bold text-bearish">{criticalCount} critical</span>
               )}
               {moderateCount > 0 && (
-                <span className="text-[10px] font-bold text-amber-500">{moderateCount} moderate</span>
+                <span className="text-[12px] font-bold text-amber-500">{moderateCount} moderate</span>
               )}
-              <span className="text-[10px] font-mono text-muted-foreground/40">
+              <span className="text-[12px] font-mono text-muted-foreground/40">
                 {analysis.suggestions.length} suggestions · {analysis.confidence}% confidence
               </span>
             </div>
@@ -211,7 +211,7 @@ export function AutoImprovement({ result }: Props) {
           {/* Weaknesses */}
           {analysis.weaknesses.length > 0 && (
             <div className="space-y-2">
-              <h3 className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-wider">
+              <h3 className="text-[12px] font-bold text-muted-foreground/50 uppercase tracking-wider">
                 Detected Weaknesses ({analysis.weaknesses.length})
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -225,7 +225,7 @@ export function AutoImprovement({ result }: Props) {
           {/* Suggestions */}
           {analysis.suggestions.length > 0 && (
             <div className="space-y-2">
-              <h3 className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-wider">
+              <h3 className="text-[12px] font-bold text-muted-foreground/50 uppercase tracking-wider">
                 Suggested Adjustments ({analysis.suggestions.length})
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -239,7 +239,7 @@ export function AutoImprovement({ result }: Props) {
           {/* Before/After comparison */}
           {comparisonResult && (
             <div className="space-y-2">
-              <h3 className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-wider">
+              <h3 className="text-[12px] font-bold text-muted-foreground/50 uppercase tracking-wider">
                 Before vs After
               </h3>
               <div className="section-card p-4">

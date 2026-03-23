@@ -26,7 +26,7 @@ export function SectionHeader({ title, subtitle, icon, accentColor }: SectionHea
       <div className="flex items-baseline gap-2">
         <h2 className="text-sm font-semibold text-foreground tracking-tight">{title}</h2>
         {subtitle && (
-          <span className="text-[11px] text-muted-foreground hidden sm:inline">{subtitle}</span>
+          <span className="text-[13px] text-muted-foreground hidden sm:inline">{subtitle}</span>
         )}
       </div>
     </div>

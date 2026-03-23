@@ -83,8 +83,8 @@ export function FearGreedGauge() {
           { label: "Month", value: fg.previousMonth },
         ].map(({ label: l, value }) => (
           <div key={l} className="flex items-center gap-1">
-            <span className="text-[10px] text-muted-foreground">{l}</span>
-            <span className="text-[10px] font-mono font-medium" style={{ color: getGaugeColor(value) }}>
+            <span className="text-[12px] text-muted-foreground">{l}</span>
+            <span className="text-[12px] font-mono font-medium" style={{ color: getGaugeColor(value) }}>
               {value}
             </span>
           </div>

@@ -54,7 +54,7 @@ export function SystemMechanicalVsAi() {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-bullish/10 text-bullish/70 border border-bullish/15"
+                className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-bullish/10 text-bullish/70 border border-bullish/15"
               >
                 {tag}
               </motion.span>
@@ -73,7 +73,7 @@ export function SystemMechanicalVsAi() {
           >
             <ArrowRight className="h-4 w-4 text-muted-foreground/40" />
           </motion.div>
-          <span className="text-[8px] font-bold uppercase tracking-wider text-muted-foreground/30">Then</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/30">Then</span>
         </div>
 
         {/* AI */}
@@ -97,10 +97,10 @@ export function SystemMechanicalVsAi() {
             </p>
             {aiRoles.map((ai, i) => (
               <div key={ai.name} className="flex gap-2 items-start">
-                <span className="text-[9px] font-mono text-amber-700/60 dark:text-amber-500/60 w-4 shrink-0 mt-0.5">{i + 1}.</span>
+                <span className="text-[11px] font-mono text-amber-700/60 dark:text-amber-500/60 w-4 shrink-0 mt-0.5">{i + 1}.</span>
                 <div>
-                  <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-500/80">{ai.name}</span>
-                  <span className="text-[10px] text-muted-foreground/50 ml-1">&mdash; {ai.desc}</span>
+                  <span className="text-[12px] font-semibold text-amber-700 dark:text-amber-500/80">{ai.name}</span>
+                  <span className="text-[12px] text-muted-foreground/50 ml-1">&mdash; {ai.desc}</span>
                 </div>
               </div>
             ))}
@@ -113,7 +113,7 @@ export function SystemMechanicalVsAi() {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-500/70 border border-amber-500/15"
+                className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-500/70 border border-amber-500/15"
               >
                 {tag}
               </motion.span>
@@ -125,7 +125,7 @@ export function SystemMechanicalVsAi() {
 
       {/* Bottom callout */}
       <div className="glass-card rounded-xl px-5 py-3 text-center">
-        <p className="text-[11px] font-semibold text-muted-foreground">
+        <p className="text-[13px] font-semibold text-muted-foreground">
           AI does <strong className="text-foreground">not</strong> generate trade ideas. It <strong className="text-foreground">explains</strong> them.
         </p>
       </div>

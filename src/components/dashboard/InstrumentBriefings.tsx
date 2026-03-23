@@ -56,7 +56,7 @@ function DirectionBadge({ direction, confidence }: { direction: BiasDirection; c
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider",
+        "inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider",
         isBullish && "bg-bullish/15 text-bullish",
         isBearish && "bg-bearish/15 text-bearish",
         !isBullish && !isBearish && "bg-neutral-accent/15 text-neutral-accent"
@@ -72,7 +72,7 @@ function ScoreBar({ label, score, icon: Icon }: { label: string; score: number; 
   const isBullish = score > 50;
   return (
     <div className="flex-1 space-y-1">
-      <div className="flex items-center gap-1 text-[10px]">
+      <div className="flex items-center gap-1 text-[12px]">
         <Icon className="h-3 w-3 text-muted-foreground/50" />
         <span className="font-mono text-muted-foreground">{label}:{Math.round(score)}</span>
       </div>
@@ -153,19 +153,19 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-bold text-foreground">{instrument.symbol}</span>
             {isPinned && <Pin className="h-3 w-3 text-neutral-accent fill-neutral-accent rotate-45" />}
-            <span className="text-[9px] text-muted-foreground/40">{instrument.displayName}</span>
+            <span className="text-[11px] text-muted-foreground/40">{instrument.displayName}</span>
           </div>
         </div>
         <span
           className={cn(
-            "text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded",
+            "text-[13px] font-mono font-semibold px-1.5 py-0.5 rounded",
             changePercent > 0 ? "bg-bullish/12 text-bullish" : changePercent < 0 ? "bg-bearish/12 text-bearish" : "bg-muted text-muted-foreground"
           )}
         >
           {changePercent > 0 ? "+" : ""}{changePercent.toFixed(2)}%
         </span>
       </div>
-      <span className="text-[9px] text-muted-foreground/40 mb-2">
+      <span className="text-[11px] text-muted-foreground/40 mb-2">
         {timeAgo(biasResult.timestamp)}
       </span>
 
@@ -177,7 +177,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
         <div className="flex flex-col gap-1">
           <DirectionBadge direction={biasResult.direction} confidence={biasResult.confidence} />
           {biasResult.signalAgreement !== undefined && (
-            <span className="text-[9px] text-muted-foreground/40">
+            <span className="text-[11px] text-muted-foreground/40">
               {Math.round(biasResult.signalAgreement * 100)}% signal agreement
             </span>
           )}
@@ -193,7 +193,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
       {/* D. Momentum vs Trend (LTF/HTF proxy) */}
       <div className="flex items-center gap-2 mb-3">
         <div className={cn(
-          "flex items-center gap-1 px-2 py-1 rounded text-[10px] font-mono",
+          "flex items-center gap-1 px-2 py-1 rounded text-[12px] font-mono",
           "bg-[var(--surface-2)]"
         )}>
           {momentum > 50
@@ -206,7 +206,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
           </span>
         </div>
         <div className={cn(
-          "flex items-center gap-1 px-2 py-1 rounded text-[10px] font-mono",
+          "flex items-center gap-1 px-2 py-1 rounded text-[12px] font-mono",
           "bg-[var(--surface-2)]"
         )}>
           {trend > 50
@@ -221,7 +221,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
       </div>
 
       {/* E. Key Data Row */}
-      <div className="flex items-center gap-3 flex-wrap text-[9px] font-mono text-muted-foreground/50 border-t border-border/20 pt-2 mb-3">
+      <div className="flex items-center gap-3 flex-wrap text-[11px] font-mono text-muted-foreground/50 border-t border-border/20 pt-2 mb-3">
         {llmResult?.keyLevels && llmResult.keyLevels.support > 0 && (
           <>
             <span className="text-bullish/60">S:{llmResult.keyLevels.support.toFixed(dec)}</span>
@@ -233,7 +233,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
         {llmResult?.riskAssessment && (
           <span
             className={cn(
-              "font-bold uppercase px-1 py-0.5 rounded text-[8px]",
+              "font-bold uppercase px-1 py-0.5 rounded text-[10px]",
               llmResult.riskAssessment === "low" && "bg-bullish/15 text-bullish",
               llmResult.riskAssessment === "medium" && "bg-amber/15 text-[var(--amber)]",
               llmResult.riskAssessment === "high" && "bg-bearish/15 text-bearish"
@@ -249,9 +249,9 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
         <div className="mb-3">
           <div className="flex items-center gap-1 mb-1">
             <Brain className="h-3 w-3 text-neutral-accent/60" />
-            <span className="text-[9px] font-semibold text-muted-foreground/40 uppercase tracking-wider">AI Analysis</span>
+            <span className="text-[11px] font-semibold text-muted-foreground/40 uppercase tracking-wider">AI Analysis</span>
           </div>
-          <p className="text-[11px] text-foreground/70 leading-relaxed line-clamp-2">
+          <p className="text-[13px] text-foreground/70 leading-relaxed line-clamp-2">
             {summaryText}
           </p>
         </div>
@@ -261,7 +261,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
       <div className="flex items-center justify-between mt-auto pt-3 border-t border-border/30">
         <button
           onClick={handleDeepAnalysis}
-          className="flex items-center gap-1.5 text-[11px] font-semibold text-neutral-accent hover:text-foreground transition-colors"
+          className="flex items-center gap-1.5 text-[13px] font-semibold text-neutral-accent hover:text-foreground transition-colors"
         >
           Deep Analysis
           <ArrowRight className="h-3.5 w-3.5" />
@@ -270,7 +270,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
           <button
             onClick={() => togglePin(instrument.id)}
             className={cn(
-              "flex items-center gap-1 text-[10px] transition-colors",
+              "flex items-center gap-1 text-[12px] transition-colors",
               isPinned ? "text-neutral-accent" : "text-muted-foreground/40 hover:text-muted-foreground"
             )}
           >
@@ -280,7 +280,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
           <button
             onClick={() => toggleFavorite(instrument.id)}
             className={cn(
-              "flex items-center gap-1 text-[10px] transition-colors",
+              "flex items-center gap-1 text-[12px] transition-colors",
               isFavorite ? "text-[#FFD700]" : "text-muted-foreground/40 hover:text-muted-foreground"
             )}
           >

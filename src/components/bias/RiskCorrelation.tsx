@@ -48,11 +48,11 @@ export function RiskCorrelation() {
           <h3 className="text-sm font-semibold">Portfolio Risk</h3>
         </div>
         <div className="flex items-center gap-2">
-          <div className={cn("px-2 py-0.5 rounded text-[10px] font-bold", riskBg, riskColor)}>
+          <div className={cn("px-2 py-0.5 rounded text-[12px] font-bold", riskBg, riskColor)}>
             {concentrationRisk.toUpperCase()}
           </div>
           <div className="text-right">
-            <span className="text-[9px] text-muted-foreground/50 block">Diversity</span>
+            <span className="text-[11px] text-muted-foreground/50 block">Diversity</span>
             <span className={cn("text-sm font-bold tabular", riskColor)}>
               {diversificationScore}
             </span>
@@ -62,18 +62,18 @@ export function RiskCorrelation() {
 
       {/* Currency Exposure Bars */}
       <div className="space-y-1.5 mb-4">
-        <h4 className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-wider">
+        <h4 className="text-[11px] font-bold text-muted-foreground/50 uppercase tracking-wider">
           Net Currency Exposure
         </h4>
         {displayExposures.length === 0 ? (
-          <p className="text-[10px] text-muted-foreground/50">No significant exposure detected</p>
+          <p className="text-[12px] text-muted-foreground/50">No significant exposure detected</p>
         ) : (
           displayExposures.slice(0, 8).map((exp) => {
             const isLong = exp.netExposure > 0;
             const barWidth = (Math.abs(exp.netExposure) / maxExposure) * 100;
             return (
               <div key={exp.currency} className="flex items-center gap-2">
-                <span className="text-[10px] font-mono font-bold w-8 text-muted-foreground">
+                <span className="text-[12px] font-mono font-bold w-8 text-muted-foreground">
                   {exp.currency}
                 </span>
                 <div className="flex-1 flex items-center">
@@ -95,7 +95,7 @@ export function RiskCorrelation() {
                   </div>
                 </div>
                 <span className={cn(
-                  "text-[10px] font-mono font-bold w-10 text-right tabular",
+                  "text-[12px] font-mono font-bold w-10 text-right tabular",
                   isLong ? "text-bullish" : "text-bearish"
                 )}>
                   {isLong ? "+" : ""}{exp.netExposure.toFixed(1)}
@@ -109,7 +109,7 @@ export function RiskCorrelation() {
       {/* Correlation Warnings */}
       {warnings.length > 0 && (
         <div className="space-y-1.5">
-          <h4 className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-wider">
+          <h4 className="text-[11px] font-bold text-muted-foreground/50 uppercase tracking-wider">
             Warnings
           </h4>
           {warnings.map((warning, i) => {
@@ -133,8 +133,8 @@ export function RiskCorrelation() {
               <div key={i} className={cn("flex items-start gap-2 px-2 py-1.5 rounded-lg", bg)}>
                 <Icon className={cn("h-3 w-3 mt-0.5 shrink-0", color)} />
                 <div>
-                  <p className={cn("text-[10px] font-medium", color)}>{warning.message}</p>
-                  <p className="text-[9px] text-muted-foreground/50 mt-0.5">
+                  <p className={cn("text-[12px] font-medium", color)}>{warning.message}</p>
+                  <p className="text-[11px] text-muted-foreground/50 mt-0.5">
                     {warning.instruments.map((id) => {
                       const inst = INSTRUMENTS.find((i) => i.id === id);
                       return inst?.symbol || id;
