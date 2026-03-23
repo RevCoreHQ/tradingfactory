@@ -1,16 +1,13 @@
 "use client";
 
-import { useFearGreed, useBondYields } from "@/lib/hooks/useMarketData";
+import { useFearGreed, useBondYields, useRates } from "@/lib/hooks/useMarketData";
 import { useMarketStore } from "@/lib/store/market-store";
-import { TRADING_SESSIONS, INSTRUMENTS } from "@/lib/utils/constants";
+import { INSTRUMENTS } from "@/lib/utils/constants";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Activity, TrendingUp, TrendingDown, DollarSign, BarChart3, Star } from "lucide-react";
-import { useEffect, useState } from "react";
 import useSWR from "swr";
-
-import { isSessionActive } from "@/lib/calculations/session-scoring";
 
 function getGaugeColor(value: number): string {
   if (value <= 20) return "var(--bearish)";
@@ -33,21 +30,21 @@ export function MarketPulse() {
   const { data: fearGreedData } = useFearGreed();
   const { data: bondData } = useBondYields();
   const { data: newsData } = useGeneralNews();
+  const { data: ratesData } = useRates();
   const allBiasResults = useMarketStore((s) => s.allBiasResults);
   const biasTimeframe = "intraday" as const;
   const currentResults = allBiasResults[biasTimeframe];
 
-  const [now, setNow] = useState(new Date());
-
-  useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 60_000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const hourUTC = now.getUTCHours();
   const fg = fearGreedData?.current || { value: 50, label: "Neutral" };
   const dxy = bondData?.dxy || { value: 0, change: 0 };
-  const activeSessions = Object.values(TRADING_SESSIONS).filter((s) => isSessionActive(s, hourUTC));
+  const quotes = ratesData?.quotes || {};
+
+  const KEY_MARKETS = [
+    { id: "US30", label: "Dow 30", decimals: 0 },
+    { id: "US100", label: "Nasdaq", decimals: 1 },
+    { id: "XAU_USD", label: "Gold", decimals: 2 },
+    { id: "USOIL", label: "Oil", decimals: 2 },
+  ];
   const strongConviction = Object.values(currentResults).filter((r) => Math.abs(r.overallBias) >= 45).length;
   const totalInstruments = Object.keys(currentResults).length;
   const bullishCount = Object.values(currentResults).filter((r) => r.overallBias > 10).length;
@@ -228,31 +225,33 @@ export function MarketPulse() {
         </Popover>
       </div>
 
-      {/* Active Sessions */}
+      {/* Key Markets */}
       <div className="glass-card p-4">
         <div className="flex items-center gap-2 mb-3">
-          <div className="h-6 w-6 rounded-md flex items-center justify-center bg-amber/15">
-            <Activity className="h-3.5 w-3.5 text-[var(--amber)]" />
+          <div className="h-6 w-6 rounded-md flex items-center justify-center bg-foreground/10">
+            <TrendingUp className="h-3.5 w-3.5 text-foreground/60" />
           </div>
-          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Sessions</span>
+          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Key Markets</span>
         </div>
-        {activeSessions.length > 0 ? (
-          <div className="space-y-1.5">
-            {activeSessions.map((session) => (
-              <div key={session.name} className="flex items-center gap-2">
-                <span
-                  className="h-2 w-2 rounded-full pulse-dot shrink-0"
-                  style={{ backgroundColor: session.color }}
-                />
-                <span className="text-sm font-medium">{session.name}</span>
+        <div className="space-y-1.5">
+          {KEY_MARKETS.map((m) => {
+            const q = quotes[m.id];
+            const change = q?.change || 0;
+            const pct = q?.changePercent || 0;
+            return (
+              <div key={m.id} className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-muted-foreground">{m.label}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className={cn("text-[11px] font-mono font-semibold", change > 0 ? "text-bullish" : change < 0 ? "text-bearish" : "text-muted-foreground")}>
+                    {change > 0 ? "+" : ""}{change.toFixed(m.decimals)}
+                  </span>
+                  <span className={cn("text-[9px] font-mono px-1 py-0.5 rounded", pct > 0 ? "bg-bullish/12 text-bullish" : pct < 0 ? "bg-bearish/12 text-bearish" : "bg-muted text-muted-foreground")}>
+                    {pct > 0 ? "+" : ""}{pct.toFixed(2)}%
+                  </span>
+                </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          <span className="text-sm text-muted-foreground">Markets Closed</span>
-        )}
-        <div className="text-[10px] text-muted-foreground/60 mt-2 font-mono">
-          {now.toUTCString().slice(17, 25)} UTC
+            );
+          })}
         </div>
       </div>
     </div>
