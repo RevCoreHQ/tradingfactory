@@ -4,12 +4,15 @@ import { motion } from "motion/react";
 import { Cog, Sparkles, ArrowRight } from "lucide-react";
 
 const mechanicalTags = ["Deterministic", "Reproducible", "Book-sourced", "Rule-based"];
-const aiTags = ["Narrator", "Interpreter", "Contextualizer"];
+const aiTags = ["Narrator", "Interpreter", "Risk Manager", "Macro Aware"];
 
 const aiRoles = [
-  { name: "Instrument Analysis", desc: "Narrates a single instrument's fundamentals + technicals into a readable report" },
-  { name: "Batch Analysis", desc: "Generates market summaries for all 16 instruments simultaneously" },
-  { name: "Desk Manager", desc: "Receives all A+/A mechanical setups and provides commentary, risk warnings, and a top pick" },
+  { name: "Instrument Analysis", desc: "Single-instrument deep analysis with fundamentals + technicals" },
+  { name: "Deep Analysis", desc: "Supply/demand zones, FVG analysis, ICT context per instrument" },
+  { name: "Batch Analysis", desc: "Generates bias adjustments for all 16 instruments simultaneously" },
+  { name: "Desk Manager", desc: "Institutional risk manager — COT, carry, events, portfolio risk, 7-factor priority framework" },
+  { name: "Market Summary", desc: "Macro strategist — COT, carry, rate differentials, event risk, focusToday/sitOutToday" },
+  { name: "Desk Chat", desc: "Multi-turn conversational follow-up to desk manager briefing" },
 ];
 
 export function SystemMechanicalVsAi() {
@@ -89,7 +92,7 @@ export function SystemMechanicalVsAi() {
           </div>
           <div className="space-y-3 text-xs text-muted-foreground leading-relaxed">
             <p>
-              AI is used in <strong className="text-foreground">3 places</strong>, all after the mechanical engine
+              AI is used in <strong className="text-foreground">6 places</strong>, all after the mechanical engine
               has already generated trade ideas:
             </p>
             {aiRoles.map((ai, i) => (

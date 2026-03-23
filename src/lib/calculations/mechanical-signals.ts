@@ -11,6 +11,7 @@ import type {
   TradingStyle,
   MarketPhase,
 } from "@/lib/types/signals";
+import type { MTFTimeframe } from "@/lib/types/mtf";
 import type { Instrument } from "@/lib/types/market";
 import { calcSMA, calcEMA } from "./technical-indicators";
 import { applyLearning, adjustedTier } from "./confluence-learning";
@@ -50,6 +51,28 @@ export const STYLE_PARAMS: Record<TradingStyle, StyleParams> = {
     entrySpreadMultiplier: 0.5,
     expiryMs: 24 * 60 * 60 * 1000, // 24 hours
     label: "4H Swing",
+  },
+};
+
+export interface StyleTimeframeConfig {
+  timeframes: MTFTimeframe[];   // ordered highest → lowest
+  anchor: MTFTimeframe;         // directional anchor (highest TF)
+  trigger: MTFTimeframe;        // pullback trigger (lowest TF)
+  confluenceWeights: Partial<Record<MTFTimeframe, number>>;
+}
+
+export const STYLE_TIMEFRAMES: Record<TradingStyle, StyleTimeframeConfig> = {
+  swing: {
+    timeframes: ["1w", "1d", "4h", "1h"],
+    anchor: "1w",
+    trigger: "1h",
+    confluenceWeights: { "1w": 0.40, "1d": 0.30, "4h": 0.20, "1h": 0.10 },
+  },
+  intraday: {
+    timeframes: ["4h", "1h", "15m", "5m"],
+    anchor: "4h",
+    trigger: "5m",
+    confluenceWeights: { "4h": 0.40, "1h": 0.30, "15m": 0.20, "5m": 0.10 },
   },
 };
 

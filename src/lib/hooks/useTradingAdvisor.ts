@@ -263,7 +263,7 @@ export function useTradingAdvisor(params: UseTradingAdvisorParams | null) {
           trackedStatus: trackedStatuses[s.instrumentId],
           // Rich data from mechanical pipeline
           mtfAlignment: s.mtfTrend?.alignment,
-          mtfDaily: s.mtfTrend?.dailyDirection,
+          mtfDaily: s.mtfTrend?.anchorDirection,
           pullbackComplete: s.mtfTrend?.pullbackComplete,
           volatilityRegime: s.fullRegime?.volatility,
           wyckoffPhase: s.fullRegime?.phase,

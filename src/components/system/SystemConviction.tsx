@@ -16,10 +16,10 @@ const factors = [
 ];
 
 const tiers = [
-  { tier: "A+", score: ">= 75", signals: "5+", barWidth: "100%", desc: "Elite setup — max conviction", highlight: true },
-  { tier: "A", score: ">= 60", signals: "4+", barWidth: "80%", desc: "Strong setup — high confidence", highlight: true },
-  { tier: "B", score: ">= 40", signals: "3+", barWidth: "53%", desc: "Moderate — filtered out", highlight: false },
-  { tier: "C", score: ">= 25", signals: "2+", barWidth: "33%", desc: "Weak — too few signals", highlight: false },
+  { tier: "A+", score: ">= 75", signals: "3 clusters", barWidth: "100%", desc: "Elite setup — all 3 clusters agree", highlight: true },
+  { tier: "A", score: ">= 60", signals: "2+ clusters", barWidth: "80%", desc: "Strong setup — high confidence", highlight: true },
+  { tier: "B", score: ">= 40", signals: "2+ clusters", barWidth: "53%", desc: "Moderate — filtered out", highlight: false },
+  { tier: "C", score: ">= 25", signals: "1+ cluster", barWidth: "33%", desc: "Weak — insufficient agreement", highlight: false },
   { tier: "D", score: "< 25", signals: "any", barWidth: "15%", desc: "No trade", highlight: false },
 ];
 

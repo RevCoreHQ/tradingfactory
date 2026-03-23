@@ -20,7 +20,7 @@ export interface MTFConfluenceResult {
 
 export type EmaStackState = "bullish" | "bearish" | "mixed";
 
-export type MTFTimeframe = "15m" | "1h" | "4h" | "1d";
+export type MTFTimeframe = "5m" | "15m" | "1h" | "4h" | "1d" | "1w";
 
 export interface TimeframeTrend {
   timeframe: MTFTimeframe;
@@ -36,8 +36,8 @@ export interface TimeframeTrend {
 
 export interface MTFTrendSummary {
   trends: TimeframeTrend[];
-  alignedCount: number;          // how many TFs agree with daily direction (0-4)
-  dailyDirection: "bullish" | "bearish" | "neutral";
+  alignedCount: number;          // how many TFs agree with anchor direction
+  anchorDirection: "bullish" | "bearish" | "neutral";
   pullbackComplete: boolean;     // lower TF flipped back to daily direction
   pullbackTimeframe: MTFTimeframe | null; // which TF triggered the signal
   convictionModifier: number;    // +10 fully aligned, +5 mostly, -10 against daily

@@ -31,17 +31,17 @@ const steps: Step[] = [
     number: 1,
     title: "Candles Arrive",
     badge: "DATA",
-    summary: "OHLCV for EUR/USD on 4 timeframes",
+    summary: "OHLCV for EUR/USD on style-specific timeframes",
     content: (
       <div className="space-y-2">
-        <p>The system fetches <strong>4 timeframes</strong> of OHLCV candles for every instrument from Twelve Data (primary) with Finnhub fallback.</p>
+        <p>The system fetches OHLCV candles using a <strong>two-phase approach</strong>: first 1H/4H/Daily (common), then style-specific extras.</p>
         <div className="bg-surface-2/30 rounded-md px-3 py-2 font-mono text-[9px] text-muted-foreground/60 space-y-0.5">
           <div>Instrument: EUR_USD</div>
-          <div>Timeframes: 15M, 1H, 4H, Daily (200-250 candles each)</div>
+          <div>Style: Swing → TFs: Weekly, Daily, 4H, 1H</div>
           <div>Latest close: 1.0845</div>
           <div>Session: London-NY overlap (score: 100)</div>
         </div>
-        <p className="text-[10px] text-muted-foreground/60">15M and 1H feed the MTF trend alignment. 1H or 4H is selected for the signal engine. Daily provides the higher-timeframe directional anchor.</p>
+        <p className="text-[10px] text-muted-foreground/60">Swing uses Weekly/Daily/4H/1H for MTF alignment. Intraday uses 4H/1H/15M/5M. Signal engine uses 4H (swing) or 1H (intraday).</p>
       </div>
     ),
   },
@@ -348,9 +348,10 @@ const steps: Step[] = [
           <div className="flex justify-between"><span className="text-muted-foreground/50">Size:</span><span className="text-foreground">0.44 lots (2.5% risk, A+ 1.25x)</span></div>
         </div>
         <div className="bg-amber-500/8 border border-amber-500/15 rounded-md px-3 py-2 text-[10px] text-foreground/70 italic leading-relaxed mt-2">
-          &ldquo;EUR/USD is showing strong bullish momentum with 7 of 8 systems aligned. The Elder Impulse is
-          GREEN confirming buying pressure. RSI at 28 suggests we&apos;re catching an oversold bounce in a
-          trending regime. This is my top pick for today.&rdquo;
+          &ldquo;EUR/USD is showing strong bullish momentum with 7/8 systems aligned. COT positioning shows
+          specs at 45% long — not crowded. Carry is neutral (ECB 4.5% vs Fed 5.25%), no headwind.
+          No high-impact events in next 24h. Portfolio has room — no EUR concentration, diversification score 72.
+          MTF 3/4 aligned with Weekly bullish. This is my top focus today.&rdquo;
         </div>
         <p className="text-[9px] text-muted-foreground/60 font-semibold">
           The AI did not create this trade idea. It explained the mechanical output in human-readable form.

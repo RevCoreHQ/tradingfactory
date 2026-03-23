@@ -92,7 +92,7 @@ export function SystemComprehensiveGuide() {
       <GuideSection number={1} title="System Identity" defaultExpanded>
         <p>
           A <strong className="text-foreground">deterministic 15-stage trading pipeline</strong> that generates, filters, and manages trades
-          across 16 forex/crypto/index instruments on 4 timeframes (15M, 1H, 4H, Daily). All signal generation is 100% mechanical and rule-based.
+          across 16 forex/crypto/index instruments on up to 6 timeframes (5M, 15M, 1H, 4H, Daily, Weekly), selected by trading style. All signal generation is 100% mechanical and rule-based.
         </p>
         <p>
           AI (LLM) serves as a <strong className="text-foreground">narrator and advisor layer</strong> — it NEVER generates or modifies trades.
@@ -117,7 +117,7 @@ export function SystemComprehensiveGuide() {
           ))}
         </div>
         <p className="text-[10px]">
-          <strong className="text-foreground">Timeframes:</strong> 1H + 4H → signal engine. 15M + Daily → MTF trend alignment context only.
+          <strong className="text-foreground">Timeframes:</strong> Signal engine uses 1H (intraday) or 4H (swing). MTF alignment uses style-specific TFs: Swing = Weekly/Daily/4H/1H, Intraday = 4H/1H/15M/5M.
         </p>
 
         <h4 className="text-[10px] font-bold text-foreground/70 uppercase tracking-wider mt-2">Fundamental Data (Parallel Track — Separate From Signals)</h4>
@@ -127,6 +127,7 @@ export function SystemComprehensiveGuide() {
           <TRow cells={["Alternative.me", "Fear & Greed Index", "REST"]} />
           <TRow cells={["FMP", "Central bank policy, bond yields, COT", "REST"]} />
           <TRow cells={["FMP", "Economic calendar (CPI, GDP, NFP)", "REST"]} />
+          <TRow cells={["Derived", "Rate differentials per pair", "Calculated"]} />
         </div>
         <p className="text-[10px]">
           Fundamentals feed the <strong className="text-foreground">bias engine</strong> and <strong className="text-foreground">AI advisor</strong> —
@@ -238,6 +239,9 @@ export function SystemComprehensiveGuide() {
           <TRow cells={["Breakout structure", "Intraday", "1.5x ATR", "8h"]} />
           <TRow cells={["Range structure", "Intraday", "1.5x ATR", "8h"]} />
         </div>
+        <p className="text-[10px] mt-2">
+          <strong className="text-foreground">Style-specific MTF alignment:</strong> Swing uses Weekly (40%), Daily (30%), 4H (20%), 1H (10%). Intraday uses 4H (40%), 1H (30%), 15M (20%), 5M (10%).
+        </p>
       </GuideSection>
 
       {/* ── 7. 8 MECHANICAL SIGNAL SYSTEMS ── */}
@@ -336,9 +340,7 @@ export function SystemComprehensiveGuide() {
         </p>
         <div className="bg-surface-2/30 rounded-md overflow-hidden">
           <TRow cells={["Timeframe", "Weight", "Purpose"]} header />
-          <TRow cells={["1H", "20%", "Immediate momentum"]} />
-          <TRow cells={["4H", "30%", "Intermediate trend"]} />
-          <TRow cells={["Daily", "50%", "Primary trend direction"]} />
+          <TRow cells={["Style-dependent", "—", "Swing = 1W(40%)/1D(30%)/4H(20%)/1H(10%), Intraday = 4H(40%)/1H(30%)/15M(20%)/5M(10%)"]} />
         </div>
         <div className="space-y-1 mt-2">
           <p className="text-[10px]"><strong className="text-foreground">EMA slope quality:</strong> Strong slope = 1.2x weight boost, weak slope = 0.8x penalty.</p>
@@ -449,6 +451,8 @@ export function SystemComprehensiveGuide() {
           <TRow cells={["Correlated pair limit", "2", "EUR/GBP, AUD/NZD, US indices, BTC/ETH"]} />
           <TRow cells={["Max total portfolio risk", "10%", "Sum of all position risk% must not exceed"]} />
           <TRow cells={["Drawdown throttle", "Dynamic", "2 losses=75%, 3=50%, 4+=25% size"]} />
+          <TRow cells={["Directional exposure", "3 per currency", "Max net same-direction positions"]} />
+          <TRow cells={["Concentration/diversification", "Score 0-100", "Score < 30 triggers desk manager veto"]} />
         </div>
       </GuideSection>
 
@@ -459,7 +463,7 @@ export function SystemComprehensiveGuide() {
           <TRow cells={["Function", "Model", "Provider", "Max Tokens", "Cache"]} header />
           <TRow cells={["Trade Advisor (desk briefing)", "Claude Opus 4.6", "Anthropic", "2048", "None"]} />
           <TRow cells={["Desk Chat (multi-turn)", "Claude Opus 4.6", "Anthropic", "512/reply", "None"]} />
-          <TRow cells={["Market Summary (macro)", "Claude Opus 4.6", "Anthropic", "1024", "5min"]} />
+          <TRow cells={["Market Summary (institutional macro strategist — COT, carry, rate differentials, event risk)", "Claude Opus 4.6", "Anthropic", "1024", "5min"]} />
           <TRow cells={["Single Instrument Analysis", "Claude Sonnet 4.6", "Anthropic", "1536", "5min"]} />
           <TRow cells={["Deep Analysis (S/D zones)", "Claude Sonnet 4.6", "Anthropic", "1024", "None"]} />
           <TRow cells={["Batch Analysis (all 16)", "Claude Haiku 4.5", "Anthropic", "250/instr", "10min"]} />
@@ -472,11 +476,17 @@ export function SystemComprehensiveGuide() {
         <p className="text-[10px]">
           Receives all A+/A setups ranked by conviction, plus: regime summary, Fear &amp; Greed, DXY, bond yields,
           system consensus, impulse distribution, active positions, learning data (win rates, expectancy per pattern),
-          MTF alignment per setup, ICT scores.
+          MTF alignment per setup, ICT scores, COT speculative positioning, rate differentials &amp; carry direction,
+          high-impact economic events, central bank rates, portfolio risk metrics (concentration risk, diversification score,
+          directional exposure, correlation warnings).
+        </p>
+        <p className="text-[10px]">
+          <strong className="text-foreground">Priority framework (institutional 7-factor):</strong> Portfolio Risk Gate (veto) &gt; Event Risk Filter (gate) &gt; COT Positioning (25%) &gt; MTF Alignment (25%) &gt; Carry Trade (15%) &gt; ICT Confluence (20%) &gt; Structure + Signals (15%).
         </p>
         <p className="text-[10px]">
           <strong className="text-foreground">Returns:</strong> greeting, market regime assessment, top pick (instrument, action, conviction, reasoning, levels),
           other setups (2-3 notes), avoid list, risk warning, desk note (wisdom from 8 trading books).
+          Additional outputs: focusToday (top 3-5 instruments to watch), sitOutToday (instruments to avoid with reasoning).
         </p>
         <p className="text-[10px]">
           <strong className="text-foreground">The advisor NEVER overrides mechanical signals.</strong> It selects from setups the engine already approved
@@ -593,7 +603,7 @@ export function SystemComprehensiveGuide() {
         <pre className="text-[8px] sm:text-[9px] font-mono text-muted-foreground/60 bg-surface-2/30 rounded-md px-3 py-3 overflow-x-auto whitespace-pre leading-relaxed">
 {`┌─────────────────────────────────────────────────────────────┐
 │                    EXTERNAL DATA SOURCES                     │
-│  Twelve Data ─── OHLCV candles (15M, 1H, 4H, Daily)        │
+│  Twelve Data ─── OHLCV candles (5M-Weekly, style-dependent) │
 │  Finnhub ─────── News headlines + sentiment                  │
 │  Alternative.me ─ Fear & Greed Index                         │
 │  FMP ──────────── Central banks, yields, COT, calendar       │

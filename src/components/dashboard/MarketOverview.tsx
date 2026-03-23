@@ -14,7 +14,8 @@ import { BiasAccuracySummary } from "@/components/bias/BiasAccuracy";
 import { RiskCorrelation } from "@/components/bias/RiskCorrelation";
 import { COTPositioning } from "@/components/fundamentals/COTPositioning";
 import { useRealtimePrices } from "@/lib/hooks/useRealtimePrices";
-import { Activity, Sparkles, AlertTriangle, BarChart3, Shield } from "lucide-react";
+import { InstrumentBriefings } from "./InstrumentBriefings";
+import { Activity, Sparkles, AlertTriangle, BarChart3, Shield, LayoutGrid } from "lucide-react";
 
 export function MarketOverview() {
   useAllBiasScores();
@@ -59,6 +60,17 @@ export function MarketOverview() {
               accentColor="blue"
             />
             <AIMarketSummary />
+          </section>
+
+          {/* Section 2.5: Instrument Briefings */}
+          <section>
+            <SectionHeader
+              title="Instrument Briefings"
+              subtitle="AI analysis cards for each tracked instrument"
+              icon={<LayoutGrid className="h-3.5 w-3.5" />}
+              accentColor="green"
+            />
+            <InstrumentBriefings />
           </section>
 
           {/* Section 3: Risk Calendar */}

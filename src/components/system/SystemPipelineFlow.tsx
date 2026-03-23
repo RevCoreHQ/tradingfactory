@@ -70,13 +70,13 @@ export function SystemPipelineFlow() {
         <PipelineStageCard number={1} title="Raw Market Data" subtitle="OHLCV candles, news feeds, economic data, rates" icon={<Database className="h-3.5 w-3.5" />} badge="data" accentColor="blue" defaultExpanded>
           <p>
             Every signal starts with raw data. The system fetches OHLCV candles from Twelve Data (primary, paid tier)
-            with Finnhub and Alpha Vantage as fallbacks, across <strong>4 timeframes — 15M, 1H, 4H, and Daily</strong> for
-            all 16 instruments. 1H and 4H feed the signal engine; 15M and Daily add MTF trend alignment context.
+            with Finnhub and Alpha Vantage as fallbacks, across <strong>up to 6 timeframes (5M, 15M, 1H, 4H, Daily, Weekly)</strong>,
+            selected per instrument based on trading style. 1H or 4H feed the signal engine; the remaining TFs provide MTF trend alignment context.
           </p>
           <p>
-            In parallel (but on a <strong>separate track</strong>), fundamental data streams from 7 sources: news
-            sentiment, Fear &amp; Greed, central bank policy, bond yields, economic calendar, COT positioning,
-            and ADR. Fundamentals feed the bias engine and AI advisor — they do <strong>not</strong> feed the
+            In parallel (but on a <strong>separate track</strong>), fundamental data streams from 8 sources: news
+            sentiment, Fear &amp; Greed, central bank policy, bond yields, rate differentials, economic calendar,
+            COT positioning, and ADR. Fundamentals feed the bias engine and AI advisor — they do <strong>not</strong> feed the
             mechanical signal systems directly.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mt-2">
@@ -185,8 +185,8 @@ export function SystemPipelineFlow() {
             ))}
           </div>
           <p className="mt-2">
-            <strong>Intraday</strong>: 1H candles, 1.5 ATR stop, 8h expiry.{" "}
-            <strong>Swing</strong>: 4H candles, 2.0 ATR stop, 24h expiry.
+            <strong>Intraday</strong>: 1H candles, 1.5 ATR stop, 8h expiry. MTF alignment: 4H/1H/15M/5M.{" "}
+            <strong>Swing</strong>: 4H candles, 2.0 ATR stop, 24h expiry. MTF alignment: Weekly/Daily/4H/1H.
           </p>
         </PipelineStageCard>
 
@@ -239,10 +239,11 @@ export function SystemPipelineFlow() {
           </p>
         </PipelineStageCard>
 
-        <PipelineStageCard number={8} title="MTF Trend Alignment" subtitle="Daily/4H/1H/15M EMA stack → alignment score" icon={<TrendingUp className="h-3.5 w-3.5" />} badge="mechanical" accentColor="green" defaultExpanded>
+        <PipelineStageCard number={8} title="MTF Trend Alignment" subtitle="Style-specific EMA stack → alignment score" icon={<TrendingUp className="h-3.5 w-3.5" />} badge="mechanical" accentColor="green" defaultExpanded>
           <p>
-            The EMA stack (EMA 9/21/50 + SMA 200) is computed on <strong>all 4 timeframes</strong>. Bullish stack:
-            EMA9 &gt; EMA21 &gt; EMA50 &gt; SMA200. Bearish: reversed. Otherwise: mixed.
+            The EMA stack (EMA 9/21/50 + SMA 200) is computed on <strong>style-specific timeframes</strong>.
+            Swing: Weekly (40%), Daily (30%), 4H (20%), 1H (10%). Intraday: 4H (40%), 1H (30%), 15M (20%), 5M (10%).
+            Bullish stack: EMA9 &gt; EMA21 &gt; EMA50 &gt; SMA200. Bearish: reversed. Otherwise: mixed.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mt-2">
             {[
@@ -368,6 +369,8 @@ export function SystemPipelineFlow() {
               { check: "Max 3 positions per currency", desc: "Both base and quote currency caps enforced" },
               { check: "Max 2 correlated positions", desc: "EUR/GBP, AUD/NZD, US indices, crypto groups" },
               { check: "Drawdown throttle", desc: "2 consecutive losses → 75% size, 3 → 50%, 4+ → 25%" },
+              { check: "Directional exposure limit", desc: "Tracks net long/short per currency across all positions" },
+              { check: "Concentration + diversification", desc: "Score 0-100. Score < 30 triggers desk manager veto" },
             ].map((c) => (
               <div key={c.check} className="bg-bearish/8 border border-bearish/15 rounded-md px-2.5 py-1.5">
                 <div className="text-[10px] font-semibold text-bearish/80">{c.check}</div>
@@ -381,21 +384,27 @@ export function SystemPipelineFlow() {
           </p>
         </PipelineStageCard>
 
-        <PipelineStageCard number={14} title="AI Trade Advisor" subtitle="LLM narrates and contextualizes the top setups" icon={<Sparkles className="h-3.5 w-3.5" />} badge="ai" accentColor="amber" defaultExpanded>
+        <PipelineStageCard number={14} title="AI Trade Advisor" subtitle="Institutional risk manager — 6 AI roles, 7-factor priority framework" icon={<Sparkles className="h-3.5 w-3.5" />} badge="ai" accentColor="amber" defaultExpanded>
           <p>
             <strong>This is where AI enters.</strong> The mechanical engine has already decided the trade ideas.
-            The AI Trade Advisor (Desk Manager) receives all A+/A setups along with market context — regime
-            summary, Fear &amp; Greed, DXY, bond yields, account equity.
+            The Desk Manager operates as an <strong>institutional risk manager</strong>, receiving A+/A setups plus
+            COT positioning, rate differentials &amp; carry direction, high-impact economic events, central bank rates,
+            portfolio risk metrics (concentration, diversification, directional exposure, correlation warnings),
+            and managed positions.
           </p>
           <p>
-            The LLM then provides: a market regime assessment, a top pick with rationale, risk warnings,
-            and strategy recommendations. It&apos;s a <strong>narrator, not a decision-maker</strong>.
+            <strong>7-factor institutional priority:</strong> Portfolio Risk Gate (veto) &rarr; Event Risk Filter (gate)
+            &rarr; COT Positioning (25%) &rarr; MTF Alignment (25%) &rarr; Carry Trade (15%) &rarr; ICT Confluence (20%)
+            &rarr; Structure + Signals (15%). Outputs: market regime, top pick, focusToday, sitOutToday, avoid list, risk warnings.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 mt-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mt-2">
             {[
-              { name: "Instrument LLM", desc: "Single-instrument deep analysis" },
-              { name: "Batch LLM", desc: "All 16 instruments in parallel" },
-              { name: "Desk Manager", desc: "All A+/A setups + market context" },
+              { name: "Desk Manager", desc: "Institutional risk manager — Opus 4.6" },
+              { name: "Market Summary", desc: "Macro strategist — Opus 4.6" },
+              { name: "Instrument LLM", desc: "Single-instrument deep analysis — Sonnet" },
+              { name: "Deep Analysis", desc: "S/D zones, FVG, ICT context — Sonnet" },
+              { name: "Batch LLM", desc: "All 16 instruments in parallel — Haiku" },
+              { name: "Desk Chat", desc: "Multi-turn follow-up — Opus 4.6" },
             ].map((ai) => (
               <div key={ai.name} className="bg-amber-500/8 border border-amber-500/15 rounded-md px-2.5 py-1.5 text-center">
                 <div className="text-[10px] font-semibold text-amber-700 dark:text-amber-500/80">{ai.name}</div>

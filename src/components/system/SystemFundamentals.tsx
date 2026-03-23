@@ -26,8 +26,9 @@ const sources: Source[] = [
   { name: "Fear & Greed", provider: "Alternative.me", icon: <Gauge className="h-3.5 w-3.5" />, measures: "Market-wide sentiment (0-100)", feedsInto: "Greed = risk-on bullish, Fear = safe-haven bullish" },
   { name: "Central Bank", provider: "Manual + API", icon: <Landmark className="h-3.5 w-3.5" />, measures: "Rate decisions, hawk/dove stance", feedsInto: "Hiking = currency bullish (relative strength)" },
   { name: "Bond Yields", provider: "FRED", icon: <TrendingUp className="h-3.5 w-3.5" />, measures: "10Y, 5Y, 2Y yields + DXY", feedsInto: "Rising yields = stronger currency" },
-  { name: "Econ Calendar", provider: "FMP", icon: <Calendar className="h-3.5 w-3.5" />, measures: "CPI, NFP, GDP, PMI", feedsInto: "Beat = bullish, miss = bearish" },
-  { name: "COT Positioning", provider: "CFTC", icon: <BarChart3 className="h-3.5 w-3.5" />, measures: "Institutional long/short ratios", feedsInto: "Extreme positioning = reversal risk" },
+  { name: "Rate Differentials", provider: "Derived", icon: <TrendingUp className="h-3.5 w-3.5" />, measures: "Base vs quote rate spread per pair", feedsInto: "Carry direction: long/short/neutral, tailwind/headwind logic" },
+  { name: "Econ Calendar", provider: "Forex Factory", icon: <Calendar className="h-3.5 w-3.5" />, measures: "CPI, NFP, GDP, PMI, rate decisions", feedsInto: "Beat = bullish, miss = bearish. High-impact within 24h → reduced exposure" },
+  { name: "COT Positioning", provider: "CFTC", icon: <BarChart3 className="h-3.5 w-3.5" />, measures: "Speculative + commercial positioning", feedsInto: "Crowded >70%/<30%, smart money divergence, weekly shift >15K. Filter, not trigger" },
   { name: "ADR", provider: "Calculated", icon: <Activity className="h-3.5 w-3.5" />, measures: "14-period avg daily range", feedsInto: "Volatility context for SL/TP spacing" },
 ];
 

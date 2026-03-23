@@ -10,10 +10,12 @@ import { calcEMA, calcSMA } from "./technical-indicators";
 // ==================== EMA Stack ====================
 
 const TF_LABELS: Record<MTFTimeframe, string> = {
+  "5m": "5M",
   "15m": "15M",
   "1h": "1H",
   "4h": "4H",
   "1d": "Daily",
+  "1w": "Weekly",
 };
 
 /**
@@ -106,55 +108,52 @@ function classifyStack(ema9: number, ema21: number, ema50: number, sma200: numbe
 // ==================== Pullback Detection ====================
 
 /**
- * Detect pullback completion: higher TF sets the trend, lower TF flips back.
+ * Detect pullback completion: anchor TF sets the trend, trigger TF flips back.
  *
  * Logic:
- *   1. Daily trend = bullish
- *   2. 15M (or 1H) was mixed/bearish (pullback happening)
- *   3. 15M just flipped back to bullish → pullback is over, entry signal
+ *   1. Anchor TF trend = bullish (e.g. Weekly for swing, 4H for intraday)
+ *   2. Trigger TF was mixed/bearish (pullback happening)
+ *   3. Trigger TF just flipped back to bullish → pullback is over, entry signal
  *
- * We detect the "flip back" by checking if the lowest-TF EMA stack just
- * re-aligned with the daily direction. Since we don't have history of the
- * stack state, we approximate: if lower TF is aligned AND the mid TFs
- * (1H or 4H) have at least one that's mixed/opposed, it suggests we're
- * coming out of a pullback rather than riding a clean trend.
+ * We detect the "flip back" by checking if the trigger-TF EMA stack just
+ * re-aligned with the anchor direction. If trigger is aligned AND at least
+ * one mid-TF is mixed/opposed, it suggests a pullback recovery.
  */
 export function detectPullbackCompletion(
-  trends: TimeframeTrend[]
+  trends: TimeframeTrend[],
+  anchorTf: MTFTimeframe = "1d",
+  triggerTf: MTFTimeframe = "15m"
 ): { complete: boolean; triggerTf: MTFTimeframe | null } {
-  const daily = trends.find((t) => t.timeframe === "1d");
-  const tf15m = trends.find((t) => t.timeframe === "15m");
-  const tf1h = trends.find((t) => t.timeframe === "1h");
-  const tf4h = trends.find((t) => t.timeframe === "4h");
+  const anchor = trends.find((t) => t.timeframe === anchorTf);
+  const trigger = trends.find((t) => t.timeframe === triggerTf);
 
-  if (!daily || !tf15m) return { complete: false, triggerTf: null };
+  if (!anchor || !trigger) return { complete: false, triggerTf: null };
 
-  // Daily must have a clear direction
-  if (daily.direction === "neutral") return { complete: false, triggerTf: null };
+  // Anchor must have a clear direction
+  if (anchor.direction === "neutral") return { complete: false, triggerTf: null };
 
-  const dailyDir = daily.direction;
+  const anchorDir = anchor.direction;
 
-  // 15M must be aligned with daily (it just flipped back)
-  if (tf15m.direction !== dailyDir) return { complete: false, triggerTf: null };
+  // Trigger must be aligned with anchor (it just flipped back)
+  if (trigger.direction !== anchorDir) return { complete: false, triggerTf: null };
 
-  // Price must be above EMA9 on 15M (confirming the flip)
-  const priceConfirms = dailyDir === "bullish" ? tf15m.priceAboveEma9 : !tf15m.priceAboveEma9;
+  // Price must confirm on the trigger TF
+  const priceConfirms = anchorDir === "bullish" ? trigger.priceAboveEma9 : !trigger.priceAboveEma9;
   if (!priceConfirms) return { complete: false, triggerTf: null };
 
-  // At least one mid-TF (1H or 4H) should be mixed or opposed — indicating
-  // this is a recovery from a pullback, not just a full alignment
-  const midTfs = [tf1h, tf4h].filter(Boolean) as TimeframeTrend[];
-  const hasDiscrepancy = midTfs.some((t) => t.direction !== dailyDir);
+  // Mid TFs = everything between anchor and trigger
+  const midTfs = trends.filter(
+    (t) => t.timeframe !== anchorTf && t.timeframe !== triggerTf
+  );
+  const hasDiscrepancy = midTfs.some((t) => t.direction !== anchorDir);
 
   if (hasDiscrepancy) {
-    return { complete: true, triggerTf: "15m" };
+    return { complete: true, triggerTf };
   }
 
-  // If all TFs are aligned, check if 1H just recently aligned (price barely above EMA9)
-  // This is still a valid entry — full alignment is the strongest signal
-  if (tf1h && tf1h.direction === dailyDir && tf4h && tf4h.direction === dailyDir) {
-    // Full alignment — still valid but mark as complete from 1H perspective
-    return { complete: true, triggerTf: "1h" };
+  // If all TFs are aligned, still valid — mark as complete from first mid-TF
+  if (midTfs.length > 0 && midTfs.every((t) => t.direction === anchorDir)) {
+    return { complete: true, triggerTf: midTfs[0].timeframe };
   }
 
   return { complete: false, triggerTf: null };
@@ -162,27 +161,27 @@ export function detectPullbackCompletion(
 
 // ==================== MTF Summary ====================
 
-interface MultiCandles {
-  candles15m: OHLCV[];
-  candles1h: OHLCV[];
-  candles4h: OHLCV[];
-  candles1d: OHLCV[];
+/** Flexible candle map keyed by timeframe — works for any style-specific TF set */
+export type CandlesByTimeframe = Partial<Record<MTFTimeframe, OHLCV[]>>;
+
+export interface MTFTrendConfig {
+  timeframes: MTFTimeframe[];  // ordered highest → lowest
+  anchor: MTFTimeframe;
+  trigger: MTFTimeframe;
 }
 
 /**
  * Calculate complete MTF trend summary for an instrument.
+ * Accepts a flexible candle map and style-specific config.
  */
-export function calculateMTFTrendSummary(data: MultiCandles): MTFTrendSummary | null {
-  const timeframes: { tf: MTFTimeframe; candles: OHLCV[] }[] = [
-    { tf: "1d", candles: data.candles1d },
-    { tf: "4h", candles: data.candles4h },
-    { tf: "1h", candles: data.candles1h },
-    { tf: "15m", candles: data.candles15m },
-  ];
-
+export function calculateMTFTrendSummary(
+  data: CandlesByTimeframe,
+  config: MTFTrendConfig
+): MTFTrendSummary | null {
   const trends: TimeframeTrend[] = [];
 
-  for (const { tf, candles } of timeframes) {
+  for (const tf of config.timeframes) {
+    const candles = data[tf];
     if (!candles || candles.length < 50) continue;
     const trend = computeEmaStack(candles);
     if (trend) {
@@ -190,30 +189,30 @@ export function calculateMTFTrendSummary(data: MultiCandles): MTFTrendSummary | 
     }
   }
 
-  // Need at least daily + one lower TF
+  // Need at least anchor + one other TF
   if (trends.length < 2) return null;
 
-  const daily = trends.find((t) => t.timeframe === "1d");
-  if (!daily) return null;
+  const anchor = trends.find((t) => t.timeframe === config.anchor);
+  if (!anchor) return null;
 
-  const dailyDirection = daily.direction;
+  const anchorDirection = anchor.direction;
 
-  // Count how many TFs agree with daily direction
-  const alignedCount = trends.filter((t) => t.direction === dailyDirection).length;
+  // Count how many TFs agree with anchor direction
+  const alignedCount = trends.filter((t) => t.direction === anchorDirection).length;
 
   // Pullback detection
-  const pullback = detectPullbackCompletion(trends);
+  const pullback = detectPullbackCompletion(trends, config.anchor, config.trigger);
 
   // Conviction modifier
   let convictionModifier = 0;
-  if (dailyDirection === "neutral") {
+  if (anchorDirection === "neutral") {
     convictionModifier = 0;
   } else if (alignedCount === trends.length) {
     convictionModifier = 10; // Full alignment — strongest
   } else if (alignedCount >= trends.length - 1) {
     convictionModifier = 5; // Strong — 3 of 4
   } else if (alignedCount <= 1) {
-    convictionModifier = -10; // Against daily — weakest
+    convictionModifier = -10; // Against anchor — weakest
   } else {
     convictionModifier = 0; // Partial — no modifier
   }
@@ -228,7 +227,7 @@ export function calculateMTFTrendSummary(data: MultiCandles): MTFTrendSummary | 
   return {
     trends,
     alignedCount,
-    dailyDirection,
+    anchorDirection,
     pullbackComplete: pullback.complete,
     pullbackTimeframe: pullback.triggerTf,
     convictionModifier,

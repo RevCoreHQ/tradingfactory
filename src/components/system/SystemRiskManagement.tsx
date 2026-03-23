@@ -9,6 +9,9 @@ const gateChecks = [
   { icon: "$", check: "Max 3/currency", desc: "Per-currency position count (base + quote)" },
   { icon: "C", check: "Max 2 correlated", desc: "EUR/GBP, AUD/NZD, indices, crypto" },
   { icon: "D", check: "Drawdown throttle", desc: "2 losses = 75%, 3 = 50%, 4+ = 25%" },
+  { icon: "E", check: "Directional exposure", desc: "Net long/short per currency across all positions" },
+  { icon: "S", check: "Concentration risk", desc: "Diversification score 0-100, desk manager veto if < 30" },
+  { icon: "W", check: "Correlation warnings", desc: "Flagged by portfolio risk — reduce or sit out" },
 ];
 
 export function SystemRiskManagement() {
@@ -136,7 +139,7 @@ export function SystemRiskManagement() {
           <ShieldCheck className="h-4 w-4 text-bearish/60" />
           <h4 className="text-[11px] font-semibold text-foreground">Portfolio Risk Gate</h4>
           <p className="text-[10px] text-muted-foreground/50 ml-2">
-            Every setup must pass all 4 constraints
+            Every setup must pass all 7 constraints
           </p>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

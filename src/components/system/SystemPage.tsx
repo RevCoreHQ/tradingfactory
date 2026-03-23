@@ -72,7 +72,7 @@ export function SystemPage() {
           <section>
             <SystemSectionCard
               title="Fundamental Analysis"
-              subtitle="7 data sources that feed the bias engine"
+              subtitle="8 data sources that feed the bias engine"
               icon={<Globe className="h-4 w-4" />}
               accentColor="amber"
             >

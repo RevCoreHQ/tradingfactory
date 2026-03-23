@@ -253,7 +253,7 @@ export function SystemFlowDiagram() {
             <FlowNode
               icon={<Database className="h-3 w-3" />}
               label="Price APIs"
-              subtitle="Twelve Data / Finnhub / CoinGecko — 15m, 1h, 4h, 1D"
+              subtitle="Twelve Data / Finnhub / CoinGecko — 5m to Weekly (style-specific)"
               color="blue"
               badge="data"
             />
@@ -262,7 +262,7 @@ export function SystemFlowDiagram() {
             <FlowNode
               icon={<Globe className="h-3 w-3" />}
               label="Fundamental APIs"
-              subtitle="F&G, DXY, Bonds, News, Central Banks, COT, Sentiment"
+              subtitle="F&G, DXY, Bonds, News, Central Banks, COT, Rate Diffs, Events"
               color="blue"
               badge="data"
             />
@@ -293,7 +293,7 @@ export function SystemFlowDiagram() {
             <FlowNode
               icon={<Scale className="h-3 w-3" />}
               label="Bias Engine"
-              subtitle="7 fundamentals → direction + strength"
+              subtitle="8 fundamentals → direction + strength"
               color="blue"
             />
           </div>
@@ -344,7 +344,7 @@ export function SystemFlowDiagram() {
             <FlowNode
               icon={<Layers className="h-3 w-3" />}
               label="MTF Alignment"
-              subtitle="15m/1h/4h/1D EMA stacks"
+              subtitle="Style-specific TF EMA stacks"
               color="green"
             />
           </div>
@@ -418,7 +418,7 @@ export function SystemFlowDiagram() {
             <FlowNode
               icon={<Newspaper className="h-3 w-3" />}
               label="Market Summary"
-              subtitle="Sonnet — macro overview, focus/avoid"
+              subtitle="Opus — institutional macro strategist, COT/carry/events"
               color="amber"
               badge="ai"
             />
@@ -427,7 +427,7 @@ export function SystemFlowDiagram() {
             <FlowNode
               icon={<Brain className="h-3 w-3" />}
               label="Desk Manager"
-              subtitle="Opus — top pick, reasoning, risk warning"
+              subtitle="Opus — institutional risk manager, 7-factor priority"
               color="amber"
               badge="ai · opus"
             />

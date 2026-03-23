@@ -3,9 +3,12 @@ import type { MTFTimeframeResult, MTFConfluenceResult } from "@/lib/types/mtf";
 import { calculateTechnicalScore } from "./bias-engine";
 
 const TF_LABELS: Record<string, string> = {
+  "5m": "5M",
+  "15m": "15M",
   "1h": "1H",
   "4h": "4H",
   "1d": "1D",
+  "1w": "1W",
 };
 
 const TF_WEIGHTS: Record<string, number> = {
@@ -66,7 +69,8 @@ function computeOverextension(summary: TechnicalSummary): number {
 
 export function calculateMTFConfluence(
   results: MTFTimeframeResult[],
-  summaries?: Record<string, TechnicalSummary>
+  summaries?: Record<string, TechnicalSummary>,
+  tfWeights?: Record<string, number>
 ): MTFConfluenceResult {
   // Enhanced weighted bias: incorporate EMA slope strength when summaries available.
   // Higher TFs weighted more heavily (daily = 50%), and bias is quality-adjusted
@@ -76,7 +80,8 @@ export function calculateMTFConfluence(
   let overextensionPenalty = 0;
 
   for (const r of results) {
-    const baseWeight = TF_WEIGHTS[r.timeframe] || 0.33;
+    const weights = tfWeights || TF_WEIGHTS;
+    const baseWeight = weights[r.timeframe] || (1 / results.length);
 
     // Quality multiplier: strong EMA slope = more reliable alignment
     let qualityMult = 1.0;
@@ -85,8 +90,8 @@ export function calculateMTFConfluence(
       // Strong slope (>1.0) = 1.2x quality boost; weak slope (<0.3) = 0.8x penalty
       qualityMult = Math.max(0.8, Math.min(1.2, 0.9 + Math.abs(slope) * 0.3));
 
-      // Check overextension on higher TFs (4H, daily)
-      if (r.timeframe === "4h" || r.timeframe === "1d") {
+      // Check overextension on higher-weight TFs (top 2 by weight)
+      if (baseWeight >= 0.25) {
         const overext = computeOverextension(summaries[r.timeframe]);
         if (overext > 0.7) {
           // Overextended: reduce the contribution of this aligned TF
