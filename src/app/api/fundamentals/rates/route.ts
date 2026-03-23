@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchForexRates, fetchForexCandleData } from "@/lib/api/finnhub";
 import { fetchCryptoPrice } from "@/lib/api/coingecko";
-import { fetchTwelveDataBatchPrices } from "@/lib/api/twelve-data";
+import { fetchTwelveDataBatchQuotes } from "@/lib/api/twelve-data";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import type { PriceQuote } from "@/lib/types/market";
 
@@ -24,31 +24,28 @@ export async function GET(req: NextRequest) {
     }
 
     const tdSymbols = Object.keys(tdSymbolMap);
-    let batchPrices: Record<string, number> = {};
 
     if (tdSymbols.length > 0) {
       try {
-        batchPrices = await fetchTwelveDataBatchPrices(tdSymbols);
+        const batchQuotes = await fetchTwelveDataBatchQuotes(tdSymbols);
+        for (const [sym, q] of Object.entries(batchQuotes)) {
+          const inst = tdSymbolMap[sym];
+          if (inst && q.price > 0) {
+            quotes[inst.id] = {
+              instrument: inst.id,
+              bid: q.price - inst.pipSize,
+              ask: q.price + inst.pipSize,
+              mid: q.price,
+              timestamp: Date.now(),
+              change: q.change,
+              changePercent: q.changePercent,
+              high24h: q.high24h,
+              low24h: q.low24h,
+            };
+          }
+        }
       } catch {
         // Batch fetch failed — will fall through to Finnhub
-      }
-    }
-
-    // Apply batch results to quotes
-    for (const [sym, price] of Object.entries(batchPrices)) {
-      const inst = tdSymbolMap[sym];
-      if (inst && price > 0) {
-        quotes[inst.id] = {
-          instrument: inst.id,
-          bid: price - inst.pipSize,
-          ask: price + inst.pipSize,
-          mid: price,
-          timestamp: Date.now(),
-          change: 0,
-          changePercent: 0,
-          high24h: price,
-          low24h: price,
-        };
       }
     }
 

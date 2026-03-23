@@ -101,45 +101,83 @@ export async function fetchTwelveDataPrice(symbol: string): Promise<number | nul
  * Twelve Data /price supports comma-separated symbols (counts as 1 API credit).
  * Returns a map of symbol -> price.
  */
+export interface TwelveDataQuote {
+  price: number;
+  change: number;
+  changePercent: number;
+  high24h: number;
+  low24h: number;
+  previousClose: number;
+}
+
 export async function fetchTwelveDataBatchPrices(symbols: string[]): Promise<Record<string, number>> {
+  const quotes = await fetchTwelveDataBatchQuotes(symbols);
+  const result: Record<string, number> = {};
+  for (const [sym, q] of Object.entries(quotes)) {
+    result[sym] = q.price;
+  }
+  return result;
+}
+
+/**
+ * Fetch batch quotes from Twelve Data /quote endpoint.
+ * Returns price, change, percent_change, previous_close, high, low per symbol.
+ * Same rate-limit cost as /price but includes daily change data.
+ */
+export async function fetchTwelveDataBatchQuotes(symbols: string[]): Promise<Record<string, TwelveDataQuote>> {
   const apiKey = getApiKey();
   if (!apiKey || symbols.length === 0) return {};
 
   const { allowed } = checkRateLimit("twelvedata");
   if (!allowed) {
-    console.warn("[TwelveData] Rate limited — skipping batch prices");
+    console.warn("[TwelveData] Rate limited — skipping batch quotes");
     return {};
   }
 
-  const url = new URL(`${BASE_URL}/price`);
+  const url = new URL(`${BASE_URL}/quote`);
   url.searchParams.set("symbol", symbols.join(","));
   url.searchParams.set("apikey", apiKey);
 
   try {
     const res = await fetch(url.toString(), { next: { revalidate: 60 } });
     if (!res.ok) {
-      console.warn(`[TwelveData] HTTP ${res.status} for batch prices`);
+      console.warn(`[TwelveData] HTTP ${res.status} for batch quotes`);
       return {};
     }
     const data = await res.json();
 
-    const result: Record<string, number> = {};
+    const result: Record<string, TwelveDataQuote> = {};
 
-    // Single symbol returns { price: "..." }, multiple returns { "SYM": { price: "..." }, ... }
-    if (symbols.length === 1 && data.price) {
-      result[symbols[0]] = parseFloat(data.price);
+    const parseEntry = (entry: Record<string, string | number | undefined>): TwelveDataQuote | null => {
+      const price = parseFloat(String(entry.close ?? entry.price ?? "0"));
+      if (!price || price <= 0) return null;
+      return {
+        price,
+        change: parseFloat(String(entry.change ?? "0")),
+        changePercent: parseFloat(String(entry.percent_change ?? "0")),
+        high24h: parseFloat(String(entry.high ?? price)),
+        low24h: parseFloat(String(entry.low ?? price)),
+        previousClose: parseFloat(String(entry.previous_close ?? price)),
+      };
+    };
+
+    // Single symbol returns flat object, multiple returns { "SYM": {...}, ... }
+    if (symbols.length === 1 && (data.close || data.price)) {
+      const q = parseEntry(data);
+      if (q) result[symbols[0]] = q;
     } else {
       for (const sym of symbols) {
         const entry = data[sym];
-        if (entry?.price) {
-          result[sym] = parseFloat(entry.price);
+        if (entry) {
+          const q = parseEntry(entry);
+          if (q) result[sym] = q;
         }
       }
     }
 
     return result;
   } catch (err) {
-    console.warn("[TwelveData] Batch price fetch failed:", err);
+    console.warn("[TwelveData] Batch quote fetch failed:", err);
     return {};
   }
 }
