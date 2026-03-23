@@ -45,7 +45,7 @@ Rules:
   - Use the full range: ±40-50 for very strong conviction, ±20-40 for moderate, ±1-20 for minor.
 - Provide 2-5 signals, each with a source name, signal direction (bullish/bearish/neutral), strength (0-100), and a brief description explaining your reasoning.
 - Include a confidence score (0-100) indicating how confident you are in your adjustment.
-- Include a short summary sentence (one sentence max).
+- Include a short summary sentence (one sentence max). CRITICAL: the summary MUST be directionally consistent with your biasAdjustment. If biasAdjustment > 0, the summary must describe a bullish outlook. If biasAdjustment < 0, the summary must describe a bearish outlook. Never say "bearish" in the summary while giving a positive biasAdjustment or vice versa.
 - Include fundamentalReason: 1-2 sentences explaining what is driving the fundamental score — reference specific macro factors (central bank stance, news sentiment, DXY correlation, Fear & Greed, bond yields).
 - Include technicalReason: 1-2 sentences explaining what is driving the technical score — reference specific indicators (RSI, MACD, trend strength, Bollinger %B, support/resistance).
 - Include keyLevels: the most important support and resistance price levels you identify.
@@ -60,7 +60,7 @@ Rules per instrument:
 - biasAdjustment: number -50 to +50 (positive = more bullish than rules, negative = more bearish)
 - confidence: 0-100
 - signals: exactly 2 signals per instrument (keep descriptions under 15 words)
-- summary: one short sentence
+- summary: one short sentence — MUST match biasAdjustment direction (positive = bullish summary, negative = bearish summary)
 - fundamentalReason: one sentence on what drives the fundamental score
 - technicalReason: one sentence on what drives the technical score
 - keyLevels: { support, resistance } — key price levels

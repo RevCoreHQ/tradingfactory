@@ -65,8 +65,14 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
   const isBearish = biasResult.overallBias < 0;
 
   // AI summary: prefer LLM batch result, fallback to bias reasons
+  // Safety: if LLM summary contradicts the final blended direction, discard it
+  const llmSummary = llmResult?.summary || null;
+  const summaryContradictsDirection =
+    llmSummary &&
+    ((isBullish && /\bbearish\b/i.test(llmSummary) && !/\bbullish\b/i.test(llmSummary)) ||
+     (isBearish && /\bbullish\b/i.test(llmSummary) && !/\bbearish\b/i.test(llmSummary)));
   const summaryText =
-    llmResult?.summary ||
+    (summaryContradictsDirection ? null : llmSummary) ||
     biasResult.fundamentalReason ||
     biasResult.technicalReason ||
     null;
