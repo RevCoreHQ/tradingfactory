@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchForexRates, fetchForexCandleData } from "@/lib/api/finnhub";
+import { fetchForexRates, fetchForexCandleData, fetchCandles } from "@/lib/api/finnhub";
 import { fetchCryptoPrice } from "@/lib/api/coingecko";
-import { fetchTwelveDataBatchQuotes } from "@/lib/api/twelve-data";
+import { fetchTwelveDataBatchQuotes, fetchTwelveDataCandles } from "@/lib/api/twelve-data";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import type { PriceQuote } from "@/lib/types/market";
 
@@ -86,15 +86,45 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // ── Fallback: Finnhub candles for missing commodity/index ──
+    // ── Fallback: Twelve Data candles for missing commodity/index ──
     const candleMissing = INSTRUMENTS.filter(
       (i) => (i.category === "commodity" || i.category === "index") && requestedIds.includes(i.id) && !quotes[i.id]
     );
     for (const inst of candleMissing) {
+      const tdSym = inst.twelveDataSymbol || inst.symbol;
+      try {
+        // Try Twelve Data candles first (more reliable for CFD indices)
+        const candles = await fetchTwelveDataCandles(tdSym, "1h", 24);
+        if (candles.length > 0) {
+          const latest = candles[candles.length - 1];
+          const first = candles[0];
+          const change = latest.close - first.open;
+          const changePercent = (change / first.open) * 100;
+          quotes[inst.id] = {
+            instrument: inst.id,
+            bid: latest.close - inst.pipSize,
+            ask: latest.close + inst.pipSize,
+            mid: latest.close,
+            timestamp: latest.timestamp,
+            change,
+            changePercent,
+            high24h: Math.max(...candles.map((c) => c.high)),
+            low24h: Math.min(...candles.map((c) => c.low)),
+          };
+          continue;
+        }
+      } catch {
+        // Twelve Data candles failed — try Finnhub
+      }
+
+      // Finnhub fallback: try /forex/candle for OANDA symbols, /stock/candle for FOREXCOM
       try {
         const now = Math.floor(Date.now() / 1000);
         const fromTs = now - 24 * 60 * 60;
-        const candles = await fetchForexCandleData(inst.finnhubSymbol || "", "60", fromTs, now);
+        const fhSymbol = inst.finnhubSymbol || "";
+        const candles = fhSymbol.startsWith("OANDA:")
+          ? await fetchForexCandleData(fhSymbol, "60", fromTs, now)
+          : await fetchCandles(fhSymbol, "60", fromTs, now);
         if (candles.length > 0) {
           const latest = candles[candles.length - 1];
           const first = candles[0];
@@ -113,7 +143,7 @@ export async function GET(req: NextRequest) {
           };
         }
       } catch {
-        // Finnhub candle fallback failed
+        // Both fallbacks failed for this instrument
       }
     }
 

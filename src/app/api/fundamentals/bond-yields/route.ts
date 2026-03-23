@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { fetchBondYields, fetchFedFundsRate } from "@/lib/api/fred";
 import { fetchForexRates } from "@/lib/api/finnhub";
+import { fetchTwelveDataBatchQuotes } from "@/lib/api/twelve-data";
 import type { DXYData } from "@/lib/types/market";
 
 /**
@@ -54,6 +55,44 @@ async function computeDXY(): Promise<DXYData | null> {
   }
 }
 
+/**
+ * Twelve Data fallback for DXY: fetch the 6 component pairs and apply ICE formula.
+ */
+async function computeDXYFromTwelveData(): Promise<DXYData | null> {
+  try {
+    const symbols = ["EUR/USD", "USD/JPY", "GBP/USD", "USD/CAD", "USD/SEK", "USD/CHF"];
+    const quotes = await fetchTwelveDataBatchQuotes(symbols);
+    const eurusd = quotes["EUR/USD"]?.price;
+    const usdjpy = quotes["USD/JPY"]?.price;
+    const gbpusd = quotes["GBP/USD"]?.price;
+    const usdcad = quotes["USD/CAD"]?.price;
+    const usdsek = quotes["USD/SEK"]?.price;
+    const usdchf = quotes["USD/CHF"]?.price;
+
+    if (!eurusd || !usdjpy || !gbpusd || !usdcad || !usdsek || !usdchf) return null;
+
+    const dxy =
+      50.14348112 *
+      Math.pow(eurusd, -0.576) *
+      Math.pow(usdjpy, 0.136) *
+      Math.pow(gbpusd, -0.119) *
+      Math.pow(usdcad, 0.091) *
+      Math.pow(usdsek, 0.042) *
+      Math.pow(usdchf, 0.036);
+
+    if (dxy < 70 || dxy > 130) return null;
+
+    return {
+      value: Math.round(dxy * 100) / 100,
+      change: 0,
+      changePercent: 0,
+      history: [],
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function GET() {
   try {
     const [yields, computedDxy, fedRate] = await Promise.allSettled([
@@ -62,9 +101,20 @@ export async function GET() {
       fetchFedFundsRate(),
     ]);
 
-    const dxyResult = computedDxy.status === "fulfilled" && computedDxy.value
+    let dxyResult = computedDxy.status === "fulfilled" && computedDxy.value
       ? computedDxy.value
-      : { value: 0, change: 0, changePercent: 0, history: [] };
+      : null;
+
+    // Twelve Data fallback for DXY if Finnhub failed
+    if (!dxyResult) {
+      try {
+        dxyResult = await computeDXYFromTwelveData();
+      } catch { /* silent */ }
+    }
+
+    if (!dxyResult) {
+      dxyResult = { value: 0, change: 0, changePercent: 0, history: [] };
+    }
 
     return NextResponse.json(
       {
