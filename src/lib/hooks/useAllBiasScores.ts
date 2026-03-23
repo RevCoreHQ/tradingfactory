@@ -124,6 +124,7 @@ export function useAllBiasScores() {
 
   // Store all results, using ref to prevent infinite loops
   const prevHashRef = useRef("");
+  const setBootReady = useMarketStore((s) => s.setBootReady);
   useEffect(() => {
     const hash = Object.values(allResults.intraday)
       .map((r) => `${r.instrument}:${r.overallBias.toFixed(1)}`)
@@ -135,11 +136,14 @@ export function useAllBiasScores() {
       for (const [id, result] of Object.entries(allResults.intraday)) {
         setBiasResult(id, result);
       }
+      if (Object.keys(allResults.intraday).length > 0) {
+        setBootReady("bias");
+      }
     }
     setBatchLLMResults(batchResults);
     if (llmReady) setBatchLLMReady(true);
     if (llmApiError) setBatchLLMError(llmApiError);
-  }, [allResults, batchResults, llmReady, llmApiError, setBiasResult, setAllBiasResults, setBatchLLMResults, setBatchLLMReady, setBatchLLMError]);
+  }, [allResults, batchResults, llmReady, llmApiError, setBiasResult, setAllBiasResults, setBatchLLMResults, setBatchLLMReady, setBatchLLMError, setBootReady]);
 
   return allResults;
 }

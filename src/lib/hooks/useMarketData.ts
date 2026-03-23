@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import useSWR from "swr";
 import type { NewsItem, EconomicEvent, FearGreedData, BondYield, CentralBankRate, PriceQuote, DXYData } from "@/lib/types/market";
 import { REFRESH_INTERVALS } from "@/lib/utils/constants";
@@ -7,15 +8,29 @@ import { useMarketStore } from "@/lib/store/market-store";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
+/** Signal boot readiness once (first non-null data arrival) */
+function useBootSignal(key: string, data: unknown) {
+  const fired = useRef(false);
+  const setBootReady = useMarketStore((s) => s.setBootReady);
+  useEffect(() => {
+    if (data && !fired.current) {
+      fired.current = true;
+      setBootReady(key);
+    }
+  }, [data, key, setBootReady]);
+}
+
 export function useMarketNews() {
   const instrument = useMarketStore((s) => s.selectedInstrument);
-  return useSWR<{
+  const result = useSWR<{
     items: NewsItem[];
     aggregateSentiment: { avgScore: number; distribution: Record<string, number>; biasScore: number };
   }>(`/api/fundamentals/news?instrument=${instrument.id}`, fetcher, {
     refreshInterval: REFRESH_INTERVALS.NEWS,
     revalidateOnFocus: false,
   });
+  useBootSignal("news", result.data);
+  return result;
 }
 
 export function useEconomicCalendar() {
@@ -26,21 +41,25 @@ export function useEconomicCalendar() {
 }
 
 export function useRates() {
-  return useSWR<{ quotes: Record<string, PriceQuote> }>("/api/fundamentals/rates", fetcher, {
+  const result = useSWR<{ quotes: Record<string, PriceQuote> }>("/api/fundamentals/rates", fetcher, {
     refreshInterval: REFRESH_INTERVALS.PRICES,
     revalidateOnFocus: true,
   });
+  useBootSignal("rates", result.data);
+  return result;
 }
 
 export function useFearGreed() {
-  return useSWR<{ current: FearGreedData }>("/api/fundamentals/fear-greed", fetcher, {
+  const result = useSWR<{ current: FearGreedData }>("/api/fundamentals/fear-greed", fetcher, {
     refreshInterval: REFRESH_INTERVALS.FEAR_GREED,
     revalidateOnFocus: false,
   });
+  useBootSignal("fearGreed", result.data);
+  return result;
 }
 
 export function useBondYields() {
-  return useSWR<{
+  const result = useSWR<{
     yields: BondYield[];
     dxy: DXYData;
     fedRate: { current: number; previous: number; target: number };
@@ -48,6 +67,8 @@ export function useBondYields() {
     refreshInterval: REFRESH_INTERVALS.BOND_YIELDS,
     revalidateOnFocus: false,
   });
+  useBootSignal("bonds", result.data);
+  return result;
 }
 
 export function useCentralBanks() {

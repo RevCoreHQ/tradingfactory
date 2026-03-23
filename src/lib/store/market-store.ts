@@ -39,6 +39,7 @@ interface MarketStore {
   wsConnected: boolean;
   watchlistIds: string[];
   favoriteIds: string[];
+  bootStatus: Record<string, boolean>;
 
   setSelectedInstrument: (instrument: Instrument) => void;
   setSelectedTimeframe: (timeframe: string) => void;
@@ -60,6 +61,7 @@ interface MarketStore {
   addToWatchlist: (id: string) => void;
   removeFromWatchlist: (id: string) => void;
   toggleFavorite: (id: string) => void;
+  setBootReady: (key: string) => void;
 }
 
 function loadFavoriteIds(): string[] {
@@ -106,6 +108,7 @@ export const useMarketStore = create<MarketStore>((set) => ({
   wsConnected: false,
   watchlistIds: loadWatchlistIds(),
   favoriteIds: loadFavoriteIds(),
+  bootStatus: {},
 
   setSelectedInstrument: (instrument) => set({ selectedInstrument: instrument }),
   setSelectedTimeframe: (timeframe) => set({ selectedTimeframe: timeframe }),
@@ -169,5 +172,10 @@ export const useMarketStore = create<MarketStore>((set) => ({
         : [...state.favoriteIds, id];
       try { localStorage.setItem("favoriteIds", JSON.stringify(next)); } catch {}
       return { favoriteIds: next };
+    }),
+  setBootReady: (key) =>
+    set((state) => {
+      if (state.bootStatus[key]) return state;
+      return { bootStatus: { ...state.bootStatus, [key]: true } };
     }),
 }));
