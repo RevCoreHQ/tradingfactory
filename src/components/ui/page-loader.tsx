@@ -25,7 +25,11 @@ const MIN_BOOT_MS = 5000; // minimum time in boot phase
 const MAX_BOOT_MS = 30000; // max time before forcing welcome (market summary LLM can take 20s+)
 const FADE_MS = 600;
 
-type Phase = "booting" | "welcome" | "fading" | "done";
+const WELCOME_HOLD = 3000; // ms to hold welcome before gradient starts
+const GRADIENT_MS = 2000; // ms for gradient color transition
+const GRADIENT_HOLD = 1000; // ms to hold gradient before fading out
+
+type Phase = "booting" | "welcome" | "welcome-gradient" | "fading" | "done";
 
 export function PageLoader() {
   const [phase, setPhase] = useState<Phase>("booting");
@@ -89,11 +93,18 @@ export function PageLoader() {
     return () => clearTimeout(checkTimer);
   }, [phase, dataReady, msgIndex, msgKey]);
 
-  // Welcome phase → fade after animation completes
+  // Welcome phase → hold → gradient → hold → fade
   useEffect(() => {
     if (phase !== "welcome") return;
     const welcomeDuration = "Welcome to Trading Factory".length * 4 * WELCOME_SPEED;
-    const timer = setTimeout(() => setPhase("fading"), welcomeDuration + 400);
+    const timer = setTimeout(() => setPhase("welcome-gradient"), welcomeDuration + WELCOME_HOLD);
+    return () => clearTimeout(timer);
+  }, [phase]);
+
+  // Gradient phase → hold with gradient then fade
+  useEffect(() => {
+    if (phase !== "welcome-gradient") return;
+    const timer = setTimeout(() => setPhase("fading"), GRADIENT_MS + GRADIENT_HOLD);
     return () => clearTimeout(timer);
   }, [phase]);
 
@@ -108,7 +119,7 @@ export function PageLoader() {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background transition-opacity duration-500"
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background transition-opacity duration-700"
       style={{ opacity: phase === "fading" ? 0 : 1 }}
     >
       {phase === "booting" && (
@@ -126,13 +137,32 @@ export function PageLoader() {
         </div>
       )}
 
-      {phase === "welcome" && (
-        <SpecialText
-          speed={WELCOME_SPEED}
-          className="text-sm md:text-lg text-foreground"
+      {(phase === "welcome" || phase === "welcome-gradient") && (
+        <span
+          className="text-sm md:text-lg font-medium transition-all"
+          style={{
+            transitionDuration: `${GRADIENT_MS}ms`,
+            ...(phase === "welcome-gradient"
+              ? {
+                  background: "linear-gradient(135deg, #06b6d4, #3b82f6, #0ea5e9)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }
+              : {}),
+          }}
         >
-          Welcome to Trading Factory
-        </SpecialText>
+          {phase === "welcome" ? (
+            <SpecialText
+              speed={WELCOME_SPEED}
+              className="text-sm md:text-lg text-foreground"
+            >
+              Welcome to Trading Factory
+            </SpecialText>
+          ) : (
+            "Welcome to Trading Factory"
+          )}
+        </span>
       )}
     </div>
   );
