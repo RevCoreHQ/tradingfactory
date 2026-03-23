@@ -550,8 +550,8 @@ export function calculateOverallBias(
   const isTechnicalDefault = Math.abs(technicalScore.total - 50) < 2;
 
   const baseWeights = SCORING_WEIGHTS[timeframe];
-  let techWeight = baseWeights.technical;
-  let fundWeight = baseWeights.fundamental;
+  let techWeight: number = baseWeights.technical;
+  let fundWeight: number = baseWeights.fundamental;
 
   // Handle sparse data: redistribute weights from default sources
   if (isFundamentalDefault && !isTechnicalDefault) {
@@ -567,6 +567,24 @@ export function calculateOverallBias(
   // Map 0-100 scores to -100 to +100
   const fundamentalBiasVal = (fundamentalScore.total - 50) * 2;
   const technicalBiasVal = (technicalScore.total - 50) * 2;
+
+  // Conflict dampener: when technical and fundamental strongly disagree,
+  // increase technical dominance. Price action is ground truth — if technicals
+  // scream bearish but fundamentals are bullish (e.g. gold safe-haven during fear),
+  // the move hasn't materialized yet. Trust price over narrative.
+  const ftSpread = Math.abs(technicalBiasVal - fundamentalBiasVal);
+  if (ftSpread > 80) {
+    // Strong disagreement: shift to 85/15 tech-dominant
+    const techOverride = 0.85;
+    const fundOverride = 0.15;
+    techWeight = techOverride;
+    fundWeight = fundOverride;
+  } else if (ftSpread > 50) {
+    // Moderate disagreement: blend toward tech dominance proportionally
+    const blendFactor = (ftSpread - 50) / 30; // 0 at 50, 1 at 80
+    techWeight = techWeight + (0.85 - techWeight) * blendFactor;
+    fundWeight = 1 - techWeight;
+  }
 
   let overallBias = clamp(
     fundamentalBiasVal * fundWeight +

@@ -571,6 +571,7 @@ Rules:
 - For each sector, identify 1-2 specific FOCUS instruments that have the clearest setups today, and any instruments to AVOID.
 - Provide a global "focusToday" list: the top 3-5 instruments across all sectors that deserve attention today.
 - Provide a "sitOutToday" list: instruments or conditions where the right move is to sit on your hands. Be willing to say "no clear setups" for entire sectors if conditions are unclear or choppy.
+- CRITICAL: Align recommendations with the mechanical instrument bias scores provided. If an instrument has a clear bearish bias (bias <= -20), do NOT recommend it as a LONG opportunity. If it has a clear bullish bias (bias >= 20), do NOT recommend it as a SHORT. The mechanical signals reflect actual price action — respect them even when macro narrative suggests otherwise.
 - Be specific — reference actual data values (DXY level, fear/greed, yield curve, COT extremes, rate differentials).
 - Respond with valid JSON only.`;
 
