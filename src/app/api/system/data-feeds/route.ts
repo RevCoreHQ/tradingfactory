@@ -49,95 +49,35 @@ async function pingProvider(
 export async function GET() {
   const providers: Promise<ProviderStatus>[] = [];
 
-  // 1. Twelve Data — PRIMARY provider (paid, 55 req/min)
-  const twelveKey = process.env.TWELVE_DATA_API_KEY;
+  // 1. Massive (Polygon.io) — PRIMARY provider for all market data
+  const massiveKey = process.env.MASSIVE_API_KEY;
   providers.push(
-    twelveKey
+    massiveKey
       ? pingProvider(
-          "Twelve Data",
+          "Massive",
           async () => {
             const res = await fetch(
-              `https://api.twelvedata.com/price?symbol=EUR/USD&apikey=${twelveKey}`,
+              `https://api.polygon.io/v2/aggs/ticker/C:EURUSD/prev?apiKey=${massiveKey}`,
               { cache: "no-store" }
             );
             if (!res.ok) return { ok: false, message: `HTTP ${res.status}` };
             const data = await res.json();
-            return { ok: !!data.price, message: data.price ? "Connected" : (data.message || "No data") };
+            return { ok: data.status === "OK", message: data.status === "OK" ? "Connected" : (data.error || "No data") };
           },
-          "Forex/commodity candles, rates (primary)",
-          "Paid (55 req/min)"
+          "Forex, commodities, crypto candles & quotes (primary)",
+          "Paid (unlimited)"
         )
       : Promise.resolve({
-          name: "Twelve Data",
+          name: "Massive",
           status: "no_key" as const,
           latencyMs: null,
-          message: "TWELVE_DATA_API_KEY not set",
-          provides: "Forex/commodity candles, rates (primary)",
-          tier: "Paid (55 req/min)",
+          message: "MASSIVE_API_KEY not set",
+          provides: "Forex, commodities, crypto candles & quotes (primary)",
+          tier: "Paid (unlimited)",
         })
   );
 
-  // 2. Finnhub — fallback for candles/rates, primary for news
-  const finnhubKey = process.env.FINNHUB_API_KEY;
-  providers.push(
-    finnhubKey
-      ? pingProvider(
-          "Finnhub",
-          async () => {
-            const res = await fetch(
-              `https://finnhub.io/api/v1/forex/rates?base=USD&token=${finnhubKey}`,
-              { cache: "no-store" }
-            );
-            if (!res.ok) return { ok: false, message: `HTTP ${res.status}` };
-            const data = await res.json();
-            return { ok: !!data.quote, message: data.quote ? "Connected" : "No data returned" };
-          },
-          "News, candles/rates (fallback)",
-          "Free (55 req/min)"
-        )
-      : Promise.resolve({
-          name: "Finnhub",
-          status: "no_key" as const,
-          latencyMs: null,
-          message: "FINNHUB_API_KEY not set",
-          provides: "News, candles/rates (fallback)",
-          tier: "Free (55 req/min)",
-        })
-  );
-
-  // 3. Alpha Vantage — last resort fallback
-  const avKey = process.env.ALPHA_VANTAGE_API_KEY;
-  providers.push(
-    avKey
-      ? pingProvider(
-          "Alpha Vantage",
-          async () => {
-            const res = await fetch(
-              `https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=EUR&to_currency=USD&apikey=${avKey}`,
-              { cache: "no-store" }
-            );
-            if (!res.ok) return { ok: false, message: `HTTP ${res.status}` };
-            const data = await res.json();
-            if (data["Note"] || data["Information"]) return { ok: false, message: "Rate limited" };
-            return {
-              ok: !!data["Realtime Currency Exchange Rate"],
-              message: data["Realtime Currency Exchange Rate"] ? "Connected" : "No data",
-            };
-          },
-          "Forex candles (last resort)",
-          "Free (5 req/min)"
-        )
-      : Promise.resolve({
-          name: "Alpha Vantage",
-          status: "no_key" as const,
-          latencyMs: null,
-          message: "ALPHA_VANTAGE_API_KEY not set",
-          provides: "Forex candles (last resort)",
-          tier: "Free (5 req/min)",
-        })
-  );
-
-  // 4. CoinGecko — crypto prices, OHLC
+  // 2. CoinGecko — crypto fallback
   providers.push(
     pingProvider(
       "CoinGecko",
@@ -150,12 +90,12 @@ export async function GET() {
         const data = await res.json();
         return { ok: !!data.gecko_says, message: "Connected" };
       },
-      "Crypto prices, OHLC, market data",
+      "Crypto prices (fallback)",
       "Free (25 req/min)"
     )
   );
 
-  // 5. FRED — bond yields, economic indicators, DXY
+  // 3. FRED — bond yields, economic indicators
   const fredKey = process.env.FRED_API_KEY;
   providers.push(
     fredKey
@@ -170,7 +110,7 @@ export async function GET() {
             const data = await res.json();
             return { ok: !!data.seriess, message: "Connected" };
           },
-          "Bond yields, DXY, economic data",
+          "Bond yields, economic data",
           "Free (100 req/min)"
         )
       : Promise.resolve({
@@ -178,12 +118,12 @@ export async function GET() {
           status: "no_key" as const,
           latencyMs: null,
           message: "FRED_API_KEY not set",
-          provides: "Bond yields, DXY, economic data",
+          provides: "Bond yields, economic data",
           tier: "Free (100 req/min)",
         })
   );
 
-  // 6. FMP — economic calendar
+  // 4. FMP — economic calendar
   const fmpKey = process.env.FMP_API_KEY;
   providers.push(
     fmpKey
@@ -211,7 +151,7 @@ export async function GET() {
         })
   );
 
-  // 7. Fear & Greed Index — no key required
+  // 5. Fear & Greed Index
   providers.push(
     pingProvider(
       "Fear & Greed",
@@ -229,14 +169,13 @@ export async function GET() {
     )
   );
 
-  // 8. Anthropic — LLM analysis
+  // 6. Anthropic — LLM analysis
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   providers.push(
     anthropicKey
       ? pingProvider(
           "Anthropic",
           async () => {
-            // Just check the key is accepted with a minimal request
             const res = await fetch("https://api.anthropic.com/v1/messages", {
               method: "POST",
               headers: {
