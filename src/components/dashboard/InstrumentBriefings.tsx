@@ -332,7 +332,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
       <div className="flex items-center gap-3 mt-auto pt-3 border-t border-border/20">
         <button
           onClick={handleDeepDive}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-medium bg-gradient-to-r from-primary via-[oklch(0.65_0.17_162)] to-primary text-primary-foreground shadow-[0_0_12px_oklch(0.72_0.17_162/0.25)] hover:shadow-[0_0_20px_oklch(0.72_0.17_162/0.35)] hover:-translate-y-px active:translate-y-0 transition-all duration-300"
+          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-medium border border-border hover:border-border-bright bg-[var(--surface-1)] hover:bg-[var(--surface-2)] text-foreground transition-colors duration-200"
         >
           Deep Dive
           <ArrowRight className="h-3.5 w-3.5" />
