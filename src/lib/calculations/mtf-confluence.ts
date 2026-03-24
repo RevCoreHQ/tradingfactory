@@ -12,9 +12,10 @@ const TF_LABELS: Record<string, string> = {
 };
 
 const TF_WEIGHTS: Record<string, number> = {
-  "1h": 0.2,
+  "15m": 0.1,
+  "1h": 0.15,
   "4h": 0.3,
-  "1d": 0.5,
+  "1d": 0.45,
 };
 
 export function computeMTFTimeframeResult(
@@ -33,6 +34,8 @@ export function computeMTFTimeframeResult(
     trendDirection: summary.trend.direction,
     rsi: summary.rsi.value,
     macdCrossover: summary.macd.crossover,
+    macdHistogram: summary.macd.histogram,
+    adx: summary.adx.adx,
     bias,
   };
 }

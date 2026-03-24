@@ -11,6 +11,54 @@ export interface SessionRelevance {
   reason: string;
 }
 
+// ==================== DST-AWARE SESSION HOURS ====================
+
+/**
+ * Standard trading session hours in LOCAL exchange time.
+ * These are converted to UTC dynamically to handle DST transitions.
+ */
+const SESSION_LOCAL_HOURS: Record<string, { open: number; close: number }> = {
+  sydney: { open: 7, close: 16 },    // 7 AM - 4 PM AEST/AEDT
+  tokyo: { open: 9, close: 18 },     // 9 AM - 6 PM JST (no DST)
+  london: { open: 8, close: 17 },    // 8 AM - 5 PM GMT/BST
+  newyork: { open: 8, close: 17 },   // 8 AM - 5 PM EST/EDT
+};
+
+/**
+ * Get the current UTC offset (in hours) for a timezone, accounting for DST.
+ */
+function getTimezoneOffsetHours(timezone: string): number {
+  const now = new Date();
+  const utcStr = now.toLocaleString("en-US", { timeZone: "UTC" });
+  const tzStr = now.toLocaleString("en-US", { timeZone: timezone });
+  return Math.round((new Date(tzStr).getTime() - new Date(utcStr).getTime()) / 3600000);
+}
+
+/**
+ * Get DST-adjusted UTC open/close hours for a session.
+ * Falls back to the static constants if local hours aren't defined.
+ */
+export function getSessionUTCHours(sessionKey: string): { openHourUTC: number; closeHourUTC: number } {
+  const session = TRADING_SESSIONS[sessionKey];
+  const local = SESSION_LOCAL_HOURS[sessionKey];
+  if (!session || !local) {
+    return session
+      ? { openHourUTC: session.openHourUTC, closeHourUTC: session.closeHourUTC }
+      : { openHourUTC: 0, closeHourUTC: 0 };
+  }
+
+  const offset = getTimezoneOffsetHours(session.timezone);
+  let open = local.open - offset;
+  let close = local.close - offset;
+  // Normalize to 0-23
+  if (open < 0) open += 24;
+  if (open >= 24) open -= 24;
+  if (close < 0) close += 24;
+  if (close >= 24) close -= 24;
+
+  return { openHourUTC: open, closeHourUTC: close };
+}
+
 /** Map each instrument to its most active trading sessions */
 export const INSTRUMENT_SESSIONS: Record<string, TradingSession[]> = {
   EUR_USD: ["london", "newyork"],
@@ -196,9 +244,10 @@ export function getSessionRelevance(instrumentId: string): SessionRelevance {
     };
   }
 
+  // Use DST-aware UTC hours for accurate session detection
   const activeSessions = optimalSessions.filter((sessionKey) => {
-    const session = TRADING_SESSIONS[sessionKey];
-    return session && isSessionActive(session, hourUTC, now);
+    const dstHours = getSessionUTCHours(sessionKey);
+    return isSessionActive(dstHours, hourUTC, now);
   });
 
   const isOptimalNow = activeSessions.length > 0;
@@ -210,19 +259,21 @@ export function getSessionRelevance(instrumentId: string): SessionRelevance {
   } else if (isOptimalNow) {
     sessionScore = 75;
   } else {
-    const anyActive = Object.values(TRADING_SESSIONS).some((s) =>
-      isSessionActive(s, hourUTC, now)
-    );
+    const anyActive = Object.keys(TRADING_SESSIONS).some((key) => {
+      const dstHours = getSessionUTCHours(key);
+      return isSessionActive(dstHours, hourUTC, now);
+    });
     sessionScore = anyActive ? 40 : 15;
   }
 
   let nextOptimalIn = "Active now";
   if (!isOptimalNow && optimalSessions.length > 0) {
+    // Find the soonest optimal session to open
     const times = optimalSessions.map((key) => {
-      const session = TRADING_SESSIONS[key];
-      return session ? getTimeUntil(session.openHourUTC, hourUTC, minUTC) : "—";
+      const dstHours = getSessionUTCHours(key);
+      return { time: getTimeUntil(dstHours.openHourUTC, hourUTC, minUTC), key };
     });
-    nextOptimalIn = times[0] || "—";
+    nextOptimalIn = times[0]?.time || "—";
   }
 
   return {

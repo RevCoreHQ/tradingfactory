@@ -10,7 +10,7 @@ import type { MTFConfluenceResult } from "@/lib/types/mtf";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-const TIMEFRAMES = ["1h", "4h", "1d"] as const;
+const TIMEFRAMES = ["15m", "1h", "4h", "1d"] as const;
 
 export function useMultiTimeframeAnalysis(): {
   confluence: MTFConfluenceResult | null;

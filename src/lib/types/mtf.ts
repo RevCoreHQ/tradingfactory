@@ -5,6 +5,8 @@ export interface MTFTimeframeResult {
   trendDirection: "uptrend" | "downtrend" | "sideways";
   rsi: number;
   macdCrossover: "bullish" | "bearish" | null;
+  macdHistogram: number; // positive = bullish momentum, negative = bearish
+  adx: number; // 0-100, >25 = trending, <20 = ranging
   bias: number; // -100 to +100
 }
 

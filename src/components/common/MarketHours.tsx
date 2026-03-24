@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { TRADING_SESSIONS } from "@/lib/utils/constants";
-import { isSessionActive, getTimeUntil, isForexMarketOpen } from "@/lib/calculations/session-scoring";
+import { isSessionActive, getTimeUntil, isForexMarketOpen, getSessionUTCHours } from "@/lib/calculations/session-scoring";
 import { GlassCard } from "./GlassCard";
 import { cn } from "@/lib/utils";
 
@@ -20,10 +20,11 @@ export function MarketHoursStrip() {
 
   const marketOpen = isForexMarketOpen(now);
   const sessions = Object.entries(TRADING_SESSIONS).map(([key, session]) => {
-    const active = marketOpen && isSessionActive(session, hourUTC, now);
+    const dstHours = getSessionUTCHours(key);
+    const active = marketOpen && isSessionActive(dstHours, hourUTC, now);
     const timeLeft = active
-      ? getTimeUntil(session.closeHourUTC, hourUTC, minUTC)
-      : getTimeUntil(session.openHourUTC, hourUTC, minUTC);
+      ? getTimeUntil(dstHours.closeHourUTC, hourUTC, minUTC)
+      : getTimeUntil(dstHours.openHourUTC, hourUTC, minUTC);
     return { key, ...session, active, timeLeft };
   });
 
@@ -77,10 +78,11 @@ export function MarketHours() {
 
   const marketOpen = isForexMarketOpen(now);
   const sessions = Object.entries(TRADING_SESSIONS).map(([key, session]) => {
-    const active = marketOpen && isSessionActive(session, hourUTC, now);
+    const dstHours = getSessionUTCHours(key);
+    const active = marketOpen && isSessionActive(dstHours, hourUTC, now);
     const timeLeft = active
-      ? getTimeUntil(session.closeHourUTC, hourUTC, minUTC)
-      : getTimeUntil(session.openHourUTC, hourUTC, minUTC);
+      ? getTimeUntil(dstHours.closeHourUTC, hourUTC, minUTC)
+      : getTimeUntil(dstHours.openHourUTC, hourUTC, minUTC);
     return { key, ...session, active, timeLeft };
   });
 

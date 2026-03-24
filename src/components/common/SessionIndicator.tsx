@@ -5,6 +5,7 @@ import { GlassCard } from "./GlassCard";
 import { Clock, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TRADING_SESSIONS } from "@/lib/utils/constants";
+import { getSessionUTCHours, isSessionActive } from "@/lib/calculations/session-scoring";
 
 /** Compact badge for conviction cards */
 export function SessionBadge({ instrumentId }: { instrumentId: string }) {
@@ -76,27 +77,30 @@ export function SessionCard({ instrumentId }: { instrumentId: string }) {
         </div>
       </div>
 
-      {/* Optimal sessions */}
+      {/* Optimal sessions — per-session active state */}
       <div className="flex flex-wrap gap-1.5 mb-3">
         {relevance.optimalSessions.map((sessionKey) => {
           const session = TRADING_SESSIONS[sessionKey];
           if (!session) return null;
-          const isActive = relevance.isOptimalNow;
+          // Check if THIS specific session is active (DST-aware)
+          const now = new Date();
+          const dstHours = getSessionUTCHours(sessionKey);
+          const thisSessionActive = isSessionActive(dstHours, now.getUTCHours(), now);
           return (
             <div
               key={sessionKey}
               className={cn(
                 "flex items-center gap-1 px-2 py-1 rounded-md text-[12px] border",
-                isActive
+                thisSessionActive
                   ? "border-bullish/30 bg-bullish/10"
                   : "border-border bg-[var(--surface-2)]"
               )}
             >
               <span
-                className={cn("h-1.5 w-1.5 rounded-full shrink-0", isActive && "pulse-dot")}
-                style={{ backgroundColor: session.color, opacity: isActive ? 1 : 0.4 }}
+                className={cn("h-1.5 w-1.5 rounded-full shrink-0", thisSessionActive && "pulse-dot")}
+                style={{ backgroundColor: session.color, opacity: thisSessionActive ? 1 : 0.4 }}
               />
-              <span className={cn(isActive ? "text-foreground font-medium" : "text-muted-foreground")}>
+              <span className={cn(thisSessionActive ? "text-foreground font-medium" : "text-muted-foreground")}>
                 {session.name}
               </span>
             </div>

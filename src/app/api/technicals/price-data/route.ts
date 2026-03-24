@@ -9,6 +9,7 @@ import type { OHLCV } from "@/lib/types/market";
 const RESOLUTION_MAP: Record<string, string> = {
   "1min": "1",
   "5min": "5",
+  "15m": "15",
   "15min": "15",
   "30min": "30",
   "1h": "60",

@@ -3,7 +3,7 @@
 import { useMultiTimeframeAnalysis } from "@/lib/hooks/useMultiTimeframeAnalysis";
 import { GlassCard } from "@/components/common/GlassCard";
 import { cn } from "@/lib/utils";
-import { TrendingUp, TrendingDown, Minus, Layers } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Layers, Activity } from "lucide-react";
 
 const trendIcon = (dir: string) => {
   if (dir === "uptrend") return <TrendingUp className="h-3 w-3 text-bullish" />;
@@ -11,10 +11,22 @@ const trendIcon = (dir: string) => {
   return <Minus className="h-3 w-3 text-muted-foreground" />;
 };
 
-const macdLabel = (c: "bullish" | "bearish" | null) => {
-  if (c === "bullish") return <span className="text-bullish">Bull X</span>;
-  if (c === "bearish") return <span className="text-bearish">Bear X</span>;
-  return <span className="text-muted-foreground/50">—</span>;
+/** ADX-based market regime label */
+const regimeLabel = (adx: number) => {
+  if (adx >= 40) return <span className="text-bullish font-bold">Strong</span>;
+  if (adx >= 25) return <span className="text-foreground/70">Trend</span>;
+  if (adx >= 20) return <span className="text-[var(--amber)]">Weak</span>;
+  return <span className="text-muted-foreground/60">Range</span>;
+};
+
+/** MACD histogram momentum indicator */
+const macdMomentum = (histogram: number, crossover: "bullish" | "bearish" | null) => {
+  if (crossover === "bullish") return <span className="text-bullish font-bold">Bull X</span>;
+  if (crossover === "bearish") return <span className="text-bearish font-bold">Bear X</span>;
+  // No crossover — show histogram direction as momentum indicator
+  if (histogram > 0) return <span className="text-bullish/70">+Mom</span>;
+  if (histogram < 0) return <span className="text-bearish/70">-Mom</span>;
+  return <span className="text-muted-foreground/50">Flat</span>;
 };
 
 export function MTFConfluence() {
@@ -27,11 +39,11 @@ export function MTFConfluence() {
           <div className="flex items-center gap-2">
             <Layers className="h-3.5 w-3.5 text-muted-foreground/40" />
             <span className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">
-              Multi-Timeframe
+              Time Frame Correlation
             </span>
           </div>
           <div className="space-y-2">
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3, 4].map((i) => (
               <div key={i} className="h-8 shimmer rounded-lg" />
             ))}
           </div>
@@ -47,11 +59,11 @@ export function MTFConfluence() {
           <div className="flex items-center gap-2 mb-3">
             <Layers className="h-3.5 w-3.5 text-muted-foreground/40" />
             <span className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">
-              Multi-Timeframe
+              Time Frame Correlation
             </span>
           </div>
           <p className="text-[12px] text-muted-foreground/50 text-center py-2">
-            Insufficient candle data for MTF analysis
+            Insufficient candle data for analysis
           </p>
         </div>
       </GlassCard>
@@ -64,9 +76,9 @@ export function MTFConfluence() {
   const isMixed = alignment === "mixed";
 
   const alignmentLabel = isBullish
-    ? "HTF ALIGNED BULLISH"
+    ? "ALIGNED BULLISH"
     : isBearish
-    ? "HTF ALIGNED BEARISH"
+    ? "ALIGNED BEARISH"
     : "MIXED SIGNALS";
 
   return (
@@ -80,7 +92,7 @@ export function MTFConfluence() {
           <div className="flex items-center gap-2">
             <Layers className="h-3.5 w-3.5 text-muted-foreground/40" />
             <span className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">
-              Multi-Timeframe
+              Time Frame Correlation
             </span>
           </div>
           <span
@@ -113,6 +125,19 @@ export function MTFConfluence() {
           </span>
         </div>
 
+        {/* Column headers */}
+        <div className="flex items-center gap-2 px-2 text-[10px] text-muted-foreground/40 uppercase tracking-wider">
+          <span className="w-7">TF</span>
+          <span className="w-3" />
+          <span className="w-10 text-right">Bias</span>
+          <div className="h-3 w-px" />
+          <span className="w-12">RSI</span>
+          <div className="h-3 w-px" />
+          <span className="w-10">MACD</span>
+          <div className="h-3 w-px" />
+          <span className="flex-1 text-right">ADX</span>
+        </div>
+
         {/* Timeframe rows */}
         <div className="space-y-1.5">
           {timeframes.map((tf) => {
@@ -123,7 +148,7 @@ export function MTFConfluence() {
                 key={tf.timeframe}
                 className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-[var(--surface-2)]"
               >
-                <span className="text-[12px] font-bold w-6 text-muted-foreground/60">
+                <span className="text-[12px] font-bold w-7 text-muted-foreground/60">
                   {tf.label}
                 </span>
                 {trendIcon(tf.trendDirection)}
@@ -132,14 +157,20 @@ export function MTFConfluence() {
                 </span>
                 <div className="h-3 w-px bg-border/30" />
                 <span className={cn(
-                  "text-[11px] font-mono",
+                  "text-[11px] font-mono w-12",
                   tf.rsi > 70 ? "text-bearish" : tf.rsi < 30 ? "text-bullish" : "text-muted-foreground/60"
                 )}>
                   RSI {Math.round(tf.rsi)}
                 </span>
                 <div className="h-3 w-px bg-border/30" />
-                <span className="text-[11px] font-mono">
-                  {macdLabel(tf.macdCrossover)}
+                <span className="text-[11px] font-mono w-10">
+                  {macdMomentum(tf.macdHistogram, tf.macdCrossover)}
+                </span>
+                <div className="h-3 w-px bg-border/30" />
+                <span className="text-[11px] font-mono flex items-center gap-1 flex-1 justify-end">
+                  <Activity className="h-2.5 w-2.5 text-muted-foreground/40" />
+                  <span className="tabular">{Math.round(tf.adx)}</span>
+                  {regimeLabel(tf.adx)}
                 </span>
               </div>
             );

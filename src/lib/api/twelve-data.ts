@@ -186,6 +186,7 @@ export async function fetchTwelveDataBatchQuotes(symbols: string[]): Promise<Rec
 export const TWELVE_DATA_INTERVALS: Record<string, string> = {
   "1min": "1min",
   "5min": "5min",
+  "15m": "15min",
   "15min": "15min",
   "30min": "30min",
   "1h": "1h",
