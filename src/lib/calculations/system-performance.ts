@@ -1,4 +1,4 @@
-import type { TrackedSetup, MechanicalSignal } from "@/lib/types/signals";
+import type { TrackedSetup, MechanicalSignal, MarketRegime } from "@/lib/types/signals";
 
 // ==================== TYPES ====================
 
@@ -73,7 +73,9 @@ export function recordSystemOutcome(
       ? signal.strength
       : perf.avgStrength + (signal.strength - perf.avgStrength) / perf.trades;
 
-    perf.winRate = perf.trades > 0 ? perf.wins / perf.trades : 0;
+    // Exclude breakevens from denominator (consistent with confluence-learning.ts)
+    const decisions = perf.wins + perf.losses;
+    perf.winRate = decisions > 0 ? perf.wins / decisions : 0;
     perf.weight = calculateSystemWeight(perf);
     perf.lastUpdated = Date.now();
 
@@ -250,4 +252,108 @@ export function applySystemWeights(
     // Scale strength by weight
     return { ...signal, strength: Math.round(signal.strength * weight) };
   });
+}
+
+// ==================== REGIME-ADAPTIVE TRACKING ====================
+
+/**
+ * Build a regime-specific key for system performance tracking.
+ * Format: "systemName::regime" (e.g., "Trend Stack::trending_up")
+ */
+export function buildRegimeSystemKey(system: string, regime: MarketRegime): string {
+  return `${system}::${regime}`;
+}
+
+/**
+ * Record system outcome with regime context.
+ * Tracks both global (system-only) and regime-specific (system::regime) performance.
+ * This allows the system to learn which signals work best in which conditions.
+ */
+export function recordRegimeSystemOutcome(
+  existing: Record<string, SystemPerformance>,
+  tracked: TrackedSetup
+): Record<string, SystemPerformance> {
+  // First, record global performance (existing behavior)
+  let updated = recordSystemOutcome(existing, tracked);
+
+  // Then, record regime-specific performance
+  const outcome = tracked.outcome;
+  if (!outcome || outcome === "breakeven") return updated;
+
+  const isWin = outcome === "win";
+  const direction = tracked.setup.direction;
+  const regime = tracked.setup.regime;
+
+  for (const signal of tracked.setup.signals) {
+    if (signal.direction !== direction) continue;
+
+    const key = buildRegimeSystemKey(signal.system, regime);
+    const perf = updated[key] ?? {
+      system: signal.system,
+      regime,
+      trades: 0,
+      wins: 0,
+      losses: 0,
+      winRate: 0,
+      avgStrength: 0,
+      weight: 1.0,
+      lastUpdated: 0,
+    };
+
+    perf.trades++;
+    if (isWin) perf.wins++;
+    else perf.losses++;
+
+    perf.avgStrength = perf.trades === 1
+      ? signal.strength
+      : perf.avgStrength + (signal.strength - perf.avgStrength) / perf.trades;
+
+    const decisions = perf.wins + perf.losses;
+    perf.winRate = decisions > 0 ? perf.wins / decisions : 0;
+    perf.weight = calculateSystemWeight(perf);
+    perf.lastUpdated = Date.now();
+
+    updated[key] = perf;
+  }
+
+  return updated;
+}
+
+/**
+ * Get regime-adaptive system weights. Prefers regime-specific weights when
+ * available (10+ trades), otherwise falls back to global weights.
+ *
+ * This is the key improvement: "Trend Stack" might have a global weight of 1.0
+ * but a regime-specific weight of 1.5 in trending markets and 0.5 in ranging.
+ */
+export function getRegimeAdaptiveWeights(
+  performances: Record<string, SystemPerformance>,
+  regime: MarketRegime,
+  config: SystemWeightConfig = DEFAULT_WEIGHT_CONFIG
+): Record<string, number> {
+  const weights: Record<string, number> = {};
+
+  // Collect all unique system names (not regime-keyed)
+  const systems = new Set<string>();
+  for (const [key, perf] of Object.entries(performances)) {
+    if (!key.includes("::")) {
+      systems.add(perf.system);
+    }
+  }
+
+  for (const system of systems) {
+    const regimeKey = buildRegimeSystemKey(system, regime);
+    const regimePerf = performances[regimeKey];
+    const globalPerf = performances[system];
+
+    // Prefer regime-specific weight if it has enough data
+    if (regimePerf && regimePerf.trades >= config.minTrades) {
+      weights[system] = calculateSystemWeight(regimePerf, config);
+    } else if (globalPerf) {
+      weights[system] = calculateSystemWeight(globalPerf, config);
+    }
+    // else: no data at all, signal keeps default weight (1.0)
+  }
+
+  return weights;
 }

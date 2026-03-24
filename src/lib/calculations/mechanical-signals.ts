@@ -19,7 +19,7 @@ import { buildConfluenceKey, buildRegimeConfluenceKey } from "./setup-tracker";
 import { detectFullRegime } from "./regime-engine";
 import { analyzeMarketStructure } from "./market-structure";
 import { computeDeCorrelatedAgreement, detectClusterConflict } from "./signal-clustering";
-import { applySystemWeights, evaluateSignalHealth, applySignalHealth, type SystemPerformance } from "./system-performance";
+import { applySystemWeights, evaluateSignalHealth, applySignalHealth, getRegimeAdaptiveWeights, type SystemPerformance } from "./system-performance";
 import { analyzeEntryOptimization } from "./entry-optimization";
 import { detectFairValueGaps } from "./fair-value-gaps";
 import { detectInstitutionalCandles, detectConsolidationBreakouts } from "./institutional-candles";
@@ -309,7 +309,8 @@ export function detectRegime(summary: TechnicalSummary, candles?: OHLCV[], previ
 function rsiExtremesSignal(
   summary: TechnicalSummary,
   candles: OHLCV[],
-  regime: MarketRegime
+  regime: MarketRegime,
+  fullRegime?: FullRegime
 ): MechanicalSignal {
   // Weissman: RSI extremes with SMA(200) filter — using RSI(14) for less noise
   const closes = candles.map((c) => c.close);
@@ -344,8 +345,10 @@ function rsiExtremesSignal(
     strength = 50;
   }
 
-  const isRanging = regime === "ranging";
-  const regimeMatch = isRanging || regime === "volatile";
+  // Use fullRegime.structure when available for more accurate gating.
+  const regimeMatch = fullRegime
+    ? fullRegime.structure === "range"
+    : regime === "ranging" || regime === "volatile";
   // Hard regime gate: MR signals in trending markets are excluded entirely.
   if (!regimeMatch && direction !== "neutral") {
     return {
@@ -399,7 +402,87 @@ function impulseSignal(summary: TechnicalSummary): MechanicalSignal {
   };
 }
 
-function trendAlignmentSignal(summary: TechnicalSummary, regime: MarketRegime): MechanicalSignal {
+function volumeConfirmationSignal(
+  summary: TechnicalSummary,
+  candles: OHLCV[]
+): MechanicalSignal {
+  // Volume Confirmation: VWAP position + volume surge + Force Index alignment.
+  // This is a genuinely independent 4th cluster — uses volume data, not just price.
+  // Works across all regimes (volume confirms moves in trends, ranges, and breakouts).
+  const price = summary.currentPrice;
+  const vwap = summary.vwap;
+  const forceIndex = summary.forceIndex;
+
+  if (!vwap || candles.length < 20) {
+    return {
+      system: "Volume Confirmation",
+      type: "volume",
+      direction: "neutral",
+      strength: 0,
+      description: "Insufficient volume data",
+      regimeMatch: true,
+    };
+  }
+
+  // Factor 1: VWAP position — price above VWAP = institutional buying, below = selling
+  const vwapDeviation = vwap.deviation; // positive = price above VWAP
+  const atr = summary.atr.value;
+  const normalizedDev = atr > 0 ? vwapDeviation / atr : 0;
+  // Significant deviation: |normalizedDev| > 0.3 ATR from VWAP
+  let vwapScore = 0;
+  if (normalizedDev > 0.3) vwapScore = 1;       // bullish: price well above VWAP
+  else if (normalizedDev < -0.3) vwapScore = -1; // bearish: price well below VWAP
+
+  // Factor 2: Volume surge — current bar volume vs 20-period average
+  const recentVolumes = candles.slice(-20).map((c) => c.volume);
+  const avgVolume = recentVolumes.reduce((s, v) => s + v, 0) / recentVolumes.length;
+  const currentVolume = candles[candles.length - 1].volume;
+  const volumeRatio = avgVolume > 0 ? currentVolume / avgVolume : 1;
+  const hasSurge = volumeRatio > 1.5; // 50%+ above average
+
+  // Factor 3: Force Index alignment — institutional participation direction
+  // Short-term (EMA2) shows immediate pressure, intermediate (EMA13) shows trend
+  let forceScore = 0;
+  if (forceIndex.shortTerm > 0 && forceIndex.intermediate > 0) forceScore = 1;  // bullish
+  else if (forceIndex.shortTerm < 0 && forceIndex.intermediate < 0) forceScore = -1; // bearish
+
+  // Combine: all three factors must agree for a strong signal
+  const bullishFactors = (vwapScore > 0 ? 1 : 0) + (forceScore > 0 ? 1 : 0);
+  const bearishFactors = (vwapScore < 0 ? 1 : 0) + (forceScore < 0 ? 1 : 0);
+
+  let direction: "bullish" | "bearish" | "neutral" = "neutral";
+  let strength = 20;
+  let description = `VWAP dev ${normalizedDev.toFixed(2)} ATR, vol ratio ${volumeRatio.toFixed(1)}x`;
+
+  if (bullishFactors >= 2 && hasSurge) {
+    direction = "bullish";
+    strength = 85;
+    description = `Volume confirms bullish — price above VWAP + Force Index positive + ${volumeRatio.toFixed(1)}x vol surge`;
+  } else if (bearishFactors >= 2 && hasSurge) {
+    direction = "bearish";
+    strength = 85;
+    description = `Volume confirms bearish — price below VWAP + Force Index negative + ${volumeRatio.toFixed(1)}x vol surge`;
+  } else if (bullishFactors >= 2) {
+    direction = "bullish";
+    strength = 55;
+    description = `Volume leans bullish — price above VWAP + Force Index positive (no surge)`;
+  } else if (bearishFactors >= 2) {
+    direction = "bearish";
+    strength = 55;
+    description = `Volume leans bearish — price below VWAP + Force Index negative (no surge)`;
+  }
+
+  return {
+    system: "Volume Confirmation",
+    type: "volume",
+    direction,
+    strength,
+    description,
+    regimeMatch: true, // Volume works across all regimes
+  };
+}
+
+function trendAlignmentSignal(summary: TechnicalSummary, regime: MarketRegime, fullRegime?: FullRegime): MechanicalSignal {
   // Multi-MA alignment check: EMA(9) > EMA(21) > EMA(50) > SMA(200) = bullish stack
   const mas = summary.movingAverages;
   const ema9 = mas.find((m) => m.type === "EMA" && m.period === 9)?.value;
@@ -443,7 +526,12 @@ function trendAlignmentSignal(summary: TechnicalSummary, regime: MarketRegime): 
     strength = 20;
   }
 
-  const isTrending = regime === "trending_up" || regime === "trending_down";
+  // Use fullRegime.structure when available (more accurate than legacy ADX-only check).
+  // Legacy regime misclassifies moderate trends (ADX 25-30) as "ranging", but
+  // fullRegime correctly identifies them as "trend" via EMA slope + ADX combined.
+  const isTrending = fullRegime
+    ? fullRegime.structure === "trend" || fullRegime.structure === "breakout"
+    : regime === "trending_up" || regime === "trending_down";
   if (!isTrending && direction !== "neutral") {
     return {
       system: "Trend Stack",
@@ -474,7 +562,7 @@ function calculateConviction(
   fullRegime?: FullRegime,
   marketStructure?: MarketStructure | null,
   ictContext?: TradeDeskSetup["ictContext"]
-): { tier: ConvictionTier; score: number; direction: "bullish" | "bearish" | "neutral" } {
+): { tier: ConvictionTier; score: number; direction: "bullish" | "bearish" | "neutral"; activeClusters: number } {
   // Count signal directions
   const bullish = signals.filter((s) => s.direction === "bullish");
   const bearish = signals.filter((s) => s.direction === "bearish");
@@ -494,13 +582,18 @@ function calculateConviction(
   // Simplified from 6 factors: merged regime+impulse, merged structure+ICT
   let score = 0;
 
-  // Factor 1: De-correlated Agreement (0-40 pts) — UNCHANGED
-  // Only best signal per cluster counts, regime-weighted.
+  // Pre-compute de-correlated agreement ONCE (used by Factor 1 + Factor 4)
   let activeClusters = 0;
+  let clusterResult: ReturnType<typeof computeDeCorrelatedAgreement> | null = null;
   if (direction !== "neutral" && activeSignals > 0) {
-    const clusterResult = computeDeCorrelatedAgreement(signals, direction, fullRegime);
-    score += clusterResult.agreement;
+    clusterResult = computeDeCorrelatedAgreement(signals, direction, fullRegime);
     activeClusters = clusterResult.activeClusters;
+  }
+
+  // Factor 1: De-correlated Agreement (0-40 pts)
+  // Only best signal per cluster counts, regime-weighted.
+  if (clusterResult) {
+    score += clusterResult.agreement;
   }
 
   // Factor 2: Regime + Impulse (0-30 pts) — MERGED old factors 3+4
@@ -549,8 +642,8 @@ function calculateConviction(
 
   // Factor 4: Structure + ICT (0-10 pts) — MERGED old factors 2+6
   // Cluster conflict scaled by 0.67 (was -15 max, now -10 max)
-  if (direction !== "neutral" && activeSignals > 0) {
-    const clusterResult = computeDeCorrelatedAgreement(signals, direction, fullRegime);
+  // Reuses clusterResult from Factor 1 — no redundant computation.
+  if (clusterResult) {
     const conflict = detectClusterConflict(clusterResult.clusters);
     score += Math.round(conflict.penalty * 0.67); // scaled down
   }
@@ -583,7 +676,7 @@ function calculateConviction(
   else if (score >= 20 && activeClusters >= 1) tier = "C";
   else tier = "D";
 
-  return { tier, score: Math.max(0, Math.min(100, score)), direction };
+  return { tier, score: Math.max(0, Math.min(100, score)), direction, activeClusters };
 }
 
 // ==================== REASONS TO EXIT ====================
@@ -673,19 +766,21 @@ export function generateTradeDeskSetup(
   );
 
   // 3. Run all mechanical systems (regime-gated: non-matching signals already excluded)
-  // Audit v2: collapsed from 6 → 3 truly independent signals (1 per cluster)
+  // Audit v3: 4 truly independent signals (1 per cluster)
+  // Volume Confirmation added as 4th cluster — makes A+ tier achievable.
   let signals: MechanicalSignal[] = [
-    trendAlignmentSignal(summary, regime),
-    rsiExtremesSignal(summary, candles, regime),
+    trendAlignmentSignal(summary, regime, fullRegime),
+    rsiExtremesSignal(summary, candles, regime, fullRegime),
     impulseSignal(summary),
+    volumeConfirmationSignal(summary, candles),
   ];
 
   // 3b. Apply system performance weights (auto-kill weak systems)
+  // Use regime-adaptive weights: prefer regime-specific weight (e.g., "Trend Stack::trending_up")
+  // over global weight when enough data exists. This lets the system learn which
+  // signals work best in which market conditions.
   if (systemPerformance && Object.keys(systemPerformance).length > 0) {
-    const weights: Record<string, number> = {};
-    for (const [key, perf] of Object.entries(systemPerformance)) {
-      weights[key] = perf.weight;
-    }
+    const weights = getRegimeAdaptiveWeights(systemPerformance, regime);
     signals = applySystemWeights(signals, weights);
 
     // 3b2. Hard kill/probation layer (requires 30+ trades for actionable decisions)
@@ -796,7 +891,7 @@ export function generateTradeDeskSetup(
 
   // 4. Calculate conviction (pass fullRegime + structure + ICT for phase-aware scoring)
   const adx = summary.adx.adx;
-  const { tier, score: convictionScore, direction } = calculateConviction(signals, regime, impulseColor, adx, fullRegime, marketStructure, ictContext);
+  const { tier, score: convictionScore, direction, activeClusters: convictionClusters } = calculateConviction(signals, regime, impulseColor, adx, fullRegime, marketStructure, ictContext);
 
   // 4. Consensus
   const bullish = signals.filter((s) => s.direction === "bullish").length;
@@ -856,7 +951,16 @@ export function generateTradeDeskSetup(
   );
 
   // 5e. Volatility targeting — scale risk inversely to vol (blended ATR + return-based)
-  const volTarget = calculateVolTargetMultiplier(atr, price, 0.10, candles);
+  // Use category-specific vol targets so crypto (50-80% annual vol) doesn't always
+  // floor at 0.5x, and forex (8-12%) doesn't always get boosted.
+  const CATEGORY_VOL_TARGETS: Record<string, number> = {
+    forex: 0.08,
+    commodity: 0.15,
+    index: 0.15,
+    crypto: 0.40,
+  };
+  const categoryVolTarget = CATEGORY_VOL_TARGETS[instrument.category] ?? 0.10;
+  const volTarget = calculateVolTargetMultiplier(atr, price, categoryVolTarget, candles);
 
   // 6. Position sizing — conviction-scaled risk × vol multiplier (Hougaard: size up on best setups)
   const tierRiskMultiplier: Record<ConvictionTier, number> = {
@@ -939,7 +1043,7 @@ export function generateTradeDeskSetup(
 
     if (learning.applied) {
       baseSetup.convictionScore = learning.adjustedScore;
-      baseSetup.conviction = adjustedTier(learning.adjustedScore);
+      baseSetup.conviction = adjustedTier(learning.adjustedScore, convictionClusters);
       baseSetup.riskAmount = learning.adjustedRisk;
       baseSetup.positionSizeLots = learning.adjustedLots;
       baseSetup.learningApplied = {

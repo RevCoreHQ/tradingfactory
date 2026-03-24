@@ -363,11 +363,18 @@ function scoreMomentum(summary: TechnicalSummary): { score: number; signals: Bia
 
   // RSI contribution (40% of momentum)
   const rsiScore = summary.rsi.value;
-  // RSI 50 = neutral. Above 50 = bullish momentum. Below 50 = bearish.
-  // But overbought (>70) is bearish signal, oversold (<30) is bullish signal.
+  // RSI 50 = neutral (score 50). Above 50 = bullish momentum, below 50 = bearish.
+  // Overbought (>70) = reversal risk → score decreases toward bearish.
+  // Oversold (<30) = reversal risk → score increases toward bullish.
+  // This ensures the numerical score MATCHES the signal direction.
   let rsiBias = rsiScore;
-  if (rsiScore > 70) rsiBias = 100 - (rsiScore - 70) * 2; // Overbought reduces bias
-  else if (rsiScore < 30) rsiBias = 30 + (30 - rsiScore) * 2; // Oversold increases bias
+  if (rsiScore > 70) {
+    // Overbought: increasingly bearish. RSI 70→50 (neutral), RSI 85→20 (bearish)
+    rsiBias = 50 - (rsiScore - 70) * 2;
+  } else if (rsiScore < 30) {
+    // Oversold: increasingly bullish. RSI 30→50 (neutral), RSI 15→80 (bullish)
+    rsiBias = 50 + (30 - rsiScore) * 2;
+  }
 
   signals.push({
     source: "RSI (14)",
@@ -377,11 +384,17 @@ function scoreMomentum(summary: TechnicalSummary): { score: number; signals: Bia
   });
 
   // MACD contribution (40% of momentum)
+  // Normalize histogram by ATR so scoring works consistently across all instruments.
+  // Raw histogram is in price units (0.0002 for EUR_USD, 500 for BTC_USD).
+  // Dividing by ATR produces a dimensionless ratio comparable across instruments.
+  const atr = summary.atr.value;
+  const normalizedHistogram = atr > 0 ? summary.macd.histogram / atr : 0;
+  // normalizedHistogram typically ranges from -2 to +2 (histogram as fraction of ATR)
   let macdBias = 50;
-  if (summary.macd.histogram > 0) {
-    macdBias = 50 + Math.min(50, summary.macd.histogram * 1000);
+  if (normalizedHistogram > 0) {
+    macdBias = 50 + Math.min(50, normalizedHistogram * 25);
   } else {
-    macdBias = 50 + Math.max(-50, summary.macd.histogram * 1000);
+    macdBias = 50 + Math.max(-50, normalizedHistogram * 25);
   }
 
   if (summary.macd.crossover) {
@@ -425,8 +438,12 @@ function scoreVolatility(summary: TechnicalSummary): { score: number; signals: B
     });
   }
 
-  // Band width squeeze detection
-  if (bb.width < 0.02) {
+  // Band width squeeze detection — normalize by price for cross-instrument consistency.
+  // EUR_USD width ~0.005-0.015, BTC_USD width ~2000-8000, US30 ~200-600.
+  // Using width/price produces a dimensionless ratio comparable across all instruments.
+  const currentPrice = summary.currentPrice;
+  const normalizedWidth = currentPrice > 0 ? bb.width / currentPrice : 0;
+  if (normalizedWidth < 0.01) {
     signals.push({
       source: "BB Squeeze",
       signal: "neutral",

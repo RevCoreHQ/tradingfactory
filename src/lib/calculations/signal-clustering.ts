@@ -6,7 +6,7 @@ import type {
 
 // ==================== CLUSTER TYPES ====================
 
-export type SignalCluster = "trend" | "mean_reversion" | "momentum";
+export type SignalCluster = "trend" | "mean_reversion" | "momentum" | "volume";
 
 export interface ClusterScore {
   cluster: SignalCluster;
@@ -22,6 +22,7 @@ const SIGNAL_CLUSTER_MAP: Record<string, SignalCluster> = {
   "Trend Stack": "trend",
   "RSI Extremes": "mean_reversion",
   "Elder Impulse": "momentum",
+  "Volume Confirmation": "volume",
 };
 
 // ==================== REGIME-DEPENDENT WEIGHTS ====================
@@ -33,13 +34,13 @@ const SIGNAL_CLUSTER_MAP: Record<string, SignalCluster> = {
  * In a breakout, momentum matters most.
  */
 const CLUSTER_WEIGHTS: Record<StructureRegime, Record<SignalCluster, number>> = {
-  trend:    { trend: 0.45, mean_reversion: 0.15, momentum: 0.40 },
-  range:    { trend: 0.15, mean_reversion: 0.45, momentum: 0.40 },
-  breakout: { trend: 0.35, mean_reversion: 0.10, momentum: 0.55 },
+  trend:    { trend: 0.40, mean_reversion: 0.10, momentum: 0.30, volume: 0.20 },
+  range:    { trend: 0.10, mean_reversion: 0.40, momentum: 0.30, volume: 0.20 },
+  breakout: { trend: 0.25, mean_reversion: 0.05, momentum: 0.40, volume: 0.30 },
 };
 
 const DEFAULT_WEIGHTS: Record<SignalCluster, number> = {
-  trend: 0.35, mean_reversion: 0.25, momentum: 0.40,
+  trend: 0.30, mean_reversion: 0.20, momentum: 0.30, volume: 0.20,
 };
 
 export function getClusterWeights(fullRegime?: FullRegime): Record<SignalCluster, number> {
@@ -66,6 +67,7 @@ export function clusterSignals(
     trend: [],
     mean_reversion: [],
     momentum: [],
+    volume: [],
   };
 
   // Group signals by cluster

@@ -260,10 +260,17 @@ export function applyLearning(
 
 // ==================== RE-TIER ====================
 
-export function adjustedTier(score: number): ConvictionTier {
-  if (score >= 75) return "A+";
-  if (score >= 60) return "A";
-  if (score >= 40) return "B";
-  if (score >= 25) return "C";
+/**
+ * Re-derive conviction tier from an adjusted score.
+ * Uses the SAME thresholds as calculateConviction() in mechanical-signals.ts.
+ * Without cluster information, we use a softer gate: activeClusters defaults
+ * to 2 (the minimum for B-tier) since learning only fires on 20+ trades,
+ * meaning the original setup already passed the cluster gate.
+ */
+export function adjustedTier(score: number, activeClusters: number = 2): ConvictionTier {
+  if (score >= 70 && activeClusters >= 3) return "A+";
+  if (score >= 55 && activeClusters >= 2) return "A";
+  if (score >= 35 && activeClusters >= 2) return "B";
+  if (score >= 20 && activeClusters >= 1) return "C";
   return "D";
 }

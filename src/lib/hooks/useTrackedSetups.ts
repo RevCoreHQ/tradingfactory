@@ -22,7 +22,7 @@ import {
   saveSystemPerformance,
   clearAllTrackingData,
 } from "@/lib/storage/setup-storage";
-import { recordSystemOutcome, type SystemPerformance } from "@/lib/calculations/system-performance";
+import { recordRegimeSystemOutcome, type SystemPerformance } from "@/lib/calculations/system-performance";
 import type { SmartAlert } from "@/lib/types/alerts";
 
 interface UseTrackedSetupsResult {
@@ -210,7 +210,7 @@ export function useTrackedSetups(
           if (!isSetupActive(updated.status)) {
             const key = updated.confluenceKey;
             patterns[key] = recordOutcome(patterns[key] ?? null, updated);
-            sysPerf = recordSystemOutcome(sysPerf, updated);
+            sysPerf = recordRegimeSystemOutcome(sysPerf, updated);
             terminalList.push(updated);
             continue;
           }
@@ -273,7 +273,7 @@ export function useTrackedSetups(
         if (updated.outcome) {
           const key = updated.confluenceKey;
           patterns[key] = recordOutcome(patterns[key] ?? null, updated);
-          sysPerf = recordSystemOutcome(sysPerf, updated);
+          sysPerf = recordRegimeSystemOutcome(sysPerf, updated);
         }
         terminalList.push(updated);
       } else {

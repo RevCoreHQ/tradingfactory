@@ -83,7 +83,7 @@ export interface MarketStructure {
 
 export interface MechanicalSignal {
   system: string; // e.g. "MA Crossover", "MACD", "BB Breakout", "RSI Extremes", "Elder Impulse"
-  type: "trend" | "mean_reversion" | "momentum" | "reversal";
+  type: "trend" | "mean_reversion" | "momentum" | "reversal" | "volume";
   direction: "bullish" | "bearish" | "neutral";
   strength: number; // 0-100
   description: string;
