@@ -7,7 +7,8 @@ import { INSTRUMENTS } from "@/lib/utils/constants";
 import { getBiasColor } from "@/lib/utils/formatters";
 import { cn } from "@/lib/utils";
 import { SessionBadge } from "@/components/common/SessionIndicator";
-import type { BiasResult, BiasDirection } from "@/lib/types/bias";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import type { BiasResult } from "@/lib/types/bias";
 import type { LLMAnalysisResult } from "@/lib/types/llm";
 import type { Instrument, PriceQuote } from "@/lib/types/market";
 import {
@@ -16,7 +17,6 @@ import {
   BarChart3,
   Gem,
   Activity,
-  Brain,
   ArrowRight,
   Star,
   Pin,
@@ -50,6 +50,44 @@ function timeAgo(timestamp: number): string {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
+function BiasDot({ score }: { score: number }) {
+  return (
+    <span
+      className={cn(
+        "inline-block h-1.5 w-1.5 rounded-full shrink-0",
+        score > 55 ? "bg-bullish" : score < 45 ? "bg-bearish" : "bg-muted-foreground/40"
+      )}
+    />
+  );
+}
+
+function scoreArrow(score: number): string {
+  if (score > 55) return "↑";
+  if (score < 45) return "↓";
+  return "–";
+}
+
+function getRiskReasons(biasResult: BiasResult): string[] {
+  const agreement = Math.round(biasResult.signalAgreement * 100);
+  const fundBullish = biasResult.fundamentalScore.total > 50;
+  const techBullish = biasResult.technicalScore.total > 50;
+  const conflicting = fundBullish !== techBullish;
+  const vol = biasResult.technicalScore.volatility;
+
+  const reasons: string[] = [];
+  if (conflicting) reasons.push("Fundamental & technical signals conflict");
+  else reasons.push("Fundamental & technical signals aligned");
+
+  if (agreement > 70) reasons.push(`High signal agreement (${agreement}%)`);
+  else if (agreement < 40) reasons.push(`Low signal agreement (${agreement}%)`);
+  else reasons.push(`Moderate signal agreement (${agreement}%)`);
+
+  if (vol > 65) reasons.push("Elevated volatility");
+  else if (vol < 35) reasons.push("Low volatility — potential squeeze");
+
+  return reasons;
+}
+
 function InstrumentCard({ data }: { data: InstrumentCardData }) {
   const router = useRouter();
   const setSelectedInstrument = useMarketStore((s) => s.setSelectedInstrument);
@@ -80,16 +118,33 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
     null;
 
   // Scores
-  const fundScore = biasResult.fundamentalScore.total;
-  const techScore = biasResult.technicalScore.total;
-  const momentum = biasResult.technicalScore.momentum;
-  const trend = biasResult.technicalScore.trendDirection;
-  const dec = instrument.decimalPlaces;
+  const fund = biasResult.fundamentalScore;
+  const tech = biasResult.technicalScore;
+  const fundScore = fund.total;
+  const techScore = tech.total;
+  const momentum = tech.momentum;
+  const trend = tech.trendDirection;
 
   const handleDeepDive = () => {
     setSelectedInstrument(instrument);
     router.push("/instrument");
   };
+
+  // Sub-score data for tooltips
+  const fundSubScores = [
+    { label: "News Sentiment", score: fund.newsSentiment },
+    { label: "Economic Data", score: fund.economicData },
+    { label: "Central Bank", score: fund.centralBankPolicy },
+    { label: "Market Sentiment", score: fund.marketSentiment },
+    { label: "Intermarket", score: fund.intermarketCorrelation },
+  ];
+  const techSubScores = [
+    { label: "Trend Direction", score: tech.trendDirection },
+    { label: "Momentum", score: tech.momentum },
+    { label: "Volatility", score: tech.volatility },
+    { label: "Volume (VWAP)", score: tech.volumeAnalysis },
+    { label: "Support/Resistance", score: tech.supportResistance },
+  ];
 
   return (
     <div className="section-card spotlight p-5 flex flex-col min-h-[320px]" onMouseMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty("--spotlight-x", `${e.clientX - r.left}px`); e.currentTarget.style.setProperty("--spotlight-y", `${e.clientY - r.top}px`); }}>
@@ -176,89 +231,113 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
 
       {/* Fundamental vs Technical + Momentum/Trend */}
       <div className="grid grid-cols-2 gap-2 mb-3">
-        <div className="bg-[var(--surface-0)] rounded-lg px-3 py-2">
-          <div className="flex items-center gap-1.5 mb-1">
-            <BarChart3 className="h-3 w-3 text-muted-foreground/50" />
-            <span className="text-xs text-muted-foreground/60">Fundamental</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className={cn("text-lg font-mono font-bold", fundScore > 50 ? "text-bullish" : "text-bearish")}>
-              {Math.round(fundScore)}
-            </span>
-            <div className="w-16 h-1.5 rounded-full bg-[var(--surface-2)] overflow-hidden">
-              <div
-                className={cn("h-full rounded-full", fundScore > 50 ? "bg-bullish" : "bg-bearish")}
-                style={{ width: `${Math.round(fundScore)}%` }}
-              />
+        <Tooltip>
+          <TooltipTrigger render={<div />} className="bg-[var(--surface-0)] rounded-lg px-3 py-2 cursor-default">
+            <div className="flex items-center gap-1.5 mb-1">
+              <BarChart3 className="h-3 w-3 text-muted-foreground/50" />
+              <span className="text-xs text-muted-foreground/60">Fundamental</span>
             </div>
-          </div>
-        </div>
-        <div className="bg-[var(--surface-0)] rounded-lg px-3 py-2">
-          <div className="flex items-center gap-1.5 mb-1">
-            <Activity className="h-3 w-3 text-muted-foreground/50" />
-            <span className="text-xs text-muted-foreground/60">Technical</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className={cn("text-lg font-mono font-bold", techScore > 50 ? "text-bullish" : "text-bearish")}>
-              {Math.round(techScore)}
-            </span>
-            <div className="w-16 h-1.5 rounded-full bg-[var(--surface-2)] overflow-hidden">
-              <div
-                className={cn("h-full rounded-full", techScore > 50 ? "bg-bullish" : "bg-bearish")}
-                style={{ width: `${Math.round(techScore)}%` }}
-              />
+            <div className="flex items-center justify-between">
+              <span className={cn("text-lg font-mono font-bold", fundScore > 50 ? "text-bullish" : "text-bearish")}>
+                {Math.round(fundScore)}
+              </span>
+              <div className="w-16 h-1.5 rounded-full bg-[var(--surface-2)] overflow-hidden">
+                <div
+                  className={cn("h-full rounded-full", fundScore > 50 ? "bg-bullish" : "bg-bearish")}
+                  style={{ width: `${Math.round(fundScore)}%` }}
+                />
+              </div>
             </div>
-          </div>
-        </div>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs">
+            <div className="flex flex-col gap-0.5 py-0.5 font-mono text-[11px]">
+              {fundSubScores.map((s) => (
+                <div key={s.label} className="flex items-center justify-between gap-4">
+                  <span className="opacity-70">{s.label}</span>
+                  <span>{Math.round(s.score)} {scoreArrow(s.score)}</span>
+                </div>
+              ))}
+            </div>
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger render={<div />} className="bg-[var(--surface-0)] rounded-lg px-3 py-2 cursor-default">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Activity className="h-3 w-3 text-muted-foreground/50" />
+              <span className="text-xs text-muted-foreground/60">Technical</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className={cn("text-lg font-mono font-bold", techScore > 50 ? "text-bullish" : "text-bearish")}>
+                {Math.round(techScore)}
+              </span>
+              <div className="w-16 h-1.5 rounded-full bg-[var(--surface-2)] overflow-hidden">
+                <div
+                  className={cn("h-full rounded-full", techScore > 50 ? "bg-bullish" : "bg-bearish")}
+                  style={{ width: `${Math.round(techScore)}%` }}
+                />
+              </div>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs">
+            <div className="flex flex-col gap-0.5 py-0.5 font-mono text-[11px]">
+              {techSubScores.map((s) => (
+                <div key={s.label} className="flex items-center justify-between gap-4">
+                  <span className="opacity-70">{s.label}</span>
+                  <span>{Math.round(s.score)} {scoreArrow(s.score)}</span>
+                </div>
+              ))}
+            </div>
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Momentum + Trend pills */}
       <div className="flex items-center gap-2 mb-3">
-        <div className="flex items-center gap-1 bg-[var(--surface-0)] px-2.5 py-1 rounded-md text-xs font-mono">
-          {momentum > 50
-            ? <TrendingUp className="h-3 w-3 text-bullish" />
-            : <TrendingDown className="h-3 w-3 text-bearish" />
-          }
-          <span className="text-muted-foreground/60">Mom</span>
-          <span className={cn("font-semibold", momentum > 50 ? "text-bullish" : "text-bearish")}>
-            {Math.round(momentum)}
-          </span>
-        </div>
-        <div className="flex items-center gap-1 bg-[var(--surface-0)] px-2.5 py-1 rounded-md text-xs font-mono">
-          {trend > 50
-            ? <TrendingUp className="h-3 w-3 text-bullish" />
-            : <TrendingDown className="h-3 w-3 text-bearish" />
-          }
-          <span className="text-muted-foreground/60">Trend</span>
-          <span className={cn("font-semibold", trend > 50 ? "text-bullish" : "text-bearish")}>
-            {Math.round(trend)}
-          </span>
-        </div>
+        <Tooltip>
+          <TooltipTrigger className="flex items-center gap-1 bg-[var(--surface-0)] px-2.5 py-1 rounded-md text-xs font-mono cursor-default">
+            {momentum > 50
+              ? <TrendingUp className="h-3 w-3 text-bullish" />
+              : <TrendingDown className="h-3 w-3 text-bearish" />
+            }
+            <span className="text-muted-foreground/60">Mom</span>
+            <span className={cn("font-semibold", momentum > 50 ? "text-bullish" : "text-bearish")}>
+              {Math.round(momentum)}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="top">
+            <div className="flex flex-col gap-0.5 py-0.5 text-[11px]">
+              <span className="font-semibold">Momentum: {Math.round(momentum)}/100</span>
+              <span className="opacity-70">RSI (40%) + MACD (40%) + StochRSI (20%)</span>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger className="flex items-center gap-1 bg-[var(--surface-0)] px-2.5 py-1 rounded-md text-xs font-mono cursor-default">
+            {trend > 50
+              ? <TrendingUp className="h-3 w-3 text-bullish" />
+              : <TrendingDown className="h-3 w-3 text-bearish" />
+            }
+            <span className="text-muted-foreground/60">Trend</span>
+            <span className={cn("font-semibold", trend > 50 ? "text-bullish" : "text-bearish")}>
+              {Math.round(trend)}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="top">
+            <div className="flex flex-col gap-0.5 py-0.5 text-[11px]">
+              <span className="font-semibold">Trend: {Math.round(trend)}/100</span>
+              <span className="opacity-70">Moving average alignment + trend pattern</span>
+            </div>
+          </TooltipContent>
+        </Tooltip>
         <SessionBadge instrumentId={instrument.id} />
       </div>
 
-      {/* Key Levels + Risk */}
-      <div className="flex items-center gap-3 flex-wrap text-xs font-mono text-muted-foreground/50 border-t border-border/20 pt-2 mb-3">
-        {llmResult?.keyLevels && llmResult.keyLevels.support > 0 && (
-          <>
-            <span className="text-bullish/60">S:{llmResult.keyLevels.support.toFixed(dec)}</span>
-            <span className="text-bearish/60">R:{llmResult.keyLevels.resistance.toFixed(dec)}</span>
-          </>
-        )}
-        {biasResult.adr && <span>ADR:{biasResult.adr.pips}p</span>}
-        {llmResult?.riskAssessment && (
-          <span
-            className={cn(
-              "font-bold uppercase px-1 py-0.5 rounded text-[10px]",
-              llmResult.riskAssessment === "low" && "bg-bullish/15 text-bullish",
-              llmResult.riskAssessment === "medium" && "bg-amber/15 text-[var(--amber)]",
-              llmResult.riskAssessment === "high" && "bg-bearish/15 text-bearish"
-            )}
-          >
-            {llmResult.riskAssessment} risk
-          </span>
-        )}
-      </div>
+      {/* ADR */}
+      {biasResult.adr && (
+        <div className="flex items-center gap-3 flex-wrap text-xs font-mono text-muted-foreground/50 border-t border-border/20 pt-2 mb-3">
+          <span>ADR:{biasResult.adr.pips}p</span>
+        </div>
+      )}
 
       {/* Analysis — inset container */}
       {summaryText && (
@@ -268,18 +347,39 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
               <Sparkles className="h-3.5 w-3.5 text-neutral-accent" />
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Analysis</span>
             </div>
-            {llmResult?.outlook && (
-              <div className="flex items-center gap-1.5">
-                {llmResult.conviction && (
-                  <span className={cn(
-                    "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
-                    llmResult.conviction === "high" && "bg-bullish/15 text-bullish",
-                    llmResult.conviction === "medium" && "bg-amber/15 text-[var(--amber)]",
-                    llmResult.conviction === "low" && "bg-muted text-muted-foreground",
-                  )}>
-                    {llmResult.conviction}
-                  </span>
-                )}
+            <div className="flex items-center gap-1.5">
+              {llmResult?.riskAssessment && (
+                <Tooltip>
+                  <TooltipTrigger
+                    className={cn(
+                      "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded cursor-default",
+                      llmResult.riskAssessment === "low" && "bg-bullish/15 text-bullish",
+                      llmResult.riskAssessment === "medium" && "bg-amber/15 text-[var(--amber)]",
+                      llmResult.riskAssessment === "high" && "bg-bearish/15 text-bearish"
+                    )}
+                  >
+                    {llmResult.riskAssessment} risk
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <div className="flex flex-col gap-0.5 py-0.5 text-[11px]">
+                      {getRiskReasons(biasResult).map((r, i) => (
+                        <span key={i} className={i === 0 ? "font-semibold" : "opacity-70"}>{r}</span>
+                      ))}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {llmResult?.conviction && (
+                <span className={cn(
+                  "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
+                  llmResult.conviction === "high" && "bg-bullish/15 text-bullish",
+                  llmResult.conviction === "medium" && "bg-amber/15 text-[var(--amber)]",
+                  llmResult.conviction === "low" && "bg-muted text-muted-foreground",
+                )}>
+                  {llmResult.conviction}
+                </span>
+              )}
+              {llmResult?.outlook && (
                 <span className={cn(
                   "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
                   llmResult.outlook === "bullish" && "bg-bullish/15 text-bullish",
@@ -288,8 +388,8 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
                 )}>
                   {llmResult.outlook}
                 </span>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Summary */}
@@ -301,23 +401,37 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
           <div className="mt-3 space-y-2.5 border-t border-border/20 pt-2.5">
             {llmResult?.fundamentalReason && (
               <div>
-                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Fundamentals</span>
+                <div className="flex items-center gap-1.5">
+                  <BiasDot score={fundScore} />
+                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Fundamentals</span>
+                </div>
                 <p className="text-sm text-foreground/65 leading-relaxed mt-0.5">{llmResult.fundamentalReason}</p>
               </div>
             )}
             {llmResult?.technicalReason && (
               <div>
-                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Technicals</span>
+                <div className="flex items-center gap-1.5">
+                  <BiasDot score={techScore} />
+                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Technicals</span>
+                </div>
                 <p className="text-sm text-foreground/65 leading-relaxed mt-0.5">{llmResult.technicalReason}</p>
               </div>
             )}
             {llmResult?.catalysts && llmResult.catalysts.length > 0 && (
               <div>
-                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Catalysts</span>
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={cn(
+                      "inline-block h-1.5 w-1.5 rounded-full shrink-0",
+                      llmResult.outlook === "bullish" ? "bg-bullish" : llmResult.outlook === "bearish" ? "bg-bearish" : "bg-muted-foreground/40"
+                    )}
+                  />
+                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Catalysts</span>
+                </div>
                 <ul className="mt-0.5 space-y-0.5">
                   {llmResult.catalysts.map((c, i) => (
                     <li key={i} className="text-sm text-foreground/65 leading-relaxed flex items-start gap-1.5">
-                      <span className="text-neutral-accent mt-1.5 shrink-0">•</span>
+                      <span className="text-neutral-accent mt-1.5 shrink-0">&bull;</span>
                       {c}
                     </li>
                   ))}
