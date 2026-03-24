@@ -56,6 +56,28 @@ async function computeDXY(): Promise<DXYData | null> {
 }
 
 /**
+ * Primary DXY source: Twelve Data /quote for DXY directly.
+ * Returns real price, change, and changePercent in one call.
+ */
+async function fetchDXYDirect(): Promise<DXYData | null> {
+  try {
+    const quotes = await fetchTwelveDataBatchQuotes(["DXY"]);
+    const dxy = quotes["DXY"];
+    if (dxy && dxy.price > 70 && dxy.price < 130) {
+      return {
+        value: Math.round(dxy.price * 100) / 100,
+        change: dxy.change,
+        changePercent: dxy.changePercent,
+        history: [],
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Twelve Data fallback for DXY: fetch the 6 component pairs and apply ICE formula.
  */
 async function computeDXYFromTwelveData(): Promise<DXYData | null> {
@@ -95,17 +117,25 @@ async function computeDXYFromTwelveData(): Promise<DXYData | null> {
 
 export async function GET() {
   try {
-    const [yields, computedDxy, fedRate] = await Promise.allSettled([
+    const [yields, directDxy, computedDxy, fedRate] = await Promise.allSettled([
       fetchBondYields(),
+      fetchDXYDirect(),
       computeDXY(),
       fetchFedFundsRate(),
     ]);
 
-    let dxyResult = computedDxy.status === "fulfilled" && computedDxy.value
-      ? computedDxy.value
+    // Priority: Twelve Data direct quote (has change data) → computed from Finnhub → computed from Twelve Data pairs
+    let dxyResult = directDxy.status === "fulfilled" && directDxy.value
+      ? directDxy.value
       : null;
 
-    // Twelve Data fallback for DXY if Finnhub failed
+    if (!dxyResult) {
+      dxyResult = computedDxy.status === "fulfilled" && computedDxy.value
+        ? computedDxy.value
+        : null;
+    }
+
+    // Last resort: compute from Twelve Data component pairs
     if (!dxyResult) {
       try {
         dxyResult = await computeDXYFromTwelveData();

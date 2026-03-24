@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchForexCandleData } from "@/lib/api/finnhub";
+import { fetchForexCandleData, fetchCandles } from "@/lib/api/finnhub";
 import { fetchCryptoOHLC } from "@/lib/api/coingecko";
 import { fetchForexDaily, fetchForexIntraday } from "@/lib/api/alpha-vantage";
 import { fetchTwelveDataCandles, TWELVE_DATA_INTERVALS } from "@/lib/api/twelve-data";
@@ -118,8 +118,12 @@ export async function GET(req: NextRequest) {
       }
       if (candles.length === 0) {
         try {
+          const fhSymbol = instrument.finnhubSymbol || "";
           const resolution = RESOLUTION_MAP[timeframe] || "D";
-          candles = await fetchForexCandleData(instrument.finnhubSymbol || "", resolution, from, now);
+          // FOREXCOM symbols use /stock/candle, OANDA symbols use /forex/candle
+          candles = fhSymbol.startsWith("OANDA:")
+            ? await fetchForexCandleData(fhSymbol, resolution, from, now)
+            : await fetchCandles(fhSymbol, resolution, from, now);
         } catch (err) {
           console.warn(`[PriceData] Finnhub failed for index ${instrument.finnhubSymbol}:`, err);
           candles = [];

@@ -36,7 +36,7 @@ export function MarketPulse() {
   const currentResults = allBiasResults[biasTimeframe];
 
   const fg = fearGreedData?.current || { value: 50, label: "Neutral" };
-  const dxy = bondData?.dxy || { value: 0, change: 0 };
+  const dxy = bondData?.dxy || { value: 0, change: 0, changePercent: 0 };
   const quotes = ratesData?.quotes || {};
 
   const KEY_MARKETS = [
@@ -156,14 +156,14 @@ export function MarketPulse() {
           <span className="text-2xl font-bold font-mono">
             {dxy.value > 0 ? dxy.value.toFixed(2) : "—"}
           </span>
-          {dxy.change !== 0 && (
-            <span className={cn("text-xs font-mono font-medium", dxy.change > 0 ? "text-bullish" : "text-bearish")}>
-              {dxy.change > 0 ? "+" : ""}{dxy.change.toFixed(2)}
+          {(dxy.change !== 0 || dxy.changePercent !== 0) && (
+            <span className={cn("text-xs font-mono font-medium", dxy.changePercent > 0 ? "text-bullish" : "text-bearish")}>
+              {dxy.changePercent > 0 ? "+" : ""}{dxy.changePercent.toFixed(2)}%
             </span>
           )}
         </div>
         <div className="text-[12px] text-muted-foreground/60 mt-2 font-mono">
-          {dxy.change > 0.3 ? "USD Strength" : dxy.change < -0.3 ? "USD Weakness" : "Stable"}
+          {dxy.changePercent > 0.15 ? "USD Strength" : dxy.changePercent < -0.15 ? "USD Weakness" : "Stable"}
         </div>
       </div>
 
