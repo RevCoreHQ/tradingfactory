@@ -6,7 +6,11 @@ export interface SessionRelevance {
   optimalSessions: TradingSession[];
   currentSessionActive: boolean;
   isOptimalNow: boolean;
+  isOverlap: boolean;
+  activeSessions: TradingSession[];
   nextOptimalIn: string;
+  nextEventLabel: string; // e.g. "NY opens", "London–NY overlap", "London closes"
+  nextEventCountdownMs: number; // ms until next event for live countdown
   sessionScore: number; // 0-100
   reason: string;
 }
@@ -219,11 +223,36 @@ function getTimeUntilMarketOpen(now: Date): string {
   return `${h}h ${m}m`;
 }
 
+/** Session name lookup */
+const SESSION_NAMES: Record<string, string> = {
+  sydney: "Sydney",
+  tokyo: "Tokyo",
+  london: "London",
+  newyork: "NY",
+};
+
+/** Compute ms until a target UTC hour from now */
+function getMsUntilHour(targetHourUTC: number, now: Date): number {
+  const nowMs = now.getTime();
+  const target = new Date(now);
+  target.setUTCHours(targetHourUTC, 0, 0, 0);
+  if (target.getTime() <= nowMs) target.setUTCDate(target.getUTCDate() + 1);
+  return target.getTime() - nowMs;
+}
+
+/** Format ms as countdown string */
+function formatCountdown(ms: number): string {
+  const totalMin = Math.floor(ms / 60000);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  if (h === 0) return `${m}m`;
+  return `${h}h ${m}m`;
+}
+
 /** Get the session relevance for a specific instrument */
 export function getSessionRelevance(instrumentId: string): SessionRelevance {
   const now = new Date();
   const hourUTC = now.getUTCHours();
-  const minUTC = now.getUTCMinutes();
   const optimalSessions = INSTRUMENT_SESSIONS[instrumentId] || [];
 
   // Check if this instrument's market is open at all
@@ -236,7 +265,11 @@ export function getSessionRelevance(instrumentId: string): SessionRelevance {
       optimalSessions,
       currentSessionActive: false,
       isOptimalNow: false,
+      isOverlap: false,
+      activeSessions: [],
       nextOptimalIn: isCrypto ? "Active now" : getTimeUntilMarketOpen(now),
+      nextEventLabel: "Market opens",
+      nextEventCountdownMs: 0,
       sessionScore: 0,
       reason: isUSHoliday(now) && US_INDEX_INSTRUMENTS.has(instrumentId)
         ? "US market holiday"
@@ -245,13 +278,13 @@ export function getSessionRelevance(instrumentId: string): SessionRelevance {
   }
 
   // Use DST-aware UTC hours for accurate session detection
-  const activeSessions = optimalSessions.filter((sessionKey) => {
+  const activeSessionKeys = optimalSessions.filter((sessionKey) => {
     const dstHours = getSessionUTCHours(sessionKey);
     return isSessionActive(dstHours, hourUTC, now);
   });
 
-  const isOptimalNow = activeSessions.length > 0;
-  const isOverlap = activeSessions.length >= 2;
+  const isOptimalNow = activeSessionKeys.length > 0;
+  const isOverlap = activeSessionKeys.length >= 2;
 
   let sessionScore: number;
   if (isOverlap) {
@@ -266,14 +299,63 @@ export function getSessionRelevance(instrumentId: string): SessionRelevance {
     sessionScore = anyActive ? 40 : 15;
   }
 
+  // Compute next event label + countdown
+  let nextEventLabel = "";
+  let nextEventCountdownMs = 0;
   let nextOptimalIn = "Active now";
-  if (!isOptimalNow && optimalSessions.length > 0) {
-    // Find the soonest optimal session to open
-    const times = optimalSessions.map((key) => {
+
+  if (isOverlap) {
+    // Find when the overlap ends (earliest close among active sessions)
+    let earliestCloseMs = Infinity;
+    let closingSession = "";
+    for (const key of activeSessionKeys) {
       const dstHours = getSessionUTCHours(key);
-      return { time: getTimeUntil(dstHours.openHourUTC, hourUTC, minUTC), key };
-    });
-    nextOptimalIn = times[0]?.time || "—";
+      const ms = getMsUntilHour(dstHours.closeHourUTC, now);
+      if (ms < earliestCloseMs) {
+        earliestCloseMs = ms;
+        closingSession = key;
+      }
+    }
+    nextEventLabel = `${SESSION_NAMES[closingSession] || closingSession} closes`;
+    nextEventCountdownMs = earliestCloseMs;
+  } else if (isOptimalNow) {
+    // Single session active — find next session to open (overlap) or when this closes
+    const inactiveSessions = optimalSessions.filter((k) => !activeSessionKeys.includes(k));
+    if (inactiveSessions.length > 0) {
+      // Next optimal event is the next session opening (overlap start)
+      let soonestMs = Infinity;
+      let soonestKey = "";
+      for (const key of inactiveSessions) {
+        const dstHours = getSessionUTCHours(key);
+        const ms = getMsUntilHour(dstHours.openHourUTC, now);
+        if (ms < soonestMs) {
+          soonestMs = ms;
+          soonestKey = key;
+        }
+      }
+      nextEventLabel = `${SESSION_NAMES[soonestKey] || soonestKey} opens`;
+      nextEventCountdownMs = soonestMs;
+    } else {
+      // Only one optimal session and it's active — show when it closes
+      const dstHours = getSessionUTCHours(activeSessionKeys[0]);
+      nextEventCountdownMs = getMsUntilHour(dstHours.closeHourUTC, now);
+      nextEventLabel = `${SESSION_NAMES[activeSessionKeys[0]] || activeSessionKeys[0]} closes`;
+    }
+  } else {
+    // No optimal sessions active — find soonest one to open
+    let soonestMs = Infinity;
+    let soonestKey = "";
+    for (const key of optimalSessions) {
+      const dstHours = getSessionUTCHours(key);
+      const ms = getMsUntilHour(dstHours.openHourUTC, now);
+      if (ms < soonestMs) {
+        soonestMs = ms;
+        soonestKey = key;
+      }
+    }
+    nextOptimalIn = formatCountdown(soonestMs);
+    nextEventLabel = `${SESSION_NAMES[soonestKey] || soonestKey} opens`;
+    nextEventCountdownMs = soonestMs;
   }
 
   return {
@@ -281,7 +363,11 @@ export function getSessionRelevance(instrumentId: string): SessionRelevance {
     optimalSessions,
     currentSessionActive: isOptimalNow,
     isOptimalNow,
+    isOverlap,
+    activeSessions: activeSessionKeys,
     nextOptimalIn,
+    nextEventLabel,
+    nextEventCountdownMs,
     sessionScore,
     reason: SESSION_REASONS[instrumentId] || "Check market hours",
   };
