@@ -236,7 +236,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
   ];
 
   return (
-    <div className="section-card spotlight p-5 flex flex-col min-h-[320px]" onMouseMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty("--spotlight-x", `${e.clientX - r.left}px`); e.currentTarget.style.setProperty("--spotlight-y", `${e.clientY - r.top}px`); }}>
+    <div className="section-card spotlight p-3 sm:p-5 flex flex-col min-h-[320px]" onMouseMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty("--spotlight-x", `${e.clientX - r.left}px`); e.currentTarget.style.setProperty("--spotlight-y", `${e.clientY - r.top}px`); }}>
       {/* Header: Symbol + Category | % Change + Direction */}
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">

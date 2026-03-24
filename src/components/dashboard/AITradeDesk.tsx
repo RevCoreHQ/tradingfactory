@@ -1078,7 +1078,7 @@ function TabBar({
 
 function TradeDeskSkeleton() {
   return (
-    <div className="section-card p-5">
+    <div className="section-card p-3 sm:p-5">
       <div className="py-12">
         <AnalysisLoader
           messages={[

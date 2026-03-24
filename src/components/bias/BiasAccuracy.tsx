@@ -105,7 +105,7 @@ export function BiasAccuracySummary() {
   if (!stats || stats.total === 0) return null;
 
   return (
-    <div className="flex items-center gap-4 px-3 py-2 rounded-lg bg-[var(--surface-2)] text-[12px]">
+    <div className="flex flex-wrap items-center gap-2 sm:gap-4 px-3 py-2 rounded-lg bg-[var(--surface-2)] text-[12px]">
       <div className="flex items-center gap-1.5">
         <Target className="h-3 w-3 text-neutral-accent" />
         <span className="text-muted-foreground">Bias Accuracy</span>

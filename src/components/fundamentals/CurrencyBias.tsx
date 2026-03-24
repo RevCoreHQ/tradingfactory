@@ -81,7 +81,7 @@ export function CurrencyBias() {
   const hasData = Object.keys(currentResults).length > 0;
 
   return (
-    <div className="section-card p-5 h-full">
+    <div className="section-card p-3 sm:p-5 h-full">
       <div className="flex items-center gap-2 mb-4">
         <div className="h-6 w-6 rounded-md flex items-center justify-center bg-neutral-accent/15">
           <Globe className="h-3.5 w-3.5 text-neutral-accent" />
@@ -115,13 +115,13 @@ export function CurrencyBias() {
 
       {/* Currency grid */}
       {!hasData ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="h-24 shimmer rounded-lg" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {biases.map((item) => {
             const color = getBiasColor(item.direction);
 

@@ -106,7 +106,7 @@ export function DataFeedStatus() {
         side="bottom"
         align="end"
         sideOffset={8}
-        className="w-80 p-0"
+        className="w-[min(320px,calc(100vw-16px))] p-0"
       >
         {/* Header */}
         <div className="px-3 py-2 border-b border-border/30 flex items-center justify-between">
@@ -178,7 +178,7 @@ export function DataFeedStatus() {
                       </span>
                     </div>
                   </div>
-                  <div className="mt-1 pl-5.5 space-y-0.5">
+                  <div className="mt-1 pl-6 space-y-0.5">
                     <p className="text-[12px] text-muted-foreground/50">{p.provides}</p>
                     <p className="text-[12px] text-muted-foreground/30">{p.tier}</p>
                     {p.status === "error" && p.message && (

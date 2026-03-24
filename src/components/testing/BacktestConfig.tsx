@@ -22,7 +22,7 @@ export function BacktestConfig({ config, onConfigChange, progress, onRun, onStop
   };
 
   return (
-    <div className="section-card p-5">
+    <div className="section-card p-3 sm:p-5">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         {/* Instrument */}
         <div>

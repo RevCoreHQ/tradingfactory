@@ -57,7 +57,7 @@ function AlertsDropdown({ onClose }: { onClose: () => void }) {
     .sort((a, b) => b.createdAt - a.createdAt);
 
   return (
-    <div className="absolute right-0 top-full mt-2 z-50 w-80 max-h-96 overflow-y-auto rounded-xl bg-[var(--surface-1)] border border-border shadow-xl">
+    <div className="absolute right-0 top-full mt-2 z-50 w-[min(320px,calc(100vw-16px))] max-h-96 overflow-y-auto rounded-xl bg-[var(--surface-1)] border border-border shadow-xl">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-[var(--surface-1)] border-b border-border px-3 py-2 flex items-center justify-between">
         <span className="text-xs font-bold">Alerts</span>

@@ -322,7 +322,7 @@ export function TopPairs() {
   const displayed = ranked.slice(0, displayCount);
 
   return (
-    <div className="relative section-card p-5">
+    <div className="relative section-card p-3 sm:p-5">
       <GlowingEffect
         spread={40}
         glow={true}

@@ -11,7 +11,7 @@ export function RedNewsWeek() {
 
   if (isLoading) {
     return (
-      <div className="section-card p-5 h-full">
+      <div className="section-card p-3 sm:p-5 h-full">
         <div className="flex items-center gap-2 mb-4">
           <div className="h-6 w-6 rounded-md flex items-center justify-center bg-bearish/15">
             <Calendar className="h-3.5 w-3.5 text-bearish" />
@@ -41,7 +41,7 @@ export function RedNewsWeek() {
   const today = new Date().toISOString().split("T")[0];
 
   return (
-    <div className="section-card p-5 h-full">
+    <div className="section-card p-3 sm:p-5 h-full">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <div className="h-6 w-6 rounded-md flex items-center justify-center bg-bearish/15">
@@ -104,7 +104,7 @@ export function RedNewsWeek() {
                         </span>
                       )}
                       {event.previous != null && (
-                        <span className="text-muted-foreground/50 font-mono text-[12px] shrink-0">
+                        <span className="text-muted-foreground/50 font-mono text-[12px] shrink-0 hidden sm:inline">
                           prev: {event.previous}
                         </span>
                       )}

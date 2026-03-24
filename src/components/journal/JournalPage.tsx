@@ -45,7 +45,7 @@ export function JournalPage() {
     <div className="relative min-h-screen bg-background">
       <div className="fixed inset-0 z-0 hidden dark:block">
         <EtheralShadow
-          color="rgba(30, 27, 55, 1)"
+          color="rgba(12, 40, 35, 1)"
           animation={{ scale: 60, speed: 40 }}
           noise={{ opacity: 0.6, scale: 1.2 }}
           sizing="fill"
@@ -65,7 +65,7 @@ export function JournalPage() {
               accentColor="amber"
             />
 
-            <div className="section-card p-5">
+            <div className="section-card p-3 sm:p-5">
               {/* Month nav */}
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold text-foreground">

@@ -43,7 +43,7 @@ const ADVISOR_LOADING_MESSAGES = [
 
 function AdvisorSkeleton() {
   return (
-    <div className="section-card p-5">
+    <div className="section-card p-3 sm:p-5">
       <div className="flex items-center gap-2 mb-4">
         <div className="h-6 w-6 rounded-md flex items-center justify-center bg-neutral-accent/15">
           <MessageSquare className="h-3.5 w-3.5 text-neutral-accent" />
@@ -106,7 +106,7 @@ function AdvisorContent({ advisor, onRefresh }: { advisor: TradingAdvisorResult;
   }
 
   return (
-    <div className="relative section-card p-5">
+    <div className="relative section-card p-3 sm:p-5">
       <GlowingEffect
         spread={40}
         glow={true}
@@ -472,7 +472,7 @@ export function TradingAdvisor() {
 
   if (!advisor) {
     return (
-      <div className="section-card p-5">
+      <div className="section-card p-3 sm:p-5">
         <div className="flex items-center gap-2 mb-2">
           <div className="h-6 w-6 rounded-md flex items-center justify-center bg-neutral-accent/15">
             <MessageSquare className="h-3.5 w-3.5 text-neutral-accent" />

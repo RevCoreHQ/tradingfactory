@@ -181,7 +181,7 @@ export function AIMarketSummary() {
 
   if (isLoading) {
     return (
-      <div className="section-card p-5">
+      <div className="section-card p-3 sm:p-5">
         <div className="flex items-center gap-2 mb-4">
           <div className="h-6 w-6 rounded-md flex items-center justify-center bg-neutral-accent/15">
             <Sparkles className="h-3.5 w-3.5 text-neutral-accent" />
@@ -201,7 +201,7 @@ export function AIMarketSummary() {
 
   if (!summary) {
     return (
-      <div className="section-card p-5">
+      <div className="section-card p-3 sm:p-5">
         <div className="flex items-center gap-3">
           <div className="h-6 w-6 rounded-md flex items-center justify-center bg-neutral-accent/10">
             <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
@@ -233,7 +233,7 @@ export function AIMarketSummary() {
     : "";
 
   return (
-    <div className="relative section-card p-5">
+    <div className="relative section-card p-3 sm:p-5">
       <GlowingEffect
         spread={40}
         glow={true}
@@ -244,9 +244,9 @@ export function AIMarketSummary() {
       />
 
       {/* Top bar: Date + Mood + Provider/Refresh */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <span className="text-[13px] font-mono text-muted-foreground/60">
+      <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          <span className="text-[13px] font-mono text-muted-foreground/60 hidden sm:inline">
             {dateStr}
           </span>
           <MoodBadge
@@ -256,7 +256,7 @@ export function AIMarketSummary() {
           />
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono text-muted-foreground/40 px-1.5 py-0.5 bg-[var(--surface-2)] rounded">
+          <span className="text-[11px] font-mono text-muted-foreground/40 px-1.5 py-0.5 bg-[var(--surface-2)] rounded hidden sm:inline">
             {summary.provider === "gemini"
               ? "Gemini Flash"
               : summary.provider === "anthropic"

@@ -97,7 +97,7 @@ export function EtheralShadow({
                 position: "relative",
                 width: "100%",
                 height: "100%",
-                backgroundColor: "#0a0a14",
+                backgroundColor: "#060d0b",
                 ...style
             }}
         >
@@ -169,8 +169,8 @@ export function EtheralShadow({
                     style={{
                         width: "100%",
                         height: "100%",
-                        background: `radial-gradient(ellipse at 30% 40%, ${color} 0%, rgba(15, 12, 30, 0.8) 40%, rgba(8, 6, 18, 0.4) 70%, transparent 100%),
-                                     radial-gradient(ellipse at 70% 60%, rgba(60, 40, 100, 0.6) 0%, rgba(20, 15, 40, 0.3) 50%, transparent 100%)`,
+                        background: `radial-gradient(ellipse at 30% 40%, ${color} 0%, rgba(8, 22, 18, 0.8) 40%, rgba(6, 14, 12, 0.4) 70%, transparent 100%),
+                                     radial-gradient(ellipse at 70% 60%, rgba(15, 55, 45, 0.5) 0%, rgba(8, 25, 20, 0.25) 50%, transparent 100%)`,
                     }}
                 />
             </div>
@@ -193,7 +193,7 @@ export function EtheralShadow({
                 style={{
                     position: "absolute",
                     inset: 0,
-                    background: "radial-gradient(ellipse at center, transparent 30%, rgba(5, 3, 12, 0.8) 100%)",
+                    background: "radial-gradient(ellipse at center, transparent 30%, rgba(4, 10, 8, 0.85) 100%)",
                 }}
             />
         </div>

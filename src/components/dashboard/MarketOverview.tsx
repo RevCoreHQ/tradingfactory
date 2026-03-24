@@ -42,7 +42,7 @@ export function MarketOverview() {
       {/* Ethereal shadow background — dark mode only */}
       <div className="fixed inset-0 z-0 hidden dark:block">
         <EtheralShadow
-          color="rgba(30, 27, 55, 1)"
+          color="rgba(12, 40, 35, 1)"
           animation={{ scale: 60, speed: 40 }}
           noise={{ opacity: 0.6, scale: 1.2 }}
           sizing="fill"

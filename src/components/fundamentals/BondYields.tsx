@@ -14,7 +14,7 @@ export function BondYields() {
 
   if (isLoading) {
     return (
-      <div className="section-card p-5 h-full">
+      <div className="section-card p-3 sm:p-5 h-full">
         <div className="flex items-center gap-2 mb-4">
           <div className="h-6 w-6 rounded-md flex items-center justify-center bg-amber/15">
             <TrendingUp className="h-3.5 w-3.5 text-[var(--amber)]" />
@@ -45,7 +45,7 @@ export function BondYields() {
   }));
 
   return (
-    <div className="section-card p-5 h-full">
+    <div className="section-card p-3 sm:p-5 h-full">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <div className="h-6 w-6 rounded-md flex items-center justify-center bg-amber/15">

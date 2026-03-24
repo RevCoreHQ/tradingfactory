@@ -19,7 +19,7 @@ export function GlassCard({ children, className, accent, animate = true, delay =
   const content = (
     <div
       className={cn(
-        "relative panel rounded-lg p-4 transition-colors duration-200",
+        "relative panel rounded-lg p-3 sm:p-4 transition-colors duration-200",
         "hover:border-border-bright",
         accentClass,
         className
