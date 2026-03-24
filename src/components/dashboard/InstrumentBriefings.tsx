@@ -11,6 +11,8 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 import type { BiasResult } from "@/lib/types/bias";
 import type { LLMAnalysisResult } from "@/lib/types/llm";
 import type { Instrument, PriceQuote } from "@/lib/types/market";
+import type { MTFTrendSummary } from "@/lib/types/mtf";
+import { useMTFEmaTrend } from "@/lib/hooks/useMTFEmaTrend";
 import {
   DollarSign,
   Bitcoin,
@@ -22,6 +24,7 @@ import {
   Pin,
   TrendingUp,
   TrendingDown,
+  Minus,
   Clock,
   Sparkles,
 } from "lucide-react";
@@ -38,6 +41,7 @@ interface InstrumentCardData {
   biasResult: BiasResult;
   llmResult: LLMAnalysisResult | null;
   quote: PriceQuote | null;
+  mtfTrend: MTFTrendSummary | null;
 }
 
 function timeAgo(timestamp: number): string {
@@ -163,7 +167,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
   const toggleFavorite = useMarketStore((s) => s.toggleFavorite);
   const pinnedIds = useMarketStore((s) => s.pinnedIds);
   const togglePin = useMarketStore((s) => s.togglePin);
-  const { instrument, biasResult, llmResult, quote } = data;
+  const { instrument, biasResult, llmResult, quote, mtfTrend } = data;
   const CategoryIcon = categoryIcons[instrument.category] || DollarSign;
   const changePercent = quote?.changePercent || 0;
   const isBullish = biasResult.overallBias > 0;
@@ -429,6 +433,42 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
         <SessionBadge instrumentId={instrument.id} />
       </div>
 
+      {/* MTF EMA Trend */}
+      {mtfTrend && mtfTrend.trends.length > 0 && (
+        <div className="flex items-center gap-1.5 mb-3">
+          <span className="text-[10px] text-muted-foreground/40 font-medium mr-0.5">EMA</span>
+          {(["15m", "1h", "4h", "1d"] as const).map((tf) => {
+            const t = mtfTrend.trends.find((tr) => tr.timeframe === tf);
+            if (!t) return null;
+            const dir = t.direction;
+            return (
+              <Tooltip key={tf}>
+                <TooltipTrigger className={cn(
+                  "text-[10px] font-mono font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 cursor-default",
+                  dir === "bullish" && "bg-bullish/12 text-bullish",
+                  dir === "bearish" && "bg-bearish/12 text-bearish",
+                  dir === "neutral" && "bg-muted text-muted-foreground"
+                )}>
+                  {dir === "bullish" ? <TrendingUp className="h-2.5 w-2.5" /> : dir === "bearish" ? <TrendingDown className="h-2.5 w-2.5" /> : <Minus className="h-2.5 w-2.5" />}
+                  {tf === "1d" ? "D" : tf.toUpperCase()}
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  <div className="flex flex-col gap-0.5 py-0.5 text-[11px]">
+                    <span className="font-semibold">{tf} EMA Stack: {dir}</span>
+                    <span className="opacity-70">EMA9: {t.ema9.toFixed(instrument.decimalPlaces)}</span>
+                    <span className="opacity-70">EMA21: {t.ema21.toFixed(instrument.decimalPlaces)}</span>
+                    <span className="opacity-70">EMA50: {t.ema50.toFixed(instrument.decimalPlaces)}</span>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+          {mtfTrend.alignment === "full" && (
+            <span className="text-[9px] font-bold uppercase text-muted-foreground/40 ml-1">Aligned</span>
+          )}
+        </div>
+      )}
+
       {/* ADR */}
       {biasResult.adr && (
         <div className="flex items-center gap-3 flex-wrap text-xs font-mono text-muted-foreground/50 border-t border-border/20 pt-2 mb-3">
@@ -610,6 +650,7 @@ export function InstrumentBriefings() {
   const batchLLMResults = useMarketStore((s) => s.batchLLMResults);
   const pinnedIds = useMarketStore((s) => s.pinnedIds);
   const { data: ratesData } = useRates();
+  const { trends: mtfTrends } = useMTFEmaTrend();
   const quotes = ratesData?.quotes || {};
   const currentResults = allBiasResults.intraday;
 
@@ -621,6 +662,7 @@ export function InstrumentBriefings() {
       biasResult: bias,
       llmResult: batchLLMResults?.[inst.id] || null,
       quote: quotes[inst.id] || null,
+      mtfTrend: mtfTrends[inst.id] || null,
     });
     return acc;
   }, []).sort((a, b) => {

@@ -502,7 +502,8 @@ function scoreSupportResistance(summary: TechnicalSummary, currentPrice: number)
 
 export function calculateTechnicalScore(
   summary: TechnicalSummary,
-  currentPrice: number
+  currentPrice: number,
+  mtfAlignmentScore?: number
 ): { score: TechnicalScore; signals: BiasSignal[] } {
   const td = scoreTrendDirection(summary);
   const mo = scoreMomentum(summary);
@@ -510,8 +511,13 @@ export function calculateTechnicalScore(
   const va = scoreVolume(summary);
   const sr = scoreSupportResistance(summary, currentPrice);
 
+  // Blend MTF alignment into trendDirection when available (60% single-TF, 40% MTF)
+  const blendedTrend = mtfAlignmentScore !== undefined
+    ? td.score * 0.6 + mtfAlignmentScore * 0.4
+    : td.score;
+
   const total =
-    td.score * 0.30 +
+    blendedTrend * 0.30 +
     mo.score * 0.30 +
     vo.score * 0.15 +
     va.score * 0.10 +
@@ -520,7 +526,7 @@ export function calculateTechnicalScore(
   return {
     score: {
       total: clamp(total, 0, 100),
-      trendDirection: td.score,
+      trendDirection: clamp(blendedTrend, 0, 100),
       momentum: mo.score,
       volatility: vo.score,
       volumeAnalysis: va.score,
