@@ -59,7 +59,7 @@ export function SystemPage() {
           {/* Mechanical vs AI */}
           <section>
             <SystemSectionCard
-              title="Mechanical vs AI"
+              title="Mechanical vs Language Models"
               subtitle="What's rule-based and what uses language models"
               icon={<Sparkles className="h-4 w-4" />}
               accentColor="amber"

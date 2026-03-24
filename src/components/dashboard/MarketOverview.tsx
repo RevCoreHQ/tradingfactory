@@ -51,11 +51,11 @@ export function MarketOverview() {
             <BiasAccuracySummary />
           </section>
 
-          {/* Section 2: AI Intelligence */}
+          {/* Section 2: Market Intelligence */}
           <section>
             <SectionHeader
-              title="AI Intelligence"
-              subtitle="AI-generated macro analysis and sector breakdown"
+              title="Market Intelligence"
+              subtitle="Macro analysis and sector breakdown"
               icon={<Sparkles className="h-3.5 w-3.5" />}
               accentColor="blue"
             />
@@ -66,7 +66,7 @@ export function MarketOverview() {
           <section>
             <SectionHeader
               title="Instrument Briefings"
-              subtitle="AI analysis cards for each tracked instrument"
+              subtitle="Analysis cards for each tracked instrument"
               icon={<LayoutGrid className="h-3.5 w-3.5" />}
               accentColor="green"
             />

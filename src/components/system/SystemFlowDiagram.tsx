@@ -403,7 +403,7 @@ export function SystemFlowDiagram() {
         </div>
 
         {/* ===== TIER 7: AI ===== */}
-        <TierDivider label="AI Intelligence Layer" color="amber" />
+        <TierDivider label="Intelligence Layer" color="amber" />
         <div className="flex items-start justify-center gap-8">
           <div ref={batchRef}>
             <FlowNode

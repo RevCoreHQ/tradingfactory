@@ -260,7 +260,7 @@ export async function GET() {
             }
             return { ok: true, message: "Connected" };
           },
-          "AI market analysis, advisor",
+          "Market analysis, advisor",
           "Paid (45 req/min)"
         )
       : Promise.resolve({
@@ -268,7 +268,7 @@ export async function GET() {
           status: "no_key" as const,
           latencyMs: null,
           message: "ANTHROPIC_API_KEY not set",
-          provides: "AI market analysis, advisor",
+          provides: "Market analysis, advisor",
           tier: "Paid (45 req/min)",
         })
   );

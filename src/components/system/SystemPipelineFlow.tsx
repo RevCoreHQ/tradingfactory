@@ -76,7 +76,7 @@ export function SystemPipelineFlow() {
           <p>
             In parallel (but on a <strong>separate track</strong>), fundamental data streams from 8 sources: news
             sentiment, Fear &amp; Greed, central bank policy, bond yields, rate differentials, economic calendar,
-            COT positioning, and ADR. Fundamentals feed the bias engine and AI advisor — they do <strong>not</strong> feed the
+            COT positioning, and ADR. Fundamentals feed the bias engine and advisor — they do <strong>not</strong> feed the
             mechanical signal systems directly.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mt-2">
@@ -210,7 +210,7 @@ export function SystemPipelineFlow() {
             Weights adapt automatically based on performance feedback.
           </p>
           <p className="text-bullish/70 font-semibold">
-            100% rule-based. Zero AI. Pure math from indicator values.
+            100% rule-based. Pure math from indicator values.
           </p>
         </PipelineStageCard>
 
@@ -382,9 +382,9 @@ export function SystemPipelineFlow() {
           </p>
         </PipelineStageCard>
 
-        <PipelineStageCard number={14} title="AI Risk Auditor" subtitle="3 LLM roles — explanation, risk auditing, summarization only" icon={<Sparkles className="h-3.5 w-3.5" />} badge="ai" accentColor="amber" defaultExpanded>
+        <PipelineStageCard number={14} title="Risk Auditor" subtitle="3 LLM roles — explanation, risk auditing, summarization only" icon={<Sparkles className="h-3.5 w-3.5" />} badge="ai" accentColor="amber" defaultExpanded>
           <p>
-            <strong>This is where AI enters.</strong> The mechanical engine has already decided all trade ideas, rankings, and entries.
+            <strong>This is where language models enter.</strong> The mechanical engine has already decided all trade ideas, rankings, and entries.
             The Risk Auditor reviews setups for risk flags, portfolio conflicts, event risk, and positioning warnings.
             LLMs never change scores, rankings, or entries — the system is fully deterministic.
           </p>

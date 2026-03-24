@@ -220,7 +220,7 @@ export function AIMarketSummary() {
             <Sparkles className="h-3.5 w-3.5 text-neutral-accent" />
           </div>
           <h3 className="text-xs font-semibold text-foreground">
-            AI Market Summary
+            Market Summary
           </h3>
         </div>
         <div className="space-y-3">
@@ -240,12 +240,12 @@ export function AIMarketSummary() {
             <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
           <h3 className="text-xs font-semibold text-foreground">
-            AI Market Summary
+            Market Summary
           </h3>
           <span className="text-[12px] text-muted-foreground/50 ml-auto">
             {apiError
-              ? `AI error: ${apiError}`
-              : "AI analysis unavailable — check API keys in Vercel settings"}
+              ? `Error: ${apiError}`
+              : "Analysis unavailable — check API keys in Vercel settings"}
           </span>
         </div>
       </div>
@@ -305,7 +305,7 @@ export function AIMarketSummary() {
             onClick={refresh}
             disabled={isRefreshing}
             className="p-1.5 rounded-md hover:bg-[var(--surface-2)] text-muted-foreground/40 hover:text-muted-foreground transition-colors disabled:opacity-40"
-            title="Refresh AI summary"
+            title="Refresh summary"
           >
             <RefreshCw
               className={cn("h-3 w-3", isRefreshing && "animate-spin")}

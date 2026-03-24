@@ -124,7 +124,7 @@ export function BacktestPage() {
                 <section>
                   <SectionHeader
                     title="Auto-Improvement"
-                    subtitle="AI-powered weakness detection and parameter optimization"
+                    subtitle="Weakness detection and parameter optimization"
                     icon={<Cpu className="h-4 w-4" />}
                     accentColor="blue"
                   />

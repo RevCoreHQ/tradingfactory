@@ -34,7 +34,7 @@ export function TradingDeskPage() {
           <section>
             <SectionHeader
               title="Desk Manager"
-              subtitle="AI-powered trading advisor interpreting mechanical signals"
+              subtitle="Trading advisor interpreting mechanical signals"
               icon={<Brain className="h-3.5 w-3.5" />}
               accentColor="green"
             />

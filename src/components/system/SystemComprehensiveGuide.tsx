@@ -95,9 +95,9 @@ export function SystemComprehensiveGuide() {
           across 16 forex/crypto/index instruments on up to 6 timeframes (5M, 15M, 1H, 4H, Daily, Weekly), selected by trading style. All signal generation is 100% mechanical and rule-based.
         </p>
         <p>
-          AI (LLM) serves as a <strong className="text-foreground">narrator and advisor layer</strong> — it NEVER generates or modifies trades.
+          The LLM serves as a <strong className="text-foreground">narrator and advisor layer</strong> — it NEVER generates or modifies trades.
           The system processes: raw OHLCV data → 20+ indicators → regime classification → 3 mechanical signals → de-correlation →
-          conviction scoring → hard filters → structural level snapping → position sizing → portfolio risk gate → AI narration → learning feedback.
+          conviction scoring → hard filters → structural level snapping → position sizing → portfolio risk gate → LLM narration → learning feedback.
         </p>
       </GuideSection>
 
@@ -130,7 +130,7 @@ export function SystemComprehensiveGuide() {
           <TRow cells={["Derived", "Rate differentials per pair", "Calculated"]} />
         </div>
         <p className="text-[12px]">
-          Fundamentals feed the <strong className="text-foreground">bias engine</strong> and <strong className="text-foreground">AI advisor</strong> —
+          Fundamentals feed the <strong className="text-foreground">bias engine</strong> and <strong className="text-foreground">advisor</strong> —
           they do NOT feed the mechanical signal systems directly.
         </p>
       </GuideSection>
@@ -450,8 +450,8 @@ export function SystemComprehensiveGuide() {
         </div>
       </GuideSection>
 
-      {/* ── 15. AI INTEGRATION ── */}
-      <GuideSection number={15} title="AI Integration — 3 Roles (Stages 14-15)">
+      {/* ── 15. LLM INTEGRATION ── */}
+      <GuideSection number={15} title="LLM Integration — 3 Roles (Stages 14-15)">
         <h4 className="text-[12px] font-bold text-foreground/70 uppercase tracking-wider">Deterministic Core + LLM Intelligence Shell</h4>
         <p className="text-[12px]">
           LLM roles are restricted to <strong className="text-foreground">explanation, risk auditing, and summarization</strong>.
@@ -489,7 +489,7 @@ export function SystemComprehensiveGuide() {
           <TRow cells={["Fundamental (news, F&G, rates)", "30%", "55%"]} />
         </div>
         <p className="text-[12px] mt-1">
-          Fully deterministic — no AI weight. LLM provides display-only summary text (fundamentalReason, technicalReason)
+          Fully deterministic — no LLM weight. LLM provides display-only summary text (fundamentalReason, technicalReason)
           but never influences the numerical bias score.
         </p>
       </GuideSection>
@@ -649,7 +649,7 @@ export function SystemComprehensiveGuide() {
                        │
                        ▼
 ┌──────────────────────────────────────────────────────────────┐
-│  STAGE 14: AI LAYER (narrator, NOT decision-maker)           │
+│  STAGE 14: LLM LAYER (narrator, NOT decision-maker)          │
 │  ┌────────────────┐ ┌───────────────┐ ┌──────────────────┐  │
 │  │ Trade Advisor   │ │  Desk Chat    │ │ Market Summary   │  │
 │  │ Opus 4.6       │ │  Opus 4.6     │ │ Opus 4.6        │  │
@@ -658,7 +658,7 @@ export function SystemComprehensiveGuide() {
 │  │ Instrument LLM  │ │ Deep Analysis │ │ Batch Analysis   │  │
 │  │ Sonnet 4.6     │ │ Sonnet 4.6    │ │ Haiku 4.5       │  │
 │  └────────────────┘ └───────────────┘ └──────────────────┘  │
-│  AI receives ONLY mechanical output — never raw candles      │
+│  LLM receives ONLY mechanical output — never raw candles     │
 └──────────────────────┬──────────────────────────────────────┘
                        │
                        ▼
@@ -681,7 +681,7 @@ export function SystemComprehensiveGuide() {
           {[
             {
               num: "1",
-              title: "AI is a narrator, not a trader",
+              title: "The LLM is a narrator, not a trader",
               desc: "All 3 signal systems are mechanical. The LLM receives finished setups and provides narrative context — it cannot create, modify, or override trades.",
             },
             {

@@ -9,12 +9,12 @@ const BOOT_MESSAGES = [
   "Loading market rates...",
   "Scanning news & sentiment...",
   "Calculating bias scores...",
-  "Running AI analysis...",
+  "Running analysis...",
   "Evaluating macro conditions...",
   "Analyzing instrument confluence...",
   "Generating market summary...",
   "Assessing sector outlooks...",
-  "Finalizing AI intelligence...",
+  "Finalizing intelligence...",
   "Preparing your desk...",
 ];
 

@@ -16,14 +16,14 @@ const badgeColors: Record<string, string> = {
   DATA: "bg-neutral-accent/15 text-neutral-accent border-neutral-accent/25",
   MECH: "bg-bullish/15 text-bullish border-bullish/25",
   FILTER: "bg-bearish/15 text-bearish border-bearish/25",
-  AI: "bg-amber-500/15 text-amber-700 dark:text-amber-500 border-amber-500/25",
+  LLM: "bg-amber-500/15 text-amber-700 dark:text-amber-500 border-amber-500/25",
 };
 
 const accentBorders: Record<string, string> = {
   DATA: "border-l-[var(--neutral-accent)]",
   MECH: "border-l-[var(--bullish)]",
   FILTER: "border-l-[var(--bearish)]",
-  AI: "border-l-amber-500",
+  LLM: "border-l-amber-500",
 };
 
 const steps: Step[] = [
@@ -330,11 +330,11 @@ const steps: Step[] = [
   {
     number: 12,
     title: "Setup Delivered",
-    badge: "AI",
+    badge: "LLM",
     summary: "EUR/USD A+ LONG — Risk Auditor reviews",
     content: (
       <div className="space-y-2">
-        <p>Mechanical engine delivers the final setup. AI Risk Auditor reviews for risk flags:</p>
+        <p>Mechanical engine delivers the final setup. Risk Auditor reviews for risk flags:</p>
         <div className="bg-surface-2/30 rounded-md px-3 py-2 font-mono text-[12px] space-y-1">
           <div className="flex justify-between"><span className="text-muted-foreground/50">Setup:</span><span className="text-foreground font-bold">EUR/USD LONG A+</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground/50">Entry:</span><span className="text-foreground">1.0882 - 1.0890</span></div>
@@ -349,7 +349,7 @@ const steps: Step[] = [
           MTF 3/4 aligned with Weekly bullish. This is my top focus today.&rdquo;
         </div>
         <p className="text-[11px] text-muted-foreground/60 font-semibold">
-          The AI did not create this trade idea. It explained the mechanical output in human-readable form.
+          The LLM did not create this trade idea. It explained the mechanical output in human-readable form.
         </p>
       </div>
     ),

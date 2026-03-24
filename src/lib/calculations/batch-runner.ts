@@ -223,7 +223,7 @@ export async function runBatchBacktest(
             await yieldToMain();
             const llmResult = runBacktest(candles, instrument, llmConfig);
             const llmVariant: SweepVariant = {
-              label: "AI Suggested",
+              label: "Suggested",
               overrides: llmOverrides,
               stats: llmResult.stats,
               score: scoreVariant(llmResult.stats),

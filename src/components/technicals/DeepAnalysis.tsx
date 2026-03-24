@@ -326,7 +326,7 @@ function AIZoneAnalysis({ deepAnalysis, indicators, biasResult }: {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-neutral-accent" />
-          <h3 className="text-xs font-semibold text-foreground">AI Zone Analysis</h3>
+          <h3 className="text-xs font-semibold text-foreground">Zone Analysis</h3>
         </div>
 
         {!isRequested && (
@@ -349,7 +349,7 @@ function AIZoneAnalysis({ deepAnalysis, indicators, biasResult }: {
       {!isRequested ? (
         <p className="text-xs text-muted-foreground/50 text-center py-6">
           {hasIndicators
-            ? "Click \"Analyze Zones\" for AI commentary on detected supply/demand zones and key levels"
+            ? "Click \"Analyze Zones\" for commentary on detected supply/demand zones and key levels"
             : "Price data loading — zone analysis will be available once chart data loads"
           }
         </p>
@@ -505,7 +505,7 @@ function AIZoneAnalysis({ deepAnalysis, indicators, biasResult }: {
       ) : (
         <div className="text-center py-6 space-y-3">
           <p className="text-xs text-muted-foreground/50">
-            {!hasIndicators ? "Waiting for price data..." : "AI analysis unavailable"}
+            {!hasIndicators ? "Waiting for price data..." : "Analysis unavailable"}
           </p>
           {hasIndicators && (
             <button
@@ -532,7 +532,7 @@ export function DeepAnalysis() {
       {/* TradingView chart always renders — it loads its own data */}
       <TradingViewChart heightClass="h-[400px] lg:h-[500px]" />
 
-      {/* AI Zone Analysis — analysis only, no trade ideas */}
+      {/* Zone Analysis — analysis only, no trade ideas */}
       <AIZoneAnalysis deepAnalysis={deepAnalysis} indicators={indicators} biasResult={biasResult} />
     </div>
   );

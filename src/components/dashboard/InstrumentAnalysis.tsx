@@ -112,7 +112,7 @@ export function InstrumentAnalysis() {
           <section>
             <SectionHeader
               title="Analysis & Chart"
-              subtitle="Price action and AI analysis"
+              subtitle="Price action and deep analysis"
               icon={<BarChart3 className="h-3.5 w-3.5" />}
               accentColor="blue"
             />

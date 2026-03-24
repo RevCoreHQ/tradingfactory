@@ -25,7 +25,7 @@ const PHASES: Record<string, string> = {
   backtest: "Running backtest",
   analyze: "Analyzing weaknesses",
   sweep: "Parameter sweep",
-  improve: "Testing AI suggestion",
+  improve: "Testing suggestion",
   retest: "Re-testing best variant",
   confluence: "Feeding confluence",
 };

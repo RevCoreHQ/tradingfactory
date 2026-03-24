@@ -9,7 +9,7 @@ type BadgeType = "mechanical" | "ai" | "filter" | "data";
 
 const badgeConfig: Record<BadgeType, { label: string; className: string }> = {
   mechanical: { label: "MECHANICAL", className: "bg-bullish/12 text-bullish border-bullish/20" },
-  ai: { label: "AI", className: "bg-amber-500/12 text-amber-500 border-amber-500/20" },
+  ai: { label: "LLM", className: "bg-amber-500/12 text-amber-500 border-amber-500/20" },
   filter: { label: "FILTER", className: "bg-bearish/12 text-bearish border-bearish/20" },
   data: { label: "DATA", className: "bg-neutral-accent/12 text-neutral-accent border-neutral-accent/20" },
 };

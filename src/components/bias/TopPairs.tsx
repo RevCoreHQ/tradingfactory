@@ -154,12 +154,12 @@ function CardDetailModal({ item, onClose, onNavigate }: {
             </div>
           </motion.div>
 
-          {/* AI Summary */}
+          {/* Summary */}
           {item.llmSummary && (
             <motion.div variants={fadeUp} className="space-y-1.5">
               <div className="flex items-center gap-1.5">
                 <Brain className="h-3.5 w-3.5 text-neutral-accent" />
-                <span className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">AI Analysis</span>
+                <span className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">Analysis</span>
                 {item.llmRisk && <RiskLabel risk={item.llmRisk} />}
               </div>
               <p className="text-[13px] text-muted-foreground/70 leading-relaxed">
