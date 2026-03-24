@@ -67,6 +67,60 @@ function scoreArrow(score: number): string {
   return "–";
 }
 
+function describeFundamentals(fund: BiasResult["fundamentalScore"]): string {
+  const parts: string[] = [];
+  const labelScore = (name: string, score: number) => {
+    if (score > 60) return `${name} bullish (${Math.round(score)})`;
+    if (score < 40) return `${name} bearish (${Math.round(score)})`;
+    return `${name} neutral (${Math.round(score)})`;
+  };
+  parts.push(labelScore("News sentiment", fund.newsSentiment));
+  parts.push(labelScore("market sentiment", fund.marketSentiment));
+  if (Math.abs(fund.centralBankPolicy - 50) > 5) parts.push(labelScore("central bank policy", fund.centralBankPolicy));
+  if (Math.abs(fund.intermarketCorrelation - 50) > 5) parts.push(labelScore("intermarket", fund.intermarketCorrelation));
+  return parts.join(", ") + ".";
+}
+
+function describeTechnicals(tech: BiasResult["technicalScore"]): string {
+  const parts: string[] = [];
+  const labelScore = (name: string, score: number) => {
+    if (score > 60) return `${name} bullish (${Math.round(score)})`;
+    if (score < 40) return `${name} bearish (${Math.round(score)})`;
+    return `${name} neutral (${Math.round(score)})`;
+  };
+  parts.push(labelScore("Trend", tech.trendDirection));
+  parts.push(labelScore("momentum", tech.momentum));
+  if (tech.volatility > 65) parts.push("elevated volatility");
+  else if (tech.volatility < 35) parts.push("compressed volatility");
+  if (Math.abs(tech.supportResistance - 50) > 5) parts.push(labelScore("S/R", tech.supportResistance));
+  return parts.join(", ") + ".";
+}
+
+function deriveRiskLevel(biasResult: BiasResult): "low" | "medium" | "high" {
+  const agreement = biasResult.signalAgreement;
+  const vol = biasResult.technicalScore.volatility;
+  const fundDir = biasResult.fundamentalScore.total > 50;
+  const techDir = biasResult.technicalScore.total > 50;
+  const conflicting = fundDir !== techDir;
+  if (conflicting || agreement < 0.3 || vol > 70) return "high";
+  if (agreement > 0.7 && !conflicting && vol < 60) return "low";
+  return "medium";
+}
+
+function deriveOutlook(biasResult: BiasResult): "bullish" | "bearish" | "neutral" {
+  if (biasResult.overallBias > 10) return "bullish";
+  if (biasResult.overallBias < -10) return "bearish";
+  return "neutral";
+}
+
+function deriveCatalysts(signals: BiasResult["signals"]): string[] {
+  return signals
+    .filter((s) => s.strength > 0.3 && s.description)
+    .sort((a, b) => b.strength - a.strength)
+    .slice(0, 4)
+    .map((s) => s.description);
+}
+
 function getRiskReasons(biasResult: BiasResult): string[] {
   const agreement = Math.round(biasResult.signalAgreement * 100);
   const fundBullish = biasResult.fundamentalScore.total > 50;
@@ -360,47 +414,56 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Analysis</span>
             </div>
             <div className="flex items-center gap-1.5">
-              {llmResult?.riskAssessment && (
-                <Tooltip>
-                  <TooltipTrigger
-                    className={cn(
-                      "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded cursor-default",
-                      llmResult.riskAssessment === "low" && "bg-bullish/15 text-bullish",
-                      llmResult.riskAssessment === "medium" && "bg-amber/15 text-[var(--amber)]",
-                      llmResult.riskAssessment === "high" && "bg-bearish/15 text-bearish"
-                    )}
-                  >
-                    {llmResult.riskAssessment} risk
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
-                    <div className="flex flex-col gap-0.5 py-0.5 text-[11px]">
-                      {getRiskReasons(biasResult).map((r, i) => (
-                        <span key={i} className={i === 0 ? "font-semibold" : "opacity-70"}>{r}</span>
-                      ))}
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              )}
-              {llmResult?.conviction && (
-                <span className={cn(
-                  "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
-                  llmResult.conviction === "high" && "bg-bullish/15 text-bullish",
-                  llmResult.conviction === "medium" && "bg-amber/15 text-[var(--amber)]",
-                  llmResult.conviction === "low" && "bg-muted text-muted-foreground",
-                )}>
-                  {llmResult.conviction}
-                </span>
-              )}
-              {llmResult?.outlook && (
-                <span className={cn(
-                  "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
-                  llmResult.outlook === "bullish" && "bg-bullish/15 text-bullish",
-                  llmResult.outlook === "bearish" && "bg-bearish/15 text-bearish",
-                  llmResult.outlook === "neutral" && "bg-neutral-accent/15 text-neutral-accent",
-                )}>
-                  {llmResult.outlook}
-                </span>
-              )}
+              {(() => {
+                const risk = llmResult?.riskAssessment || deriveRiskLevel(biasResult);
+                return (
+                  <Tooltip>
+                    <TooltipTrigger
+                      className={cn(
+                        "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded cursor-default",
+                        risk === "low" && "bg-bullish/15 text-bullish",
+                        risk === "medium" && "bg-amber/15 text-[var(--amber)]",
+                        risk === "high" && "bg-bearish/15 text-bearish"
+                      )}
+                    >
+                      {risk} risk
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs">
+                      <div className="flex flex-col gap-0.5 py-0.5 text-[11px]">
+                        {getRiskReasons(biasResult).map((r, i) => (
+                          <span key={i} className={i === 0 ? "font-semibold" : "opacity-70"}>{r}</span>
+                        ))}
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })()}
+              {(() => {
+                const conviction = llmResult?.conviction || (confidence > 70 ? "high" : confidence > 45 ? "medium" : "low");
+                return (
+                  <span className={cn(
+                    "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
+                    conviction === "high" && "bg-bullish/15 text-bullish",
+                    conviction === "medium" && "bg-amber/15 text-[var(--amber)]",
+                    conviction === "low" && "bg-muted text-muted-foreground",
+                  )}>
+                    {conviction}
+                  </span>
+                );
+              })()}
+              {(() => {
+                const outlook = llmResult?.outlook || deriveOutlook(biasResult);
+                return (
+                  <span className={cn(
+                    "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
+                    outlook === "bullish" && "bg-bullish/15 text-bullish",
+                    outlook === "bearish" && "bg-bearish/15 text-bearish",
+                    outlook === "neutral" && "bg-neutral-accent/15 text-neutral-accent",
+                  )}>
+                    {outlook}
+                  </span>
+                );
+              })()}
             </div>
           </div>
 
@@ -411,45 +474,56 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
 
           {/* Details — always visible */}
           <div className="mt-3 space-y-2.5 border-t border-border/20 pt-2.5">
-            {llmResult?.fundamentalReason && (
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <BiasDot score={fundScore} />
-                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Fundamentals</span>
+            {(() => {
+              const fundReason = llmResult?.fundamentalReason || describeFundamentals(fund);
+              return (
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <BiasDot score={fundScore} />
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Fundamentals</span>
+                  </div>
+                  <p className="text-sm text-foreground/65 leading-relaxed mt-0.5">{fundReason}</p>
                 </div>
-                <p className="text-sm text-foreground/65 leading-relaxed mt-0.5">{llmResult.fundamentalReason}</p>
-              </div>
-            )}
-            {llmResult?.technicalReason && (
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <BiasDot score={techScore} />
-                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Technicals</span>
+              );
+            })()}
+            {(() => {
+              const techReason = llmResult?.technicalReason || describeTechnicals(tech);
+              return (
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <BiasDot score={techScore} />
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Technicals</span>
+                  </div>
+                  <p className="text-sm text-foreground/65 leading-relaxed mt-0.5">{techReason}</p>
                 </div>
-                <p className="text-sm text-foreground/65 leading-relaxed mt-0.5">{llmResult.technicalReason}</p>
-              </div>
-            )}
-            {llmResult?.catalysts && llmResult.catalysts.length > 0 && (
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className={cn(
-                      "inline-block h-1.5 w-1.5 rounded-full shrink-0",
-                      llmResult.outlook === "bullish" ? "bg-bullish" : llmResult.outlook === "bearish" ? "bg-bearish" : "bg-muted-foreground/40"
-                    )}
-                  />
-                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Catalysts</span>
+              );
+            })()}
+            {(() => {
+              const catalysts = llmResult?.catalysts?.length ? llmResult.catalysts : deriveCatalysts(biasResult.signals);
+              const outlook = llmResult?.outlook || deriveOutlook(biasResult);
+              if (catalysts.length === 0) return null;
+              return (
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={cn(
+                        "inline-block h-1.5 w-1.5 rounded-full shrink-0",
+                        outlook === "bullish" ? "bg-bullish" : outlook === "bearish" ? "bg-bearish" : "bg-muted-foreground/40"
+                      )}
+                    />
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Catalysts</span>
+                  </div>
+                  <ul className="mt-0.5 space-y-0.5">
+                    {catalysts.map((c, i) => (
+                      <li key={i} className="text-sm text-foreground/65 leading-relaxed flex items-start gap-1.5">
+                        <span className="text-neutral-accent mt-1.5 shrink-0">&bull;</span>
+                        {c}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <ul className="mt-0.5 space-y-0.5">
-                  {llmResult.catalysts.map((c, i) => (
-                    <li key={i} className="text-sm text-foreground/65 leading-relaxed flex items-start gap-1.5">
-                      <span className="text-neutral-accent mt-1.5 shrink-0">&bull;</span>
-                      {c}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+              );
+            })()}
           </div>
         </div>
       )}
