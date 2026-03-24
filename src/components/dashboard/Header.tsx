@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { AlertsBell } from "@/components/alerts/AlertsPanel";
+import { SetupNotificationsBadge } from "./SetupNotifications";
 import { DataFeedStatus } from "./DataFeedStatus";
 
 interface HeaderProps {
@@ -112,6 +113,8 @@ export function Header({ mode = "analysis" }: HeaderProps) {
           <div className="hidden md:block">
             <DataFeedStatus />
           </div>
+
+          <SetupNotificationsBadge />
 
           <AlertsBell />
 

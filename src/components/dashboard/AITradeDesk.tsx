@@ -4,7 +4,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTradeDeskData } from "@/lib/hooks/useTradeDeskData";
 import { useTrackedSetups } from "@/lib/hooks/useTrackedSetups";
-import { useMarketStore } from "@/lib/store/market-store";
+import { useMarketStore, type PendingSetupInfo } from "@/lib/store/market-store";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import { getStatusLabel, isActionable, isRunning as isRunningStatus } from "@/lib/calculations/setup-tracker";
 import { getScaleInSize } from "@/lib/calculations/scale-in-detector";
@@ -1335,6 +1335,34 @@ export function AITradeDesk() {
   const { activeSetups, historySetups, confluencePatterns, dismissScaleIn } = useTrackedSetups(allSetups);
   const timeAgo = useTimeAgo([setups]);
   const { alerts: setupAlerts, dismiss: dismissAlert } = useSetupAlerts(setups);
+
+  // Update pending setups in store for header notification badge
+  const setPendingSetups = useMarketStore((s) => s.setPendingSetups);
+  useEffect(() => {
+    const now = Date.now();
+    const pending: PendingSetupInfo[] = setups
+      .filter((s) => {
+        // Only A+/A conviction, non-neutral
+        if (s.conviction !== "A+" && s.conviction !== "A") return false;
+        if (s.direction === "neutral") return false;
+        // "Pending entry" = price hasn't entered the entry zone yet
+        const price = s.currentPrice;
+        const inZone = price >= s.entry[0] && price <= s.entry[1];
+        return !inZone;
+      })
+      .map((s) => ({
+        instrumentId: s.instrumentId,
+        symbol: s.symbol,
+        direction: s.direction as "bullish" | "bearish",
+        conviction: s.conviction,
+        score: s.convictionScore,
+        strategy: getStrategyLabel(s).name,
+        entry: s.entry,
+        currentPrice: s.currentPrice,
+        detectedAt: now,
+      }));
+    setPendingSetups(pending);
+  }, [setups, setPendingSetups]);
 
   const portfolioRisk = useMemo(
     () =>

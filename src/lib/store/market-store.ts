@@ -7,6 +7,19 @@ import type { LLMAnalysisResult } from "@/lib/types/llm";
 import type { SmartAlert, AlertConfig } from "@/lib/types/alerts";
 import { DEFAULT_ALERT_CONFIG } from "@/lib/types/alerts";
 import { INSTRUMENTS } from "@/lib/utils/constants";
+import type { ConvictionTier } from "@/lib/types/signals";
+
+export interface PendingSetupInfo {
+  instrumentId: string;
+  symbol: string;
+  direction: "bullish" | "bearish";
+  conviction: ConvictionTier;
+  score: number;
+  strategy: string;
+  entry: [number, number];
+  currentPrice: number;
+  detectedAt: number;
+}
 
 export interface ADRStoreData {
   pips: number;
@@ -40,8 +53,10 @@ interface MarketStore {
   watchlistIds: string[];
   favoriteIds: string[];
   pinnedIds: string[];
+  pendingSetups: PendingSetupInfo[];
   bootStatus: Record<string, boolean>;
 
+  setPendingSetups: (setups: PendingSetupInfo[]) => void;
   setSelectedInstrument: (instrument: Instrument) => void;
   setSelectedTimeframe: (timeframe: string) => void;
   setBiasTimeframe: (timeframe: "intraday" | "intraweek") => void;
@@ -123,8 +138,10 @@ export const useMarketStore = create<MarketStore>((set) => ({
   watchlistIds: loadWatchlistIds(),
   favoriteIds: loadFavoriteIds(),
   pinnedIds: loadPinnedIds(),
+  pendingSetups: [],
   bootStatus: {},
 
+  setPendingSetups: (setups) => set({ pendingSetups: setups }),
   setSelectedInstrument: (instrument) => set({ selectedInstrument: instrument }),
   setSelectedTimeframe: (timeframe) => set({ selectedTimeframe: timeframe }),
   setBiasTimeframe: (timeframe) => set({ biasTimeframe: timeframe }),
