@@ -34,27 +34,72 @@ export function getMassiveTicker(instrumentId: string): string | null {
   return TICKER_MAP[instrumentId] || null;
 }
 
-// ── Timeframe → Polygon multiplier + timespan ──
-const TIMEFRAME_MAP: Record<string, { multiplier: number; timespan: string }> = {
-  "1min": { multiplier: 1, timespan: "minute" },
-  "5min": { multiplier: 5, timespan: "minute" },
-  "15m": { multiplier: 15, timespan: "minute" },
-  "15min": { multiplier: 15, timespan: "minute" },
-  "30min": { multiplier: 30, timespan: "minute" },
-  "1h": { multiplier: 1, timespan: "hour" },
-  "4h": { multiplier: 4, timespan: "hour" },
-  "1d": { multiplier: 1, timespan: "day" },
-  "1day": { multiplier: 1, timespan: "day" },
-  "1w": { multiplier: 1, timespan: "week" },
+// ── Timeframe → minutes per candle (for aggregation from 1-min data) ──
+const MINUTES_PER_CANDLE: Record<string, number> = {
+  "1min": 1,
+  "5min": 5,
+  "15m": 15,
+  "15min": 15,
+  "30min": 30,
+  "1h": 60,
+  "4h": 240,
 };
 
 /**
- * Fetch OHLCV candles from Massive (Polygon.io) aggregates endpoint.
+ * Aggregate 1-minute candles into larger timeframes.
  */
-export async function fetchMassiveCandles(
+function aggregateMinuteCandles(candles: OHLCV[], minutesPerCandle: number): OHLCV[] {
+  if (minutesPerCandle <= 1 || candles.length === 0) return candles;
+  const msPerCandle = minutesPerCandle * 60 * 1000;
+  const result: OHLCV[] = [];
+  let bucket: OHLCV[] = [];
+  let bucketStart = 0;
+
+  for (const c of candles) {
+    const cBucket = Math.floor(c.timestamp / msPerCandle);
+    if (bucket.length === 0) {
+      bucketStart = cBucket;
+      bucket.push(c);
+    } else if (cBucket === bucketStart) {
+      bucket.push(c);
+    } else {
+      result.push({
+        timestamp: bucket[0].timestamp,
+        open: bucket[0].open,
+        high: Math.max(...bucket.map((b) => b.high)),
+        low: Math.min(...bucket.map((b) => b.low)),
+        close: bucket[bucket.length - 1].close,
+        volume: bucket.reduce((sum, b) => sum + b.volume, 0),
+      });
+      bucket = [c];
+      bucketStart = cBucket;
+    }
+  }
+  // Flush last bucket
+  if (bucket.length > 0) {
+    result.push({
+      timestamp: bucket[0].timestamp,
+      open: bucket[0].open,
+      high: Math.max(...bucket.map((b) => b.high)),
+      low: Math.min(...bucket.map((b) => b.low)),
+      close: bucket[bucket.length - 1].close,
+      volume: bucket.reduce((sum, b) => sum + b.volume, 0),
+    });
+  }
+  return result;
+}
+
+/**
+ * Raw fetch from Polygon aggregates endpoint.
+ * Only use timespan "minute" or "day" on Currencies Starter plan.
+ */
+async function fetchRawAggs(
   ticker: string,
-  timeframe: string,
-  limit: number = 200
+  multiplier: number,
+  timespan: string,
+  from: number,
+  to: number,
+  limit: number
 ): Promise<OHLCV[]> {
   const apiKey = getApiKey();
   if (!apiKey) {
@@ -62,18 +107,11 @@ export async function fetchMassiveCandles(
     return [];
   }
 
-  const tf = TIMEFRAME_MAP[timeframe] || { multiplier: 1, timespan: "hour" };
-  const to = Date.now();
-  const daysBack =
-    tf.timespan === "day" || tf.timespan === "week" ? 365 :
-    tf.timespan === "hour" && tf.multiplier >= 4 ? 90 : 30;
-  const from = to - daysBack * 24 * 60 * 60 * 1000;
-
-  const url = `${BASE_URL}/v2/aggs/ticker/${encodeURIComponent(ticker)}/range/${tf.multiplier}/${tf.timespan}/${from}/${to}?apiKey=${apiKey}&limit=${limit}&sort=asc`;
+  const url = `${BASE_URL}/v2/aggs/ticker/${encodeURIComponent(ticker)}/range/${multiplier}/${timespan}/${from}/${to}?apiKey=${apiKey}&limit=${limit}&sort=asc`;
 
   const res = await fetch(url, { next: { revalidate: 120 } });
   if (!res.ok) {
-    console.warn(`[Massive] HTTP ${res.status} for ${ticker} (${timeframe})`);
+    console.warn(`[Massive] HTTP ${res.status} for ${ticker}`);
     return [];
   }
 
@@ -84,7 +122,7 @@ export async function fetchMassiveCandles(
   }
 
   if (!data.results || data.results.length === 0) {
-    console.warn(`[Massive] No results for ${ticker} (${timeframe})`);
+    console.warn(`[Massive] No results for ${ticker} (${multiplier}/${timespan})`);
     return [];
   }
 
@@ -96,6 +134,43 @@ export async function fetchMassiveCandles(
     close: r.c,
     volume: r.v || 0,
   }));
+}
+
+/**
+ * Fetch OHLCV candles for any timeframe.
+ * Currencies Starter plan only supports 1/minute and 1/day natively.
+ * For 5min, 15min, 1h, 4h — we fetch 1-minute candles and aggregate.
+ */
+export async function fetchMassiveCandles(
+  ticker: string,
+  timeframe: string,
+  limit: number = 200
+): Promise<OHLCV[]> {
+  // Daily/weekly — fetch directly
+  if (timeframe === "1d" || timeframe === "1day" || timeframe === "1w") {
+    const to = Date.now();
+    const daysBack = timeframe === "1w" ? 730 : 365;
+    const from = to - daysBack * 24 * 60 * 60 * 1000;
+    const timespan = timeframe === "1w" ? "week" : "day";
+    return fetchRawAggs(ticker, 1, timespan, from, to, limit);
+  }
+
+  // Minute-based timeframes — fetch 1-min candles and aggregate
+  const minsPerCandle = MINUTES_PER_CANDLE[timeframe] || 60;
+  const minutesNeeded = minsPerCandle * limit;
+  const daysBack = Math.ceil(minutesNeeded / (24 * 60)) + 2; // extra buffer
+  const to = Date.now();
+  const from = to - daysBack * 24 * 60 * 60 * 1000;
+  const fetchLimit = Math.min(minutesNeeded + 500, 50000); // Polygon max 50k per request
+
+  const minuteCandles = await fetchRawAggs(ticker, 1, "minute", from, to, fetchLimit);
+
+  if (minsPerCandle === 1) {
+    return minuteCandles.slice(-limit);
+  }
+
+  const aggregated = aggregateMinuteCandles(minuteCandles, minsPerCandle);
+  return aggregated.slice(-limit);
 }
 
 /**
