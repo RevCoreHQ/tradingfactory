@@ -69,12 +69,14 @@ const INSTRUMENT_CURRENCIES: Record<string, { base: string; quote: string }> = {
   BTC_USD: { base: "BTC", quote: "USD" },
   ETH_USD: { base: "ETH", quote: "USD" },
   US100:   { base: "US100", quote: "USD" },
+  US30:    { base: "US30", quote: "USD" },
+  USOIL:   { base: "USOIL", quote: "USD" },
 };
 
 const CORRELATED_GROUPS = [
   ["EUR_USD", "GBP_USD"],
   ["AUD_USD", "NZD_USD"],
-  ["US100"],
+  ["US100", "US30"],
   ["BTC_USD", "ETH_USD"],
 ];
 

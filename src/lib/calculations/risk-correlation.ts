@@ -15,13 +15,14 @@ const INSTRUMENT_CURRENCIES: Record<string, { base: string; quote: string }> = {
   BTC_USD: { base: "BTC", quote: "USD" },
   ETH_USD: { base: "ETH", quote: "USD" },
   US100:   { base: "US100", quote: "USD" },
+  US30:    { base: "US30", quote: "USD" },
 };
 
 /** Well-known correlation pairs */
 const CORRELATED_GROUPS = [
   { pairs: ["EUR_USD", "GBP_USD"], label: "EUR & GBP vs USD" },
   { pairs: ["AUD_USD", "NZD_USD"], label: "AUD & NZD vs USD" },
-  { pairs: ["US100"], label: "US indices" },
+  { pairs: ["US100", "US30"], label: "US indices" },
   { pairs: ["BTC_USD", "ETH_USD"], label: "Crypto" },
 ];
 

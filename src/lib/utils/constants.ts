@@ -93,6 +93,17 @@ export const INSTRUMENTS: Instrument[] = [
     pipSize: 0.001,
     decimalPlaces: 3,
   },
+  {
+    id: "USOIL",
+    symbol: "USOIL",
+    displayName: "US Oil (WTI)",
+    category: "commodity",
+    baseCurrency: "WTI",
+    quoteCurrency: "USD",
+    fmpSymbol: "WTIUSD",
+    pipSize: 0.01,
+    decimalPlaces: 2,
+  },
   // Crypto
   {
     id: "BTC_USD",
@@ -101,6 +112,7 @@ export const INSTRUMENTS: Instrument[] = [
     category: "crypto",
     baseCurrency: "BTC",
     quoteCurrency: "USD",
+    fmpSymbol: "BTCUSD",
     coingeckoId: "bitcoin",
     pipSize: 0.01,
     decimalPlaces: 2,
@@ -112,6 +124,7 @@ export const INSTRUMENTS: Instrument[] = [
     category: "crypto",
     baseCurrency: "ETH",
     quoteCurrency: "USD",
+    fmpSymbol: "ETHUSD",
     coingeckoId: "ethereum",
     pipSize: 0.01,
     decimalPlaces: 2,
@@ -123,8 +136,19 @@ export const INSTRUMENTS: Instrument[] = [
     displayName: "Nasdaq 100",
     category: "index",
     baseCurrency: "NDX",
+    fmpSymbol: "^IXIC",
     pipSize: 0.1,
     decimalPlaces: 1,
+  },
+  {
+    id: "US30",
+    symbol: "US30",
+    displayName: "Dow Jones 30",
+    category: "index",
+    baseCurrency: "DJI",
+    fmpSymbol: "^DJI",
+    pipSize: 1,
+    decimalPlaces: 0,
   },
 ];
 

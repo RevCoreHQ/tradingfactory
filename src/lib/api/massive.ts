@@ -19,11 +19,13 @@ const TICKER_MAP: Record<string, string> = {
   // Commodities
   XAU_USD: "C:XAUUSD",
   XAG_USD: "C:XAGUSD",
+  USOIL: "C:USOIL",
   // Crypto
   BTC_USD: "X:BTCUSD",
   ETH_USD: "X:ETHUSD",
   // Indices
   US100: "I:NDX",
+  US30: "I:DJI",
 };
 
 export function getMassiveTicker(instrumentId: string): string | null {

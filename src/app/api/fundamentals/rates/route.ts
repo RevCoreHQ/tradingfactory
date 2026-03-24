@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchMassiveQuotes } from "@/lib/api/massive";
+import { fetchFMPQuotes } from "@/lib/api/fmp";
 import { fetchCryptoPrice } from "@/lib/api/coingecko";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import type { PriceQuote } from "@/lib/types/market";
@@ -28,6 +29,30 @@ export async function GET(req: NextRequest) {
           high24h: q.high24h,
           low24h: q.low24h,
         };
+      }
+    }
+
+    // ── Fallback: FMP for missing indices/oil/crypto ──
+    const fmpMissing = requested.filter(
+      (i) => !quotes[i.id] && i.fmpSymbol
+    );
+    if (fmpMissing.length > 0) {
+      const fmpQuotes = await fetchFMPQuotes(fmpMissing.map((i) => i.id));
+      for (const inst of fmpMissing) {
+        const q = fmpQuotes[inst.id];
+        if (q && q.price > 0) {
+          quotes[inst.id] = {
+            instrument: inst.id,
+            bid: q.bid || q.price,
+            ask: q.ask || q.price,
+            mid: q.price,
+            timestamp: q.timestamp,
+            change: q.change,
+            changePercent: q.changePercent,
+            high24h: q.high24h,
+            low24h: q.low24h,
+          };
+        }
       }
     }
 

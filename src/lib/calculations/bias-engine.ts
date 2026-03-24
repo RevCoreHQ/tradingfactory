@@ -105,7 +105,7 @@ function scoreCentralBankPolicy(
   }
 
   // For crypto and indices, central bank policy is about monetary conditions
-  if (["BTC_USD", "ETH_USD", "US100", "XAU_USD"].includes(instrument)) {
+  if (["BTC_USD", "ETH_USD", "US100", "US30", "XAU_USD"].includes(instrument)) {
     const fed = banks.find((b) => b.currency === "USD");
     if (fed) {
       if (instrument === "XAU_USD") {
@@ -692,6 +692,7 @@ function getInstrumentCurrencies(instrument: string): { base: string[]; quote: s
     BTC_USD: { base: [], quote: ["USD"] },
     ETH_USD: { base: [], quote: ["USD"] },
     US100: { base: [], quote: ["USD"] },
+    US30: { base: [], quote: ["USD"] },
     XAU_USD: { base: ["XAU"], quote: ["USD"] },
   };
   return map[instrument] || { base: [], quote: [] };

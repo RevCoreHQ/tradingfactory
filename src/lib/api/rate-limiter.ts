@@ -5,6 +5,7 @@ interface RateLimitConfig {
 
 const PROVIDER_LIMITS: Record<string, RateLimitConfig> = {
   massive: { maxRequests: 100, windowMs: 60_000 },
+  fmp: { maxRequests: 4, windowMs: 60_000 },
   newsapi: { maxRequests: 90, windowMs: 86_400_000 },
   fred: { maxRequests: 100, windowMs: 60_000 },
   coingecko: { maxRequests: 25, windowMs: 60_000 },

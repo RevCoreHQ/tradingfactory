@@ -15,6 +15,7 @@ const TV_SYMBOL_MAP: Record<string, string> = {
   BTC_USD: "COINBASE:BTCUSD",
   ETH_USD: "COINBASE:ETHUSD",
   US100: "PEPPERSTONE:NAS100",
+  US30: "TVC:DJI",
 };
 
 const TV_INTERVAL_MAP: Record<string, string> = {

@@ -7,6 +7,7 @@ export interface Instrument {
   category: InstrumentCategory;
   baseCurrency: string;
   quoteCurrency?: string;
+  fmpSymbol?: string;
   coingeckoId?: string;
   fredSeriesIds?: string[];
   pipSize: number;
