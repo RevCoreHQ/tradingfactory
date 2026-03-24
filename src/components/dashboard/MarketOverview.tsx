@@ -38,7 +38,7 @@ export function MarketOverview() {
         <Header mode="overview" />
         <MarketHoursStrip />
 
-        <main className="max-w-[1400px] mx-auto px-8 py-6 space-y-8">
+        <main className="max-w-[1400px] mx-auto px-3 md:px-8 py-4 md:py-6 space-y-6 md:space-y-8">
           {/* Section 1: Market Pulse */}
           <section>
             <SectionHeader

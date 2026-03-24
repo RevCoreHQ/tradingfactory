@@ -365,6 +365,15 @@
   background: var(--border-bright);
 }
 
+/* Hide scrollbar utility */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* ===== System Page Animations ===== */
 
 /* Pipeline particle flow */

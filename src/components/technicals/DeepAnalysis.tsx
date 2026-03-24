@@ -402,7 +402,7 @@ function AIZoneAnalysis({ deepAnalysis, indicators, biasResult }: {
 
           {/* Bull / Bear Case */}
           {(zoneResult.bullCase || zoneResult.bearCase) && (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {zoneResult.bullCase && (
                 <div className="rounded-lg bg-green-500/5 border border-green-500/10 p-3">
                   <div className="flex items-center gap-1.5 mb-1.5">

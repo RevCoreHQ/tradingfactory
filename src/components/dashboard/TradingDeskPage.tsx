@@ -30,7 +30,7 @@ export function TradingDeskPage() {
         <Header mode="desk" />
         <MarketHoursStrip />
 
-        <main className="max-w-[1600px] mx-auto px-8 py-6 space-y-8">
+        <main className="max-w-[1600px] mx-auto px-3 md:px-8 py-4 md:py-6 space-y-6 md:space-y-8">
           <section>
             <SectionHeader
               title="Desk Manager"

@@ -87,7 +87,7 @@ export function InstrumentAnalysis() {
         <Watchlist />
 
         {/* Right: Main content */}
-        <main className="flex-1 min-w-0 px-6 py-4 space-y-6">
+        <main className="flex-1 min-w-0 px-3 md:px-6 py-4 space-y-6">
           <DailyBriefing />
 
           {/* ── Section 1: Fundamental Context ── */}

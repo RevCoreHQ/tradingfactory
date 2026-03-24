@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import { useMarketStore } from "@/lib/store/market-store";
 import { useRates } from "@/lib/hooks/useMarketData";
 import { cn } from "@/lib/utils";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { getChangeClass } from "@/lib/utils/formatters";
-import { Plus, X, Star } from "lucide-react";
+import { Plus, X, Star, ChevronRight } from "lucide-react";
 
 const CATEGORIES = [
   { key: "forex", label: "Forex" },
@@ -18,6 +18,7 @@ const CATEGORIES = [
 
 export function Watchlist() {
   const [addPanelOpen, setAddPanelOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const selectedInstrument = useMarketStore((s) => s.selectedInstrument);
   const setSelectedInstrument = useMarketStore((s) => s.setSelectedInstrument);
   const realtimeQuotes = useMarketStore((s) => s.realtimeQuotes);
@@ -28,6 +29,11 @@ export function Watchlist() {
   const toggleFavorite = useMarketStore((s) => s.toggleFavorite);
   const { data: ratesData } = useRates();
   const quotes = ratesData?.quotes || {};
+
+  // Close mobile watchlist when instrument is selected
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [selectedInstrument.id]);
 
   const watchlistInstruments = INSTRUMENTS.filter((i) => watchlistIds.includes(i.id));
   const availableToAdd = INSTRUMENTS.filter((i) => !watchlistIds.includes(i.id));
@@ -42,7 +48,32 @@ export function Watchlist() {
   };
 
   return (
-    <aside className="w-56 shrink-0 sticky top-12 h-[calc(100vh-3rem)] overflow-y-auto bg-background/60 backdrop-blur-xl border-r border-border/20">
+    <>
+      {/* Mobile toggle button */}
+      <button
+        onClick={() => setMobileOpen(!mobileOpen)}
+        className={cn(
+          "lg:hidden fixed left-0 top-16 z-40 bg-[var(--surface-1)] border border-border/30 border-l-0 rounded-r-lg p-2 shadow-md transition-transform",
+          mobileOpen && "translate-x-56"
+        )}
+        aria-label="Toggle watchlist"
+      >
+        <ChevronRight className={cn("h-4 w-4 text-muted-foreground transition-transform", mobileOpen && "rotate-180")} />
+      </button>
+
+      {/* Mobile backdrop */}
+      {mobileOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-30 bg-black/30 backdrop-blur-[2px]"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+    <aside className={cn(
+      "w-56 shrink-0 sticky top-12 h-[calc(100vh-3rem)] overflow-y-auto bg-background/60 backdrop-blur-xl border-r border-border/20",
+      "max-lg:fixed max-lg:left-0 max-lg:top-12 max-lg:z-30 max-lg:transition-transform max-lg:duration-200",
+      !mobileOpen && "max-lg:-translate-x-full"
+    )}>
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/20">
         <span className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -199,5 +230,6 @@ export function Watchlist() {
         })}
       </div>
     </aside>
+    </>
   );
 }
