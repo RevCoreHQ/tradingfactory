@@ -9,6 +9,7 @@ import { useLLMBatchAnalysis } from "./useLLMAnalysis";
 import { useADRData } from "./useADRData";
 import { calculateFundamentalScore, calculateOverallBias, applyLLMAnalysis } from "@/lib/calculations/bias-engine";
 import { computeADRRanks, calculateTradeSetup } from "@/lib/calculations/trade-setup";
+import { getBiasDirection } from "@/lib/utils/formatters";
 import type { TechnicalScore } from "@/lib/types/bias";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -24,12 +25,18 @@ const DEFAULT_TECHNICAL_SCORE: TechnicalScore = {
   supportResistance: 50,
 };
 
+// EMA smoothing alpha: 0 = fully previous, 1 = fully new.
+// 0.5 means each recalculation blends 50/50 with previous,
+// preventing single-calculation noise from flipping direction.
+const SMOOTH_ALPHA = 0.5;
+
 export function useAllBiasScores() {
   const setBiasResult = useMarketStore((s) => s.setBiasResult);
   const setAllBiasResults = useMarketStore((s) => s.setAllBiasResults);
   const setBatchLLMResults = useMarketStore((s) => s.setBatchLLMResults);
   const setBatchLLMReady = useMarketStore((s) => s.setBatchLLMReady);
   const setBatchLLMError = useMarketStore((s) => s.setBatchLLMError);
+  const prevBiasRef = useRef<Record<string, number>>({});
 
   const { data: newsData } = useMarketNews();
   const { data: fearGreedData } = useFearGreed();
@@ -78,6 +85,21 @@ export function useAllBiasScores() {
         undefined,
         fundamentalResult.signals
       );
+    }
+
+    // EMA smoothing: blend new bias with previous to prevent oscillation.
+    // On first load (no previous values), raw values pass through unchanged.
+    for (const inst of INSTRUMENTS) {
+      const result = intradayResults[inst.id];
+      const prevBias = prevBiasRef.current[inst.id];
+      if (result && prevBias !== undefined) {
+        const smoothedBias = SMOOTH_ALPHA * result.overallBias + (1 - SMOOTH_ALPHA) * prevBias;
+        intradayResults[inst.id] = {
+          ...result,
+          overallBias: smoothedBias,
+          direction: getBiasDirection(smoothedBias),
+        };
+      }
     }
 
     return { intraday: intradayResults, intraweek: {} as Record<string, ReturnType<typeof calculateOverallBias>> };
@@ -147,6 +169,13 @@ export function useAllBiasScores() {
 
     if (hash !== prevHashRef.current) {
       prevHashRef.current = hash;
+      // Update smoothing ref with latest values for next recalculation
+      const newPrevBias: Record<string, number> = {};
+      for (const [id, result] of Object.entries(allResults.intraday)) {
+        newPrevBias[id] = result.overallBias;
+      }
+      prevBiasRef.current = newPrevBias;
+
       setAllBiasResults("intraday", allResults.intraday);
       for (const [id, result] of Object.entries(allResults.intraday)) {
         setBiasResult(id, result);

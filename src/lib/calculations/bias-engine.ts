@@ -597,10 +597,12 @@ export function calculateOverallBias(
     100
   );
 
-  // Amplify signals when data is sparse — prevents clustering at neutral
-  if (isTechnicalDefault || isFundamentalDefault) {
-    overallBias = clamp(overallBias * 2.0, -100, 100);
-  }
+  // NOTE: The 2x sparse-data amplifier was removed because it caused
+  // instruments with conflicting fundamental signals (e.g. gold) to
+  // flip between bullish/bearish on each recalculation. The weight
+  // redistribution above already shifts weight to the non-default source,
+  // which is sufficient to produce directional signals without amplifying
+  // noise across the ±10 threshold.
 
   const direction = getBiasDirection(overallBias);
 
