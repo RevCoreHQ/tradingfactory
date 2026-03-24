@@ -22,7 +22,7 @@ interface Source {
 }
 
 const sources: Source[] = [
-  { name: "News Sentiment", provider: "Finnhub", icon: <Newspaper className="h-3.5 w-3.5" />, measures: "Headline sentiment (-1 to +1)", feedsInto: "Score > 60 = bullish, < 40 = bearish" },
+  { name: "News Sentiment", provider: "Massive", icon: <Newspaper className="h-3.5 w-3.5" />, measures: "Headline sentiment (-1 to +1)", feedsInto: "Score > 60 = bullish, < 40 = bearish" },
   { name: "Fear & Greed", provider: "Alternative.me", icon: <Gauge className="h-3.5 w-3.5" />, measures: "Market-wide sentiment (0-100)", feedsInto: "Greed = risk-on bullish, Fear = safe-haven bullish" },
   { name: "Central Bank", provider: "Manual + API", icon: <Landmark className="h-3.5 w-3.5" />, measures: "Rate decisions, hawk/dove stance", feedsInto: "Hiking = currency bullish (relative strength)" },
   { name: "Bond Yields", provider: "FRED", icon: <TrendingUp className="h-3.5 w-3.5" />, measures: "10Y, 5Y, 2Y yields + DXY", feedsInto: "Rising yields = stronger currency" },

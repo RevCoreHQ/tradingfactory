@@ -4,15 +4,13 @@ interface RateLimitConfig {
 }
 
 const PROVIDER_LIMITS: Record<string, RateLimitConfig> = {
-  finnhub: { maxRequests: 55, windowMs: 60_000 },
-  alphavantage: { maxRequests: 5, windowMs: 60_000 },
+  massive: { maxRequests: 100, windowMs: 60_000 },
   newsapi: { maxRequests: 90, windowMs: 86_400_000 },
   fred: { maxRequests: 100, windowMs: 60_000 },
   coingecko: { maxRequests: 25, windowMs: 60_000 },
   gemini: { maxRequests: 14, windowMs: 60_000 },
   openai: { maxRequests: 50, windowMs: 60_000 },
   anthropic: { maxRequests: 45, windowMs: 60_000 },
-  twelvedata: { maxRequests: 55, windowMs: 60_000 },
 };
 
 const requestLog: Record<string, number[]> = {};

@@ -2,12 +2,11 @@
 
 import { useEffect, useRef } from "react";
 import { useMarketStore } from "@/lib/store/market-store";
-import { connectFinnhubWS, disconnectFinnhubWS, isConnected } from "@/lib/websocket/finnhub-ws";
+import { connectPolygonWS, disconnectPolygonWS, isConnected } from "@/lib/websocket/polygon-ws";
 
 /**
- * Hook to start the Finnhub WebSocket connection.
- * Call this once at the app level (e.g., in MarketOverview or a provider).
- * Prices are pushed into the Zustand store as realtimeQuotes.
+ * Hook to start the Polygon WebSocket connection for real-time prices.
+ * Call this once at the app level. Prices are pushed into Zustand store.
  */
 export function useRealtimePrices() {
   const updateRealtimePrice = useMarketStore((s) => s.updateRealtimePrice);
@@ -18,18 +17,17 @@ export function useRealtimePrices() {
     if (initialized.current) return;
     initialized.current = true;
 
-    connectFinnhubWS((instrumentId, price, timestamp) => {
+    connectPolygonWS((instrumentId, price, timestamp) => {
       updateRealtimePrice(instrumentId, price, timestamp);
     });
 
-    // Check connection status periodically
     const statusInterval = setInterval(() => {
       setWsConnected(isConnected());
     }, 3000);
 
     return () => {
       clearInterval(statusInterval);
-      disconnectFinnhubWS();
+      disconnectPolygonWS();
       initialized.current = false;
     };
   }, [updateRealtimePrice, setWsConnected]);

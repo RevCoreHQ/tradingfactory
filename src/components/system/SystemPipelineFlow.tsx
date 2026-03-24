@@ -69,8 +69,7 @@ export function SystemPipelineFlow() {
 
         <PipelineStageCard number={1} title="Raw Market Data" subtitle="OHLCV candles, news feeds, economic data, rates" icon={<Database className="h-3.5 w-3.5" />} badge="data" accentColor="blue" defaultExpanded>
           <p>
-            Every signal starts with raw data. The system fetches OHLCV candles from Twelve Data (primary, paid tier)
-            with Finnhub and Alpha Vantage as fallbacks, across <strong>up to 6 timeframes (5M, 15M, 1H, 4H, Daily, Weekly)</strong>,
+            Every signal starts with raw data. The system fetches OHLCV candles via Massive (Polygon) across <strong>up to 6 timeframes (5M, 15M, 1H, 4H, Daily, Weekly)</strong>,
             selected per instrument based on trading style. 1H or 4H feed the signal engine; the remaining TFs provide MTF trend alignment context.
           </p>
           <p>
@@ -80,7 +79,7 @@ export function SystemPipelineFlow() {
             mechanical signal systems directly.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mt-2">
-            {["Finnhub", "Twelve Data", "FMP", "Alternative.me"].map((src) => (
+            {["Massive (Polygon)", "FMP", "Alternative.me"].map((src) => (
               <span key={src} className="text-[11px] font-mono text-neutral-accent/60 bg-neutral-accent/8 px-2 py-1 rounded text-center">{src}</span>
             ))}
           </div>

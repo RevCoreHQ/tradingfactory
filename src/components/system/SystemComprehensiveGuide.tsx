@@ -106,9 +106,7 @@ export function SystemComprehensiveGuide() {
         <h4 className="text-[12px] font-bold text-foreground/70 uppercase tracking-wider">Market Data</h4>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
           {[
-            { src: "Twelve Data", role: "Primary — OHLCV candles across 4 TFs", tier: "Paid" },
-            { src: "Finnhub", role: "Fallback candles + news headlines + sentiment", tier: "Free" },
-            { src: "Alpha Vantage", role: "Secondary fallback for price data", tier: "Free" },
+            { src: "Massive (Polygon)", role: "OHLCV candles across 4 TFs + news headlines + sentiment", tier: "Paid" },
           ].map((s) => (
             <div key={s.src} className="bg-neutral-accent/8 border border-neutral-accent/15 rounded-md px-2.5 py-1.5">
               <div className="text-[12px] font-semibold text-neutral-accent/80">{s.src}</div>
@@ -123,7 +121,7 @@ export function SystemComprehensiveGuide() {
         <h4 className="text-[12px] font-bold text-foreground/70 uppercase tracking-wider mt-2">Fundamental Data (Parallel Track — Separate From Signals)</h4>
         <div className="bg-surface-2/30 rounded-md overflow-hidden">
           <TRow cells={["Source", "Data", "API"]} header />
-          <TRow cells={["Finnhub", "News headlines + sentiment", "REST"]} />
+          <TRow cells={["Massive", "News headlines + sentiment", "REST"]} />
           <TRow cells={["Alternative.me", "Fear & Greed Index", "REST"]} />
           <TRow cells={["FMP", "Central bank policy, bond yields, COT", "REST"]} />
           <TRow cells={["FMP", "Economic calendar (CPI, GDP, NFP)", "REST"]} />
@@ -592,8 +590,7 @@ export function SystemComprehensiveGuide() {
         <pre className="text-[10px] sm:text-[11px] font-mono text-muted-foreground/60 bg-surface-2/30 rounded-md px-3 py-3 overflow-x-auto whitespace-pre leading-relaxed">
 {`┌─────────────────────────────────────────────────────────────┐
 │                    EXTERNAL DATA SOURCES                     │
-│  Twelve Data ─── OHLCV candles (5M-Weekly, style-dependent) │
-│  Finnhub ─────── News headlines + sentiment                  │
+│  Massive (Polygon) ── OHLCV candles (5M-Weekly) + sentiment  │
 │  Alternative.me ─ Fear & Greed Index                         │
 │  FMP ──────────── Central banks, yields, COT, calendar       │
 └──────────────────────┬──────────────────────────────────────┘

@@ -253,7 +253,7 @@ export function SystemFlowDiagram() {
             <FlowNode
               icon={<Database className="h-3 w-3" />}
               label="Price APIs"
-              subtitle="Twelve Data / Finnhub / CoinGecko — 5m to Weekly (style-specific)"
+              subtitle="Massive (Polygon) / CoinGecko — 5m to Weekly (style-specific)"
               color="blue"
               badge="data"
             />

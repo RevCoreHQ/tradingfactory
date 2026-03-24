@@ -7,7 +7,7 @@ export async function GET() {
     anthropic: !!process.env.ANTHROPIC_API_KEY,
     gemini: !!process.env.GEMINI_API_KEY,
     openai: !!process.env.OPENAI_API_KEY,
-    finnhub: !!process.env.FINNHUB_API_KEY,
+    massive: !!process.env.MASSIVE_API_KEY,
     fmp: !!process.env.FMP_API_KEY,
   };
 
@@ -15,7 +15,7 @@ export async function GET() {
     anthropic: process.env.ANTHROPIC_API_KEY?.length ?? 0,
     gemini: process.env.GEMINI_API_KEY?.length ?? 0,
     openai: process.env.OPENAI_API_KEY?.length ?? 0,
-    finnhub: process.env.FINNHUB_API_KEY?.length ?? 0,
+    massive: process.env.MASSIVE_API_KEY?.length ?? 0,
     fmp: process.env.FMP_API_KEY?.length ?? 0,
   };
 

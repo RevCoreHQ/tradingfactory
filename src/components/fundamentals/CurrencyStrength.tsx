@@ -21,8 +21,8 @@ function computeCurrencyStrengths(
         const bias = biasResults[inst.id];
         if (!bias) continue;
 
-        const isBase = inst.alphavantageSymbol === currency;
-        const isQuote = inst.alphavantageToSymbol === currency;
+        const isBase = inst.baseCurrency === currency;
+        const isQuote = inst.quoteCurrency === currency;
 
         if (isBase) {
           totalBias += bias.overallBias;

@@ -190,65 +190,16 @@ export async function fetchMassiveCandles(
 }
 
 /**
- * Convenience: fetch candles by instrument ID and timeframe.
- */
-/**
- * Finnhub resolution mapping for candle timeframes.
- */
-const FINNHUB_RESOLUTION: Record<string, string> = {
-  "1min": "1",
-  "5min": "5",
-  "15m": "15",
-  "15min": "15",
-  "30min": "30",
-  "1h": "60",
-  "4h": "240",  // Not natively supported by Finnhub free — but we try
-  "1d": "D",
-  "1day": "D",
-  "1w": "W",
-};
-
-/**
- * Fetch candles by instrument ID — Polygon primary, Finnhub fallback.
+ * Fetch candles by instrument ID using Polygon.
  */
 export async function fetchCandlesForInstrument(
   instrumentId: string,
   timeframe: string,
   limit: number = 200
 ): Promise<OHLCV[]> {
-  // Try Polygon first
   const ticker = getMassiveTicker(instrumentId);
-  if (ticker) {
-    const candles = await fetchMassiveCandles(ticker, timeframe, limit);
-    if (candles.length >= 20) return candles;
-  }
-
-  // Fallback: Finnhub
-  const finnhubKey = process.env.FINNHUB_API_KEY;
-  if (!finnhubKey) return [];
-
-  try {
-    // Dynamic import to avoid circular deps
-    const { fetchForexCandleData } = await import("@/lib/api/finnhub");
-
-    // Look up Finnhub symbol from constants
-    const { INSTRUMENTS } = await import("@/lib/utils/constants");
-    const inst = INSTRUMENTS.find((i) => i.id === instrumentId);
-    const finnhubSymbol = inst?.finnhubSymbol;
-    if (!finnhubSymbol) return [];
-
-    const resolution = FINNHUB_RESOLUTION[timeframe] || "60";
-    const now = Math.floor(Date.now() / 1000);
-    const config = TIMEFRAME_CONFIG[timeframe] || { daysBack: 30 };
-    const from = now - config.daysBack * 86400;
-
-    console.log(`[Massive] Polygon empty for ${instrumentId}, trying Finnhub ${finnhubSymbol}`);
-    const candles = await fetchForexCandleData(finnhubSymbol, resolution, from, now);
-    return candles.slice(-limit);
-  } catch (err) {
-    console.warn(`[Massive] Finnhub fallback failed for ${instrumentId}:`, err);
-    return [];
-  }
+  if (!ticker) return [];
+  return fetchMassiveCandles(ticker, timeframe, limit);
 }
 
 // ── Snapshot types ──
@@ -390,4 +341,127 @@ export async function fetchMassiveForexQuotes(
   tickers: string[]
 ): Promise<Record<string, SnapshotQuote>> {
   return fetchSnapshot("forex", tickers);
+}
+
+// ── Gainers / Losers ──
+
+export interface MoverEntry {
+  ticker: string;
+  change: number;
+  changePercent: number;
+  price: number;
+  updated: number;
+}
+
+/**
+ * Fetch top forex gainers or losers from Polygon snapshot.
+ */
+export async function fetchMassiveMovers(
+  direction: "gainers" | "losers"
+): Promise<MoverEntry[]> {
+  const apiKey = getApiKey();
+  if (!apiKey) return [];
+
+  const url = `${BASE_URL}/v2/snapshot/locale/global/markets/forex/${direction}?apiKey=${apiKey}`;
+  const res = await fetch(url, { next: { revalidate: 60 } });
+  if (!res.ok) return [];
+
+  const data = await res.json();
+  return (data.tickers || []).map((t: Record<string, unknown>) => ({
+    ticker: t.ticker as string,
+    change: (t.todaysChange as number) || 0,
+    changePercent: (t.todaysChangePerc as number) || 0,
+    price: ((t as Record<string, Record<string, number>>).lastQuote?.a + (t as Record<string, Record<string, number>>).lastQuote?.b) / 2 || 0,
+    updated: typeof t.updated === "number" ? Math.floor(t.updated as number / 1_000_000) : Date.now(),
+  }));
+}
+
+// ── Technical Indicators (server-side from Polygon) ──
+
+export interface IndicatorValue {
+  timestamp: number;
+  value: number;
+  signal?: number;
+  histogram?: number;
+}
+
+/**
+ * Fetch a Polygon technical indicator (sma, ema, rsi, macd).
+ */
+export async function fetchMassiveIndicator(
+  ticker: string,
+  indicator: "sma" | "ema" | "rsi" | "macd",
+  options: { timespan?: string; window?: number; limit?: number } = {}
+): Promise<IndicatorValue[]> {
+  const apiKey = getApiKey();
+  if (!apiKey) return [];
+
+  const { timespan = "day", window = 14, limit = 50 } = options;
+  const params = new URLSearchParams({
+    apiKey,
+    timespan,
+    limit: String(limit),
+    ...(indicator !== "macd" ? { window: String(window) } : {}),
+  });
+
+  const url = `${BASE_URL}/v1/indicators/${indicator}/${ticker}?${params}`;
+  const res = await fetch(url, { next: { revalidate: 120 } });
+  if (!res.ok) return [];
+
+  const data = await res.json();
+  const values = data.results?.values || [];
+
+  return values.map((v: Record<string, number>) => ({
+    timestamp: v.timestamp,
+    value: v.value,
+    ...(indicator === "macd" ? { signal: v.signal, histogram: v.histogram } : {}),
+  }));
+}
+
+// ── Universal Snapshot ──
+
+export interface UniversalSnapshotEntry {
+  ticker: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  prevClose: number;
+  volume: number;
+  updated: number;
+}
+
+/**
+ * Fetch enhanced multi-asset quotes via Polygon Universal Snapshot.
+ */
+export async function fetchUniversalSnapshot(
+  tickers: string[]
+): Promise<UniversalSnapshotEntry[]> {
+  const apiKey = getApiKey();
+  if (!apiKey || tickers.length === 0) return [];
+
+  const url = `${BASE_URL}/v3/snapshot?ticker.any_of=${tickers.join(",")}&apiKey=${apiKey}`;
+  const res = await fetch(url, { next: { revalidate: 30 } });
+  if (!res.ok) return [];
+
+  const data = await res.json();
+  return (data.results || []).map((r: Record<string, unknown>) => {
+    const session = r.session as Record<string, number> | undefined;
+    return {
+      ticker: r.ticker as string,
+      price: session?.close || 0,
+      change: session?.change || 0,
+      changePercent: session?.change_percent || 0,
+      open: session?.open || 0,
+      high: session?.high || 0,
+      low: session?.low || 0,
+      close: session?.close || 0,
+      prevClose: session?.previous_close || 0,
+      volume: session?.volume || 0,
+      updated: typeof r.last_updated === "number" ? r.last_updated as number : Date.now(),
+    };
+  });
 }
