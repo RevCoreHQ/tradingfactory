@@ -1,22 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchForexCandleData, fetchCandles } from "@/lib/api/finnhub";
-import { fetchCryptoOHLC } from "@/lib/api/coingecko";
-import { fetchForexDaily, fetchForexIntraday } from "@/lib/api/alpha-vantage";
-import { fetchTwelveDataCandles, TWELVE_DATA_INTERVALS } from "@/lib/api/twelve-data";
+import { fetchCandlesForInstrument } from "@/lib/api/massive";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import type { OHLCV } from "@/lib/types/market";
-
-const RESOLUTION_MAP: Record<string, string> = {
-  "1min": "1",
-  "5min": "5",
-  "15m": "15",
-  "15min": "15",
-  "30min": "30",
-  "1h": "60",
-  "4h": "240",
-  "1d": "D",
-  "1w": "W",
-};
 
 /**
  * Aggregate smaller candles into larger ones.
@@ -51,84 +36,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ candles: [], instrument: instrumentId, timeframe }, { status: 200 });
     }
 
-    let candles: OHLCV[] = [];
-    const now = Math.floor(Date.now() / 1000);
-    const daysBack = timeframe === "1d" || timeframe === "1w" ? 365 : timeframe === "4h" ? 90 : 30;
-    const from = now - daysBack * 24 * 60 * 60;
+    let candles = await fetchCandlesForInstrument(instrumentId, timeframe, limit);
 
-    if (instrument.category === "crypto") {
-      const days = timeframe === "1d" || timeframe === "1w" ? 365 : timeframe === "4h" ? 90 : 30;
-      const coingeckoId = instrument.coingeckoId || "bitcoin";
-      candles = await fetchCryptoOHLC(coingeckoId, days);
-    } else if (instrument.category === "forex" || instrument.category === "commodity") {
-      // Primary: Twelve Data (paid, 55 req/min)
-      try {
-        const tdInterval = TWELVE_DATA_INTERVALS[timeframe] || "1h";
-        const tdSymbol = instrument.twelveDataSymbol || instrument.symbol;
-        candles = await fetchTwelveDataCandles(tdSymbol, tdInterval, limit);
-      } catch (err) {
-        console.warn(`[PriceData] TwelveData failed for ${instrument.symbol}:`, err);
-        candles = [];
-      }
-
-      // Fallback 2: Finnhub /forex/candle
-      if (candles.length === 0) {
-        const finnhubSym = instrument.finnhubSymbol || "";
-        const resolution = RESOLUTION_MAP[timeframe] || "60";
-        try {
-          candles = await fetchForexCandleData(finnhubSym, resolution, from, now);
-        } catch (err) {
-          console.warn(`[PriceData] Finnhub failed for ${finnhubSym}:`, err);
-          candles = [];
-        }
-      }
-
-      // Fallback 3: Alpha Vantage (5 calls/min)
-      if (candles.length === 0) {
-        try {
-          if (timeframe === "1d" || timeframe === "1w") {
-            candles = await fetchForexDaily(
-              instrument.alphavantageSymbol,
-              instrument.alphavantageToSymbol || "USD"
-            );
-          } else {
-            candles = await fetchForexIntraday(
-              instrument.alphavantageSymbol,
-              instrument.alphavantageToSymbol || "USD",
-              "60min"
-            );
-            if (timeframe === "4h") {
-              candles = aggregateCandles(candles, 4);
-            }
-          }
-        } catch (err) {
-          console.warn(`[PriceData] AlphaVantage failed for ${instrument.alphavantageSymbol}:`, err);
-          candles = [];
-        }
-      }
-    } else {
-      // Index — try Twelve Data first, then Finnhub
-      try {
-        const tdInterval = TWELVE_DATA_INTERVALS[timeframe] || "1h";
-        const tdSymbol = instrument.twelveDataSymbol || instrument.symbol;
-        candles = await fetchTwelveDataCandles(tdSymbol, tdInterval, limit);
-      } catch (err) {
-        console.warn(`[PriceData] TwelveData failed for index ${instrument.symbol}:`, err);
-        candles = [];
-      }
-      if (candles.length === 0) {
-        try {
-          const fhSymbol = instrument.finnhubSymbol || "";
-          const resolution = RESOLUTION_MAP[timeframe] || "D";
-          // FOREXCOM symbols use /stock/candle, OANDA symbols use /forex/candle
-          candles = fhSymbol.startsWith("OANDA:")
-            ? await fetchForexCandleData(fhSymbol, resolution, from, now)
-            : await fetchCandles(fhSymbol, resolution, from, now);
-        } catch (err) {
-          console.warn(`[PriceData] Finnhub failed for index ${instrument.finnhubSymbol}:`, err);
-          candles = [];
-        }
-      }
+    // If 4h not directly available, aggregate from 1h
+    if (candles.length === 0 && timeframe === "4h") {
+      const hourly = await fetchCandlesForInstrument(instrumentId, "1h", limit * 4);
+      candles = aggregateCandles(hourly, 4);
     }
 
     candles = candles.slice(-limit);
