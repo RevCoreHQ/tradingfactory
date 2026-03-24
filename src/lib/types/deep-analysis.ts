@@ -101,4 +101,13 @@ export interface DeepAnalysisLLMResult {
   keyLevelsToWatch: string[];
   summary: string;
   zoneAnalysis?: string; // Narrative analysis of how zones interact with price
+  // Comprehensive analysis fields
+  marketContext?: string; // 2-4 sentences on macro setup, what's driving this asset
+  bullCase?: string; // 2-3 sentences on why price could go up
+  bearCase?: string; // 2-3 sentences on why price could go down
+  directionalBias?: "bullish" | "bearish" | "neutral";
+  conviction?: "low" | "medium" | "high";
+  actionableTake?: string; // 2-3 sentences — the bottom line
+  riskRewardAssessment?: string; // 1-2 sentences on risk/reward at current levels
+  catalysts?: string[]; // upcoming events or factors that could trigger a move
 }

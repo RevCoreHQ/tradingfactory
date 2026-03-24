@@ -706,14 +706,22 @@ export async function generateMarketSummary(
 
 import type { DeepAnalysisLLMResult } from "@/lib/types/deep-analysis";
 
-const DEEP_ANALYSIS_SYSTEM_PROMPT = `You are an elite price action and order flow analyst at a prop trading desk. Given supply/demand zones, Fair Value Gaps (ICT concepts), confluence levels, and technical context, provide zone analysis commentary.
+const DEEP_ANALYSIS_SYSTEM_PROMPT = `You are an elite macro strategist and price action analyst at a prop trading desk. Given supply/demand zones, Fair Value Gaps (ICT concepts), confluence levels, technical context, and macro data, provide a comprehensive market analysis — the kind of thorough breakdown a senior analyst would present at a morning desk meeting.
 
 Rules:
 - Do NOT generate trade ideas, entries, stop losses, or take profits. The mechanical system handles trade generation.
-- Identify which supply/demand zones are most significant and why (significantZones).
-- List 2-3 key levels to watch for confirmation or rejection (keyLevelsToWatch).
-- Provide a brief summary of the overall price structure.
-- Provide a zoneAnalysis: 1-3 sentences analyzing how the zones interact with current price action and what that implies structurally.
+- marketContext: 2-4 sentences setting up the big picture. What macro forces are driving this asset right now? Reference specific data (DXY, yields, central bank stance, fear/greed, news sentiment). Be specific — cite numbers.
+- bullCase: 2-3 sentences making the strongest case for price going higher. Reference specific technical levels, support zones, oversold conditions, or macro tailwinds.
+- bearCase: 2-3 sentences making the strongest case for price going lower. Reference specific resistance zones, overbought conditions, trend direction, or macro headwinds.
+- directionalBias: "bullish", "bearish", or "neutral" — your overall lean given all the evidence.
+- conviction: "low", "medium", or "high" — how confident are you in that lean? Low if signals conflict, high if everything aligns.
+- actionableTake: 2-3 sentences giving the bottom line. If you had to brief a portfolio manager in 30 seconds, what would you say? Be direct and specific. Reference the key level or catalyst that would change the thesis.
+- riskRewardAssessment: 1-2 sentences on the risk/reward at current price. Is the market offering good asymmetry? Is it a fade or a chase?
+- significantZones: Identify which supply/demand zones are most significant and why.
+- keyLevelsToWatch: 2-3 key levels for confirmation or rejection.
+- summary: 1-2 sentences on overall price structure.
+- zoneAnalysis: 2-3 sentences on how zones interact with current price action and what that implies.
+- catalysts: 2-3 upcoming events or factors that could trigger the next move.
 - Respond with valid JSON only.`;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -783,10 +791,18 @@ ${req.news.map((n: { headline: string; sentiment: string }) => `  [${n.sentiment
   prompt += `
 Respond with JSON:
 {
+  "marketContext": "<2-4 sentences on macro setup and what's driving this asset>",
+  "bullCase": "<2-3 sentences — strongest case for price going higher>",
+  "bearCase": "<2-3 sentences — strongest case for price going lower>",
+  "directionalBias": "bullish" | "bearish" | "neutral",
+  "conviction": "low" | "medium" | "high",
+  "actionableTake": "<2-3 sentences — bottom line briefing>",
+  "riskRewardAssessment": "<1-2 sentences on risk/reward asymmetry>",
   "significantZones": ["<zone description>"],
   "keyLevelsToWatch": ["<level to watch>"],
-  "summary": "<brief price structure summary>",
-  "zoneAnalysis": "<1-3 sentences on how zones interact with current price>"
+  "summary": "<1-2 sentences on overall price structure>",
+  "zoneAnalysis": "<2-3 sentences on how zones interact with current price>",
+  "catalysts": ["<upcoming event or factor>"]
 }`;
 
   return prompt;
@@ -807,6 +823,14 @@ function parseDeepAnalysisResult(raw: string): DeepAnalysisLLMResult | null {
         : [],
       summary: String(parsed.summary ?? ""),
       zoneAnalysis: parsed.zoneAnalysis ? String(parsed.zoneAnalysis) : undefined,
+      marketContext: parsed.marketContext ? String(parsed.marketContext) : undefined,
+      bullCase: parsed.bullCase ? String(parsed.bullCase) : undefined,
+      bearCase: parsed.bearCase ? String(parsed.bearCase) : undefined,
+      directionalBias: ["bullish", "bearish", "neutral"].includes(parsed.directionalBias) ? parsed.directionalBias : undefined,
+      conviction: ["low", "medium", "high"].includes(parsed.conviction) ? parsed.conviction : undefined,
+      actionableTake: parsed.actionableTake ? String(parsed.actionableTake) : undefined,
+      riskRewardAssessment: parsed.riskRewardAssessment ? String(parsed.riskRewardAssessment) : undefined,
+      catalysts: Array.isArray(parsed.catalysts) ? parsed.catalysts.map(String).slice(0, 5) : undefined,
     };
   } catch (err) {
     console.error("Failed to parse deep analysis response:", err);
@@ -818,7 +842,7 @@ function parseDeepAnalysisResult(raw: string): DeepAnalysisLLMResult | null {
 export async function analyzeDeepAnalysis(req: any): Promise<DeepAnalysisLLMResult | null> {
   const userPrompt = buildDeepAnalysisPrompt(req);
   // Use Sonnet for quality — this is single-instrument deep analysis
-  const response = await callLLM(DEEP_ANALYSIS_SYSTEM_PROMPT, userPrompt, 1536);
+  const response = await callLLM(DEEP_ANALYSIS_SYSTEM_PROMPT, userPrompt, 3072);
   if (!response) return null;
 
   return parseDeepAnalysisResult(response.text);

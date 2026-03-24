@@ -360,22 +360,111 @@ function AIZoneAnalysis({ deepAnalysis, indicators, biasResult }: {
           <div className="h-3 w-3/4 shimmer rounded" />
         </div>
       ) : zoneResult ? (
-        <div className="space-y-3">
-          {zoneResult.summary && (
-            <p className="text-[13px] text-muted-foreground leading-snug border-l-2 border-neutral-accent/30 pl-3">
-              {zoneResult.summary}
-            </p>
+        <div className="space-y-4">
+          {/* Directional Bias + Conviction header */}
+          {zoneResult.directionalBias && (
+            <div className="flex items-center gap-2">
+              {zoneResult.directionalBias === "bullish" ? (
+                <TrendingUp className="h-4 w-4 text-green-500" />
+              ) : zoneResult.directionalBias === "bearish" ? (
+                <TrendingDown className="h-4 w-4 text-red-500" />
+              ) : (
+                <Layers className="h-4 w-4 text-yellow-500" />
+              )}
+              <span className={cn(
+                "text-[13px] font-bold uppercase tracking-wide",
+                zoneResult.directionalBias === "bullish" ? "text-green-500" : zoneResult.directionalBias === "bearish" ? "text-red-500" : "text-yellow-500"
+              )}>
+                {zoneResult.directionalBias} Bias
+              </span>
+              {zoneResult.conviction && (
+                <span className={cn(
+                  "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
+                  zoneResult.conviction === "high" ? "bg-green-500/15 text-green-500" :
+                  zoneResult.conviction === "medium" ? "bg-yellow-500/15 text-yellow-500" :
+                  "bg-muted-foreground/15 text-muted-foreground/60"
+                )}>
+                  {zoneResult.conviction} conviction
+                </span>
+              )}
+            </div>
           )}
 
-          {zoneResult.zoneAnalysis && (
-            <p className="text-[13px] text-foreground/80 leading-snug">
-              {zoneResult.zoneAnalysis}
-            </p>
+          {/* Market Context */}
+          {zoneResult.marketContext && (
+            <div>
+              <span className="text-[11px] font-bold text-muted-foreground/50 uppercase tracking-wider">Market Context</span>
+              <p className="text-[13px] text-foreground/80 leading-relaxed mt-1">
+                {zoneResult.marketContext}
+              </p>
+            </div>
           )}
 
+          {/* Bull / Bear Case */}
+          {(zoneResult.bullCase || zoneResult.bearCase) && (
+            <div className="grid grid-cols-2 gap-3">
+              {zoneResult.bullCase && (
+                <div className="rounded-lg bg-green-500/5 border border-green-500/10 p-3">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <TrendingUp className="h-3 w-3 text-green-500" />
+                    <span className="text-[11px] font-bold text-green-500 uppercase tracking-wider">Bull Case</span>
+                  </div>
+                  <p className="text-[12px] text-foreground/70 leading-relaxed">{zoneResult.bullCase}</p>
+                </div>
+              )}
+              {zoneResult.bearCase && (
+                <div className="rounded-lg bg-red-500/5 border border-red-500/10 p-3">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <TrendingDown className="h-3 w-3 text-red-500" />
+                    <span className="text-[11px] font-bold text-red-500 uppercase tracking-wider">Bear Case</span>
+                  </div>
+                  <p className="text-[12px] text-foreground/70 leading-relaxed">{zoneResult.bearCase}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Actionable Take */}
+          {zoneResult.actionableTake && (
+            <div className="border-l-2 border-neutral-accent/40 pl-3">
+              <span className="text-[11px] font-bold text-neutral-accent uppercase tracking-wider">Bottom Line</span>
+              <p className="text-[13px] text-foreground/85 leading-relaxed mt-1 font-medium">
+                {zoneResult.actionableTake}
+              </p>
+            </div>
+          )}
+
+          {/* Risk/Reward Assessment */}
+          {zoneResult.riskRewardAssessment && (
+            <div>
+              <span className="text-[11px] font-bold text-muted-foreground/50 uppercase tracking-wider">Risk / Reward</span>
+              <p className="text-[13px] text-foreground/70 leading-relaxed mt-1">
+                {zoneResult.riskRewardAssessment}
+              </p>
+            </div>
+          )}
+
+          {/* Price Structure + Zone Analysis */}
+          {(zoneResult.summary || zoneResult.zoneAnalysis) && (
+            <div>
+              <span className="text-[11px] font-bold text-muted-foreground/50 uppercase tracking-wider">Price Structure</span>
+              {zoneResult.summary && (
+                <p className="text-[13px] text-muted-foreground leading-snug mt-1">
+                  {zoneResult.summary}
+                </p>
+              )}
+              {zoneResult.zoneAnalysis && (
+                <p className="text-[13px] text-foreground/70 leading-snug mt-1">
+                  {zoneResult.zoneAnalysis}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Significant Zones */}
           {zoneResult.significantZones.length > 0 && (
             <div>
-              <span className="text-[11px] font-bold text-muted-foreground/50 uppercase tracking-wider">Significant Zones</span>
+              <span className="text-[11px] font-bold text-muted-foreground/50 uppercase tracking-wider">Key Zones</span>
               <div className="flex flex-wrap gap-1 mt-1">
                 {zoneResult.significantZones.map((zone, i) => (
                   <span key={i} className="text-[11px] px-1.5 py-0.5 rounded bg-[var(--surface-2)] text-muted-foreground/60">
@@ -386,13 +475,28 @@ function AIZoneAnalysis({ deepAnalysis, indicators, biasResult }: {
             </div>
           )}
 
+          {/* Key Levels to Watch */}
           {zoneResult.keyLevelsToWatch.length > 0 && (
             <div className="flex items-start gap-2">
               <Target className="h-3.5 w-3.5 text-muted-foreground/40 mt-0.5 shrink-0" />
               <div className="space-y-1">
-                <span className="text-[11px] font-bold text-muted-foreground/50 uppercase tracking-wider">Watch</span>
+                <span className="text-[11px] font-bold text-muted-foreground/50 uppercase tracking-wider">Levels to Watch</span>
                 {zoneResult.keyLevelsToWatch.map((level, i) => (
                   <p key={i} className="text-[12px] text-muted-foreground/60">{level}</p>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Catalysts */}
+          {zoneResult.catalysts && zoneResult.catalysts.length > 0 && (
+            <div>
+              <span className="text-[11px] font-bold text-muted-foreground/50 uppercase tracking-wider">Catalysts</span>
+              <div className="space-y-1 mt-1">
+                {zoneResult.catalysts.map((c, i) => (
+                  <p key={i} className="text-[12px] text-muted-foreground/60 flex items-start gap-1.5">
+                    <span className="text-neutral-accent mt-0.5">•</span> {c}
+                  </p>
                 ))}
               </div>
             </div>
