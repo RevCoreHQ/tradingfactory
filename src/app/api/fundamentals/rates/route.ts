@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchMassiveQuotes } from "@/lib/api/massive";
+import { fetchMassiveQuotes, fetchUniversalSnapshot, getMassiveTicker } from "@/lib/api/massive";
 import { fetchFMPQuotes } from "@/lib/api/fmp";
 import { fetchCryptoPrice } from "@/lib/api/coingecko";
 import { INSTRUMENTS } from "@/lib/utils/constants";
@@ -33,7 +33,44 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // ── Fallback: FMP for missing indices/oil/crypto ──
+    // ── Fallback 2: Universal Snapshot for indices/commodities missing from forex snapshot ──
+    const usMissing = requested.filter((i) => !quotes[i.id]);
+    if (usMissing.length > 0) {
+      const usTickers = usMissing
+        .map((i) => getMassiveTicker(i.id))
+        .filter((t): t is string => t !== null);
+      if (usTickers.length > 0) {
+        try {
+          const snapEntries = await fetchUniversalSnapshot(usTickers);
+          for (const entry of snapEntries) {
+            const inst = usMissing.find(
+              (i) => getMassiveTicker(i.id) === entry.ticker
+            );
+            if (inst && entry.price > 0) {
+              quotes[inst.id] = {
+                instrument: inst.id,
+                bid: entry.price,
+                ask: entry.price,
+                mid: entry.price,
+                timestamp: entry.updated,
+                change: entry.change,
+                changePercent: entry.changePercent,
+                high24h: entry.high,
+                low24h: entry.low,
+                open: entry.open,
+                prevClose: entry.prevClose,
+                volume: entry.volume,
+                provider: "polygon",
+              };
+            }
+          }
+        } catch {
+          // Silent — fall through to FMP
+        }
+      }
+    }
+
+    // ── Fallback 3: FMP for still-missing indices/oil/crypto ──
     const fmpMissing = requested.filter(
       (i) => !quotes[i.id] && i.fmpSymbol
     );
@@ -58,7 +95,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // ── Fallback: CoinGecko for missing crypto ──
+    // ── Fallback 4: CoinGecko for missing crypto ──
     const cryptoMissing = requested.filter(
       (i) => i.category === "crypto" && !quotes[i.id]
     );

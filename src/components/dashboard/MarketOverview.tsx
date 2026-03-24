@@ -2,6 +2,7 @@
 
 import { Header } from "./Header";
 import { MarketPulse } from "./MarketPulse";
+import { ForexMovers } from "./ForexMovers";
 import { SectionHeader } from "./SectionHeader";
 import { AIMarketSummary } from "./AIMarketSummary";
 import { RedNewsWeek } from "@/components/fundamentals/RedNewsWeek";
@@ -62,6 +63,7 @@ export function MarketOverview() {
               accentColor="blue"
             />
             <MarketPulse />
+            <ForexMovers />
             <BiasAccuracySummary />
           </motion.section>
 
