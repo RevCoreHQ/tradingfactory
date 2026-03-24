@@ -111,11 +111,23 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
     llmSummary &&
     ((isBullish && /\bbearish\b/i.test(llmSummary) && !/\bbullish\b/i.test(llmSummary)) ||
      (isBearish && /\bbullish\b/i.test(llmSummary) && !/\bbearish\b/i.test(llmSummary)));
+
+  // Generate deterministic summary from scores when LLM hasn't returned yet
+  const fundTotal = biasResult.fundamentalScore.total;
+  const techTotal = biasResult.technicalScore.total;
+  const dir = isBullish ? "bullish" : isBearish ? "bearish" : "neutral";
+  const fundLabel = fundTotal > 55 ? "bullish" : fundTotal < 45 ? "bearish" : "neutral";
+  const techLabel = techTotal > 55 ? "bullish" : techTotal < 45 ? "bearish" : "neutral";
+  const conflicting = fundLabel !== techLabel && fundLabel !== "neutral" && techLabel !== "neutral";
+  const deterministicSummary = conflicting
+    ? `Mixed signals: fundamentals are ${fundLabel} (${Math.round(fundTotal)}) while technicals are ${techLabel} (${Math.round(techTotal)}). Confidence is reduced due to conflicting inputs.`
+    : `${instrument.symbol} shows ${dir} bias with fundamentals at ${Math.round(fundTotal)} and technicals at ${Math.round(techTotal)}. ${biasResult.signalAgreement > 0.7 ? "Strong signal agreement supports conviction." : biasResult.signalAgreement < 0.4 ? "Low signal agreement warrants caution." : "Moderate signal agreement."}`;
+
   const summaryText =
     (summaryContradictsDirection ? null : llmSummary) ||
     biasResult.fundamentalReason ||
     biasResult.technicalReason ||
-    null;
+    deterministicSummary;
 
   // Scores
   const fund = biasResult.fundamentalScore;
