@@ -266,26 +266,80 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
       {/* AI Analysis — inset container */}
       {summaryText && (
         <div className="bg-[var(--surface-0)] rounded-lg p-3 mb-4 flex-1">
-          <div className="flex items-center gap-1.5 mb-2">
-            <Sparkles className="h-3.5 w-3.5 text-neutral-accent" />
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">AI Analysis</span>
-          </div>
-          <p
-            className={cn(
-              "text-sm text-foreground/70 leading-relaxed",
-              !expanded && "line-clamp-3"
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-neutral-accent" />
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">AI Analysis</span>
+            </div>
+            {llmResult?.outlook && (
+              <div className="flex items-center gap-1.5">
+                {llmResult.conviction && (
+                  <span className={cn(
+                    "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
+                    llmResult.conviction === "high" && "bg-bullish/15 text-bullish",
+                    llmResult.conviction === "medium" && "bg-amber/15 text-[var(--amber)]",
+                    llmResult.conviction === "low" && "bg-muted text-muted-foreground",
+                  )}>
+                    {llmResult.conviction}
+                  </span>
+                )}
+                <span className={cn(
+                  "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
+                  llmResult.outlook === "bullish" && "bg-bullish/15 text-bullish",
+                  llmResult.outlook === "bearish" && "bg-bearish/15 text-bearish",
+                  llmResult.outlook === "neutral" && "bg-neutral-accent/15 text-neutral-accent",
+                )}>
+                  {llmResult.outlook}
+                </span>
+              </div>
             )}
-          >
+          </div>
+
+          {/* Summary */}
+          <p className={cn(
+            "text-sm text-foreground/70 leading-relaxed",
+            !expanded && "line-clamp-3"
+          )}>
             {summaryText}
           </p>
-          {summaryText.length > 120 && (
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className="text-xs text-neutral-accent hover:text-neutral-accent/80 mt-1.5 font-medium"
-            >
-              {expanded ? "Read less" : "Read more"}
-            </button>
+
+          {/* Expanded details */}
+          {expanded && (
+            <div className="mt-3 space-y-2.5 border-t border-border/20 pt-2.5">
+              {llmResult?.fundamentalReason && (
+                <div>
+                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Fundamentals</span>
+                  <p className="text-sm text-foreground/65 leading-relaxed mt-0.5">{llmResult.fundamentalReason}</p>
+                </div>
+              )}
+              {llmResult?.technicalReason && (
+                <div>
+                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Technicals</span>
+                  <p className="text-sm text-foreground/65 leading-relaxed mt-0.5">{llmResult.technicalReason}</p>
+                </div>
+              )}
+              {llmResult?.catalysts && llmResult.catalysts.length > 0 && (
+                <div>
+                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Catalysts</span>
+                  <ul className="mt-0.5 space-y-0.5">
+                    {llmResult.catalysts.map((c, i) => (
+                      <li key={i} className="text-sm text-foreground/65 leading-relaxed flex items-start gap-1.5">
+                        <span className="text-neutral-accent mt-1.5 shrink-0">•</span>
+                        {c}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
           )}
+
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="text-xs text-neutral-accent hover:text-neutral-accent/80 mt-1.5 font-medium"
+          >
+            {expanded ? "Read less" : "Read more"}
+          </button>
         </div>
       )}
 

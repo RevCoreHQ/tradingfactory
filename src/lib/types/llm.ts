@@ -18,6 +18,8 @@ export interface LLMAnalysisResult {
   projectedMovePercent?: number;
   riskAssessment?: "low" | "medium" | "high";
   catalysts?: string[];
+  outlook?: "bullish" | "bearish" | "neutral";
+  conviction?: "low" | "medium" | "high";
 }
 
 export interface LLMBatchResult {

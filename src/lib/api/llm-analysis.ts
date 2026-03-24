@@ -49,18 +49,20 @@ Rules:
 - Include catalysts: 1-3 upcoming events or factors that could trigger a move.
 - Respond with valid JSON only. Do not include any markdown formatting or explanation outside the JSON.`;
 
-const BATCH_SYSTEM_PROMPT = `You are an elite quantitative market analyst. Provide narrative context and risk assessment for multiple instruments. Be concise — keep each instrument's analysis compact. You do NOT adjust scores or influence the mechanical scoring system.
+const BATCH_SYSTEM_PROMPT = `You are an elite quantitative market analyst writing for professional traders. Provide detailed narrative context and actionable risk assessment for multiple instruments. You do NOT adjust scores or influence the mechanical scoring system.
 
 Rules per instrument:
 - confidence: 0-100
-- signals: exactly 2 signals per instrument (keep descriptions under 15 words)
-- summary: one short sentence describing current market context
-- fundamentalReason: one sentence on what drives the fundamental picture
-- technicalReason: one sentence on what drives the technical picture
+- signals: exactly 2 signals per instrument (keep descriptions under 20 words)
+- summary: 2-3 sentences giving a comprehensive market context overview — what's driving price, key macro forces, and the current narrative
+- fundamentalReason: 2-3 sentences explaining the fundamental picture — central bank policy impact, economic data, geopolitical factors, institutional flows, and how they interact
+- technicalReason: 2-3 sentences explaining the technical picture — trend structure, key patterns, momentum shifts, volume dynamics, and what they suggest for near-term direction
 - keyLevels: { support, resistance } — key price levels
 - projectedMovePercent: 0.1-5.0
 - riskAssessment: "low" | "medium" | "high"
-- catalysts: 1-2 short items
+- catalysts: 2-4 specific upcoming events or factors that could move price (be specific with dates/events when possible)
+- outlook: "bullish" | "bearish" | "neutral" — your directional lean
+- conviction: "low" | "medium" | "high" — how strongly you believe in the outlook
 - Respond with valid JSON only.`;
 
 // ---------------------------------------------------------------------------
@@ -176,8 +178,8 @@ ${inst.instrument} (${inst.category}):
   }
 
   prompt += `
-Respond with JSON. Use the exact instrument names as keys. Keep signals to 2 per instrument with short descriptions.
-{"results":{"<instrumentId>":{"confidence":<0-100>,"signals":[{"source":"<name>","signal":"bullish"|"bearish"|"neutral","strength":<0-100>,"description":"<brief>"}],"summary":"<one sentence>","fundamentalReason":"<one sentence>","technicalReason":"<one sentence>","keyLevels":{"support":<price>,"resistance":<price>},"projectedMovePercent":<0.1-5.0>,"riskAssessment":"low"|"medium"|"high","catalysts":["<catalyst>"]}}}
+Respond with JSON. Use the exact instrument names as keys. Keep signals to 2 per instrument. Write detailed, professional analysis — traders rely on this.
+{"results":{"<instrumentId>":{"confidence":<0-100>,"signals":[{"source":"<name>","signal":"bullish"|"bearish"|"neutral","strength":<0-100>,"description":"<concise reasoning>"}],"summary":"<2-3 sentence market context>","fundamentalReason":"<2-3 sentences on fundamentals>","technicalReason":"<2-3 sentences on technicals>","keyLevels":{"support":<price>,"resistance":<price>},"projectedMovePercent":<0.1-5.0>,"riskAssessment":"low"|"medium"|"high","catalysts":["<specific catalyst 1>","<specific catalyst 2>"],"outlook":"bullish"|"bearish"|"neutral","conviction":"low"|"medium"|"high"}}}
 
 Keys: ${req.instruments.map((i) => `"${i.instrument}"`).join(", ")}`;
 
@@ -475,6 +477,12 @@ function parseBatchResult(
         catalysts: Array.isArray(d.catalysts)
           ? (d.catalysts as string[]).map(String).slice(0, 5)
           : undefined,
+        outlook: ["bullish", "bearish", "neutral"].includes(d.outlook as string)
+          ? (d.outlook as "bullish" | "bearish" | "neutral")
+          : undefined,
+        conviction: ["low", "medium", "high"].includes(d.conviction as string)
+          ? (d.conviction as "low" | "medium" | "high")
+          : undefined,
       };
     }
 
@@ -534,10 +542,10 @@ export async function analyzeBatchInstruments(
   }
 
   const userPrompt = buildBatchPrompt(req);
-  // Each instrument needs ~300 tokens (signals, summary, reasons, catalysts, key levels, etc.)
+  // Each instrument needs ~700 tokens for detailed analysis (summary, fundamental, technical, catalysts, etc.)
   // Plus ~100 tokens for the outer JSON wrapper
-  const maxTokens = Math.min(8192, req.instruments.length * 350 + 100);
-  // Use Haiku for batch — 10x faster and cheaper than Sonnet, plenty capable for bias adjustments
+  const maxTokens = Math.min(16384, req.instruments.length * 700 + 100);
+  // Use Haiku for batch — 10x faster and cheaper than Sonnet, plenty capable for detailed analysis
   const response = await callLLM(BATCH_SYSTEM_PROMPT, userPrompt, maxTokens, "claude-haiku-4-5-20251001");
   if (!response) return null;
 
