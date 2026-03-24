@@ -66,19 +66,15 @@ const INSTRUMENT_CURRENCIES: Record<string, { base: string; quote: string }> = {
   USD_CHF: { base: "USD", quote: "CHF" },
   XAU_USD: { base: "XAU", quote: "USD" },
   XAG_USD: { base: "XAG", quote: "USD" },
-  USOIL:   { base: "USOIL", quote: "USD" },
   BTC_USD: { base: "BTC", quote: "USD" },
   ETH_USD: { base: "ETH", quote: "USD" },
   US100:   { base: "US100", quote: "USD" },
-  US30:    { base: "US30", quote: "USD" },
-  SPX500:  { base: "SPX500", quote: "USD" },
-  US2000:  { base: "US2000", quote: "USD" },
 };
 
 const CORRELATED_GROUPS = [
   ["EUR_USD", "GBP_USD"],
   ["AUD_USD", "NZD_USD"],
-  ["US100", "US30", "SPX500", "US2000"],
+  ["US100"],
   ["BTC_USD", "ETH_USD"],
 ];
 

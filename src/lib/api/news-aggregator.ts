@@ -16,7 +16,6 @@ export function filterNewsByInstrument(news: NewsItem[], instrumentId: string): 
     USD_JPY: ["jpy", "yen", "boj", "bank of japan", "usd/jpy", "japan"],
     BTC_USD: ["bitcoin", "btc", "crypto", "cryptocurrency", "satoshi", "blockchain"],
     US100: ["nasdaq", "us100", "tech stocks", "technology", "big tech", "us tech"],
-    US30: ["dow", "us30", "dow jones", "djia", "blue chip"],
   };
 
   const relevantKeywords = keywords[instrumentId] || [];

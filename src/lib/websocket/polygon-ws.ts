@@ -13,7 +13,6 @@ for (const inst of INSTRUMENTS) {
   } else if (inst.category === "commodity") {
     if (id === "XAU_USD") TICKER_TO_INSTRUMENT.set("C:XAUUSD", id);
     if (id === "XAG_USD") TICKER_TO_INSTRUMENT.set("C:XAGUSD", id);
-    if (id === "USOIL") TICKER_TO_INSTRUMENT.set("C:USOIL", id);
   } else if (inst.category === "crypto") {
     if (id === "BTC_USD") TICKER_TO_INSTRUMENT.set("X:BTCUSD", id);
     if (id === "ETH_USD") TICKER_TO_INSTRUMENT.set("X:ETHUSD", id);

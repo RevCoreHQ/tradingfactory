@@ -13,13 +13,9 @@ export const SPREAD_TABLE: Record<string, number> = {
   USD_CHF: 1.5,
   XAU_USD: 3.0,
   XAG_USD: 3.0,
-  USOIL: 3.0,
   BTC_USD: 15.0,
   ETH_USD: 1.5,
   US100: 1.5,
-  US30: 3.0,
-  SPX500: 0.5,
-  US2000: 0.3,
 };
 
 export interface ExecutionCost {

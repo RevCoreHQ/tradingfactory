@@ -16,18 +16,14 @@ const TICKER_MAP: Record<string, string> = {
   USD_JPY: "C:USDJPY",
   USD_CAD: "C:USDCAD",
   USD_CHF: "C:USDCHF",
-  // Commodities (under Currencies plan)
+  // Commodities
   XAU_USD: "C:XAUUSD",
   XAG_USD: "C:XAGUSD",
-  USOIL: "C:USOIL",
-  // Crypto (under Currencies plan)
+  // Crypto
   BTC_USD: "X:BTCUSD",
   ETH_USD: "X:ETHUSD",
-  // Indices (requires Indices plan)
+  // Indices
   US100: "I:NDX",
-  US30: "I:DJI",
-  SPX500: "I:SPX",
-  US2000: "I:RUT",
 };
 
 export function getMassiveTicker(instrumentId: string): string | null {

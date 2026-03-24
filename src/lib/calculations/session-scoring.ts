@@ -76,9 +76,6 @@ export const INSTRUMENT_SESSIONS: Record<string, TradingSession[]> = {
   BTC_USD: ["london", "newyork"],
   ETH_USD: ["london", "newyork"],
   US100: ["newyork"],
-  US30: ["newyork"],
-  SPX500: ["newyork"],
-  US2000: ["newyork"],
 };
 
 /** Session descriptions for UI display */
@@ -94,16 +91,13 @@ const SESSION_REASONS: Record<string, string> = {
   BTC_USD: "Highest volume during London–NY",
   ETH_USD: "Highest volume during London–NY",
   US100: "US market hours only",
-  US30: "US market hours only",
-  SPX500: "US market hours only",
-  US2000: "US market hours only",
 };
 
 /** Instruments that trade 24/7 (ignore weekend/holiday checks) */
 const CRYPTO_INSTRUMENTS = new Set(["BTC_USD", "ETH_USD"]);
 
 /** Instruments that follow US equity calendar (close on US holidays) */
-const US_INDEX_INSTRUMENTS = new Set(["US100", "US30", "SPX500", "US2000"]);
+const US_INDEX_INSTRUMENTS = new Set(["US100"]);
 
 // ==================== WEEKEND / HOLIDAY CHECKS ====================
 
