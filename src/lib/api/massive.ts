@@ -91,7 +91,6 @@ function aggregateMinuteCandles(candles: OHLCV[], minutesPerCandle: number): OHL
 
 /**
  * Raw fetch from Polygon aggregates endpoint.
- * Only use timespan "minute" or "day" on Currencies Starter plan.
  */
 async function fetchRawAggs(
   ticker: string,
@@ -107,11 +106,12 @@ async function fetchRawAggs(
     return [];
   }
 
-  const url = `${BASE_URL}/v2/aggs/ticker/${encodeURIComponent(ticker)}/range/${multiplier}/${timespan}/${from}/${to}?apiKey=${apiKey}&limit=${limit}&sort=asc`;
+  // Use raw ticker in URL path — do NOT encodeURIComponent (colons are valid in paths)
+  const url = `${BASE_URL}/v2/aggs/ticker/${ticker}/range/${multiplier}/${timespan}/${from}/${to}?apiKey=${apiKey}&limit=${limit}&sort=asc`;
 
   const res = await fetch(url, { next: { revalidate: 120 } });
   if (!res.ok) {
-    console.warn(`[Massive] HTTP ${res.status} for ${ticker}`);
+    console.warn(`[Massive] HTTP ${res.status} for ${ticker} (${multiplier}/${timespan})`);
     return [];
   }
 
@@ -137,40 +137,56 @@ async function fetchRawAggs(
 }
 
 /**
+ * Polygon timespan mapping — fetch candles directly using native timespans
+ * instead of fetching 1-minute data and aggregating client-side.
+ */
+const TIMEFRAME_CONFIG: Record<string, { multiplier: number; timespan: string; daysBack: number }> = {
+  "1min":  { multiplier: 1,  timespan: "minute", daysBack: 2 },
+  "5min":  { multiplier: 5,  timespan: "minute", daysBack: 5 },
+  "15m":   { multiplier: 15, timespan: "minute", daysBack: 10 },
+  "15min": { multiplier: 15, timespan: "minute", daysBack: 10 },
+  "30min": { multiplier: 30, timespan: "minute", daysBack: 15 },
+  "1h":    { multiplier: 1,  timespan: "hour",   daysBack: 30 },
+  "4h":    { multiplier: 4,  timespan: "hour",   daysBack: 90 },
+  "1d":    { multiplier: 1,  timespan: "day",    daysBack: 365 },
+  "1day":  { multiplier: 1,  timespan: "day",    daysBack: 365 },
+  "1w":    { multiplier: 1,  timespan: "week",   daysBack: 730 },
+};
+
+/**
  * Fetch OHLCV candles for any timeframe.
- * Currencies Starter plan only supports 1/minute and 1/day natively.
- * For 5min, 15min, 1h, 4h — we fetch 1-minute candles and aggregate.
+ * Uses native Polygon timespans (hour, day, week) directly — no client-side aggregation needed.
+ * Falls back to 1-minute aggregation only if native fetch returns empty.
  */
 export async function fetchMassiveCandles(
   ticker: string,
   timeframe: string,
   limit: number = 200
 ): Promise<OHLCV[]> {
-  // Daily/weekly — fetch directly
-  if (timeframe === "1d" || timeframe === "1day" || timeframe === "1w") {
-    const to = Date.now();
-    const daysBack = timeframe === "1w" ? 730 : 365;
-    const from = to - daysBack * 24 * 60 * 60 * 1000;
-    const timespan = timeframe === "1w" ? "week" : "day";
-    return fetchRawAggs(ticker, 1, timespan, from, to, limit);
-  }
-
-  // Minute-based timeframes — fetch 1-min candles and aggregate
-  const minsPerCandle = MINUTES_PER_CANDLE[timeframe] || 60;
-  const minutesNeeded = minsPerCandle * limit;
-  const daysBack = Math.ceil(minutesNeeded / (24 * 60)) + 2; // extra buffer
+  const config = TIMEFRAME_CONFIG[timeframe] || { multiplier: 1, timespan: "hour", daysBack: 30 };
   const to = Date.now();
-  const from = to - daysBack * 24 * 60 * 60 * 1000;
-  const fetchLimit = Math.min(minutesNeeded + 500, 50000); // Polygon max 50k per request
+  const from = to - config.daysBack * 24 * 60 * 60 * 1000;
 
-  const minuteCandles = await fetchRawAggs(ticker, 1, "minute", from, to, fetchLimit);
-
-  if (minsPerCandle === 1) {
-    return minuteCandles.slice(-limit);
+  // Try native timespan first
+  const native = await fetchRawAggs(ticker, config.multiplier, config.timespan, from, to, limit);
+  if (native.length >= 20) {
+    return native.slice(-limit);
   }
 
-  const aggregated = aggregateMinuteCandles(minuteCandles, minsPerCandle);
-  return aggregated.slice(-limit);
+  // Fallback: fetch 1-minute candles and aggregate (for plans that restrict timespans)
+  const minsPerCandle = MINUTES_PER_CANDLE[timeframe] || 60;
+  if (minsPerCandle > 1 && config.timespan !== "minute") {
+    console.warn(`[Massive] Native ${config.timespan} returned ${native.length} for ${ticker}, falling back to minute aggregation`);
+    const minutesNeeded = minsPerCandle * limit;
+    const daysBackFallback = Math.ceil(minutesNeeded / (24 * 60)) + 2;
+    const fromFallback = to - daysBackFallback * 24 * 60 * 60 * 1000;
+    const fetchLimit = Math.min(minutesNeeded + 500, 50000);
+    const minuteCandles = await fetchRawAggs(ticker, 1, "minute", fromFallback, to, fetchLimit);
+    const aggregated = aggregateMinuteCandles(minuteCandles, minsPerCandle);
+    return aggregated.slice(-limit);
+  }
+
+  return native.slice(-limit);
 }
 
 /**
