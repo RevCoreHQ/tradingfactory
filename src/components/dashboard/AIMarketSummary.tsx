@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+
 import { useMarketSummary } from "@/lib/hooks/useMarketSummary";
 import { cn } from "@/lib/utils";
-import { Sparkles, AlertTriangle, Zap, ChevronDown, RefreshCw } from "lucide-react";
+import { Sparkles, AlertTriangle, Zap, RefreshCw } from "lucide-react";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
 
 function splitHeadlineBody(overview: string): { headline: string; body: string } {
@@ -78,94 +78,61 @@ function SectorCard({
     avoidPairs?: string[];
   };
 }) {
-  const [expanded, setExpanded] = useState(false);
-
   return (
-    <button
-      onClick={() => setExpanded(!expanded)}
+    <div
       className={cn(
-        "bg-[var(--surface-2)] rounded-lg p-3 border border-border/30 text-left w-full transition-colors",
-        "hover:border-border-bright cursor-pointer"
+        "bg-[var(--surface-2)] rounded-lg p-3 border border-border/30 text-left w-full",
       )}
     >
       <div className="flex items-center justify-between mb-2">
         <span className="text-[13px] font-semibold capitalize text-foreground">
           {sector.sector}
         </span>
-        <div className="flex items-center gap-1.5">
-          <OutlookBadge outlook={sector.outlook} />
-          <motion.div
-            animate={{ rotate: expanded ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <ChevronDown className="h-3 w-3 text-muted-foreground/30" />
-          </motion.div>
-        </div>
+        <OutlookBadge outlook={sector.outlook} />
       </div>
 
-      {!expanded && sector.keyAssets.length > 0 && (
-        <p className="text-[12px] text-muted-foreground leading-snug truncate">
-          {sector.keyAssets[0]}
-        </p>
-      )}
-
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="overflow-hidden"
+      <div className="space-y-1.5 pt-1">
+        {sector.keyAssets.map((asset, i) => (
+          <p
+            key={i}
+            className="text-[13px] text-muted-foreground leading-snug"
           >
-            <div className="space-y-1.5 pt-1">
-              {sector.keyAssets.map((asset, i) => (
-                <motion.p
-                  key={i}
-                  initial={{ opacity: 0, x: -4 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.05, duration: 0.2 }}
-                  className="text-[13px] text-muted-foreground leading-snug"
-                >
-                  <span className="text-muted-foreground/30 mr-1.5">&bull;</span>
-                  {asset}
-                </motion.p>
-              ))}
-              {sector.focusPairs && sector.focusPairs.length > 0 && (
-                <div className="mt-2 pt-2 border-t border-border/30">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-bullish">
-                    Focus
-                  </span>
-                  {sector.focusPairs.map((fp, j) => (
-                    <p
-                      key={j}
-                      className="text-[12px] text-bullish/80 leading-snug pl-3"
-                    >
-                      &bull; {fp}
-                    </p>
-                  ))}
-                </div>
-              )}
-              {sector.avoidPairs && sector.avoidPairs.length > 0 && (
-                <div className="mt-1">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    Avoid
-                  </span>
-                  {sector.avoidPairs.map((ap, j) => (
-                    <p
-                      key={j}
-                      className="text-[12px] text-muted-foreground/60 leading-snug pl-3"
-                    >
-                      &bull; {ap}
-                    </p>
-                  ))}
-                </div>
-              )}
-            </div>
-          </motion.div>
+            <span className="text-muted-foreground/30 mr-1.5">&bull;</span>
+            {asset}
+          </p>
+        ))}
+        {sector.focusPairs && sector.focusPairs.length > 0 && (
+          <div className="mt-2 pt-2 border-t border-border/30">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-bullish">
+              Focus
+            </span>
+            {sector.focusPairs.map((fp, j) => (
+              <p
+                key={j}
+                className="text-[12px] text-bullish/80 leading-snug pl-3"
+              >
+                &bull; {fp}
+              </p>
+            ))}
+          </div>
         )}
-      </AnimatePresence>
-    </button>
+        {sector.avoidPairs && sector.avoidPairs.length > 0 && (
+          <div className="mt-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+              Avoid
+            </span>
+            {sector.avoidPairs.map((ap, j) => (
+              <p
+                key={j}
+                className="text-[12px] text-muted-foreground/60 leading-snug pl-3"
+              >
+                &bull; {ap}
+              </p>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
