@@ -34,12 +34,14 @@ export function useMultiTimeframeAnalysis(): {
 
   const isLoading = results.some((r) => r.isLoading);
   const allLoaded = results.every((r) => !r.isLoading);
-  const allReady = results.every((r) => r.data && r.data.candles && r.data.candles.length >= 20);
+  // Only need at least 2 timeframes with enough data (was: all 4 required)
+  const readyResults = results.filter((r) => r.data && r.data.candles && r.data.candles.length >= 20);
+  const hasEnough = readyResults.length >= 2;
 
   const confluence = useMemo<MTFConfluenceResult | null>(() => {
-    if (!allReady) return null;
+    if (!hasEnough) return null;
 
-    const tfResults = results.map((r) => {
+    const tfResults = readyResults.map((r) => {
       const candles = r.data!.candles;
       const currentPrice = candles[candles.length - 1].close;
       const summary = calculateAllIndicators(candles, instrument.id, r.tf);
@@ -48,7 +50,7 @@ export function useMultiTimeframeAnalysis(): {
 
     return calculateMTFConfluence(tfResults);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allReady, instrument.id, ...results.map((r) => r.data)]);
+  }, [hasEnough, instrument.id, ...results.map((r) => r.data)]);
 
-  return { confluence, isLoading, insufficientData: allLoaded && !allReady };
+  return { confluence, isLoading, insufficientData: allLoaded && !hasEnough };
 }
