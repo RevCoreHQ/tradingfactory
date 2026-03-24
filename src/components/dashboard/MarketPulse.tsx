@@ -47,11 +47,11 @@ export function MarketPulse() {
   const quotes = ratesData?.quotes || {};
 
   const KEY_MARKETS = [
-    { id: "SPX500", label: "S&P 500", decimals: 1 },
-    { id: "US30", label: "Dow 30", decimals: 0 },
-    { id: "US100", label: "Nasdaq", decimals: 1 },
     { id: "XAU_USD", label: "Gold", decimals: 2 },
     { id: "USOIL", label: "Oil", decimals: 2 },
+    { id: "BTC_USD", label: "Bitcoin", decimals: 0 },
+    { id: "US30", label: "Dow 30", decimals: 0 },
+    { id: "US100", label: "Nasdaq", decimals: 1 },
   ];
   const strongConviction = Object.values(currentResults).filter((r) => Math.abs(r.overallBias) >= 45).length;
   const totalInstruments = Object.keys(currentResults).length;
