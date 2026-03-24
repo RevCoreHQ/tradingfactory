@@ -16,12 +16,12 @@ export function Header({ mode = "analysis" }: HeaderProps) {
   const wsConnected = useMarketStore((s) => s.wsConnected);
 
   return (
-    <header className="h-12 sticky top-0 z-50 bg-background/70 backdrop-blur-xl border-b border-border/30 shadow-[0_1px_3px_oklch(0_0_0/0.04)]  dark:shadow-[0_1px_6px_oklch(0_0_0/0.3)]">
+    <header className="h-12 sticky top-0 z-50 bg-background/60 backdrop-blur-2xl backdrop-saturate-150 border-b border-border/20 shadow-[0_1px_2px_oklch(0_0_0/0.03)] dark:bg-background/50 dark:border-border/15 dark:shadow-[0_1px_4px_oklch(0_0_0/0.4),inset_0_1px_0_oklch(1_0_0/0.03)]">
       <div className="h-full px-3 md:px-8 flex items-center justify-between gap-2">
         {/* Left: Logo */}
         <Link href="/" className="flex items-baseline gap-1.5 shrink-0">
-          <span className="text-sm font-bold tracking-tight text-foreground">Trading</span>
-          <span className="text-sm font-light tracking-tight text-muted-foreground hidden sm:inline">Factory</span>
+          <span className="text-sm font-bold tracking-tight text-gradient-teal">Trading</span>
+          <span className="text-sm font-light tracking-tight text-muted-foreground/80 hidden sm:inline">Factory</span>
         </Link>
 
         {/* Center: Segmented control */}
@@ -31,8 +31,8 @@ export function Header({ mode = "analysis" }: HeaderProps) {
             className={cn(
               "px-4 py-1.5 rounded-full text-xs font-medium transition-all",
               mode === "overview"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-background text-foreground shadow-[0_1px_3px_oklch(0_0_0/0.08)] dark:shadow-[0_1px_5px_oklch(0_0_0/0.3),inset_0_1px_0_oklch(1_0_0/0.05)]"
+                : "text-muted-foreground hover:text-foreground/80 transition-all duration-200"
             )}
           >
             Overview
@@ -42,8 +42,8 @@ export function Header({ mode = "analysis" }: HeaderProps) {
             className={cn(
               "px-4 py-1.5 rounded-full text-xs font-medium transition-all",
               mode === "desk"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-background text-foreground shadow-[0_1px_3px_oklch(0_0_0/0.08)] dark:shadow-[0_1px_5px_oklch(0_0_0/0.3),inset_0_1px_0_oklch(1_0_0/0.05)]"
+                : "text-muted-foreground hover:text-foreground/80 transition-all duration-200"
             )}
           >
             Desk
@@ -53,8 +53,8 @@ export function Header({ mode = "analysis" }: HeaderProps) {
             className={cn(
               "px-4 py-1.5 rounded-full text-xs font-medium transition-all",
               mode === "analysis"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-background text-foreground shadow-[0_1px_3px_oklch(0_0_0/0.08)] dark:shadow-[0_1px_5px_oklch(0_0_0/0.3),inset_0_1px_0_oklch(1_0_0/0.05)]"
+                : "text-muted-foreground hover:text-foreground/80 transition-all duration-200"
             )}
           >
             Analysis
@@ -64,8 +64,8 @@ export function Header({ mode = "analysis" }: HeaderProps) {
             className={cn(
               "px-4 py-1.5 rounded-full text-xs font-medium transition-all",
               mode === "journal"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-background text-foreground shadow-[0_1px_3px_oklch(0_0_0/0.08)] dark:shadow-[0_1px_5px_oklch(0_0_0/0.3),inset_0_1px_0_oklch(1_0_0/0.05)]"
+                : "text-muted-foreground hover:text-foreground/80 transition-all duration-200"
             )}
           >
             Journal
@@ -75,8 +75,8 @@ export function Header({ mode = "analysis" }: HeaderProps) {
             className={cn(
               "px-4 py-1.5 rounded-full text-xs font-medium transition-all",
               mode === "brain"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-background text-foreground shadow-[0_1px_3px_oklch(0_0_0/0.08)] dark:shadow-[0_1px_5px_oklch(0_0_0/0.3),inset_0_1px_0_oklch(1_0_0/0.05)]"
+                : "text-muted-foreground hover:text-foreground/80 transition-all duration-200"
             )}
           >
             Brain
@@ -86,8 +86,8 @@ export function Header({ mode = "analysis" }: HeaderProps) {
             className={cn(
               "px-4 py-1.5 rounded-full text-xs font-medium transition-all",
               mode === "testing"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-background text-foreground shadow-[0_1px_3px_oklch(0_0_0/0.08)] dark:shadow-[0_1px_5px_oklch(0_0_0/0.3),inset_0_1px_0_oklch(1_0_0/0.05)]"
+                : "text-muted-foreground hover:text-foreground/80 transition-all duration-200"
             )}
           >
             Testing

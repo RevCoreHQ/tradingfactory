@@ -92,7 +92,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
   };
 
   return (
-    <div className="bg-card rounded-xl border border-border p-5 flex flex-col min-h-[320px]">
+    <div className="section-card spotlight p-5 flex flex-col min-h-[320px]" onMouseMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty("--spotlight-x", `${e.clientX - r.left}px`); e.currentTarget.style.setProperty("--spotlight-y", `${e.clientY - r.top}px`); }}>
       {/* Header: Symbol + Category | % Change + Direction */}
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
@@ -332,7 +332,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
       <div className="flex items-center gap-3 mt-auto pt-3 border-t border-border/20">
         <button
           onClick={handleDeepDive}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-medium bg-gradient-to-r from-primary via-[oklch(0.65_0.17_162)] to-primary text-primary-foreground shadow-[0_0_12px_oklch(0.72_0.17_162/0.25)] hover:shadow-[0_0_20px_oklch(0.72_0.17_162/0.35)] hover:-translate-y-px active:translate-y-0 transition-all duration-300"
         >
           Deep Dive
           <ArrowRight className="h-3.5 w-3.5" />

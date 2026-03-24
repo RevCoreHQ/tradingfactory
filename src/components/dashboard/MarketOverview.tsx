@@ -16,6 +16,20 @@ import { COTPositioning } from "@/components/fundamentals/COTPositioning";
 import { useRealtimePrices } from "@/lib/hooks/useRealtimePrices";
 import { InstrumentBriefings } from "./InstrumentBriefings";
 import { Activity, Sparkles, AlertTriangle, BarChart3, Shield, LayoutGrid } from "lucide-react";
+import { motion } from "framer-motion";
+
+const sectionVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * 0.08,
+      duration: 0.5,
+      ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number],
+    },
+  }),
+};
 
 export function MarketOverview() {
   useAllBiasScores();
@@ -40,7 +54,7 @@ export function MarketOverview() {
 
         <main className="max-w-[1400px] mx-auto px-3 md:px-8 py-4 md:py-6 space-y-6 md:space-y-8">
           {/* Section 1: Market Pulse */}
-          <section>
+          <motion.section custom={0} initial="hidden" animate="visible" variants={sectionVariants}>
             <SectionHeader
               title="Market Pulse"
               subtitle="Current market conditions at a glance"
@@ -49,10 +63,10 @@ export function MarketOverview() {
             />
             <MarketPulse />
             <BiasAccuracySummary />
-          </section>
+          </motion.section>
 
           {/* Section 2: Market Intelligence */}
-          <section>
+          <motion.section custom={1} initial="hidden" animate="visible" variants={sectionVariants}>
             <SectionHeader
               title="Market Intelligence"
               subtitle="Macro analysis and sector breakdown"
@@ -60,10 +74,10 @@ export function MarketOverview() {
               accentColor="blue"
             />
             <AIMarketSummary />
-          </section>
+          </motion.section>
 
           {/* Section 2.5: Instrument Briefings */}
-          <section>
+          <motion.section custom={2} initial="hidden" animate="visible" variants={sectionVariants}>
             <SectionHeader
               title="Instrument Briefings"
               subtitle="Analysis cards for each tracked instrument"
@@ -71,10 +85,10 @@ export function MarketOverview() {
               accentColor="green"
             />
             <InstrumentBriefings />
-          </section>
+          </motion.section>
 
           {/* Section 3: Risk Calendar */}
-          <section>
+          <motion.section custom={3} initial="hidden" animate="visible" variants={sectionVariants}>
             <SectionHeader
               title="Risk Calendar"
               subtitle="High-impact economic events and news risk"
@@ -82,10 +96,10 @@ export function MarketOverview() {
               accentColor="red"
             />
             <RedNewsWeek />
-          </section>
+          </motion.section>
 
           {/* Section 4: Deep Dive */}
-          <section>
+          <motion.section custom={4} initial="hidden" animate="visible" variants={sectionVariants}>
             <SectionHeader
               title="Deep Dive"
               subtitle="Institutional positioning, bond yields, and currency strength"
@@ -103,10 +117,10 @@ export function MarketOverview() {
                 <CurrencyBias />
               </div>
             </div>
-          </section>
+          </motion.section>
 
           {/* Section 5: Portfolio Risk */}
-          <section>
+          <motion.section custom={5} initial="hidden" animate="visible" variants={sectionVariants}>
             <SectionHeader
               title="Portfolio Risk"
               subtitle="Currency exposure and correlation warnings"
@@ -114,7 +128,7 @@ export function MarketOverview() {
               accentColor="red"
             />
             <RiskCorrelation />
-          </section>
+          </motion.section>
         </main>
       </div>
 

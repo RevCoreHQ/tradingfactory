@@ -19,12 +19,22 @@ export function AnimatedNumber({
   colorize = false,
 }: AnimatedNumberProps) {
   const [displayValue, setDisplayValue] = useState(value);
+  const [flash, setFlash] = useState(false);
   const prevValue = useRef(value);
   const animationRef = useRef<number | null>(null);
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const startValue = prevValue.current;
     const diff = value - startValue;
+
+    // Flash on significant change (> 0.5% of value)
+    if (startValue !== 0 && Math.abs(diff / startValue) > 0.005) {
+      setFlash(true);
+      if (flashTimer.current) clearTimeout(flashTimer.current);
+      flashTimer.current = setTimeout(() => setFlash(false), 400);
+    }
+
     const startTime = performance.now();
 
     const animate = (currentTime: number) => {
@@ -58,7 +68,10 @@ export function AnimatedNumber({
     : "";
 
   return (
-    <span className={cn("tabular-nums font-mono transition-colors duration-300", colorClass, className)}>
+    <span
+      className={cn("tabular-nums font-mono transition-colors duration-300", colorClass, className)}
+      style={flash ? { animation: "number-flash 0.4s ease-out" } : undefined}
+    >
       {format(displayValue)}
     </span>
   );

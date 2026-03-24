@@ -8,6 +8,13 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { Activity, TrendingUp, TrendingDown, DollarSign, BarChart3, Star } from "lucide-react";
 import useSWR from "swr";
+import type React from "react";
+
+const handleSpotlight = (e: React.MouseEvent<HTMLElement>) => {
+  const rect = e.currentTarget.getBoundingClientRect();
+  e.currentTarget.style.setProperty("--spotlight-x", `${e.clientX - rect.left}px`);
+  e.currentTarget.style.setProperty("--spotlight-y", `${e.clientY - rect.top}px`);
+};
 
 function getGaugeColor(value: number): string {
   if (value <= 20) return "var(--bearish)";
@@ -70,7 +77,7 @@ export function MarketPulse() {
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       {/* Fear & Greed — with Sentiment Popover */}
       <Popover>
-        <PopoverTrigger className="glass-card p-4 text-left w-full cursor-pointer hover:border-border-bright transition-colors">
+        <PopoverTrigger className="glass-card spotlight p-4 text-left w-full cursor-pointer transition-colors" onMouseMove={handleSpotlight}>
           <div className="flex items-center gap-2 mb-3">
             <div className="h-6 w-6 rounded-md flex items-center justify-center" style={{ background: `${fgColor}20` }}>
               <Activity className="h-3.5 w-3.5" style={{ color: fgColor }} />
@@ -145,7 +152,7 @@ export function MarketPulse() {
       </Popover>
 
       {/* DXY */}
-      <div className="glass-card p-4">
+      <div className="glass-card spotlight p-4" onMouseMove={handleSpotlight}>
         <div className="flex items-center gap-2 mb-3">
           <div className="h-6 w-6 rounded-md flex items-center justify-center bg-neutral-accent/15">
             <DollarSign className="h-3.5 w-3.5 text-neutral-accent" />
@@ -168,7 +175,7 @@ export function MarketPulse() {
       </div>
 
       {/* Market Bias — with Strong Conviction Popover */}
-      <div className="glass-card p-4">
+      <div className="glass-card spotlight p-4" onMouseMove={handleSpotlight}>
         <div className="flex items-center gap-2 mb-3">
           <div className="h-6 w-6 rounded-md flex items-center justify-center bg-bullish/15">
             <BarChart3 className="h-3.5 w-3.5 text-bullish" />
@@ -227,7 +234,7 @@ export function MarketPulse() {
       </div>
 
       {/* Key Markets */}
-      <div className="glass-card p-4">
+      <div className="glass-card spotlight p-4" onMouseMove={handleSpotlight}>
         <div className="flex items-center gap-2 mb-3">
           <div className="h-6 w-6 rounded-md flex items-center justify-center bg-foreground/10">
             <TrendingUp className="h-3.5 w-3.5 text-foreground/60" />
