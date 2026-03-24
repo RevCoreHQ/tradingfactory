@@ -55,6 +55,7 @@ export interface FMPQuote {
   high24h: number;
   low24h: number;
   timestamp: number;
+  provider: "fmp" | "yahoo";
 }
 
 /**
@@ -100,6 +101,7 @@ export async function fetchFMPQuotes(
                     high24h: q.dayHigh || q.price,
                     low24h: q.dayLow || q.price,
                     timestamp: q.timestamp ? q.timestamp * 1000 : Date.now(),
+                    provider: "fmp",
                   };
                 }
               }
@@ -159,6 +161,7 @@ async function fetchYahooQuote(instrumentId: string): Promise<FMPQuote | null> {
       high24h: meta.regularMarketDayHigh || price,
       low24h: meta.regularMarketDayLow || price,
       timestamp: (meta.regularMarketTime || Math.floor(Date.now() / 1000)) * 1000,
+      provider: "yahoo",
     };
   } catch (err) {
     console.warn(`[Yahoo] Quote failed for ${instrumentId}:`, err);

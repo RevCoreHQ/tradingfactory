@@ -274,9 +274,21 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
         </div>
       </div>
 
-      {/* Sub-header: display name + timestamp */}
+      {/* Sub-header: display name + provider + timestamp */}
       <div className="flex items-center justify-between mb-4">
-        <span className="text-xs text-muted-foreground/40">{instrument.displayName}</span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground/40">{instrument.displayName}</span>
+          {quote?.provider && (
+            <Tooltip>
+              <TooltipTrigger className="text-[9px] font-mono text-muted-foreground/25 uppercase tracking-wider cursor-default">
+                via {quote.provider === "polygon" ? "Polygon" : quote.provider === "fmp" ? "FMP" : quote.provider === "yahoo" ? "Yahoo" : quote.provider === "coingecko" ? "CoinGecko" : quote.provider}
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs">
+                Price data from {quote.provider === "polygon" ? "Polygon (Massive)" : quote.provider === "fmp" ? "Financial Modeling Prep" : quote.provider === "yahoo" ? "Yahoo Finance" : quote.provider === "coingecko" ? "CoinGecko" : quote.provider}
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
         <div className="flex items-center gap-1 text-xs text-muted-foreground/40">
           <Clock className="h-3 w-3" />
           <span>{timeAgo(biasResult.timestamp)}</span>

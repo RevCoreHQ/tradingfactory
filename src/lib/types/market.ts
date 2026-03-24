@@ -23,6 +23,8 @@ export interface OHLCV {
   volume: number;
 }
 
+export type DataProvider = "polygon" | "fmp" | "yahoo" | "coingecko";
+
 export interface PriceQuote {
   instrument: string;
   bid: number;
@@ -33,6 +35,7 @@ export interface PriceQuote {
   changePercent: number;
   high24h: number;
   low24h: number;
+  provider?: DataProvider;
 }
 
 export type Timeframe = "1min" | "5min" | "15min" | "30min" | "1h" | "4h" | "1d" | "1w";

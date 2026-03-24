@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
           changePercent: q.changePercent,
           high24h: q.high24h,
           low24h: q.low24h,
+          provider: "polygon",
         };
       }
     }
@@ -51,6 +52,7 @@ export async function GET(req: NextRequest) {
             changePercent: q.changePercent,
             high24h: q.high24h,
             low24h: q.low24h,
+            provider: q.provider || "fmp",
           };
         }
       }
@@ -62,7 +64,8 @@ export async function GET(req: NextRequest) {
     );
     for (const inst of cryptoMissing) {
       try {
-        quotes[inst.id] = await fetchCryptoPrice(inst.coingeckoId || "bitcoin", inst.id);
+        const cq = await fetchCryptoPrice(inst.coingeckoId || "bitcoin", inst.id);
+        quotes[inst.id] = { ...cq, provider: "coingecko" };
       } catch {
         // Silent fail
       }
