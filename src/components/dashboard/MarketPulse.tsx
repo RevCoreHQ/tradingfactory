@@ -152,27 +152,59 @@ export function MarketPulse() {
       </Popover>
 
       {/* DXY */}
-      <div className="glass-card spotlight p-4" onMouseMove={handleSpotlight}>
-        <div className="flex items-center gap-2 mb-3">
-          <div className="h-6 w-6 rounded-md flex items-center justify-center bg-neutral-accent/15">
-            <DollarSign className="h-3.5 w-3.5 text-neutral-accent" />
+      <Popover>
+        <PopoverTrigger className="glass-card spotlight p-4 text-left w-full cursor-pointer transition-colors" onMouseMove={handleSpotlight}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="h-6 w-6 rounded-md flex items-center justify-center bg-neutral-accent/15">
+              <DollarSign className="h-3.5 w-3.5 text-neutral-accent" />
+            </div>
+            <span className="text-[13px] font-medium text-muted-foreground uppercase tracking-wider">Dollar Index</span>
           </div>
-          <span className="text-[13px] font-medium text-muted-foreground uppercase tracking-wider">Dollar Index</span>
-        </div>
-        <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold font-mono">
-            {dxy.value > 0 ? dxy.value.toFixed(2) : "—"}
-          </span>
-          {(dxy.change !== 0 || dxy.changePercent !== 0) && (
-            <span className={cn("text-xs font-mono font-medium", dxy.changePercent > 0 ? "text-bullish" : "text-bearish")}>
-              {dxy.changePercent > 0 ? "+" : ""}{dxy.changePercent.toFixed(2)}%
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold font-mono">
+              {dxy.value > 0 ? dxy.value.toFixed(2) : "—"}
             </span>
-          )}
-        </div>
-        <div className="text-[12px] text-muted-foreground/60 mt-2 font-mono">
-          {dxy.changePercent > 0.15 ? "USD Strength" : dxy.changePercent < -0.15 ? "USD Weakness" : "Stable"}
-        </div>
-      </div>
+            {(dxy.change !== 0 || dxy.changePercent !== 0) && (
+              <span className={cn("text-xs font-mono font-medium", dxy.changePercent > 0 ? "text-bullish" : "text-bearish")}>
+                {dxy.changePercent > 0 ? "+" : ""}{dxy.changePercent.toFixed(2)}%
+              </span>
+            )}
+          </div>
+          <div className="text-[12px] text-muted-foreground/60 mt-2 font-mono">
+            {dxy.changePercent > 0.15 ? "USD Strength" : dxy.changePercent < -0.15 ? "USD Weakness" : "Stable"}
+          </div>
+        </PopoverTrigger>
+        <PopoverContent side="bottom" align="start" className="w-72">
+          <div className="space-y-2.5">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Why it matters</span>
+              <p className="text-sm text-foreground/70 leading-relaxed mt-1">
+                The Dollar Index tracks USD strength against a basket of major currencies. It directly impacts every pair you trade.
+              </p>
+            </div>
+            <div className="space-y-1.5 border-t border-border/30 pt-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Impact right now</span>
+              {dxy.changePercent > 0.15 ? (
+                <ul className="space-y-1 text-sm text-foreground/65">
+                  <li className="flex items-start gap-1.5"><span className="text-bearish shrink-0">&bull;</span>Bearish for Gold & Silver (inverse correlation)</li>
+                  <li className="flex items-start gap-1.5"><span className="text-bearish shrink-0">&bull;</span>Bearish for EUR, GBP, AUD, NZD vs USD</li>
+                  <li className="flex items-start gap-1.5"><span className="text-bullish shrink-0">&bull;</span>Bullish for USD/JPY, USD/CAD, USD/CHF</li>
+                  <li className="flex items-start gap-1.5"><span className="text-bearish shrink-0">&bull;</span>Headwind for commodities (Oil priced in USD)</li>
+                </ul>
+              ) : dxy.changePercent < -0.15 ? (
+                <ul className="space-y-1 text-sm text-foreground/65">
+                  <li className="flex items-start gap-1.5"><span className="text-bullish shrink-0">&bull;</span>Bullish for Gold & Silver (inverse correlation)</li>
+                  <li className="flex items-start gap-1.5"><span className="text-bullish shrink-0">&bull;</span>Bullish for EUR, GBP, AUD, NZD vs USD</li>
+                  <li className="flex items-start gap-1.5"><span className="text-bearish shrink-0">&bull;</span>Bearish for USD/JPY, USD/CAD, USD/CHF</li>
+                  <li className="flex items-start gap-1.5"><span className="text-bullish shrink-0">&bull;</span>Tailwind for commodities (Oil priced in USD)</li>
+                </ul>
+              ) : (
+                <p className="text-sm text-foreground/65">USD is stable — no strong directional pressure on your pairs.</p>
+              )}
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
 
       {/* Market Bias — with Strong Conviction Popover */}
       <div className="glass-card spotlight p-4" onMouseMove={handleSpotlight}>

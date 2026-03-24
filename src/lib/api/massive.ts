@@ -277,7 +277,8 @@ export async function fetchMassiveQuotes(
     idToTicker[id] = ticker;
     if (ticker.startsWith("X:")) {
       cryptoTickers.push(ticker);
-    } else {
+    } else if (!ticker.startsWith("I:")) {
+      // Only send forex/commodity tickers to forex snapshot — indices need candle fallback
       forexTickers.push(ticker);
     }
   }
@@ -294,6 +295,41 @@ export async function fetchMassiveQuotes(
     const snap = allSnaps[ticker];
     if (snap && snap.price > 0) {
       result[id] = snap;
+    }
+  }
+
+  // Fallback: for instruments missing from snapshots (indices, oil, etc.),
+  // derive quotes from the latest daily candles
+  const missingIds = instrumentIds.filter((id) => !result[id] && idToTicker[id]);
+  if (missingIds.length > 0) {
+    const fallbacks = await Promise.allSettled(
+      missingIds.map(async (id) => {
+        const candles = await fetchMassiveCandles(idToTicker[id], "1h", 25);
+        if (candles.length < 2) return { id, quote: null };
+        const latest = candles[candles.length - 1];
+        const prevDayCandle = candles[0];
+        const change = latest.close - prevDayCandle.open;
+        const changePercent = prevDayCandle.open > 0 ? (change / prevDayCandle.open) * 100 : 0;
+        return {
+          id,
+          quote: {
+            price: latest.close,
+            change,
+            changePercent,
+            bid: latest.close,
+            ask: latest.close,
+            high24h: Math.max(...candles.map((c) => c.high)),
+            low24h: Math.min(...candles.map((c) => c.low)),
+            timestamp: latest.timestamp,
+          } as SnapshotQuote,
+        };
+      })
+    );
+
+    for (const f of fallbacks) {
+      if (f.status === "fulfilled" && f.value.quote) {
+        result[f.value.id] = f.value.quote;
+      }
     }
   }
 
