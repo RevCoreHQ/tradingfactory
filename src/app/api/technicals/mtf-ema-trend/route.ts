@@ -45,7 +45,7 @@ export async function GET() {
           );
 
           for (const r of tfResults) {
-            if (r.status === "fulfilled" && r.value.candles.length >= 50) {
+            if (r.status === "fulfilled" && r.value.candles.length >= 25) {
               data[r.value.tf] = r.value.candles;
             }
           }

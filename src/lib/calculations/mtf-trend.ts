@@ -64,27 +64,39 @@ export function computeEmaStack(candles: OHLCV[]): TimeframeTrend | null {
 
 /**
  * For timeframes with < 200 candles, use EMA 9/21/50 only (no SMA 200).
+ * Falls back to EMA 9/21 only if fewer than 50 candles but at least 25.
  */
 function computeShortStack(candles: OHLCV[]): TimeframeTrend | null {
-  if (candles.length < 50) return null;
+  if (candles.length < 25) return null;
 
   const closes = candles.map((c) => c.close);
   const currentPrice = closes[closes.length - 1];
 
   const ema9Arr = calcEMA(closes, 9);
   const ema21Arr = calcEMA(closes, 21);
-  const ema50Arr = calcEMA(closes, 50);
 
-  if (!ema9Arr.length || !ema21Arr.length || !ema50Arr.length) return null;
+  if (!ema9Arr.length || !ema21Arr.length) return null;
 
   const ema9 = ema9Arr[ema9Arr.length - 1];
   const ema21 = ema21Arr[ema21Arr.length - 1];
-  const ema50 = ema50Arr[ema50Arr.length - 1];
 
-  // Without SMA 200, use just the 3-EMA ordering
+  // Try EMA 50 if enough candles
+  let ema50 = 0;
+  if (candles.length >= 50) {
+    const ema50Arr = calcEMA(closes, 50);
+    if (ema50Arr.length) ema50 = ema50Arr[ema50Arr.length - 1];
+  }
+
   let stack: EmaStackState = "mixed";
-  if (ema9 > ema21 && ema21 > ema50) stack = "bullish";
-  else if (ema9 < ema21 && ema21 < ema50) stack = "bearish";
+  if (ema50 > 0) {
+    // 3-EMA ordering
+    if (ema9 > ema21 && ema21 > ema50) stack = "bullish";
+    else if (ema9 < ema21 && ema21 < ema50) stack = "bearish";
+  } else {
+    // 2-EMA fallback
+    if (ema9 > ema21 && currentPrice > ema9) stack = "bullish";
+    else if (ema9 < ema21 && currentPrice < ema9) stack = "bearish";
+  }
 
   return {
     timeframe: "1d",
@@ -93,7 +105,7 @@ function computeShortStack(candles: OHLCV[]): TimeframeTrend | null {
     ema9,
     ema21,
     ema50,
-    sma200: 0, // not available
+    sma200: 0,
     priceAboveEma9: currentPrice > ema9,
     direction: stack === "bullish" ? "bullish" : stack === "bearish" ? "bearish" : "neutral",
   };
@@ -182,7 +194,7 @@ export function calculateMTFTrendSummary(
 
   for (const tf of config.timeframes) {
     const candles = data[tf];
-    if (!candles || candles.length < 50) continue;
+    if (!candles || candles.length < 25) continue;
     const trend = computeEmaStack(candles);
     if (trend) {
       trends.push({ ...trend, timeframe: tf, label: TF_LABELS[tf] });
