@@ -68,32 +68,46 @@ function scoreArrow(score: number): string {
 }
 
 function describeFundamentals(fund: BiasResult["fundamentalScore"]): string {
+  const dir = (s: number) => s > 60 ? "supportive" : s < 40 ? "negative" : "mixed";
   const parts: string[] = [];
-  const labelScore = (name: string, score: number) => {
-    if (score > 60) return `${name} bullish (${Math.round(score)})`;
-    if (score < 40) return `${name} bearish (${Math.round(score)})`;
-    return `${name} neutral (${Math.round(score)})`;
-  };
-  parts.push(labelScore("News sentiment", fund.newsSentiment));
-  parts.push(labelScore("market sentiment", fund.marketSentiment));
-  if (Math.abs(fund.centralBankPolicy - 50) > 5) parts.push(labelScore("central bank policy", fund.centralBankPolicy));
-  if (Math.abs(fund.intermarketCorrelation - 50) > 5) parts.push(labelScore("intermarket", fund.intermarketCorrelation));
+
+  const newsDir = dir(fund.newsSentiment);
+  const sentDir = dir(fund.marketSentiment);
+  if (newsDir === sentDir && newsDir !== "mixed") {
+    parts.push(`News flow and market sentiment are both ${newsDir}`);
+  } else {
+    if (newsDir !== "mixed") parts.push(`News sentiment is ${newsDir}`);
+    if (sentDir !== "mixed") parts.push(`market sentiment is ${sentDir}`);
+    if (newsDir === "mixed" && sentDir === "mixed") parts.push("News and sentiment are mixed with no clear direction");
+  }
+
+  const cbDir = dir(fund.centralBankPolicy);
+  if (cbDir !== "mixed") parts.push(`central bank policy leans ${cbDir === "supportive" ? "dovish" : "hawkish"}`);
+
+  const imDir = dir(fund.intermarketCorrelation);
+  if (imDir !== "mixed") parts.push(`cross-market flows are ${imDir}`);
+
   return parts.join(", ") + ".";
 }
 
 function describeTechnicals(tech: BiasResult["technicalScore"]): string {
   const parts: string[] = [];
-  const labelScore = (name: string, score: number) => {
-    if (score > 60) return `${name} bullish (${Math.round(score)})`;
-    if (score < 40) return `${name} bearish (${Math.round(score)})`;
-    return `${name} neutral (${Math.round(score)})`;
-  };
-  parts.push(labelScore("Trend", tech.trendDirection));
-  parts.push(labelScore("momentum", tech.momentum));
-  if (tech.volatility > 65) parts.push("elevated volatility");
-  else if (tech.volatility < 35) parts.push("compressed volatility");
-  if (Math.abs(tech.supportResistance - 50) > 5) parts.push(labelScore("S/R", tech.supportResistance));
-  return parts.join(", ") + ".";
+
+  if (tech.trendDirection > 65) parts.push("Price is in a clear uptrend");
+  else if (tech.trendDirection < 35) parts.push("Price is in a clear downtrend");
+  else parts.push("No clear trend direction");
+
+  if (tech.momentum > 65) parts.push("with strong bullish momentum");
+  else if (tech.momentum < 35) parts.push("with strong bearish momentum");
+  else parts.push("momentum is flat");
+
+  if (tech.volatility > 65) parts.push("Volatility is elevated — expect wide swings");
+  else if (tech.volatility < 35) parts.push("Volatility is compressed — breakout potential");
+
+  if (tech.supportResistance > 60) parts.push("Price is near support levels");
+  else if (tech.supportResistance < 40) parts.push("Price is near resistance");
+
+  return parts.join(". ") + ".";
 }
 
 function deriveRiskLevel(biasResult: BiasResult): "low" | "medium" | "high" {
@@ -173,9 +187,14 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
   const fundLabel = fundTotal > 55 ? "bullish" : fundTotal < 45 ? "bearish" : "neutral";
   const techLabel = techTotal > 55 ? "bullish" : techTotal < 45 ? "bearish" : "neutral";
   const conflicting = fundLabel !== techLabel && fundLabel !== "neutral" && techLabel !== "neutral";
+  const agreementNote = biasResult.signalAgreement > 0.7
+    ? "Multiple signals are aligned, supporting higher conviction."
+    : biasResult.signalAgreement < 0.4
+    ? "Signals are mixed — exercise caution and wait for confirmation."
+    : "Signal alignment is moderate.";
   const deterministicSummary = conflicting
-    ? `Mixed signals: fundamentals are ${fundLabel} (${Math.round(fundTotal)}) while technicals are ${techLabel} (${Math.round(techTotal)}). Confidence is reduced due to conflicting inputs.`
-    : `${instrument.symbol} shows ${dir} bias with fundamentals at ${Math.round(fundTotal)} and technicals at ${Math.round(techTotal)}. ${biasResult.signalAgreement > 0.7 ? "Strong signal agreement supports conviction." : biasResult.signalAgreement < 0.4 ? "Low signal agreement warrants caution." : "Moderate signal agreement."}`;
+    ? `${instrument.symbol} has conflicting signals — fundamentals lean ${fundLabel} while technicals lean ${techLabel}. ${agreementNote}`
+    : `${instrument.symbol} is showing ${dir} conditions across both fundamentals and technicals. ${agreementNote}`;
 
   const summaryText =
     (summaryContradictsDirection ? null : llmSummary) ||
@@ -441,14 +460,24 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
               {(() => {
                 const conviction = llmResult?.conviction || (confidence > 70 ? "high" : confidence > 45 ? "medium" : "low");
                 return (
-                  <span className={cn(
-                    "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
-                    conviction === "high" && "bg-bullish/15 text-bullish",
-                    conviction === "medium" && "bg-amber/15 text-[var(--amber)]",
-                    conviction === "low" && "bg-muted text-muted-foreground",
-                  )}>
-                    {conviction}
-                  </span>
+                  <Tooltip>
+                    <TooltipTrigger
+                      className={cn(
+                        "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded cursor-default",
+                        conviction === "high" && "bg-bullish/15 text-bullish",
+                        conviction === "medium" && "bg-amber/15 text-[var(--amber)]",
+                        conviction === "low" && "bg-muted text-muted-foreground",
+                      )}
+                    >
+                      {conviction} conviction
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs">
+                      <div className="flex flex-col gap-0.5 py-0.5 text-[11px]">
+                        <span className="font-semibold">Conviction: {conviction}</span>
+                        <span className="opacity-70">Based on confidence ({Math.round(confidence)}%), signal agreement, and fundamental-technical alignment</span>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
                 );
               })()}
               {(() => {
