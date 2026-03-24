@@ -65,7 +65,8 @@ export function InstrumentGrid({ results }: InstrumentGridProps) {
   ];
 
   return (
-    <div className="glass-card rounded-2xl border border-border/30 overflow-hidden">
+    <div className="glass-card rounded-2xl border border-border/30 overflow-hidden overflow-x-auto">
+      <div className="min-w-[640px]">
       {/* Header */}
       <div className="grid grid-cols-[1fr_0.7fr_0.6fr_0.7fr_0.8fr_0.5fr_0.7fr_0.5fr_2rem] gap-2 px-4 py-2.5 border-b border-border/20 bg-surface-2/30">
         {columns.map((col) => (
@@ -149,7 +150,7 @@ export function InstrumentGrid({ results }: InstrumentGridProps) {
               <div className="px-4 pb-4 pt-1 space-y-3 bg-surface-2/10">
                 {/* Before/After comparison */}
                 {hasImprovement && (
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <DeltaBadge
                       label="Win Rate"
                       delta={r.improvement!.winRateDelta}
@@ -265,6 +266,7 @@ export function InstrumentGrid({ results }: InstrumentGridProps) {
           No results yet. Run the Weekend Lab to see instrument data.
         </div>
       )}
+      </div>
     </div>
   );
 }

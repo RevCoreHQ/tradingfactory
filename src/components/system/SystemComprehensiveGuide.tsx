@@ -339,7 +339,7 @@ export function SystemComprehensiveGuide() {
           <p className="text-[12px]"><strong className="text-foreground">Overextension detection:</strong> Price &gt; 2.5 ATR from EMA50 → reduces confidence even if aligned.</p>
           <p className="text-[12px]"><strong className="text-foreground">Pullback completion:</strong> Lower TF flips back to daily direction after pullback.</p>
         </div>
-        <div className="grid grid-cols-4 gap-1.5 mt-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mt-2">
           {[
             { label: "Full (4/4)", mod: "1.15x", color: "bg-bullish/10 border-bullish/20 text-bullish" },
             { label: "Strong (3/4)", mod: "1.0x", color: "bg-bullish/8 border-bullish/15 text-bullish/70" },

@@ -50,7 +50,7 @@ export function TechnicalOverview() {
           <span className="text-xs font-medium text-muted-foreground">Moving Averages</span>
           <StatusBadge variant={maSignal}>{bullishMAs}/{totalMAs} bullish</StatusBadge>
         </div>
-        <div className="grid grid-cols-3 gap-x-4 gap-y-1">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1">
           {movingAverages.map((ma) => (
             <div key={`${ma.type}-${ma.period}`} className="flex items-center justify-between text-[12px]">
               <span className="text-muted-foreground">{ma.type} {ma.period}</span>
@@ -118,7 +118,7 @@ export function TechnicalOverview() {
       {pivotPoints.length > 0 && (
         <div className="mt-3 rounded-lg bg-[var(--surface-2)] p-3">
           <span className="text-xs font-medium text-muted-foreground">Daily Pivots</span>
-          <div className="grid grid-cols-7 gap-1 mt-2 text-[12px] text-center">
+          <div className="grid grid-cols-4 sm:grid-cols-7 gap-1 mt-2 text-[12px] text-center">
             {(() => {
               const dp = pivotPoints.find((p) => p.type === "daily");
               if (!dp) return null;

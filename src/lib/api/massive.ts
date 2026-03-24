@@ -165,8 +165,11 @@ export async function fetchMassiveCandles(
   const to = Date.now();
   const from = to - config.daysBack * 24 * 60 * 60 * 1000;
 
-  // Try native timespan first
-  const native = await fetchRawAggs(ticker, config.multiplier, config.timespan, from, to, limit);
+  // Fetch ALL bars in the time range (up to 50000), then slice to the requested limit.
+  // Previously we passed `limit` to the API, but with sort=asc Polygon returns the
+  // OLDEST N bars — causing 15m and other intraday timeframes to get stale data
+  // when the time range contains more bars than the requested limit.
+  const native = await fetchRawAggs(ticker, config.multiplier, config.timespan, from, to, 50000);
   if (native.length >= 20) {
     return native.slice(-limit);
   }

@@ -32,7 +32,8 @@ export function EconomicCalendar() {
       </div>
 
       <ScrollArea className="h-[300px]">
-        <table className="w-full text-xs">
+        <div className="overflow-x-auto">
+        <table className="w-full text-xs min-w-[480px]">
           <thead>
             <tr className="text-muted-foreground border-b border-border">
               <th className="text-left py-2 font-medium">Time</th>
@@ -96,6 +97,7 @@ export function EconomicCalendar() {
             ))}
           </tbody>
         </table>
+        </div>
       </ScrollArea>
     </GlassCard>
   );

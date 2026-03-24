@@ -152,22 +152,22 @@ export function InstrumentAnalysis() {
             />
 
             {/* Overview Banner */}
-            <div className="panel rounded-lg p-6 mb-4">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-5">
-                  <span className="text-5xl font-mono font-black tabular" style={{ color: biasColor }}>
+            <div className="panel rounded-lg p-4 sm:p-6 mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-4">
+                <div className="flex items-center gap-3 sm:gap-5">
+                  <span className="text-3xl sm:text-5xl font-mono font-black tabular" style={{ color: biasColor }}>
                     {bias.overallBias > 0 ? "+" : ""}{Math.round(bias.overallBias)}
                   </span>
                   <div className="space-y-1.5">
                     <span className={cn(
-                      "inline-block px-3 py-1 rounded-lg text-sm font-bold uppercase tracking-wide",
+                      "inline-block px-3 py-1 rounded-lg text-xs sm:text-sm font-bold uppercase tracking-wide",
                       biasAccent === "bullish" && "bg-bullish/15 text-bullish",
                       biasAccent === "bearish" && "bg-bearish/15 text-bearish",
                       biasAccent === "neutral" && "bg-neutral-accent/15 text-neutral-accent"
                     )}>
                       {bias.direction.replace("_", " ")}
                     </span>
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground">
                       <span>{Math.round(bias.confidence)}% confidence</span>
                       <span className="text-border">|</span>
                       <span>{Math.round((bias.signalAgreement ?? 0) * 100)}% signal agreement</span>

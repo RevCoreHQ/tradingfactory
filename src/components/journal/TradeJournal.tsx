@@ -45,7 +45,7 @@ export function TradeJournal({ onClose }: { onClose: () => void }) {
 
         {/* Stats Strip */}
         <div className="px-4 py-3 border-b border-border/50">
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <StatPill label="Trades" value={String(stats.totalTrades)} icon={<BarChart3 className="h-3 w-3" />} />
             <StatPill
               label="Win Rate"

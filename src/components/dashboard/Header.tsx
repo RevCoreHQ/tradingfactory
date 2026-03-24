@@ -25,11 +25,11 @@ export function Header({ mode = "analysis" }: HeaderProps) {
         </Link>
 
         {/* Center: Segmented control */}
-        <div className="flex items-center gap-0.5 bg-[var(--surface-1)] rounded-full p-0.5 border border-border/30 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-0.5 bg-[var(--surface-1)] rounded-full p-0.5 border border-border/30 overflow-x-auto no-scrollbar shrink min-w-0">
           <Link
             href="/"
             className={cn(
-              "px-4 py-1.5 rounded-full text-xs font-medium transition-all",
+              "px-2.5 sm:px-4 py-1.5 rounded-full text-[11px] sm:text-xs font-medium transition-all whitespace-nowrap",
               mode === "overview"
                 ? "bg-background text-foreground shadow-[0_1px_3px_oklch(0_0_0/0.08)] dark:shadow-[0_1px_5px_oklch(0_0_0/0.3),inset_0_1px_0_oklch(1_0_0/0.05)]"
                 : "text-muted-foreground hover:text-foreground/80 transition-all duration-200"
@@ -40,7 +40,7 @@ export function Header({ mode = "analysis" }: HeaderProps) {
           <Link
             href="/desk"
             className={cn(
-              "px-4 py-1.5 rounded-full text-xs font-medium transition-all",
+              "px-2.5 sm:px-4 py-1.5 rounded-full text-[11px] sm:text-xs font-medium transition-all whitespace-nowrap",
               mode === "desk"
                 ? "bg-background text-foreground shadow-[0_1px_3px_oklch(0_0_0/0.08)] dark:shadow-[0_1px_5px_oklch(0_0_0/0.3),inset_0_1px_0_oklch(1_0_0/0.05)]"
                 : "text-muted-foreground hover:text-foreground/80 transition-all duration-200"
@@ -51,7 +51,7 @@ export function Header({ mode = "analysis" }: HeaderProps) {
           <Link
             href="/instrument"
             className={cn(
-              "px-4 py-1.5 rounded-full text-xs font-medium transition-all",
+              "px-2.5 sm:px-4 py-1.5 rounded-full text-[11px] sm:text-xs font-medium transition-all whitespace-nowrap",
               mode === "analysis"
                 ? "bg-background text-foreground shadow-[0_1px_3px_oklch(0_0_0/0.08)] dark:shadow-[0_1px_5px_oklch(0_0_0/0.3),inset_0_1px_0_oklch(1_0_0/0.05)]"
                 : "text-muted-foreground hover:text-foreground/80 transition-all duration-200"
@@ -62,7 +62,7 @@ export function Header({ mode = "analysis" }: HeaderProps) {
           <Link
             href="/journal"
             className={cn(
-              "px-4 py-1.5 rounded-full text-xs font-medium transition-all",
+              "px-2.5 sm:px-4 py-1.5 rounded-full text-[11px] sm:text-xs font-medium transition-all whitespace-nowrap",
               mode === "journal"
                 ? "bg-background text-foreground shadow-[0_1px_3px_oklch(0_0_0/0.08)] dark:shadow-[0_1px_5px_oklch(0_0_0/0.3),inset_0_1px_0_oklch(1_0_0/0.05)]"
                 : "text-muted-foreground hover:text-foreground/80 transition-all duration-200"
@@ -73,7 +73,7 @@ export function Header({ mode = "analysis" }: HeaderProps) {
           <Link
             href="/brain"
             className={cn(
-              "px-4 py-1.5 rounded-full text-xs font-medium transition-all",
+              "px-2.5 sm:px-4 py-1.5 rounded-full text-[11px] sm:text-xs font-medium transition-all whitespace-nowrap",
               mode === "brain"
                 ? "bg-background text-foreground shadow-[0_1px_3px_oklch(0_0_0/0.08)] dark:shadow-[0_1px_5px_oklch(0_0_0/0.3),inset_0_1px_0_oklch(1_0_0/0.05)]"
                 : "text-muted-foreground hover:text-foreground/80 transition-all duration-200"
@@ -84,7 +84,7 @@ export function Header({ mode = "analysis" }: HeaderProps) {
           <Link
             href="/testing"
             className={cn(
-              "px-4 py-1.5 rounded-full text-xs font-medium transition-all",
+              "px-2.5 sm:px-4 py-1.5 rounded-full text-[11px] sm:text-xs font-medium transition-all whitespace-nowrap",
               mode === "testing"
                 ? "bg-background text-foreground shadow-[0_1px_3px_oklch(0_0_0/0.08)] dark:shadow-[0_1px_5px_oklch(0_0_0/0.3),inset_0_1px_0_oklch(1_0_0/0.05)]"
                 : "text-muted-foreground hover:text-foreground/80 transition-all duration-200"

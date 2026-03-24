@@ -25,7 +25,7 @@ export function BacktestPage() {
     <div className="min-h-screen bg-background">
       <Header mode="testing" />
 
-      <div className="max-w-[1400px] mx-auto px-8 py-6 space-y-8">
+      <div className="max-w-[1400px] mx-auto px-3 md:px-8 py-4 md:py-6 space-y-6 md:space-y-8">
         {/* Mode Toggle */}
         <div className="flex items-center gap-1 p-1 rounded-xl bg-surface-2/30 border border-border/20 w-fit">
           <button

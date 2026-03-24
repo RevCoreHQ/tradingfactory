@@ -1,22 +1,15 @@
 import { NextResponse } from "next/server";
-import { fetchMassiveForexQuotes } from "@/lib/api/massive";
 import { fetchMassiveCandles } from "@/lib/api/massive";
+import type { OHLCV } from "@/lib/types/market";
 
 export const dynamic = "force-dynamic";
 
-// DXY component weights (ICE Dollar Index)
-const DXY_PAIRS = [
-  { ticker: "C:EURUSD", weight: -0.576, label: "EUR/USD" },
-  { ticker: "C:USDJPY", weight: 0.136, label: "USD/JPY" },
-  { ticker: "C:GBPUSD", weight: -0.119, label: "GBP/USD" },
-  { ticker: "C:USDCAD", weight: 0.091, label: "USD/CAD" },
-  { ticker: "C:USDSEK", weight: 0.042, label: "USD/SEK" },
-  { ticker: "C:USDCHF", weight: 0.036, label: "USD/CHF" },
-];
+type TrendResult = { direction: "bullish" | "bearish" | "ranging"; strength: number };
+const RANGING: TrendResult = { direction: "ranging", strength: 0 };
 
 // Simple trend detection from candle series
-function detectTrend(closes: number[]): { direction: "bullish" | "bearish" | "ranging"; strength: number } {
-  if (closes.length < 10) return { direction: "ranging", strength: 0 };
+function detectTrend(closes: number[]): TrendResult {
+  if (closes.length < 10) return RANGING;
 
   const len = closes.length;
   const sma10 = closes.slice(-10).reduce((s, v) => s + v, 0) / 10;
@@ -48,27 +41,34 @@ function detectTrend(closes: number[]): { direction: "bullish" | "bearish" | "ra
   if (bearSignals >= 2) {
     return { direction: "bearish", strength: Math.min(bearSignals / 3, 1) };
   }
-  return { direction: "ranging", strength: 0 };
+  return RANGING;
+}
+
+// Invert EUR/USD closes to approximate DXY direction
+function invertCloses(candles: OHLCV[]): number[] {
+  return candles.map((c) => c.close > 0 ? 1 / c.close : 0).filter((v) => v > 0);
 }
 
 export async function GET() {
   try {
-    // Fetch current DXY quotes for spot price
-    const tickers = DXY_PAIRS.map((p) => p.ticker);
-    const quotes = await fetchMassiveForexQuotes(tickers);
-
     // Fetch EUR/USD candles at multiple timeframes (DXY is ~57.6% inverse EUR/USD)
-    // We use EUR/USD as primary proxy since it dominates DXY
-    const [h1Candles, h4Candles, d1Candles] = await Promise.all([
+    // Use Promise.allSettled so one failed timeframe doesn't kill the others
+    const [h1Result, h4Result, d1Result] = await Promise.allSettled([
       fetchMassiveCandles("C:EURUSD", "1h", 50),
       fetchMassiveCandles("C:EURUSD", "4h", 50),
       fetchMassiveCandles("C:EURUSD", "1d", 50),
     ]);
 
-    // DXY is INVERSE of EUR/USD (when EUR falls, DXY rises)
-    const invertCloses = (candles: typeof h1Candles) =>
-      candles.map((c) => c.close > 0 ? 1 / c.close : 0).filter((v) => v > 0);
+    const h1Candles = h1Result.status === "fulfilled" ? h1Result.value : [];
+    const h4Candles = h4Result.status === "fulfilled" ? h4Result.value : [];
+    const d1Candles = d1Result.status === "fulfilled" ? d1Result.value : [];
 
+    // Log failures for debugging
+    if (h1Result.status === "rejected") console.warn("[DXY] 1h candle fetch failed:", h1Result.reason);
+    if (h4Result.status === "rejected") console.warn("[DXY] 4h candle fetch failed:", h4Result.reason);
+    if (d1Result.status === "rejected") console.warn("[DXY] 1d candle fetch failed:", d1Result.reason);
+
+    // DXY is INVERSE of EUR/USD (when EUR falls, DXY rises)
     const h1Trend = detectTrend(invertCloses(h1Candles));
     const h4Trend = detectTrend(invertCloses(h4Candles));
     const d1Trend = detectTrend(invertCloses(d1Candles));
@@ -101,9 +101,9 @@ export async function GET() {
     console.error("[DXY Analysis] Error:", error);
     return NextResponse.json({
       trends: {
-        "1h": { direction: "ranging", strength: 0 },
-        "4h": { direction: "ranging", strength: 0 },
-        "1d": { direction: "ranging", strength: 0 },
+        "1h": RANGING,
+        "4h": RANGING,
+        "1d": RANGING,
       },
       overallBias: "neutral",
       trendScore: 0,

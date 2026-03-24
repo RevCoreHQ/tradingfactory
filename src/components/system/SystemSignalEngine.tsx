@@ -116,7 +116,7 @@ export function SystemSignalEngine() {
         <h4 className="text-[12px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-3">
           Regime-Adaptive Cluster Weights
         </h4>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {clusterWeights.map((w) => (
             <div key={w.regime} className="space-y-2">
               <div className="text-[12px] font-semibold text-foreground text-center">{w.regime}</div>

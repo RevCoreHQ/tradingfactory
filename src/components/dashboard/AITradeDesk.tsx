@@ -350,7 +350,7 @@ function ScaleInBanner({
           <X className="h-2.5 w-2.5" />
         </button>
       </div>
-      <div className="grid grid-cols-4 gap-2 mt-2 text-[12px]">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2 text-[12px]">
         <div>
           <span className="text-muted-foreground/50">Pullback</span>
           <div className="font-mono font-semibold text-foreground">{scaleIn.pullbackPercent}%</div>
@@ -636,7 +636,7 @@ function SetupCard({
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <div className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">
                 Entry Zone
@@ -832,7 +832,7 @@ function HistoryTab({ history }: { history: TrackedSetup[] }) {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="section-card p-3">
           <div className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1">Total</div>
           <div className="text-sm font-bold text-foreground">{history.length}</div>
@@ -861,7 +861,8 @@ function HistoryTab({ history }: { history: TrackedSetup[] }) {
         </div>
       </div>
 
-      <div className="section-card overflow-hidden">
+      <div className="section-card overflow-hidden overflow-x-auto">
+        <div className="min-w-[640px]">
         <div className="px-4 py-2 border-b border-border/30 grid grid-cols-8 text-[11px] font-semibold text-muted-foreground/50 uppercase tracking-wider">
           <span>Instrument</span>
           <span>Direction</span>
@@ -931,6 +932,7 @@ function HistoryTab({ history }: { history: TrackedSetup[] }) {
             );
           })}
         </div>
+        </div>
       </div>
     </div>
   );
@@ -959,7 +961,8 @@ function LearningTab({ patterns }: { patterns: Record<string, ConfluencePattern>
         </span>
       </div>
 
-      <div className="section-card overflow-hidden">
+      <div className="section-card overflow-hidden overflow-x-auto">
+        <div className="min-w-[480px]">
         <div className="px-4 py-2 border-b border-border/30 grid grid-cols-6 text-[11px] font-semibold text-muted-foreground/50 uppercase tracking-wider">
           <span className="col-span-2">Pattern</span>
           <span>Trades</span>
@@ -999,6 +1002,7 @@ function LearningTab({ patterns }: { patterns: Record<string, ConfluencePattern>
               </div>
             );
           })}
+        </div>
         </div>
       </div>
     </div>

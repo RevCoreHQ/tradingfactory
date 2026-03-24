@@ -50,7 +50,7 @@ export function SystemPage() {
 
         <SystemHero scrollYProgress={scrollYProgress} />
 
-        <main className="max-w-[1400px] mx-auto px-8 py-8 space-y-16">
+        <main className="max-w-[1400px] mx-auto px-3 md:px-8 py-4 md:py-8 space-y-8 md:space-y-16">
           {/* Pipeline Visualization */}
           <section>
             <SystemPipelineFlow />
