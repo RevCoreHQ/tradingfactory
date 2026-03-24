@@ -318,17 +318,17 @@ export function MarketPulse() {
         <Popover>
           <PopoverTrigger className="text-[12px] text-muted-foreground/60 mt-2 cursor-pointer hover:text-muted-foreground transition-colors underline decoration-dotted underline-offset-2 flex items-center gap-1">
             {strongConviction > 0 && <Star className="h-2.5 w-2.5 fill-[#FFD700] text-[#FFD700]" />}
-            {strongConviction} of {totalInstruments} strong conviction
+            {strongConviction} of {totalInstruments} strong bias
           </PopoverTrigger>
           <PopoverContent side="bottom" align="start" sideOffset={8} className="w-64 p-0">
             <div className="px-3 py-2.5 border-b border-border/30">
-              <span className="text-xs font-semibold">Strong Conviction</span>
+              <span className="text-xs font-semibold">Strong Bias</span>
               <span className="text-[12px] text-muted-foreground/50 ml-2">|bias| &ge; 45</span>
             </div>
             <div className="max-h-[240px] overflow-y-auto">
               {strongConvictionInstruments.length === 0 ? (
                 <div className="px-3 py-4 text-center text-[13px] text-muted-foreground/50">
-                  No strong conviction instruments
+                  No instruments with strong bias
                 </div>
               ) : (
                 strongConvictionInstruments.map((sc) => (
