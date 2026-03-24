@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchMassiveQuotes } from "@/lib/api/massive";
 import { fetchCryptoPrice } from "@/lib/api/coingecko";
+import { fetchForexCandleData } from "@/lib/api/finnhub";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import type { PriceQuote } from "@/lib/types/market";
 
@@ -41,6 +42,42 @@ export async function GET(req: NextRequest) {
       } catch {
         // Silent fail
       }
+    }
+
+    // ── Fallback: Finnhub for missing index/commodity quotes ──
+    const finnhubKey = process.env.FINNHUB_API_KEY;
+    if (finnhubKey) {
+      const stillMissing = requested.filter(
+        (i) => !quotes[i.id] && i.finnhubSymbol
+      );
+      const now = Math.floor(Date.now() / 1000);
+      const dayAgo = now - 86400;
+
+      await Promise.allSettled(
+        stillMissing.map(async (inst) => {
+          try {
+            const candles = await fetchForexCandleData(inst.finnhubSymbol!, "60", dayAgo, now);
+            if (candles.length < 2) return;
+            const latest = candles[candles.length - 1];
+            const first = candles[0];
+            const change = latest.close - first.open;
+            const changePercent = first.open > 0 ? (change / first.open) * 100 : 0;
+            quotes[inst.id] = {
+              instrument: inst.id,
+              bid: latest.close,
+              ask: latest.close,
+              mid: latest.close,
+              timestamp: latest.timestamp,
+              change,
+              changePercent,
+              high24h: Math.max(...candles.map((c) => c.high)),
+              low24h: Math.min(...candles.map((c) => c.low)),
+            };
+          } catch {
+            // Silent fail per instrument
+          }
+        })
+      );
     }
 
     return NextResponse.json(

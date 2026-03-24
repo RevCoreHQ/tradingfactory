@@ -6,9 +6,18 @@ import { INSTRUMENTS } from "@/lib/utils/constants";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { Activity, TrendingUp, TrendingDown, DollarSign, BarChart3, Star } from "lucide-react";
+import { Activity, TrendingUp, TrendingDown, Minus, DollarSign, BarChart3, Star } from "lucide-react";
 import useSWR from "swr";
 import type React from "react";
+
+interface DXYAnalysis {
+  trends: Record<string, { direction: "bullish" | "bearish" | "ranging"; strength: number }>;
+  overallBias: "bullish" | "bearish" | "neutral";
+  trendScore: number;
+  impact: Record<string, string>;
+}
+
+const dxyFetcher = (url: string) => fetch(url).then((r) => r.json());
 
 const handleSpotlight = (e: React.MouseEvent<HTMLElement>) => {
   const rect = e.currentTarget.getBoundingClientRect();
@@ -41,6 +50,11 @@ export function MarketPulse() {
   const allBiasResults = useMarketStore((s) => s.allBiasResults);
   const biasTimeframe = "intraday" as const;
   const currentResults = allBiasResults[biasTimeframe];
+
+  const { data: dxyAnalysis } = useSWR<DXYAnalysis>("/api/fundamentals/dxy-analysis", dxyFetcher, {
+    refreshInterval: 5 * 60_000,
+    revalidateOnFocus: false,
+  });
 
   const fg = fearGreedData?.current || { value: 50, label: "Neutral" };
   const dxy = bondData?.dxy || { value: 0, change: 0, changePercent: 0 };
@@ -170,37 +184,112 @@ export function MarketPulse() {
               </span>
             )}
           </div>
-          <div className="text-[12px] text-muted-foreground/60 mt-2 font-mono">
-            {dxy.changePercent > 0.15 ? "USD Strength" : dxy.changePercent < -0.15 ? "USD Weakness" : "Stable"}
-          </div>
-        </PopoverTrigger>
-        <PopoverContent side="bottom" align="start" className="w-72">
-          <div className="space-y-2.5">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Why it matters</span>
-              <p className="text-sm text-foreground/70 leading-relaxed mt-1">
-                The Dollar Index tracks USD strength against a basket of major currencies. It directly impacts every pair you trade.
-              </p>
+          {/* Mini trend badges */}
+          {dxyAnalysis?.trends && (
+            <div className="flex items-center gap-1.5 mt-2">
+              {(["1h", "4h", "1d"] as const).map((tf) => {
+                const t = dxyAnalysis.trends[tf];
+                if (!t) return null;
+                return (
+                  <span
+                    key={tf}
+                    className={cn(
+                      "text-[10px] font-mono font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5",
+                      t.direction === "bullish" && "bg-bullish/12 text-bullish",
+                      t.direction === "bearish" && "bg-bearish/12 text-bearish",
+                      t.direction === "ranging" && "bg-muted text-muted-foreground"
+                    )}
+                  >
+                    {t.direction === "bullish" ? <TrendingUp className="h-2.5 w-2.5" /> : t.direction === "bearish" ? <TrendingDown className="h-2.5 w-2.5" /> : <Minus className="h-2.5 w-2.5" />}
+                    {tf}
+                  </span>
+                );
+              })}
             </div>
-            <div className="space-y-1.5 border-t border-border/30 pt-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Impact right now</span>
-              {dxy.changePercent > 0.15 ? (
-                <ul className="space-y-1 text-sm text-foreground/65">
-                  <li className="flex items-start gap-1.5"><span className="text-bearish shrink-0">&bull;</span>Bearish for Gold & Silver (inverse correlation)</li>
-                  <li className="flex items-start gap-1.5"><span className="text-bearish shrink-0">&bull;</span>Bearish for EUR, GBP, AUD, NZD vs USD</li>
-                  <li className="flex items-start gap-1.5"><span className="text-bullish shrink-0">&bull;</span>Bullish for USD/JPY, USD/CAD, USD/CHF</li>
-                  <li className="flex items-start gap-1.5"><span className="text-bearish shrink-0">&bull;</span>Headwind for commodities (Oil priced in USD)</li>
-                </ul>
-              ) : dxy.changePercent < -0.15 ? (
-                <ul className="space-y-1 text-sm text-foreground/65">
-                  <li className="flex items-start gap-1.5"><span className="text-bullish shrink-0">&bull;</span>Bullish for Gold & Silver (inverse correlation)</li>
-                  <li className="flex items-start gap-1.5"><span className="text-bullish shrink-0">&bull;</span>Bullish for EUR, GBP, AUD, NZD vs USD</li>
-                  <li className="flex items-start gap-1.5"><span className="text-bearish shrink-0">&bull;</span>Bearish for USD/JPY, USD/CAD, USD/CHF</li>
-                  <li className="flex items-start gap-1.5"><span className="text-bullish shrink-0">&bull;</span>Tailwind for commodities (Oil priced in USD)</li>
-                </ul>
-              ) : (
-                <p className="text-sm text-foreground/65">USD is stable — no strong directional pressure on your pairs.</p>
-              )}
+          )}
+          {!dxyAnalysis?.trends && (
+            <div className="text-[12px] text-muted-foreground/60 mt-2 font-mono">
+              {dxy.changePercent > 0.15 ? "USD Strength" : dxy.changePercent < -0.15 ? "USD Weakness" : "Stable"}
+            </div>
+          )}
+        </PopoverTrigger>
+        <PopoverContent side="bottom" align="start" className="w-80">
+          <div className="space-y-3">
+            {/* MTF Trend Table */}
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">USD Trend by Timeframe</span>
+              <div className="mt-2 space-y-1.5">
+                {(["1h", "4h", "1d"] as const).map((tf) => {
+                  const t = dxyAnalysis?.trends?.[tf];
+                  const label = tf === "1h" ? "Intraday (1H)" : tf === "4h" ? "Swing (4H)" : "Daily (1D)";
+                  const dir = t?.direction || "ranging";
+                  return (
+                    <div key={tf} className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">{label}</span>
+                      <span
+                        className={cn(
+                          "text-xs font-bold uppercase px-2 py-0.5 rounded flex items-center gap-1",
+                          dir === "bullish" && "bg-bullish/12 text-bullish",
+                          dir === "bearish" && "bg-bearish/12 text-bearish",
+                          dir === "ranging" && "bg-muted text-muted-foreground"
+                        )}
+                      >
+                        {dir === "bullish" ? <TrendingUp className="h-3 w-3" /> : dir === "bearish" ? <TrendingDown className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
+                        {dir === "bullish" ? "Bullish" : dir === "bearish" ? "Bearish" : "Ranging"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Overall Bias */}
+            {dxyAnalysis?.overallBias && (
+              <div className="border-t border-border/30 pt-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Overall USD Bias</span>
+                  <span
+                    className={cn(
+                      "text-xs font-bold uppercase px-2 py-0.5 rounded",
+                      dxyAnalysis.overallBias === "bullish" && "bg-bullish/15 text-bullish",
+                      dxyAnalysis.overallBias === "bearish" && "bg-bearish/15 text-bearish",
+                      dxyAnalysis.overallBias === "neutral" && "bg-muted text-muted-foreground"
+                    )}
+                  >
+                    {dxyAnalysis.overallBias}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Impact on your trades */}
+            <div className="border-t border-border/30 pt-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Impact on your instruments</span>
+              {(() => {
+                const bias = dxyAnalysis?.overallBias || (dxy.changePercent > 0.15 ? "bullish" : dxy.changePercent < -0.15 ? "bearish" : "neutral");
+                if (bias === "neutral") return <p className="text-sm text-foreground/65 mt-1">USD is stable — no strong directional pressure on your pairs.</p>;
+                const usdStrong = bias === "bullish";
+                return (
+                  <ul className="space-y-1 mt-1.5 text-sm text-foreground/65">
+                    <li className="flex items-start gap-1.5">
+                      <span className={cn("shrink-0", usdStrong ? "text-bearish" : "text-bullish")}>&bull;</span>
+                      {usdStrong ? "Bearish" : "Bullish"} for Gold & Silver (inverse to USD)
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className={cn("shrink-0", usdStrong ? "text-bearish" : "text-bullish")}>&bull;</span>
+                      {usdStrong ? "Bearish" : "Bullish"} for EUR, GBP, AUD, NZD vs USD
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className={cn("shrink-0", usdStrong ? "text-bullish" : "text-bearish")}>&bull;</span>
+                      {usdStrong ? "Bullish" : "Bearish"} for USD/JPY, USD/CAD, USD/CHF
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className={cn("shrink-0", usdStrong ? "text-bearish" : "text-bullish")}>&bull;</span>
+                      {usdStrong ? "Headwind" : "Tailwind"} for Oil (priced in USD)
+                    </li>
+                  </ul>
+                );
+              })()}
             </div>
           </div>
         </PopoverContent>

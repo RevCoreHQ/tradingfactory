@@ -192,17 +192,63 @@ export async function fetchMassiveCandles(
 /**
  * Convenience: fetch candles by instrument ID and timeframe.
  */
+/**
+ * Finnhub resolution mapping for candle timeframes.
+ */
+const FINNHUB_RESOLUTION: Record<string, string> = {
+  "1min": "1",
+  "5min": "5",
+  "15m": "15",
+  "15min": "15",
+  "30min": "30",
+  "1h": "60",
+  "4h": "240",  // Not natively supported by Finnhub free — but we try
+  "1d": "D",
+  "1day": "D",
+  "1w": "W",
+};
+
+/**
+ * Fetch candles by instrument ID — Polygon primary, Finnhub fallback.
+ */
 export async function fetchCandlesForInstrument(
   instrumentId: string,
   timeframe: string,
   limit: number = 200
 ): Promise<OHLCV[]> {
+  // Try Polygon first
   const ticker = getMassiveTicker(instrumentId);
-  if (!ticker) {
-    console.warn(`[Massive] No ticker mapping for ${instrumentId}`);
+  if (ticker) {
+    const candles = await fetchMassiveCandles(ticker, timeframe, limit);
+    if (candles.length >= 20) return candles;
+  }
+
+  // Fallback: Finnhub
+  const finnhubKey = process.env.FINNHUB_API_KEY;
+  if (!finnhubKey) return [];
+
+  try {
+    // Dynamic import to avoid circular deps
+    const { fetchForexCandleData } = await import("@/lib/api/finnhub");
+
+    // Look up Finnhub symbol from constants
+    const { INSTRUMENTS } = await import("@/lib/utils/constants");
+    const inst = INSTRUMENTS.find((i) => i.id === instrumentId);
+    const finnhubSymbol = inst?.finnhubSymbol;
+    if (!finnhubSymbol) return [];
+
+    const resolution = FINNHUB_RESOLUTION[timeframe] || "60";
+    const now = Math.floor(Date.now() / 1000);
+    const config = TIMEFRAME_CONFIG[timeframe] || { daysBack: 30 };
+    const from = now - config.daysBack * 86400;
+
+    console.log(`[Massive] Polygon empty for ${instrumentId}, trying Finnhub ${finnhubSymbol}`);
+    const candles = await fetchForexCandleData(finnhubSymbol, resolution, from, now);
+    return candles.slice(-limit);
+  } catch (err) {
+    console.warn(`[Massive] Finnhub fallback failed for ${instrumentId}:`, err);
     return [];
   }
-  return fetchMassiveCandles(ticker, timeframe, limit);
 }
 
 // ── Snapshot types ──
