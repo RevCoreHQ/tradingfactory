@@ -29,13 +29,21 @@ async function fetchCandles(inst: (typeof INSTRUMENTS)[number]): Promise<OHLCV[]
     const tdSymbol = inst.twelveDataSymbol || inst.symbol;
     const candles = await fetchTwelveDataCandles(tdSymbol, tdInterval, LIMIT);
     if (candles.length > 0) return candles;
-  } catch {}
+    console.warn(`[BatchScores] TwelveData returned 0 candles for ${inst.id} (${tdSymbol})`);
+  } catch (e) {
+    console.error(`[BatchScores] TwelveData error for ${inst.id}:`, e instanceof Error ? e.message : e);
+  }
 
   try {
     const resolution = "60";
-    return await fetchForexCandleData(inst.finnhubSymbol || "", resolution, from, now);
-  } catch {}
+    const candles = await fetchForexCandleData(inst.finnhubSymbol || "", resolution, from, now);
+    if (candles.length > 0) return candles;
+    console.warn(`[BatchScores] Finnhub returned 0 candles for ${inst.id}`);
+  } catch (e) {
+    console.error(`[BatchScores] Finnhub error for ${inst.id}:`, e instanceof Error ? e.message : e);
+  }
 
+  console.warn(`[BatchScores] No candle data available for ${inst.id}`);
   return [];
 }
 
@@ -61,9 +69,15 @@ export async function GET() {
       for (const s of settled) {
         if (s.status === "fulfilled" && s.value.score) {
           results[s.value.id] = { score: s.value.score, currentPrice: s.value.currentPrice };
+        } else if (s.status === "rejected") {
+          console.error(`[BatchScores] Promise rejected:`, s.reason);
+        } else if (s.status === "fulfilled" && !s.value.score) {
+          console.warn(`[BatchScores] No score computed for ${s.value.id} (insufficient candles)`);
         }
       }
     }
+
+    console.log(`[BatchScores] Computed scores for ${Object.keys(results).length}/${INSTRUMENTS.length} instruments`);
 
     return NextResponse.json(
       { scores: results },

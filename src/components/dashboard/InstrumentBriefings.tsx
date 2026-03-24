@@ -339,33 +339,6 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
         </div>
       )}
 
-      {/* Signal Alignment Strip */}
-      <div className="flex items-center gap-2 text-xs mb-3">
-        <span className={cn(
-          "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
-          fundScore > 55 && techScore > 55 ? "bg-bullish/15 text-bullish" :
-          fundScore < 45 && techScore < 45 ? "bg-bearish/15 text-bearish" :
-          (fundScore > 55 && techScore < 45) || (fundScore < 45 && techScore > 55) ? "bg-amber/15 text-[var(--amber)]" :
-          "bg-neutral-accent/15 text-neutral-accent"
-        )}>
-          {fundScore > 55 && techScore > 55 ? "Aligned" :
-           fundScore < 45 && techScore < 45 ? "Aligned" :
-           (fundScore > 55 && techScore < 45) || (fundScore < 45 && techScore > 55) ? "Conflicting" :
-           "Mixed"}
-        </span>
-        <span className="text-muted-foreground/40 font-mono">
-          F:{Math.round(fundScore)}{scoreArrow(fundScore)}
-        </span>
-        <span className="text-muted-foreground/20">&middot;</span>
-        <span className="text-muted-foreground/40 font-mono">
-          T:{Math.round(techScore)}{scoreArrow(techScore)}
-        </span>
-        <span className="text-muted-foreground/20">&middot;</span>
-        <span className="text-muted-foreground/40 font-mono">
-          {Math.round(biasResult.signalAgreement * 100)}% agree
-        </span>
-      </div>
-
       {/* Analysis — inset container */}
       {summaryText && (
         <div className="bg-[var(--surface-0)] rounded-lg p-3 mb-4 flex-1">
