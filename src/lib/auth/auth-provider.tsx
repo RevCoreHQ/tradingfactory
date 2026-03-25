@@ -50,23 +50,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const supabase = createClient();
 
-  const fetchProfile = useCallback(
-    async (userId: string) => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
-      setProfile(data as Profile | null);
-    },
-    [supabase]
-  );
+  // Fetch profile via server API route (bypasses RLS)
+  const fetchMe = useCallback(async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      const data = await res.json();
+      setUser(data.user ?? null);
+      setProfile(data.profile as Profile | null);
+    } catch {
+      setUser(null);
+      setProfile(null);
+    }
+  }, []);
 
   const refreshProfile = useCallback(async () => {
-    if (user) {
-      await fetchProfile(user.id);
-    }
-  }, [user, fetchProfile]);
+    await fetchMe();
+  }, [fetchMe]);
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
@@ -76,31 +75,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase]);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getUser().then(({ data: { user: u } }) => {
-      setUser(u);
-      if (u) {
-        fetchProfile(u.id).finally(() => setIsLoading(false));
-      } else {
-        setIsLoading(false);
-      }
-    });
+    // Get initial auth state via server
+    fetchMe().finally(() => setIsLoading(false));
 
-    // Listen for auth changes
+    // Listen for auth changes (sign in/out)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      const u = session?.user ?? null;
-      setUser(u);
-      if (u) {
-        fetchProfile(u.id);
+      if (session?.user) {
+        fetchMe();
       } else {
+        setUser(null);
         setProfile(null);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [supabase, fetchProfile]);
+  }, [supabase, fetchMe]);
 
   return (
     <AuthContext.Provider
