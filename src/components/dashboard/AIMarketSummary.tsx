@@ -257,11 +257,7 @@ export function AIMarketSummary() {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-mono text-muted-foreground/40 px-1.5 py-0.5 bg-[var(--surface-2)] rounded hidden sm:inline">
-            {summary.provider === "gemini"
-              ? "Gemini Flash"
-              : summary.provider === "anthropic"
-                ? "Claude Sonnet"
-                : "GPT-4o Mini"}
+            AI Analysis
           </span>
           {timeSince && (
             <span className="text-[11px] font-mono text-muted-foreground/40">

@@ -117,13 +117,13 @@ export function WeekendLab() {
                 )}
               </div>
 
-              {/* Permanent: Copy prompt for Claude */}
+              {/* Permanent: Copy prompt for code update */}
               <div className="space-y-2">
                 <h4 className="text-[12px] font-bold text-muted-foreground/60 uppercase tracking-wider">
                   Permanent Code Change
                 </h4>
                 <p className="text-[12px] text-muted-foreground/50">
-                  Copies a prompt with the exact STYLE_PARAMS changes. Paste into Claude to update the code permanently.
+                  Copies a prompt with the exact STYLE_PARAMS changes for permanent code updates.
                 </p>
                 <button
                   onClick={handleCopyPrompt}
@@ -137,7 +137,7 @@ export function WeekendLab() {
                   ) : (
                     <>
                       <Copy className="h-3.5 w-3.5" />
-                      Copy for Claude
+                      Copy Prompt
                     </>
                   )}
                 </button>

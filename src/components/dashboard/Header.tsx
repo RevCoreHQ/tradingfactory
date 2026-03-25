@@ -84,9 +84,11 @@ export function Header({ mode = "analysis" }: HeaderProps) {
               </span>
             </div>
 
-            <div className="hidden md:block">
-              <DataFeedStatus />
-            </div>
+            {isAdmin && (
+              <div className="hidden md:block">
+                <DataFeedStatus />
+              </div>
+            )}
 
             <SetupNotificationsBadge />
 

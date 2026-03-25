@@ -125,7 +125,7 @@ export function useWeekendLab() {
     }
   }, [results, batchConfig.tradingStyle]);
 
-  // Generate copy-paste prompt for Claude
+  // Generate copy-paste prompt for code updates
   const getOptimizationPrompt = useCallback(() => {
     return generateOptimizationPrompt(results, batchConfig.tradingStyle);
   }, [results, batchConfig.tradingStyle]);

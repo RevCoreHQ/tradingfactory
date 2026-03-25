@@ -457,15 +457,15 @@ export function SystemComprehensiveGuide() {
         </p>
         <div className="bg-surface-2/30 rounded-md overflow-hidden mt-2">
           <TRow cells={["Role", "Model", "Purpose", "Max Tokens"]} header />
-          <TRow cells={["Risk Auditor", "Claude Opus 4.6", "Risk flags, portfolio conflicts, event warnings", "2048"]} />
-          <TRow cells={["Market Summary", "Claude Opus 4.6", "Macro regime, cross-asset themes, COT/carry", "1024"]} />
-          <TRow cells={["Desk Chat", "Claude Opus 4.6", "Multi-turn Q&A about setups and market", "512/reply"]} />
+          <TRow cells={["Risk Auditor", "LLM", "Risk flags, portfolio conflicts, event warnings", "2048"]} />
+          <TRow cells={["Market Summary", "LLM", "Macro regime, cross-asset themes, COT/carry", "1024"]} />
+          <TRow cells={["Desk Chat", "LLM", "Multi-turn Q&A about setups and market", "512/reply"]} />
         </div>
         <p className="text-[12px] mt-1">
-          <strong className="text-foreground">Fallbacks:</strong> Gemini 2.0 Flash (Google) → GPT-4o Mini (OpenAI) if Anthropic unavailable.
+          <strong className="text-foreground">Fallbacks:</strong> Multiple LLM providers with automatic failover.
         </p>
 
-        <h4 className="text-[12px] font-bold text-amber-600 dark:text-amber-500/70 uppercase tracking-wider mt-3">Risk Auditor (Claude Opus 4.6)</h4>
+        <h4 className="text-[12px] font-bold text-amber-600 dark:text-amber-500/70 uppercase tracking-wider mt-3">Risk Auditor</h4>
         <p className="text-[12px]">
           Receives all A+/A setups ranked by conviction, plus: regime summary, Fear &amp; Greed, DXY, bond yields,
           system consensus, impulse distribution, active positions, learning data, MTF alignment, ICT scores,
