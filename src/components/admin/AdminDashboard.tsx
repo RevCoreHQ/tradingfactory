@@ -38,7 +38,7 @@ interface SupportTicket {
 }
 
 export function AdminDashboard() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isLoading: authLoading } = useAuth();
   const [tab, setTab] = useState<Tab>("users");
   const [users, setUsers] = useState<Profile[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
@@ -115,6 +115,14 @@ export function AdminDashboard() {
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2000);
+  }
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="h-5 w-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+      </div>
+    );
   }
 
   if (!isAdmin) {
