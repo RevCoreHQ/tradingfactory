@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export interface AuthResult {
   user: { id: string; email: string };
@@ -20,7 +21,9 @@ export async function requireAuth(): Promise<AuthResult | NextResponse> {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: profile } = await supabase
+  // Use admin client to bypass RLS for profile fetch
+  const admin = createAdminClient();
+  const { data: profile } = await admin
     .from("profiles")
     .select("id, email, role, display_name")
     .eq("id", user.id)
