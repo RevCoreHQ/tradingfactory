@@ -368,22 +368,10 @@ export function MarketPulse() {
             const q = quotes[m.id];
             const change = q?.change || 0;
             const pct = q?.changePercent || 0;
-            const provider = q?.provider;
-            const providerLabel = provider === "polygon" ? "Polygon" : provider === "fmp" ? "FMP" : provider === "yahoo" ? "Yahoo" : provider === "coingecko" ? "CoinGecko" : null;
             return (
               <div key={m.id} className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <span className="text-[13px] font-medium text-muted-foreground">{m.label}</span>
-                  {providerLabel && (
-                    <Tooltip>
-                      <TooltipTrigger className="text-[9px] font-mono text-muted-foreground/30 uppercase tracking-wider cursor-default">
-                        {providerLabel}
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="text-xs">
-                        Data from {providerLabel}
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className={cn("text-[13px] font-mono font-semibold", change > 0 ? "text-bullish" : change < 0 ? "text-bearish" : "text-muted-foreground")}>

@@ -1391,7 +1391,7 @@ export function AITradeDesk() {
             ? "Failed to load trade desk data"
             : dataOk
               ? "No qualifying setups — no instruments meet A+/A conviction right now"
-              : "No candle data received — check Massive (Polygon) data provider status"}
+              : "No candle data received — data feeds may be loading"}
         </p>
         <p className="text-[12px] text-muted-foreground/40 mt-1 font-mono">
           Data: {instrumentsWithData}/{allInstrumentCount} instruments
