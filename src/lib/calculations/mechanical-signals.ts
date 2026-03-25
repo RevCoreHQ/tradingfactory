@@ -27,6 +27,7 @@ import { detectSupplyDemandZones } from "./supply-demand-zones";
 import { calculateExecutionCost, adjustStopLossForSpread, adjustRiskReward } from "./execution-costs";
 import { calculateVolTargetMultiplier } from "./volatility-targeting";
 import { evaluateNoTrade } from "./no-trade-engine";
+import { detectSFP, detectIDF } from "./sfp-idf-detection";
 import type { FairValueGap, SupplyDemandZone } from "@/lib/types/deep-analysis";
 import type { MarketStructure } from "@/lib/types/signals";
 
@@ -482,6 +483,68 @@ function volumeConfirmationSignal(
   };
 }
 
+// ==================== REVERSAL CLUSTER: SFP + IDF ====================
+
+function sfpSignal(
+  sfpResult: import("./sfp-idf-detection").SFPResult | null,
+  fullRegime?: FullRegime
+): MechanicalSignal {
+  if (!sfpResult || !sfpResult.detected) {
+    return {
+      system: "SFP",
+      type: "reversal",
+      direction: "neutral",
+      strength: 0,
+      description: "No swing failure pattern detected",
+      regimeMatch: true,
+    };
+  }
+
+  // SFP regime match: range or breakout (stop hunts are range/fake-breakout behavior)
+  const structure = fullRegime?.structure;
+  const regimeMatch = !structure || structure === "range" || structure === "breakout";
+
+  const sweepSide = sfpResult.direction === "bullish" ? "low" : "high";
+  return {
+    system: "SFP",
+    type: "reversal",
+    direction: sfpResult.direction,
+    strength: sfpResult.strength,
+    description: `Swing Failure Pattern — swept ${sweepSide} at ${sfpResult.sweptSwingPrice.toFixed(5)}, wick ${sfpResult.wickLengthATR.toFixed(1)}×ATR rejection`,
+    regimeMatch,
+  };
+}
+
+function idfSignal(
+  idfResult: import("./sfp-idf-detection").IDFResult | null,
+  fullRegime?: FullRegime
+): MechanicalSignal {
+  if (!idfResult || !idfResult.detected) {
+    return {
+      system: "IDF",
+      type: "reversal",
+      direction: "neutral",
+      strength: 0,
+      description: "No imbalance/displacement failure detected",
+      regimeMatch: true,
+    };
+  }
+
+  // IDF regime match: all regimes (displacement failures happen everywhere)
+  const confirmLabel = idfResult.structureBreakConfirmed
+    ? `confirmed by ${idfResult.structureBreakType}`
+    : "rejection only (no structure break)";
+
+  return {
+    system: "IDF",
+    type: "reversal",
+    direction: idfResult.direction,
+    strength: idfResult.strength,
+    description: `Imbalance/Displacement Failure — FVG ${idfResult.fvgFillPercent.toFixed(0)}% filled, ${confirmLabel}`,
+    regimeMatch: true,
+  };
+}
+
 function trendAlignmentSignal(summary: TechnicalSummary, regime: MarketRegime, fullRegime?: FullRegime): MechanicalSignal {
   // Multi-MA alignment check: EMA(9) > EMA(21) > EMA(50) > SMA(200) = bullish stack
   const mas = summary.movingAverages;
@@ -765,14 +828,29 @@ export function generateTradeDeskSetup(
     false, // dataStale is checked at hook level
   );
 
+  // 2c. ICT context — detect FVG, institutional candles, S/D zones early (SFP/IDF need them)
+  const atrVal = summary.atr.value;
+  const fairValueGaps = detectFairValueGaps(candles, atrVal);
+  const institutionalCandles = detectInstitutionalCandles(candles, atrVal);
+  const consolidationBreakouts = detectConsolidationBreakouts(candles, atrVal, institutionalCandles);
+  const { supplyZones, demandZones } = detectSupplyDemandZones(candles, atrVal);
+  const allSDZones: SupplyDemandZone[] = [...supplyZones, ...demandZones];
+
+  // 2d. SFP + IDF detection (depends on market structure + FVG/IC)
+  const sfpResult = marketStructure ? detectSFP(candles, marketStructure, atrVal) : null;
+  const idfResult = marketStructure
+    ? detectIDF(candles, fairValueGaps, institutionalCandles, marketStructure, atrVal)
+    : null;
+
   // 3. Run all mechanical systems (regime-gated: non-matching signals already excluded)
-  // Audit v3: 4 truly independent signals (1 per cluster)
-  // Volume Confirmation added as 4th cluster — makes A+ tier achievable.
+  // Audit v4: 6 signals across 5 independent clusters (trend, mean_reversion, momentum, volume, reversal)
   let signals: MechanicalSignal[] = [
     trendAlignmentSignal(summary, regime, fullRegime),
     rsiExtremesSignal(summary, candles, regime, fullRegime),
     impulseSignal(summary),
     volumeConfirmationSignal(summary, candles),
+    sfpSignal(sfpResult, fullRegime),
+    idfSignal(idfResult, fullRegime),
   ];
 
   // 3b. Apply system performance weights (auto-kill weak systems)
@@ -826,15 +904,7 @@ export function generateTradeDeskSetup(
     });
   }
 
-  // 3b. ICT context — Fair Value Gaps, Institutional Candles, Consolidation Breakouts, S/D Zones
-  const atrVal = summary.atr.value;
-  const fairValueGaps = detectFairValueGaps(candles, atrVal);
-  const institutionalCandles = detectInstitutionalCandles(candles, atrVal);
-  const consolidationBreakouts = detectConsolidationBreakouts(candles, atrVal, institutionalCandles);
-  const { supplyZones, demandZones } = detectSupplyDemandZones(candles, atrVal);
-  const allSDZones: SupplyDemandZone[] = [...supplyZones, ...demandZones];
-
-  // Build ICT context for conviction + setup
+  // 3b. Build ICT context for conviction + setup (FVG/IC already computed at step 2c)
   const currentPrice = summary.currentPrice;
   const prelimDirection = (() => {
     const b = signals.filter((s) => s.direction === "bullish").length;
@@ -887,6 +957,12 @@ export function generateTradeDeskSetup(
     displacementDetected,
     consolidationBreakout,
     ictScore,
+    sfpDetected: sfpResult && sfpResult.detected
+      ? { direction: sfpResult.direction, strength: sfpResult.strength, description: `SFP swept ${sfpResult.direction === "bullish" ? "low" : "high"} at ${sfpResult.sweptSwingPrice.toFixed(5)}, wick ${sfpResult.wickLengthATR.toFixed(1)}×ATR` }
+      : null,
+    idfDetected: idfResult && idfResult.detected
+      ? { direction: idfResult.direction, strength: idfResult.strength, structureBreakConfirmed: idfResult.structureBreakConfirmed }
+      : null,
   };
 
   // 4. Calculate conviction (pass fullRegime + structure + ICT for phase-aware scoring)

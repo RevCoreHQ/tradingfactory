@@ -7,8 +7,8 @@ import { CpuArchitecture } from "@/components/ui/cpu-architecture";
 interface MechanicalSystem {
   name: string;
   book: string;
-  type: "Trend" | "Mean Reversion" | "Momentum";
-  cluster: "trend" | "mean_reversion" | "momentum";
+  type: "Trend" | "Mean Reversion" | "Momentum" | "Volume" | "Reversal";
+  cluster: "trend" | "mean_reversion" | "momentum" | "volume" | "reversal";
   logic: string;
   params: string;
 }
@@ -17,9 +17,12 @@ const systems: MechanicalSystem[] = [
   { name: "Trend Stack", book: "Multiple", type: "Trend", cluster: "trend", logic: "EMA(9) > EMA(21) > EMA(50) > SMA(200)", params: "EMAs: 9, 21, 50, 200" },
   { name: "RSI Extremes", book: "Weissman", type: "Mean Reversion", cluster: "mean_reversion", logic: "RSI(14) < 30 or > 70 with SMA(200) filter", params: "Period: 14" },
   { name: "Elder Impulse", book: "Elder", type: "Momentum", cluster: "momentum", logic: "EMA(13) slope + MACD-H slope", params: "EMA: 13" },
+  { name: "Volume Confirmation", book: "Elder", type: "Volume", cluster: "volume", logic: "VWAP deviation + volume surge + Force Index alignment", params: "VWAP, EMA2/13 Force Index" },
+  { name: "SFP", book: "ICT", type: "Reversal", cluster: "reversal", logic: "Sweep swing H/L → close back inside + wick ≥ 0.3 ATR", params: "Lookback: 50 bars, sweep: 5 candles" },
+  { name: "IDF", book: "ICT", type: "Reversal", cluster: "reversal", logic: "Displacement creates FVG → price returns → structure break opposite", params: "Displacement: 30 bars, FVG fill ≥ 25%" },
 ];
 
-const clusterConfig = {
+const clusterConfig: Record<string, { label: string; color: string; badgeColor: string; dot: string }> = {
   trend: {
     label: "Trend Cluster",
     color: "border-neutral-accent/30 bg-neutral-accent/5",
@@ -38,32 +41,52 @@ const clusterConfig = {
     badgeColor: "bg-bullish/15 text-bullish border-bullish/25",
     dot: "bg-bullish/50",
   },
+  volume: {
+    label: "Volume Cluster",
+    color: "border-sky-500/30 bg-sky-500/5",
+    badgeColor: "bg-sky-500/15 text-sky-700 dark:text-sky-400 border-sky-500/25",
+    dot: "bg-sky-500/50",
+  },
+  reversal: {
+    label: "Reversal Cluster",
+    color: "border-rose-500/30 bg-rose-500/5",
+    badgeColor: "bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/25",
+    dot: "bg-rose-500/50",
+  },
 };
 
 const clusterWeights = [
-  { regime: "Trend", trend: 0.45, mr: 0.15, mom: 0.40 },
-  { regime: "Range", trend: 0.15, mr: 0.45, mom: 0.40 },
-  { regime: "Breakout", trend: 0.35, mr: 0.10, mom: 0.55 },
+  { regime: "Trend", trend: 0.35, mr: 0.05, mom: 0.30, vol: 0.20, rev: 0.10 },
+  { regime: "Range", trend: 0.10, mr: 0.35, mom: 0.25, vol: 0.15, rev: 0.15 },
+  { regime: "Breakout", trend: 0.25, mr: 0.05, mom: 0.35, vol: 0.25, rev: 0.10 },
+];
+
+const weightBars: { key: string; label: string; field: keyof typeof clusterWeights[0]; barClass: string }[] = [
+  { key: "T", label: "T", field: "trend", barClass: "bg-neutral-accent/50" },
+  { key: "MR", label: "MR", field: "mr", barClass: "bg-amber-500/50" },
+  { key: "M", label: "M", field: "mom", barClass: "bg-bullish/50" },
+  { key: "V", label: "V", field: "vol", barClass: "bg-sky-500/50" },
+  { key: "R", label: "R", field: "rev", barClass: "bg-rose-500/50" },
 ];
 
 export function SystemSignalEngine() {
-  const clusters = ["trend", "mean_reversion", "momentum"] as const;
+  const clusters = ["trend", "mean_reversion", "momentum", "volume", "reversal"] as const;
 
   return (
     <div className="space-y-6">
-      {/* CpuArchitecture visualization — 8 systems flow to signal processor */}
+      {/* CpuArchitecture visualization */}
       <div className="rounded-xl overflow-hidden glass-card p-4">
         <CpuArchitecture
           text="TF"
           className="w-full max-h-[160px]"
         />
         <p className="text-center text-[12px] text-muted-foreground/50 mt-2">
-          3 independent systems fire in parallel through the signal processing core
+          6 independent systems across 5 de-correlated clusters fire through the signal processing core
         </p>
       </div>
 
-      {/* 3 cluster zones */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      {/* 5 cluster zones */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {clusters.map((cluster, ci) => {
           const config = clusterConfig[cluster];
           const clusterSystems = systems.filter((s) => s.cluster === cluster);
@@ -83,7 +106,7 @@ export function SystemSignalEngine() {
                   {config.label}
                 </span>
                 <span className={cn("ml-auto text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full border", config.badgeColor)}>
-                  {clusterSystems.length} signals
+                  {clusterSystems.length} {clusterSystems.length === 1 ? "signal" : "signals"}
                 </span>
               </div>
               <div className="space-y-2">
@@ -121,42 +144,20 @@ export function SystemSignalEngine() {
             <div key={w.regime} className="space-y-2">
               <div className="text-[12px] font-semibold text-foreground text-center">{w.regime}</div>
               <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-muted-foreground/50 w-8">T</span>
-                  <div className="flex-1 h-2 bg-surface-2/50 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      whileInView={{ width: `${w.trend * 100}%` }}
-                      viewport={{ once: true }}
-                      className="h-full bg-neutral-accent/50 rounded-full"
-                    />
+                {weightBars.map((bar) => (
+                  <div key={bar.key} className="flex items-center gap-2">
+                    <span className="text-[10px] text-muted-foreground/50 w-8">{bar.label}</span>
+                    <div className="flex-1 h-2 bg-surface-2/50 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        whileInView={{ width: `${(w[bar.field] as number) * 100}%` }}
+                        viewport={{ once: true }}
+                        className={cn("h-full rounded-full", bar.barClass)}
+                      />
+                    </div>
+                    <span className="text-[10px] font-mono text-muted-foreground/40 w-6">{w[bar.field] as number}</span>
                   </div>
-                  <span className="text-[10px] font-mono text-muted-foreground/40 w-6">{w.trend}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-muted-foreground/50 w-8">MR</span>
-                  <div className="flex-1 h-2 bg-surface-2/50 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      whileInView={{ width: `${w.mr * 100}%` }}
-                      viewport={{ once: true }}
-                      className="h-full bg-amber-500/50 rounded-full"
-                    />
-                  </div>
-                  <span className="text-[10px] font-mono text-muted-foreground/40 w-6">{w.mr}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-muted-foreground/50 w-8">M</span>
-                  <div className="flex-1 h-2 bg-surface-2/50 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      whileInView={{ width: `${w.mom * 100}%` }}
-                      viewport={{ once: true }}
-                      className="h-full bg-bullish/50 rounded-full"
-                    />
-                  </div>
-                  <span className="text-[10px] font-mono text-muted-foreground/40 w-6">{w.mom}</span>
-                </div>
+                ))}
               </div>
             </div>
           ))}

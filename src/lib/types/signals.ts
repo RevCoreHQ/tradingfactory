@@ -134,6 +134,8 @@ export interface TradeDeskSetup {
     displacementDetected: boolean;
     consolidationBreakout: boolean;
     ictScore: number; // 0-100
+    sfpDetected: { direction: "bullish" | "bearish"; strength: number; description: string } | null;
+    idfDetected: { direction: "bullish" | "bearish"; strength: number; structureBreakConfirmed: boolean } | null;
   };
   executionCost?: {
     spreadPips: number;
