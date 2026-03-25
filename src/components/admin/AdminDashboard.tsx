@@ -46,6 +46,8 @@ export function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState("");
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -84,12 +86,24 @@ export function AdminDashboard() {
   }
 
   async function createInvite() {
-    await fetch("/api/admin/invites", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: inviteEmail || null }),
-    });
-    setInviteEmail("");
+    setCreating(true);
+    setActionError(null);
+    try {
+      const res = await fetch("/api/admin/invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: inviteEmail || null }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setActionError(data.error || `Failed (${res.status})`);
+      } else {
+        setInviteEmail("");
+      }
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Network error");
+    }
+    setCreating(false);
     fetchData();
   }
 
@@ -219,11 +233,18 @@ export function AdminDashboard() {
                   />
                   <button
                     onClick={createInvite}
-                    className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-all shrink-0"
+                    disabled={creating}
+                    className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-all shrink-0"
                   >
-                    Generate Invite
+                    {creating ? "Creating..." : "Generate Invite"}
                   </button>
                 </div>
+
+                {actionError && (
+                  <div className="text-xs text-bearish bg-bearish/10 border border-bearish/20 rounded-lg px-3 py-2">
+                    {actionError}
+                  </div>
+                )}
 
                 {/* Invite list */}
                 <div className="space-y-2">
