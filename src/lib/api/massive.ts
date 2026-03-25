@@ -354,8 +354,12 @@ export interface MoverEntry {
   updated: number;
 }
 
+/** Set of Polygon tickers we actually trade — used to filter movers */
+const TRACKED_TICKERS = new Set(Object.values(TICKER_MAP));
+
 /**
  * Fetch top forex gainers or losers from Polygon snapshot.
+ * Filters to only include instruments we trade (TICKER_MAP).
  */
 export async function fetchMassiveMovers(
   direction: "gainers" | "losers"
@@ -368,13 +372,15 @@ export async function fetchMassiveMovers(
   if (!res.ok) return [];
 
   const data = await res.json();
-  return (data.tickers || []).map((t: Record<string, unknown>) => ({
-    ticker: t.ticker as string,
-    change: (t.todaysChange as number) || 0,
-    changePercent: (t.todaysChangePerc as number) || 0,
-    price: ((t as Record<string, Record<string, number>>).lastQuote?.a + (t as Record<string, Record<string, number>>).lastQuote?.b) / 2 || 0,
-    updated: typeof t.updated === "number" ? Math.floor(t.updated as number / 1_000_000) : Date.now(),
-  }));
+  return (data.tickers || [])
+    .filter((t: Record<string, unknown>) => TRACKED_TICKERS.has(t.ticker as string))
+    .map((t: Record<string, unknown>) => ({
+      ticker: t.ticker as string,
+      change: (t.todaysChange as number) || 0,
+      changePercent: (t.todaysChangePerc as number) || 0,
+      price: ((t as Record<string, Record<string, number>>).lastQuote?.a + (t as Record<string, Record<string, number>>).lastQuote?.b) / 2 || 0,
+      updated: typeof t.updated === "number" ? Math.floor(t.updated as number / 1_000_000) : Date.now(),
+    }));
 }
 
 // ── Technical Indicators (server-side from Polygon) ──
