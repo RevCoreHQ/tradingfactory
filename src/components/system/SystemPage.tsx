@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { useScroll } from "motion/react";
 import { Header } from "@/components/dashboard/Header";
-import { EtheralShadow } from "@/components/ui/etheral-shadow";
+
 import { SystemHero } from "./SystemHero";
 import { SystemPipelineFlow } from "./SystemPipelineFlow";
 import { SystemSectionCard } from "./SystemSectionCard";
@@ -34,18 +34,8 @@ export function SystemPage() {
   });
 
   return (
-    <div ref={containerRef} className="relative min-h-screen bg-background">
-      {/* Ethereal shadow background — dark mode only */}
-      <div className="fixed inset-0 z-0 hidden dark:block">
-        <EtheralShadow
-          color="rgba(12, 40, 35, 1)"
-          animation={{ scale: 60, speed: 40 }}
-          noise={{ opacity: 0.6, scale: 1.2 }}
-          sizing="fill"
-        />
-      </div>
-
-      <div className="relative z-10">
+    <div ref={containerRef} className="min-h-screen bg-background">
+      <div>
         <Header mode="brain" />
 
         <SystemHero scrollYProgress={scrollYProgress} />

@@ -5,7 +5,7 @@ import { SectionHeader } from "./SectionHeader";
 import { AITradeDesk } from "./AITradeDesk";
 import { TradingAdvisor } from "./TradingAdvisor";
 import { MarketHoursStrip } from "@/components/common/MarketHours";
-import { EtheralShadow } from "@/components/ui/etheral-shadow";
+
 import { useAllBiasScores } from "@/lib/hooks/useAllBiasScores";
 import { useRealtimePrices } from "@/lib/hooks/useRealtimePrices";
 import { Brain, LayoutList } from "lucide-react";
@@ -16,17 +16,8 @@ export function TradingDeskPage() {
   useRealtimePrices();
 
   return (
-    <div className="relative min-h-screen bg-background">
-      <div className="fixed inset-0 z-0 hidden dark:block">
-        <EtheralShadow
-          color="rgba(12, 40, 35, 1)"
-          animation={{ scale: 60, speed: 40 }}
-          noise={{ opacity: 0.6, scale: 1.2 }}
-          sizing="fill"
-        />
-      </div>
-
-      <div className="relative z-10">
+    <div className="min-h-screen bg-background">
+      <div>
         <Header mode="desk" />
         <MarketHoursStrip />
 

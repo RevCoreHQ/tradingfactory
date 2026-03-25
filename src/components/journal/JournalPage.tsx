@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Header } from "@/components/dashboard/Header";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
-import { EtheralShadow } from "@/components/ui/etheral-shadow";
+
 import { BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -42,17 +42,8 @@ export function JournalPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-background">
-      <div className="fixed inset-0 z-0 hidden dark:block">
-        <EtheralShadow
-          color="rgba(12, 40, 35, 1)"
-          animation={{ scale: 60, speed: 40 }}
-          noise={{ opacity: 0.6, scale: 1.2 }}
-          sizing="fill"
-        />
-      </div>
-
-      <div className="relative z-10">
+    <div className="min-h-screen bg-background">
+      <div>
         <Header mode="journal" />
 
         <main className="max-w-[1400px] mx-auto px-3 md:px-8 py-4 md:py-6 space-y-6 md:space-y-8">
