@@ -333,7 +333,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
       {/* Fundamental vs Technical + Momentum/Trend */}
       <div className="grid grid-cols-2 gap-2 mb-3">
         <Tooltip>
-          <TooltipTrigger render={<div />} className="bg-[var(--surface-0)] rounded-lg px-3 py-2 cursor-default">
+          <TooltipTrigger render={<div />} className="bg-[var(--surface-2)]/50 rounded-lg px-3 py-2 cursor-default border border-border/10">
             <div className="flex items-center gap-1.5 mb-1">
               <BarChart3 className="h-3 w-3 text-muted-foreground/50" />
               <span className="text-xs text-muted-foreground/60">Fundamental</span>
@@ -362,7 +362,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
           </TooltipContent>
         </Tooltip>
         <Tooltip>
-          <TooltipTrigger render={<div />} className="bg-[var(--surface-0)] rounded-lg px-3 py-2 cursor-default">
+          <TooltipTrigger render={<div />} className="bg-[var(--surface-2)]/50 rounded-lg px-3 py-2 cursor-default border border-border/10">
             <div className="flex items-center gap-1.5 mb-1">
               <Activity className="h-3 w-3 text-muted-foreground/50" />
               <span className="text-xs text-muted-foreground/60">Technical</span>
@@ -395,7 +395,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
       {/* Momentum + Trend pills */}
       <div className="flex items-center gap-2 mb-3">
         <Tooltip>
-          <TooltipTrigger className="flex items-center gap-1 bg-[var(--surface-0)] px-2.5 py-1 rounded-md text-xs font-mono cursor-default">
+          <TooltipTrigger className="flex items-center gap-1 bg-[var(--surface-2)]/50 px-2.5 py-1 rounded-md text-xs font-mono cursor-default border border-border/10">
             {momentum > 50
               ? <TrendingUp className="h-3 w-3 text-bullish" />
               : <TrendingDown className="h-3 w-3 text-bearish" />
@@ -413,7 +413,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
           </TooltipContent>
         </Tooltip>
         <Tooltip>
-          <TooltipTrigger className="flex items-center gap-1 bg-[var(--surface-0)] px-2.5 py-1 rounded-md text-xs font-mono cursor-default">
+          <TooltipTrigger className="flex items-center gap-1 bg-[var(--surface-2)]/50 px-2.5 py-1 rounded-md text-xs font-mono cursor-default border border-border/10">
             {trend > 50
               ? <TrendingUp className="h-3 w-3 text-bullish" />
               : <TrendingDown className="h-3 w-3 text-bearish" />
@@ -478,7 +478,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
 
       {/* Analysis — inset container */}
       {summaryText && (
-        <div className="bg-[var(--surface-0)] rounded-lg p-3 mb-4 flex-1">
+        <div className="bg-[var(--surface-2)]/40 rounded-lg p-3 mb-4 flex-1 border border-border/15">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 text-neutral-accent" />
@@ -549,7 +549,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
           </div>
 
           {/* Summary */}
-          <p className="text-sm text-foreground/70 leading-relaxed">
+          <p className="text-sm text-foreground/80 leading-relaxed">
             {summaryText}
           </p>
 
@@ -563,7 +563,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
                     <BiasDot score={fundScore} />
                     <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Fundamentals</span>
                   </div>
-                  <p className="text-sm text-foreground/65 leading-relaxed mt-0.5">{fundReason}</p>
+                  <p className="text-sm text-foreground/75 leading-relaxed mt-0.5">{fundReason}</p>
                 </div>
               );
             })()}
@@ -575,7 +575,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
                     <BiasDot score={techScore} />
                     <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Technicals</span>
                   </div>
-                  <p className="text-sm text-foreground/65 leading-relaxed mt-0.5">{techReason}</p>
+                  <p className="text-sm text-foreground/75 leading-relaxed mt-0.5">{techReason}</p>
                 </div>
               );
             })()}
@@ -596,7 +596,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
                   </div>
                   <ul className="mt-0.5 space-y-0.5">
                     {catalysts.map((c, i) => (
-                      <li key={i} className="text-sm text-foreground/65 leading-relaxed flex items-start gap-1.5">
+                      <li key={i} className="text-sm text-foreground/75 leading-relaxed flex items-start gap-1.5">
                         <span className="text-neutral-accent mt-1.5 shrink-0">&bull;</span>
                         {c}
                       </li>
