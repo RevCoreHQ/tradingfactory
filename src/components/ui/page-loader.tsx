@@ -18,14 +18,14 @@ const BOOT_MESSAGES = [
   "Preparing your desk...",
 ];
 
-const BOOT_SPEED = 15; // ms per animation step (fast)
-const BOOT_HOLD = 400; // ms hold between messages
-const WELCOME_SPEED = 25; // ms per animation step (dramatic)
-const MIN_BOOT_MS = 5000; // minimum time in boot phase
-const MAX_BOOT_MS = 30000; // max time before forcing welcome (market summary LLM can take 20s+)
-const FADE_MS = 600;
+const BOOT_SPEED = 12; // ms per animation step (fast)
+const BOOT_HOLD = 300; // ms hold between messages
+const WELCOME_SPEED = 18; // ms per animation step
+const MIN_BOOT_MS = 1500; // minimum time in boot phase
+const MAX_BOOT_MS = 10000; // max time before forcing welcome
+const FADE_MS = 400;
 
-const WELCOME_HOLD = 1200; // ms to hold welcome before fading out
+const WELCOME_HOLD = 600; // ms to hold welcome before fading out
 
 type Phase = "booting" | "welcome" | "fading" | "done";
 
