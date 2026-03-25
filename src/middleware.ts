@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { createClient } from "@supabase/supabase-js";
 
 const PUBLIC_ROUTES = ["/login", "/signup"];
 const AUTH_API_PREFIX = "/api/auth";
 const ADMIN_ROUTES = ["/brain", "/admin"];
+
+/** Service-role client for middleware profile checks (bypasses RLS) */
+function getAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -14,7 +23,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Refresh session and get user
-  const { user, supabaseResponse, supabase } = await updateSession(request);
+  const { user, supabaseResponse } = await updateSession(request);
 
   // Public routes: if logged in, redirect to home
   if (PUBLIC_ROUTES.some((r) => pathname.startsWith(r))) {
@@ -40,7 +49,9 @@ export async function middleware(request: NextRequest) {
     ADMIN_ROUTES.some((r) => pathname.startsWith(r)) ||
     (!pathname.startsWith("/welcome") && !pathname.startsWith("/api"))
   ) {
-    const { data: profile } = await supabase
+    // Use service-role client to bypass RLS for middleware checks
+    const admin = getAdminClient();
+    const { data: profile } = await admin
       .from("profiles")
       .select("role, onboarding_complete")
       .eq("id", user.id)
