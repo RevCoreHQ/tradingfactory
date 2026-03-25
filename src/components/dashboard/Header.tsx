@@ -1,31 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useMarketStore } from "@/lib/store/market-store";
+import { useAuth } from "@/lib/auth/auth-provider";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { AlertsBell } from "@/components/alerts/AlertsPanel";
 import { SetupNotificationsBadge } from "./SetupNotifications";
 import { DataFeedStatus } from "./DataFeedStatus";
+import { UserMenu } from "@/components/auth/UserMenu";
 import { Menu, X } from "lucide-react";
 
 interface HeaderProps {
   mode?: "overview" | "desk" | "analysis" | "journal" | "brain" | "testing";
 }
 
-const NAV_ITEMS: { href: string; label: string; mode: HeaderProps["mode"] }[] = [
+const ALL_NAV_ITEMS: {
+  href: string;
+  label: string;
+  mode: HeaderProps["mode"];
+  adminOnly?: boolean;
+}[] = [
   { href: "/", label: "Overview", mode: "overview" },
   { href: "/desk", label: "Desk", mode: "desk" },
   { href: "/instrument", label: "Analysis", mode: "analysis" },
   { href: "/journal", label: "Journal", mode: "journal" },
-  { href: "/brain", label: "Brain", mode: "brain" },
+  { href: "/brain", label: "Brain", mode: "brain", adminOnly: true },
   { href: "/testing", label: "Testing", mode: "testing" },
 ];
 
 export function Header({ mode = "analysis" }: HeaderProps) {
   const wsConnected = useMarketStore((s) => s.wsConnected);
+  const { isAdmin } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const navItems = useMemo(
+    () => ALL_NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin),
+    [isAdmin]
+  );
 
   return (
     <>
@@ -39,7 +52,7 @@ export function Header({ mode = "analysis" }: HeaderProps) {
 
           {/* Center: Segmented control — desktop only */}
           <div className="hidden md:flex items-center gap-0.5 bg-[var(--surface-1)] rounded-full p-0.5 border border-border/30 shrink min-w-0">
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <Link
                 key={item.mode}
                 href={item.href}
@@ -79,6 +92,8 @@ export function Header({ mode = "analysis" }: HeaderProps) {
 
             <AlertsBell />
 
+            <UserMenu />
+
             <ThemeToggle />
 
             {/* Mobile hamburger */}
@@ -102,7 +117,7 @@ export function Header({ mode = "analysis" }: HeaderProps) {
           />
           <div className="md:hidden fixed top-12 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/30 shadow-[0_8px_30px_oklch(0_0_0/0.3)]">
             <nav className="px-4 py-3 space-y-1">
-              {NAV_ITEMS.map((item) => (
+              {navItems.map((item) => (
                 <Link
                   key={item.mode}
                   href={item.href}
@@ -117,6 +132,13 @@ export function Header({ mode = "analysis" }: HeaderProps) {
                   {item.label}
                 </Link>
               ))}
+              <Link
+                href="/support"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-[var(--surface-1)] transition-all"
+              >
+                Support
+              </Link>
             </nav>
           </div>
         </>
