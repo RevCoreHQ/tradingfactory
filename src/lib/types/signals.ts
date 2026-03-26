@@ -136,6 +136,7 @@ export interface TradeDeskSetup {
     ictScore: number; // 0-100
     sfpDetected: { direction: "bullish" | "bearish"; strength: number; description: string } | null;
     idfDetected: { direction: "bullish" | "bearish"; strength: number; structureBreakConfirmed: boolean } | null;
+    obRetestDetected: { direction: "bullish" | "bearish"; strength: number; zone: { type: "supply" | "demand"; high: number; low: number; strength: number } } | null;
   };
   executionCost?: {
     spreadPips: number;

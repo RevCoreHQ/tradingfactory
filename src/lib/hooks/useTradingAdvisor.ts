@@ -206,6 +206,9 @@ export function useTradingAdvisor(params: UseTradingAdvisorParams | null) {
             ? { type: s.ictContext.nearestOB.type, strength: s.ictContext.nearestOB.strength }
             : null,
           displacement: s.ictContext?.displacementDetected,
+          obRetest: s.ictContext?.obRetestDetected
+            ? { direction: s.ictContext.obRetestDetected.direction, zoneType: s.ictContext.obRetestDetected.zone.type, strength: s.ictContext.obRetestDetected.strength }
+            : null,
           bestEntryPattern: s.entryOptimization?.bestSignal?.type,
           entryScore: s.entryOptimization?.entryScore,
           pullbackDepth: s.entryOptimization?.pullbackDepth,

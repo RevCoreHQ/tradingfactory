@@ -25,6 +25,7 @@ const SIGNAL_CLUSTER_MAP: Record<string, SignalCluster> = {
   "Volume Confirmation": "volume",
   "SFP": "reversal",
   "IDF": "reversal",
+  "OB Retest": "reversal",
 };
 
 // ==================== REGIME-DEPENDENT WEIGHTS ====================

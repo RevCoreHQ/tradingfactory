@@ -28,6 +28,7 @@ import { calculateExecutionCost, adjustStopLossForSpread, adjustRiskReward } fro
 import { calculateVolTargetMultiplier } from "./volatility-targeting";
 import { evaluateNoTrade } from "./no-trade-engine";
 import { detectSFP, detectIDF } from "./sfp-idf-detection";
+import { detectOBRetest, type OBRetestResult } from "./ob-retest-detection";
 import type { FairValueGap, SupplyDemandZone } from "@/lib/types/deep-analysis";
 import type { MarketStructure } from "@/lib/types/signals";
 
@@ -545,6 +546,29 @@ function idfSignal(
   };
 }
 
+function obRetestSignal(
+  obRetestResult: OBRetestResult | null,
+  fullRegime?: FullRegime
+): MechanicalSignal {
+  if (!obRetestResult || !obRetestResult.detected) {
+    return { system: "OB Retest", type: "reversal", direction: "neutral", strength: 0, description: "", regimeMatch: true };
+  }
+
+  // OB Retest fits range + reversal phases best
+  const structure = fullRegime?.structure;
+  const regimeMatch = !structure || structure === "range" || structure === "breakout";
+
+  const zoneSide = obRetestResult.direction === "bullish" ? "demand" : "supply";
+  return {
+    system: "OB Retest",
+    type: "reversal",
+    direction: obRetestResult.direction,
+    strength: obRetestResult.strength,
+    description: `Order Block Retest — price returning to ${zoneSide} OB (${obRetestResult.proximityPercent.toFixed(0)}% into zone), displacement ${obRetestResult.displacementMagnitude.toFixed(1)}×ATR`,
+    regimeMatch,
+  };
+}
+
 function trendAlignmentSignal(summary: TechnicalSummary, regime: MarketRegime, fullRegime?: FullRegime): MechanicalSignal {
   // Multi-MA alignment check: EMA(9) > EMA(21) > EMA(50) > SMA(200) = bullish stack
   const mas = summary.movingAverages;
@@ -842,8 +866,11 @@ export function generateTradeDeskSetup(
     ? detectIDF(candles, fairValueGaps, institutionalCandles, marketStructure, atrVal)
     : null;
 
+  // 2e. OB Retest detection (depends on supply/demand zones)
+  const obRetestResult = detectOBRetest(candles, supplyZones, demandZones, atrVal);
+
   // 3. Run all mechanical systems (regime-gated: non-matching signals already excluded)
-  // Audit v4: 6 signals across 5 independent clusters (trend, mean_reversion, momentum, volume, reversal)
+  // Audit v4: 7 signals across 5 independent clusters (trend, mean_reversion, momentum, volume, reversal)
   let signals: MechanicalSignal[] = [
     trendAlignmentSignal(summary, regime, fullRegime),
     rsiExtremesSignal(summary, candles, regime, fullRegime),
@@ -851,6 +878,7 @@ export function generateTradeDeskSetup(
     volumeConfirmationSignal(summary, candles),
     sfpSignal(sfpResult, fullRegime),
     idfSignal(idfResult, fullRegime),
+    obRetestSignal(obRetestResult, fullRegime),
   ];
 
   // 3b. Apply system performance weights (auto-kill weak systems)
@@ -962,6 +990,9 @@ export function generateTradeDeskSetup(
       : null,
     idfDetected: idfResult && idfResult.detected
       ? { direction: idfResult.direction, strength: idfResult.strength, structureBreakConfirmed: idfResult.structureBreakConfirmed }
+      : null,
+    obRetestDetected: obRetestResult && obRetestResult.detected
+      ? { direction: obRetestResult.direction, strength: obRetestResult.strength, zone: obRetestResult.zone! }
       : null,
   };
 
