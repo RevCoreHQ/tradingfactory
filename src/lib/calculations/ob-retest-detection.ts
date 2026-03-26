@@ -86,7 +86,8 @@ export function detectOBRetest(
   candles: OHLCV[],
   supplyZones: SupplyDemandZone[],
   demandZones: SupplyDemandZone[],
-  atrValue: number
+  atrValue: number,
+  maxAgeBars?: number
 ): OBRetestResult {
   const noSignal: OBRetestResult = {
     detected: false,
@@ -107,12 +108,13 @@ export function detectOBRetest(
 
   const allZones = [...demandZones, ...supplyZones];
 
-  // Filter to valid Order Blocks only
+  // Filter to valid Order Blocks only (with 5-day age cutoff)
   const validOBs = allZones.filter(
     (z) =>
       z.isOrderBlock &&
       z.freshness !== "broken" &&
-      lastCandleIndex - z.candleIndex >= MIN_CANDLES_SINCE_OB
+      lastCandleIndex - z.candleIndex >= MIN_CANDLES_SINCE_OB &&
+      (!maxAgeBars || (lastCandleIndex - z.candleIndex) <= maxAgeBars)
   );
 
   if (validOBs.length === 0) return noSignal;

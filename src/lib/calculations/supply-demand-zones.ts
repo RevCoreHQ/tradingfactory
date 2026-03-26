@@ -32,7 +32,8 @@ function isBullish(c: OHLCV): boolean {
  */
 export function detectSupplyDemandZones(
   candles: OHLCV[],
-  atrValue: number
+  atrValue: number,
+  maxAgeBars?: number
 ): { supplyZones: SupplyDemandZone[]; demandZones: SupplyDemandZone[] } {
   if (candles.length < 10 || atrValue <= 0) {
     return { supplyZones: [], demandZones: [] };
@@ -128,8 +129,8 @@ export function detectSupplyDemandZones(
 
   // Score and filter
   const totalCandles = candles.length;
-  const scoredDemand = scoreAndFilter(rawDemand, totalCandles);
-  const scoredSupply = scoreAndFilter(rawSupply, totalCandles);
+  const scoredDemand = scoreAndFilter(rawDemand, totalCandles, maxAgeBars);
+  const scoredSupply = scoreAndFilter(rawSupply, totalCandles, maxAgeBars);
 
   return { supplyZones: scoredSupply, demandZones: scoredDemand };
 }
@@ -169,10 +170,15 @@ function checkZoneFreshness(
 
 function scoreAndFilter(
   zones: SupplyDemandZone[],
-  totalCandles: number
+  totalCandles: number,
+  maxAgeBars?: number
 ): SupplyDemandZone[] {
-  // Remove broken zones
-  const valid = zones.filter((z) => z.freshness !== "broken");
+  // Remove broken zones and zones older than maxAgeBars (5-day freshness cutoff)
+  const valid = zones.filter((z) => {
+    if (z.freshness === "broken") return false;
+    if (maxAgeBars && (totalCandles - z.candleIndex) > maxAgeBars) return false;
+    return true;
+  });
 
   // Deduplicate overlapping zones (keep stronger one)
   const deduped: SupplyDemandZone[] = [];

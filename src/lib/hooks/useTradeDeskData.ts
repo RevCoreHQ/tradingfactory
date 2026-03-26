@@ -12,6 +12,7 @@ import { calculateMTFTrendSummary, type CandlesByTimeframe } from "@/lib/calcula
 import { evaluatePortfolioGate } from "@/lib/calculations/portfolio-risk-gate";
 import { buildCorrelationMatrix, type CorrelationMatrix } from "@/lib/calculations/rolling-correlation";
 import { checkDataQuality } from "@/lib/calculations/data-quality";
+import { adjustedTier } from "@/lib/calculations/confluence-learning";
 import { getOptimizedOverrides } from "@/lib/storage/backtest-storage";
 
 const RISK_PERCENT_KEY = "tradingfactory_risk_percent";
@@ -221,8 +222,21 @@ export function useTradeDeskData(
 
       if (mtfTrend) {
         setup.mtfTrend = mtfTrend;
-        // Apply MTF conviction modifier
+        // Apply MTF conviction modifier and recalculate tier
         setup.convictionScore = Math.max(0, Math.min(100, setup.convictionScore + mtfTrend.convictionModifier));
+        setup.conviction = adjustedTier(setup.convictionScore, mtfTrend.alignedCount >= 3 ? 3 : 2);
+
+        // MTF alignment risk scaling: halve risk when timeframes conflict with trade direction
+        let mtfRiskMultiplier = 1.0;
+        if (mtfTrend.alignment === "conflicting") {
+          mtfRiskMultiplier = 0.5;
+        } else if (mtfTrend.alignment === "partial") {
+          mtfRiskMultiplier = 0.75;
+        }
+        if (mtfRiskMultiplier < 1.0) {
+          setup.positionSizeLots = Number((setup.positionSizeLots * mtfRiskMultiplier).toFixed(2));
+          setup.riskAmount = Number((setup.riskAmount * mtfRiskMultiplier).toFixed(2));
+        }
       }
 
       // Attach data quality warnings + no-trade reasons

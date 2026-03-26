@@ -857,7 +857,12 @@ export function generateTradeDeskSetup(
   const fairValueGaps = detectFairValueGaps(candles, atrVal);
   const institutionalCandles = detectInstitutionalCandles(candles, atrVal);
   const consolidationBreakouts = detectConsolidationBreakouts(candles, atrVal, institutionalCandles);
-  const { supplyZones, demandZones } = detectSupplyDemandZones(candles, atrVal);
+  // 5-day zone freshness cutoff: compute max age in bars based on timeframe
+  const BARS_PER_DAY: Record<string, number> = { "5m": 288, "15m": 96, "1h": 24, "4h": 6, "1d": 1 };
+  const barsPerDay = BARS_PER_DAY[summary.timeframe] ?? 24;
+  const maxZoneAgeBars = barsPerDay * 5; // 5 trading days
+
+  const { supplyZones, demandZones } = detectSupplyDemandZones(candles, atrVal, maxZoneAgeBars);
   const allSDZones: SupplyDemandZone[] = [...supplyZones, ...demandZones];
 
   // 2d. SFP + IDF detection (depends on market structure + FVG/IC)
@@ -867,7 +872,7 @@ export function generateTradeDeskSetup(
     : null;
 
   // 2e. OB Retest detection (depends on supply/demand zones)
-  const obRetestResult = detectOBRetest(candles, supplyZones, demandZones, atrVal);
+  const obRetestResult = detectOBRetest(candles, supplyZones, demandZones, atrVal, maxZoneAgeBars);
 
   // 3. Run all mechanical systems (regime-gated: non-matching signals already excluded)
   // Audit v4: 7 signals across 5 independent clusters (trend, mean_reversion, momentum, volume, reversal)
