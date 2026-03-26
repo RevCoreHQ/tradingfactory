@@ -20,6 +20,7 @@ const systems: MechanicalSystem[] = [
   { name: "Volume Confirmation", book: "Elder", type: "Volume", cluster: "volume", logic: "VWAP deviation + volume surge + Force Index alignment", params: "VWAP, EMA2/13 Force Index" },
   { name: "SFP", book: "ICT", type: "Reversal", cluster: "reversal", logic: "Sweep swing H/L → close back inside + wick ≥ 0.3 ATR", params: "Lookback: 50 bars, sweep: 5 candles" },
   { name: "IDF", book: "ICT", type: "Reversal", cluster: "reversal", logic: "Displacement creates FVG → price returns → structure break opposite", params: "Displacement: 30 bars, FVG fill ≥ 25%" },
+  { name: "OB Retest", book: "ICT", type: "Reversal", cluster: "reversal", logic: "Price returns to valid Order Block zone after displacement away", params: "Min 5 bars since OB, zone buffer: 0.2 ATR" },
 ];
 
 const clusterConfig: Record<string, { label: string; color: string; badgeColor: string; dot: string }> = {
