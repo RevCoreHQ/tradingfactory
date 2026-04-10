@@ -111,10 +111,10 @@ export function BiasAccuracySummary({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-2 sm:gap-4 text-[12px]",
+        "flex flex-wrap items-center text-[12px]",
         variant === "footer"
-          ? "w-full border-t border-border/40 bg-[var(--surface-2)]/40 px-3 py-2.5 sm:px-4 dark:bg-white/[0.03]"
-          : "rounded-lg bg-[var(--surface-2)] px-3 py-2"
+          ? "w-full justify-center gap-x-3 gap-y-2 border-t border-border/40 bg-[var(--surface-2)]/40 px-3 py-2.5 sm:justify-start sm:gap-x-4 sm:px-4 dark:bg-white/[0.03]"
+          : "gap-2 sm:gap-4 rounded-lg bg-[var(--surface-2)] px-3 py-2"
       )}
     >
       <div className="flex items-center gap-1.5">

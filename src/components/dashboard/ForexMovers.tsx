@@ -24,7 +24,7 @@ export function ForexMovers({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "flex items-center gap-2 sm:gap-3 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        "flex touch-pan-x items-center gap-2 sm:gap-3 overflow-x-auto pb-0.5 pl-0.5 pr-[max(0.25rem,env(safe-area-inset-right,0px))] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         className
       )}
     >

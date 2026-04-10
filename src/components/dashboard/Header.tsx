@@ -42,8 +42,8 @@ export function Header({ mode = "analysis" }: HeaderProps) {
 
   return (
     <>
-      <header className="h-12 sticky top-0 z-50 border-b border-[var(--glass-border)] bg-[var(--glass-bg)] shadow-[0_4px_24px_oklch(0_0_0/0.06)] backdrop-blur-2xl backdrop-saturate-150 dark:shadow-[0_4px_28px_oklch(0_0_0/0.35),inset_0_1px_0_oklch(1_0_0/0.06)]">
-        <div className="h-full px-3 md:px-8 flex items-center justify-between gap-2">
+      <header className="sticky top-0 z-50 border-b border-[var(--glass-border)] bg-[var(--glass-bg)] pt-[env(safe-area-inset-top,0px)] shadow-[0_4px_24px_oklch(0_0_0/0.06)] backdrop-blur-2xl backdrop-saturate-150 dark:shadow-[0_4px_28px_oklch(0_0_0/0.35),inset_0_1px_0_oklch(1_0_0/0.06)]">
+        <div className="h-12 pl-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))] md:px-8 flex items-center justify-between gap-2">
           {/* Left: Logo */}
           <Link href="/" className="flex items-baseline gap-1.5 shrink-0">
             <span className="text-sm font-bold tracking-tight text-gradient-teal">Trading</span>
@@ -100,11 +100,13 @@ export function Header({ mode = "analysis" }: HeaderProps) {
 
             {/* Mobile hamburger */}
             <button
+              type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden flex items-center justify-center h-8 w-8 rounded-lg border border-transparent text-muted-foreground transition-colors hover:border-[var(--glass-border)] hover:bg-white/40 hover:text-foreground dark:hover:bg-white/[0.06]"
+              className="md:hidden flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-transparent text-muted-foreground touch-manipulation transition-colors hover:border-[var(--glass-border)] hover:bg-white/40 hover:text-foreground active:bg-white/30 dark:hover:bg-white/[0.06]"
               aria-label="Toggle menu"
+              aria-expanded={mobileMenuOpen}
             >
-              {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </div>
@@ -117,8 +119,11 @@ export function Header({ mode = "analysis" }: HeaderProps) {
             className="md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="md:hidden fixed top-12 left-0 right-0 z-50 border-b border-[var(--glass-border)] bg-[var(--glass-bg)] shadow-[0_8px_30px_oklch(0_0_0/0.25)] backdrop-blur-2xl dark:shadow-[0_8px_32px_oklch(0_0_0/0.45)]">
-            <nav className="px-4 py-3 space-y-1">
+          <div
+            className="md:hidden fixed left-0 right-0 z-50 border-b border-[var(--glass-border)] bg-[var(--glass-bg)] shadow-[0_8px_30px_oklch(0_0_0/0.25)] backdrop-blur-2xl dark:shadow-[0_8px_32px_oklch(0_0_0/0.45)]"
+            style={{ top: "calc(3rem + env(safe-area-inset-top, 0px))" }}
+          >
+            <nav className="px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] space-y-1">
               {navItems.map((item) => (
                 <Link
                   key={item.mode}

@@ -87,11 +87,16 @@ export function MarketPulse() {
 
   const fgColor = getGaugeColor(fg.value);
 
+  const popoverWide =
+    "w-[calc(100vw-1.25rem)] max-w-80 sm:w-80 sm:max-w-80";
+  const popoverNarrow =
+    "w-[calc(100vw-1.25rem)] max-w-64 sm:w-64 sm:max-w-64";
+
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="grid min-w-0 grid-cols-1 gap-2 min-[360px]:grid-cols-2 lg:grid-cols-4 sm:gap-3">
       {/* Fear & Greed — with Sentiment Popover */}
       <Popover>
-        <PopoverTrigger className="glass-card spotlight p-4 text-left w-full cursor-pointer transition-colors flex flex-col justify-center" onMouseMove={handleSpotlight}>
+        <PopoverTrigger className="glass-card spotlight min-h-[44px] min-w-0 touch-manipulation p-3 text-left w-full cursor-pointer transition-colors flex flex-col justify-center sm:min-h-0 sm:p-4" onMouseMove={handleSpotlight}>
           <div className="flex items-center gap-2 mb-3">
             <div className="h-6 w-6 rounded-md flex items-center justify-center" style={{ background: `${fgColor}20` }}>
               <Activity className="h-3.5 w-3.5" style={{ color: fgColor }} />
@@ -125,7 +130,7 @@ export function MarketPulse() {
             ))}
           </div>
         </PopoverTrigger>
-        <PopoverContent side="bottom" align="start" sideOffset={8} className="w-80 p-0">
+        <PopoverContent side="bottom" align="start" sideOffset={8} className={cn(popoverWide, "p-0")}>
           <div className="px-3 py-2.5 border-b border-border/30 flex items-center justify-between">
             <div>
               <span className="text-xs font-semibold">Why {fg.label}?</span>
@@ -167,7 +172,7 @@ export function MarketPulse() {
 
       {/* DXY */}
       <Popover>
-        <PopoverTrigger className="glass-card spotlight p-4 text-left w-full cursor-pointer transition-colors flex flex-col justify-center" onMouseMove={handleSpotlight}>
+        <PopoverTrigger className="glass-card spotlight min-h-[44px] min-w-0 touch-manipulation p-3 text-left w-full cursor-pointer transition-colors flex flex-col justify-center sm:min-h-0 sm:p-4" onMouseMove={handleSpotlight}>
           <div className="flex items-center gap-2 mb-3">
             <div className="h-6 w-6 rounded-md flex items-center justify-center bg-neutral-accent/15">
               <DollarSign className="h-3.5 w-3.5 text-neutral-accent" />
@@ -213,7 +218,7 @@ export function MarketPulse() {
             </div>
           )}
         </PopoverTrigger>
-        <PopoverContent side="bottom" align="start" className="w-80">
+        <PopoverContent side="bottom" align="start" className={popoverWide}>
           <div className="space-y-3">
             {/* MTF Trend Table */}
             <div>
@@ -296,7 +301,7 @@ export function MarketPulse() {
       </Popover>
 
       {/* Market Bias — with Strong Conviction Popover */}
-      <div className="glass-card spotlight p-4 flex flex-col justify-center" onMouseMove={handleSpotlight}>
+      <div className="glass-card spotlight min-w-0 touch-manipulation p-3 sm:p-4 flex flex-col justify-center" onMouseMove={handleSpotlight}>
         <div className="flex items-center gap-2 mb-3">
           <div className="h-6 w-6 rounded-md flex items-center justify-center bg-bullish/15">
             <BarChart3 className="h-3.5 w-3.5 text-bullish" />
@@ -315,11 +320,11 @@ export function MarketPulse() {
           </div>
         </div>
         <Popover>
-          <PopoverTrigger className="text-[12px] text-muted-foreground/60 mt-2 cursor-pointer hover:text-muted-foreground transition-colors underline decoration-dotted underline-offset-2 flex items-center gap-1">
+          <PopoverTrigger className="text-[12px] text-muted-foreground/60 mt-2 min-h-10 cursor-pointer touch-manipulation items-center gap-1 py-1.5 hover:text-muted-foreground transition-colors underline decoration-dotted underline-offset-2 flex -mx-1 px-1 rounded-md hover:bg-[var(--surface-2)]/50">
             {strongConviction > 0 && <Star className="h-2.5 w-2.5 fill-[#FFD700] text-[#FFD700]" />}
             {strongConviction} of {totalInstruments} strong bias
           </PopoverTrigger>
-          <PopoverContent side="bottom" align="start" sideOffset={8} className="w-64 p-0">
+          <PopoverContent side="bottom" align="start" sideOffset={8} className={cn(popoverNarrow, "p-0")}>
             <div className="px-3 py-2.5 border-b border-border/30">
               <span className="text-xs font-semibold">Strong Bias</span>
               <span className="text-[12px] text-muted-foreground/50 ml-2">|bias| &ge; 45</span>
@@ -355,7 +360,7 @@ export function MarketPulse() {
       </div>
 
       {/* Key Markets */}
-      <div className="glass-card spotlight p-4 flex flex-col justify-center" onMouseMove={handleSpotlight}>
+      <div className="glass-card spotlight min-w-0 touch-manipulation p-3 sm:p-4 flex flex-col justify-center" onMouseMove={handleSpotlight}>
         <div className="flex items-center gap-2 mb-3">
           <div className="h-6 w-6 rounded-md flex items-center justify-center bg-foreground/10">
             <TrendingUp className="h-3.5 w-3.5 text-foreground/60" />

@@ -111,7 +111,7 @@ function TruncatedBullets({
         <details className="group/more mt-1">
           <summary
             className={cn(
-              "flex cursor-pointer list-none items-center gap-1 text-[11px] font-medium text-muted-foreground/80 hover:text-muted-foreground",
+              "flex min-h-9 cursor-pointer list-none touch-manipulation items-center gap-1 py-1 text-[11px] font-medium text-muted-foreground/80 hover:text-muted-foreground",
               "[&::-webkit-details-marker]:hidden"
             )}
           >
@@ -306,8 +306,8 @@ export function AIMarketSummary() {
 
       {/* Top bar: Date + Mood + Provider/Refresh */}
       <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
-        <div className="flex items-center gap-2">
-          <span className="text-[13px] font-mono text-muted-foreground/60 hidden sm:inline">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-[11px] font-mono text-muted-foreground/60 sm:text-[13px] shrink-0">
             {dateStr}
           </span>
           <MoodBadge
@@ -323,20 +323,22 @@ export function AIMarketSummary() {
             </span>
           )}
           <button
+            type="button"
             onClick={refresh}
             disabled={isRefreshing}
-            className="p-1.5 rounded-md hover:bg-[var(--surface-2)] text-muted-foreground/40 hover:text-muted-foreground transition-colors disabled:opacity-40"
+            className="flex min-h-10 min-w-10 items-center justify-center rounded-md p-2 touch-manipulation hover:bg-[var(--surface-2)] text-muted-foreground/40 hover:text-muted-foreground transition-colors disabled:opacity-40 sm:min-h-0 sm:min-w-0 sm:p-1.5"
             title="Refresh summary"
+            aria-label="Refresh market summary"
           >
             <RefreshCw
-              className={cn("h-3 w-3", isRefreshing && "animate-spin")}
+              className={cn("h-4 w-4 sm:h-3 sm:w-3", isRefreshing && "animate-spin")}
             />
           </button>
         </div>
       </div>
 
       {/* Hero thesis */}
-      <h3 className="text-sm font-bold text-foreground leading-snug mb-3">
+      <h3 className="text-[15px] font-bold text-foreground leading-snug mb-3 sm:text-sm">
         {headline}
       </h3>
 
@@ -389,7 +391,7 @@ export function AIMarketSummary() {
       {/* Rest of overview behind disclosure */}
       {body ? (
         <details className="group/ctx mb-4 rounded-md border border-border/25 bg-[var(--surface-1)]/30 open:bg-[var(--surface-1)]/50">
-          <summary className="flex cursor-pointer list-none items-center gap-1.5 px-2.5 py-2 text-[11px] font-semibold text-muted-foreground hover:text-foreground [&::-webkit-details-marker]:hidden">
+          <summary className="flex min-h-10 cursor-pointer list-none touch-manipulation items-center gap-1.5 px-2.5 py-2 text-[11px] font-semibold text-muted-foreground hover:text-foreground [&::-webkit-details-marker]:hidden">
             <ChevronDown className="h-3.5 w-3.5 shrink-0 transition-transform group-open/ctx:rotate-180" />
             More context
           </summary>
@@ -429,7 +431,7 @@ export function AIMarketSummary() {
       {/* Sectors — collapsed by default */}
       {summary.sectorOutlook && summary.sectorOutlook.length > 0 && (
         <details className="group/sectors mt-5 rounded-md border border-border/25 bg-[var(--surface-1)]/25 open:border-border/40">
-          <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2.5 text-[12px] font-semibold text-muted-foreground hover:text-foreground [&::-webkit-details-marker]:hidden">
+          <summary className="flex min-h-11 cursor-pointer list-none touch-manipulation items-center gap-2 px-3 py-2.5 text-[12px] font-semibold text-muted-foreground hover:text-foreground [&::-webkit-details-marker]:hidden">
             <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open/sectors:rotate-180" />
             <span>
               Sector breakdown

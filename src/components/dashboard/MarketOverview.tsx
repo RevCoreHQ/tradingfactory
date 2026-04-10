@@ -43,7 +43,7 @@ export function MarketOverview() {
         <Header mode="overview" />
         <MarketHoursStrip />
 
-        <main className="max-w-[1400px] mx-auto px-3 md:px-8 py-4 md:py-6 space-y-6 md:space-y-8">
+        <main className="max-w-[1400px] mx-auto space-y-6 py-4 pl-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))] md:space-y-8 md:px-8 md:py-6 md:pb-6">
           {/* Section 1: Snapshot — mechanical tape + movers + accuracy */}
           <motion.section custom={0} initial="hidden" animate="visible" variants={sectionVariants}>
             <SectionHeader
@@ -53,11 +53,11 @@ export function MarketOverview() {
               accentColor="amber"
               subtitleOnMobile
             />
-            <div className="overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-b from-[var(--surface-1)]/95 to-[var(--surface-1)]/55 shadow-sm dark:from-white/[0.06] dark:to-transparent dark:shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset]">
-              <div className="p-3 sm:p-4 md:p-5">
+            <div className="overflow-hidden rounded-xl border border-border/50 bg-gradient-to-b from-[var(--surface-1)]/95 to-[var(--surface-1)]/55 shadow-sm sm:rounded-2xl dark:from-white/[0.06] dark:to-transparent dark:shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset]">
+              <div className="p-2.5 sm:p-4 md:p-5">
                 <MarketPulse />
               </div>
-              <div className="border-t border-border/40 bg-[var(--surface-2)]/30 px-3 py-2 sm:px-4 dark:bg-white/[0.02]">
+              <div className="border-t border-border/40 bg-[var(--surface-2)]/30 px-2.5 py-2 sm:px-4 dark:bg-white/[0.02]">
                 <ForexMovers />
               </div>
               <BiasAccuracySummary variant="footer" />

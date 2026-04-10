@@ -29,8 +29,8 @@ export function MarketHoursStrip() {
   });
 
   return (
-    <div className="border-b border-[var(--glass-border)] bg-[var(--glass-bg)] px-6 py-2 backdrop-blur-xl dark:bg-white/[0.03]">
-      <div className="max-w-[1400px] mx-auto flex items-center md:justify-center gap-4 md:gap-6 overflow-x-auto scrollbar-none">
+    <div className="border-b border-[var(--glass-border)] bg-[var(--glass-bg)] py-2 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] backdrop-blur-xl dark:bg-white/[0.03] sm:pl-[max(1.5rem,env(safe-area-inset-left,0px))] sm:pr-[max(1.5rem,env(safe-area-inset-right,0px))]">
+      <div className="max-w-[1400px] mx-auto flex touch-pan-x items-center md:justify-center gap-4 md:gap-6 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <span className="text-[12px] font-mono text-muted-foreground/60 shrink-0">
           {now.toUTCString().slice(17, 25)} UTC
         </span>

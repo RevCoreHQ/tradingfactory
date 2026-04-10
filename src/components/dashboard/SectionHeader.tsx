@@ -63,7 +63,7 @@ export function SectionHeader({
         {subtitle && (
           <span
             className={cn(
-              "text-[12px] sm:text-[13px] text-muted-foreground leading-snug",
+              "text-[12px] sm:text-[13px] text-muted-foreground leading-snug text-pretty",
               subtitleOnMobile ? "" : "hidden sm:inline"
             )}
           >
