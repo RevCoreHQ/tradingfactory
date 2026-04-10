@@ -60,6 +60,8 @@ export interface BiasResult {
   adr: ADRData | null;
   tradeSetup: TradeSetup | null;
   signalAgreement: number;       // 0-1, how much signals agree on direction
+  /** How dashboard batch technicals were computed (e.g. 15m + 1h blend). */
+  technicalBasis?: string;
 }
 
 export interface BiasOutcome {

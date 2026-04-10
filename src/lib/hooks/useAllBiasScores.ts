@@ -10,7 +10,7 @@ import { useADRData } from "./useADRData";
 import { calculateFundamentalScore, calculateOverallBias, applyLLMAnalysis } from "@/lib/calculations/bias-engine";
 import { computeADRRanks, calculateTradeSetup } from "@/lib/calculations/trade-setup";
 import { getBiasDirection } from "@/lib/utils/formatters";
-import type { TechnicalScore } from "@/lib/types/bias";
+import type { BiasSignal, TechnicalScore } from "@/lib/types/bias";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -46,7 +46,10 @@ export function useAllBiasScores() {
 
   // Fetch real technical scores for all instruments
   const { data: batchTechData } = useSWR<{
-    scores: Record<string, { score: TechnicalScore; currentPrice: number }>;
+    scores: Record<
+      string,
+      { score: TechnicalScore; signals: BiasSignal[]; currentPrice: number; technicalBasis: string }
+    >;
   }>("/api/technicals/batch-scores", fetcher, {
     refreshInterval: 5 * 60_000, // 5 min
     revalidateOnFocus: false,
@@ -75,16 +78,22 @@ export function useAllBiasScores() {
         inst.id
       );
 
-      const technicalScore = techScores[inst.id]?.score ?? DEFAULT_TECHNICAL_SCORE;
+      const techEntry = techScores[inst.id];
+      const technicalScore = techEntry?.score ?? DEFAULT_TECHNICAL_SCORE;
+      const technicalSignals = techEntry?.signals ?? [];
+      const allSignals = [...fundamentalResult.signals, ...technicalSignals];
 
-      intradayResults[inst.id] = calculateOverallBias(
-        fundamentalResult.score,
-        technicalScore,
-        "intraday",
-        inst.id,
-        undefined,
-        fundamentalResult.signals
-      );
+      intradayResults[inst.id] = {
+        ...calculateOverallBias(
+          fundamentalResult.score,
+          technicalScore,
+          "intraday",
+          inst.id,
+          undefined,
+          allSignals
+        ),
+        technicalBasis: techEntry?.technicalBasis,
+      };
     }
 
     // EMA smoothing: blend new bias with previous to prevent oscillation.

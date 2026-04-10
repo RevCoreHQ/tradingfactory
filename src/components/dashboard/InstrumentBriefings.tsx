@@ -71,6 +71,12 @@ function scoreArrow(score: number): string {
   return "–";
 }
 
+function scoreToneLabel(total: number): "bullish" | "bearish" | "neutral" {
+  if (total > 55) return "bullish";
+  if (total < 45) return "bearish";
+  return "neutral";
+}
+
 function describeFundamentals(fund: BiasResult["fundamentalScore"]): string {
   const dir = (s: number) => s > 60 ? "supportive" : s < 40 ? "negative" : "mixed";
   const parts: string[] = [];
@@ -187,18 +193,41 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
   // Generate deterministic summary from scores when LLM hasn't returned yet
   const fundTotal = biasResult.fundamentalScore.total;
   const techTotal = biasResult.technicalScore.total;
-  const dir = isBullish ? "bullish" : isBearish ? "bearish" : "neutral";
-  const fundLabel = fundTotal > 55 ? "bullish" : fundTotal < 45 ? "bearish" : "neutral";
-  const techLabel = techTotal > 55 ? "bullish" : techTotal < 45 ? "bearish" : "neutral";
-  const conflicting = fundLabel !== techLabel && fundLabel !== "neutral" && techLabel !== "neutral";
+  const fundLabel = scoreToneLabel(fundTotal);
+  const techLabel = scoreToneLabel(techTotal);
+  const headlineBull = biasResult.overallBias > 10;
+  const headlineBear = biasResult.overallBias < -10;
+  const headlineNeu = !headlineBull && !headlineBear;
+  const dirWord = headlineBull ? "bullish" : headlineBear ? "bearish" : "neutral";
+
+  const narrativeDiverges =
+    (headlineBull && (techLabel === "bearish" || fundLabel === "bearish")) ||
+    (headlineBear && (techLabel === "bullish" || fundLabel === "bullish")) ||
+    (fundLabel !== "neutral" && techLabel !== "neutral" && fundLabel !== techLabel);
+
+  const bothAlignSame =
+    !narrativeDiverges && fundLabel === techLabel && fundLabel !== "neutral";
+
   const agreementNote = biasResult.signalAgreement > 0.7
     ? "Multiple signals are aligned, supporting higher conviction."
     : biasResult.signalAgreement < 0.4
     ? "Signals are mixed — exercise caution and wait for confirmation."
     : "Signal alignment is moderate.";
-  const deterministicSummary = conflicting
-    ? `${instrument.symbol} has conflicting signals — fundamentals lean ${fundLabel} while technicals lean ${techLabel}. ${agreementNote}`
-    : `${instrument.symbol} is showing ${dir} conditions across both fundamentals and technicals. ${agreementNote}`;
+
+  const deterministicSummary = (() => {
+    if (headlineNeu) {
+      return `${instrument.symbol} reads neutral overall (fundamentals ${fundLabel}, technicals ${techLabel}). ${agreementNote}`;
+    }
+    if (narrativeDiverges) {
+      return `${instrument.symbol} shows a ${dirWord} headline score, but fundamentals (${fundLabel}) and technicals (${techLabel}) do not fully agree. ${agreementNote}`;
+    }
+    if (bothAlignSame) {
+      return `${instrument.symbol} is showing ${fundLabel} conditions across both fundamentals and technicals. ${agreementNote}`;
+    }
+    const fundPhrase = fundLabel === "neutral" ? "mixed to neutral fundamentals" : `${fundLabel} fundamentals`;
+    const techPhrase = techLabel === "neutral" ? "mixed to neutral technicals" : `${techLabel} technicals`;
+    return `${instrument.symbol} leans ${dirWord} with ${fundPhrase} and ${techPhrase}. ${agreementNote}`;
+  })();
 
   const summaryText =
     (summaryContradictsDirection ? null : llmSummary) ||
@@ -292,7 +321,18 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
       {/* Confidence Bar */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-sm text-muted-foreground">Confidence</span>
+          <Tooltip>
+            <TooltipTrigger
+              render={<span />}
+              className="text-sm text-muted-foreground border-b border-dotted border-muted-foreground/30 cursor-help"
+            >
+              Confidence
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
+              Blends fundamental vs technical score alignment with how many directional indicator
+              signals agree with the headline bias. It is not a win probability.
+            </TooltipContent>
+          </Tooltip>
           <span className="text-sm font-semibold text-foreground">{Math.round(confidence)}%</span>
         </div>
         <div className="h-2 rounded-full bg-[var(--surface-2)] overflow-hidden">
@@ -313,12 +353,27 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
         </span>
         <div className="flex flex-col gap-0.5">
           {biasResult.signalAgreement !== undefined && (
-            <span className="text-xs text-muted-foreground/50">
-              {Math.round(biasResult.signalAgreement * 100)}% signal agreement
-            </span>
+            <Tooltip>
+              <TooltipTrigger
+                render={<span />}
+                className="text-xs text-muted-foreground/50 border-b border-dotted border-muted-foreground/20 cursor-help w-fit"
+              >
+                {Math.round(biasResult.signalAgreement * 100)}% signal agreement
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
+                Share of bullish vs bearish model signals (excluding neutral) that match the headline
+                bias direction. Mixed or duplicate timeframe inputs can land near 50%.
+              </TooltipContent>
+            </Tooltip>
           )}
         </div>
       </div>
+
+      {biasResult.technicalBasis ? (
+        <p className="text-[10px] text-muted-foreground/55 mb-2 leading-snug">
+          Technical basis: {biasResult.technicalBasis}
+        </p>
+      ) : null}
 
       {/* Fundamental vs Technical + Momentum/Trend */}
       <div className="grid grid-cols-2 gap-2 mb-3">

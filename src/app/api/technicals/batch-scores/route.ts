@@ -8,14 +8,14 @@ import {
   type CandlesByTimeframe,
 } from "@/lib/calculations/mtf-trend";
 import type { MTFTimeframe } from "@/lib/types/mtf";
-import type { TechnicalScore } from "@/lib/types/bias";
+import type { BiasSignal, TechnicalScore } from "@/lib/types/bias";
 
-const TIMEFRAME = "1h";
-const LIMIT = 100; // 100 hourly candles is plenty for RSI/MACD/BB
+const LIMIT_1H = 100;
+const LIMIT_15M = 100;
 
 const MTF_TIMEFRAMES: { tf: MTFTimeframe; limit: number }[] = [
-  { tf: "15m", limit: 100 },
-  { tf: "1h", limit: 100 }, // reuses the same candles fetched for indicators
+  { tf: "15m", limit: LIMIT_15M },
+  { tf: "1h", limit: LIMIT_1H },
   { tf: "4h", limit: 100 },
   { tf: "1d", limit: 200 },
 ];
@@ -40,7 +40,6 @@ function computeAlignmentScore(trends: { timeframe: string; direction: string }[
     const w = TF_WEIGHTS[t.timeframe] || 0;
     score += w * (t.direction === "bullish" ? 100 : t.direction === "bearish" ? 0 : 50);
   }
-  // Full alignment bonus
   const dirs = trends.map((t) => t.direction).filter((d) => d !== "neutral");
   if (dirs.length >= 3 && dirs.every((d) => d === dirs[0])) {
     score = Math.min(100, score + 10);
@@ -48,20 +47,42 @@ function computeAlignmentScore(trends: { timeframe: string; direction: string }[
   return score;
 }
 
+function blendTechnicalScores(a: TechnicalScore, b: TechnicalScore): TechnicalScore {
+  const mid = (x: number, y: number) => clampAvg(x, y);
+  return {
+    total: mid(a.total, b.total),
+    trendDirection: mid(a.trendDirection, b.trendDirection),
+    momentum: mid(a.momentum, b.momentum),
+    volatility: mid(a.volatility, b.volatility),
+    volumeAnalysis: mid(a.volumeAnalysis, b.volumeAnalysis),
+    supportResistance: mid(a.supportResistance, b.supportResistance),
+  };
+}
+
+function clampAvg(x: number, y: number): number {
+  const v = (x + y) / 2;
+  return Math.max(0, Math.min(100, Math.round(v * 10) / 10));
+}
+
+export type BatchScoreEntry = {
+  score: TechnicalScore;
+  signals: BiasSignal[];
+  currentPrice: number;
+  technicalBasis: string;
+};
+
 export const dynamic = "force-dynamic"; // never serve stale cached route
 
 export async function GET() {
   try {
-    const results: Record<string, { score: TechnicalScore; currentPrice: number }> = {};
+    const results: Record<string, BatchScoreEntry> = {};
     const errors: string[] = [];
 
-    // Fetch in batches of 4 to avoid rate limits
     const batchSize = 4;
     for (let i = 0; i < INSTRUMENTS.length; i += batchSize) {
       const batch = INSTRUMENTS.slice(i, i + batchSize);
       const settled = await Promise.allSettled(
         batch.map(async (inst) => {
-          // Fetch all timeframes for MTF trend
           const candlesByTf: CandlesByTimeframe = {};
           const tfResults = await Promise.allSettled(
             MTF_TIMEFRAMES.map(async ({ tf, limit }) => {
@@ -76,29 +97,65 @@ export async function GET() {
             }
           }
 
-          // Use 1h candles for indicator calculations
+          const candles15m = candlesByTf["15m"] || [];
           const candles1h = candlesByTf["1h"] || [];
-          if (candles1h.length < 20) {
-            errors.push(`${inst.id}: only ${candles1h.length} 1h candles`);
-            return { id: inst.id, score: null, currentPrice: 0 };
+          const has15m = candles15m.length >= 20;
+          const has1h = candles1h.length >= 20;
+
+          if (!has15m && !has1h) {
+            errors.push(`${inst.id}: insufficient candles (15m=${candles15m.length}, 1h=${candles1h.length})`);
+            return { id: inst.id, payload: null as BatchScoreEntry | null };
           }
 
-          // Compute MTF trend and alignment score
           const mtfSummary = calculateMTFTrendSummary(candlesByTf, MTF_CONFIG);
           const mtfAlignmentScore = mtfSummary
             ? computeAlignmentScore(mtfSummary.trends)
             : undefined;
 
-          const indicators = calculateAllIndicators(candles1h, inst.id, TIMEFRAME);
-          const currentPrice = candles1h[candles1h.length - 1].close;
-          const { score } = calculateTechnicalScore(indicators, currentPrice, mtfAlignmentScore);
-          return { id: inst.id, score, currentPrice };
+          let score: TechnicalScore;
+          let signals: BiasSignal[];
+          let currentPrice: number;
+          let technicalBasis: string;
+
+          if (has15m && has1h) {
+            const indicators15m = calculateAllIndicators(candles15m, inst.id, "15m");
+            const indicators1h = calculateAllIndicators(candles1h, inst.id, "1h");
+            const price15m = candles15m[candles15m.length - 1].close;
+            const price1h = candles1h[candles1h.length - 1].close;
+            const r15 = calculateTechnicalScore(indicators15m, price15m, mtfAlignmentScore);
+            const r1h = calculateTechnicalScore(indicators1h, price1h, mtfAlignmentScore);
+            score = blendTechnicalScores(r15.score, r1h.score);
+            signals = [...r15.signals, ...r1h.signals];
+            currentPrice = price15m;
+            technicalBasis = "15m + 1h blend, MTF-aligned trend";
+          } else if (has15m) {
+            const indicators15m = calculateAllIndicators(candles15m, inst.id, "15m");
+            const price15m = candles15m[candles15m.length - 1].close;
+            const r = calculateTechnicalScore(indicators15m, price15m, mtfAlignmentScore);
+            score = r.score;
+            signals = r.signals;
+            currentPrice = price15m;
+            technicalBasis = "15m, MTF-aligned trend";
+          } else {
+            const indicators1h = calculateAllIndicators(candles1h, inst.id, "1h");
+            const price1h = candles1h[candles1h.length - 1].close;
+            const r = calculateTechnicalScore(indicators1h, price1h, mtfAlignmentScore);
+            score = r.score;
+            signals = r.signals;
+            currentPrice = price1h;
+            technicalBasis = "1h, MTF-aligned trend";
+          }
+
+          return {
+            id: inst.id,
+            payload: { score, signals, currentPrice, technicalBasis },
+          };
         })
       );
 
       for (const s of settled) {
-        if (s.status === "fulfilled" && s.value.score) {
-          results[s.value.id] = { score: s.value.score, currentPrice: s.value.currentPrice };
+        if (s.status === "fulfilled" && s.value.payload) {
+          results[s.value.id] = s.value.payload;
         } else if (s.status === "rejected") {
           const reason = s.reason instanceof Error ? s.reason.message : String(s.reason);
           errors.push(`rejected: ${reason}`);

@@ -632,18 +632,11 @@ export function calculateOverallBias(
   // Signal agreement: what fraction of signals agree on the overall direction
   const signalAgreement = computeSignalAgreement(allSignals || [], direction);
 
-  // Confidence: base agreement + quality multipliers
-  const ftAgreement = 100 - Math.abs(fundamentalBiasVal - technicalBiasVal);
-  let confidence = clamp(ftAgreement, 10, 100);
-
-  // Boost if signal agreement is high
-  if (signalAgreement > 0.7) {
-    confidence = clamp(confidence * 1.05, 10, 100);
-  }
-  // Penalize if signal agreement is low
-  if (signalAgreement < 0.3 && (allSignals?.length || 0) > 2) {
-    confidence = clamp(confidence * 0.85, 10, 100);
-  }
+  // Confidence blends (1) fundamental vs technical score alignment with (2) directional
+  // signal votes, so a mixed tape cannot show "high confidence" solely from mild F/T proximity.
+  const ftAgreement = clamp(100 - Math.abs(fundamentalBiasVal - technicalBiasVal), 10, 100);
+  const consensusPct = signalAgreement * 100;
+  const confidence = clamp(0.45 * ftAgreement + 0.55 * consensusPct, 10, 100);
 
   return {
     instrument,
