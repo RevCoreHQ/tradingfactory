@@ -28,6 +28,7 @@ import {
   Clock,
   Sparkles,
 } from "lucide-react";
+import { DecisionDeskPanel } from "@/components/dashboard/DecisionDeskPanel";
 
 const categoryIcons: Record<string, typeof DollarSign> = {
   forex: DollarSign,
@@ -374,6 +375,8 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
           Technical basis: {biasResult.technicalBasis}
         </p>
       ) : null}
+
+      <DecisionDeskPanel bias={biasResult} />
 
       {/* Fundamental vs Technical + Momentum/Trend */}
       <div className="grid grid-cols-2 gap-2 mb-3">

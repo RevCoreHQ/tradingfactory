@@ -66,9 +66,13 @@ function clampAvg(x: number, y: number): number {
 
 export type BatchScoreEntry = {
   score: TechnicalScore;
+  score15m: TechnicalScore;
+  score1h: TechnicalScore;
   signals: BiasSignal[];
   currentPrice: number;
   technicalBasis: string;
+  /** 0–100 MTF trend alignment (from batch TF weights). */
+  mtfAlignmentPercent: number;
 };
 
 export const dynamic = "force-dynamic"; // never serve stale cached route
@@ -113,9 +117,12 @@ export async function GET() {
             : undefined;
 
           let score: TechnicalScore;
+          let score15m: TechnicalScore;
+          let score1h: TechnicalScore;
           let signals: BiasSignal[];
           let currentPrice: number;
           let technicalBasis: string;
+          const mtfPct = mtfAlignmentScore ?? 50;
 
           if (has15m && has1h) {
             const indicators15m = calculateAllIndicators(candles15m, inst.id, "15m");
@@ -124,6 +131,8 @@ export async function GET() {
             const price1h = candles1h[candles1h.length - 1].close;
             const r15 = calculateTechnicalScore(indicators15m, price15m, mtfAlignmentScore);
             const r1h = calculateTechnicalScore(indicators1h, price1h, mtfAlignmentScore);
+            score15m = r15.score;
+            score1h = r1h.score;
             score = blendTechnicalScores(r15.score, r1h.score);
             signals = [...r15.signals, ...r1h.signals];
             currentPrice = price15m;
@@ -133,6 +142,8 @@ export async function GET() {
             const price15m = candles15m[candles15m.length - 1].close;
             const r = calculateTechnicalScore(indicators15m, price15m, mtfAlignmentScore);
             score = r.score;
+            score15m = r.score;
+            score1h = r.score;
             signals = r.signals;
             currentPrice = price15m;
             technicalBasis = "15m, MTF-aligned trend";
@@ -141,6 +152,8 @@ export async function GET() {
             const price1h = candles1h[candles1h.length - 1].close;
             const r = calculateTechnicalScore(indicators1h, price1h, mtfAlignmentScore);
             score = r.score;
+            score15m = r.score;
+            score1h = r.score;
             signals = r.signals;
             currentPrice = price1h;
             technicalBasis = "1h, MTF-aligned trend";
@@ -148,7 +161,15 @@ export async function GET() {
 
           return {
             id: inst.id,
-            payload: { score, signals, currentPrice, technicalBasis },
+            payload: {
+              score,
+              score15m,
+              score1h,
+              signals,
+              currentPrice,
+              technicalBasis,
+              mtfAlignmentPercent: Math.round(mtfPct),
+            },
           };
         })
       );

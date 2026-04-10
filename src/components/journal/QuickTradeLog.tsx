@@ -12,6 +12,32 @@ import {
 } from "@/components/ui/dialog";
 import { BookOpen, TrendingUp, TrendingDown } from "lucide-react";
 import type { BiasResult } from "@/lib/types/bias";
+import type { TradeSetupType } from "@/lib/types/journal";
+
+const SETUP_OPTIONS: { value: TradeSetupType; label: string }[] = [
+  { value: "with_trend", label: "With trend" },
+  { value: "pullback", label: "Pullback" },
+  { value: "counter_trend", label: "Counter-trend" },
+  { value: "breakout", label: "Breakout" },
+  { value: "news_play", label: "News / catalyst" },
+  { value: "other", label: "Other" },
+];
+
+function defaultSetupType(bias: BiasResult | null): TradeSetupType {
+  if (!bias?.tradeGuidance) return "other";
+  switch (bias.tradeGuidance) {
+    case "with_trend":
+      return "with_trend";
+    case "pullback":
+      return "pullback";
+    case "counter_trend_scalp":
+      return "counter_trend";
+    case "caution_events":
+      return "news_play";
+    default:
+      return "other";
+  }
+}
 
 export function QuickTradeLog({
   instrumentId,
@@ -28,6 +54,7 @@ export function QuickTradeLog({
   );
   const [price, setPrice] = useState("");
   const [notes, setNotes] = useState("");
+  const [setupType, setSetupType] = useState<TradeSetupType>("other");
   const { addTrade } = useTradeJournal();
 
   const instrument = INSTRUMENTS.find((i) => i.id === instrumentId);
@@ -46,7 +73,11 @@ export function QuickTradeLog({
         direction: biasResult.direction,
         confidence: biasResult.confidence,
         tradeScore: biasResult.tradeSetup?.tradeScore,
+        timeframeAlignment: biasResult.timeframeAlignment,
+        confluenceTier: biasResult.tradeSetup?.confluenceTier,
+        tradeGuidance: biasResult.tradeGuidance,
       },
+      setupType,
       notes: notes || undefined,
     });
 
@@ -61,6 +92,7 @@ export function QuickTradeLog({
         onClick={() => {
           setPrice(currentPrice > 0 ? currentPrice.toString() : "");
           setDirection(biasResult && biasResult.overallBias > 0 ? "long" : "short");
+          setSetupType(defaultSetupType(biasResult));
           setOpen(true);
         }}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold bg-neutral-accent/15 text-neutral-accent hover:bg-neutral-accent/25 transition-colors"
@@ -118,6 +150,24 @@ export function QuickTradeLog({
             />
           </div>
 
+          {/* Setup type */}
+          <div className="mt-3">
+            <label className="text-[12px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
+              Setup type
+            </label>
+            <select
+              value={setupType}
+              onChange={(e) => setSetupType(e.target.value as TradeSetupType)}
+              className="mt-1 w-full rounded-lg border border-border bg-[var(--surface-2)] px-3 py-2 text-xs focus:outline-none focus:border-neutral-accent"
+            >
+              {SETUP_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Notes */}
           <div className="mt-2">
             <label className="text-[12px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
@@ -134,8 +184,17 @@ export function QuickTradeLog({
 
           {/* Bias context */}
           {biasResult && (
-            <div className="mt-2 px-2 py-1.5 rounded bg-[var(--surface-2)] text-[12px] text-muted-foreground/60">
-              Bias: {biasResult.overallBias > 0 ? "+" : ""}{Math.round(biasResult.overallBias)} ({biasResult.direction}) — Conf: {Math.round(biasResult.confidence)}%
+            <div className="mt-2 space-y-0.5 rounded bg-[var(--surface-2)] px-2 py-1.5 text-[12px] text-muted-foreground/60">
+              <div>
+                Bias: {biasResult.overallBias > 0 ? "+" : ""}{Math.round(biasResult.overallBias)} ({biasResult.direction}) — Conf:{" "}
+                {Math.round(biasResult.confidence)}%
+              </div>
+              {biasResult.tradeSetup?.confluenceTier && (
+                <div>
+                  Confluence: {biasResult.tradeSetup.confluenceTier}-tier
+                  {biasResult.timeframeAlignment ? ` · TF ${biasResult.timeframeAlignment}` : ""}
+                </div>
+              )}
             </div>
           )}
 

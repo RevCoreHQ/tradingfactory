@@ -10,6 +10,7 @@ import { CurrencyStrength } from "@/components/fundamentals/CurrencyStrength";
 import { TechnicalOverview } from "@/components/technicals/TechnicalOverview";
 import { DeepAnalysis } from "@/components/technicals/DeepAnalysis";
 import { TradeSetupCard } from "./TradeSetupCard";
+import { DecisionDeskPanel } from "@/components/dashboard/DecisionDeskPanel";
 import { useMarketStore } from "@/lib/store/market-store";
 import { useBiasScore } from "@/lib/hooks/useBiasScore";
 import { useTechnicalData } from "@/lib/hooks/useTechnicalData";
@@ -208,6 +209,8 @@ export function InstrumentAnalysis() {
                   style={{ width: `${Math.round(bias.confidence)}%` }}
                 />
               </div>
+
+              <DecisionDeskPanel bias={bias} />
 
               {/* LLM Summary */}
               {llmSummary && (

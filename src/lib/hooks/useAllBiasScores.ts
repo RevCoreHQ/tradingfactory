@@ -4,13 +4,14 @@ import { useEffect, useMemo, useRef } from "react";
 import useSWR from "swr";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import { useMarketStore } from "@/lib/store/market-store";
-import { useMarketNews, useFearGreed, useBondYields, useCentralBanks } from "./useMarketData";
+import { useMarketNews, useFearGreed, useBondYields, useCentralBanks, useEconomicCalendar } from "./useMarketData";
 import { useLLMBatchAnalysis } from "./useLLMAnalysis";
 import { useADRData } from "./useADRData";
 import { calculateFundamentalScore, calculateOverallBias, applyLLMAnalysis } from "@/lib/calculations/bias-engine";
 import { computeADRRanks, calculateTradeSetup } from "@/lib/calculations/trade-setup";
 import { getBiasDirection } from "@/lib/utils/formatters";
 import type { BiasSignal, TechnicalScore } from "@/lib/types/bias";
+import { buildDecisionLayer } from "@/lib/calculations/decision-context";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -43,12 +44,21 @@ export function useAllBiasScores() {
   const { data: bondData } = useBondYields();
   const { data: bankData } = useCentralBanks();
   const { adrData } = useADRData();
+  const { data: calendarData } = useEconomicCalendar();
 
   // Fetch real technical scores for all instruments
   const { data: batchTechData } = useSWR<{
     scores: Record<
       string,
-      { score: TechnicalScore; signals: BiasSignal[]; currentPrice: number; technicalBasis: string }
+      {
+        score: TechnicalScore;
+        score15m: TechnicalScore;
+        score1h: TechnicalScore;
+        signals: BiasSignal[];
+        currentPrice: number;
+        technicalBasis: string;
+        mtfAlignmentPercent: number;
+      }
     >;
   }>("/api/technicals/batch-scores", fetcher, {
     refreshInterval: 5 * 60_000, // 5 min
@@ -62,6 +72,10 @@ export function useAllBiasScores() {
     const yields = bondData?.yields || [];
     const dxy = bondData?.dxy || DEFAULT_DXY;
     const banks = bankData?.banks || [];
+    const calendarEvents = calendarData?.events ?? [];
+    const fearVal = fearGreed.value;
+    const y10 = yields.find((b) => b.maturity === "10Y");
+    const yield10Change = y10?.change ?? 0;
 
     const intradayResults: Record<string, ReturnType<typeof calculateOverallBias>> = {};
 
@@ -80,8 +94,22 @@ export function useAllBiasScores() {
 
       const techEntry = techScores[inst.id];
       const technicalScore = techEntry?.score ?? DEFAULT_TECHNICAL_SCORE;
+      const technical15m = techEntry?.score15m ?? technicalScore;
+      const technical1h = techEntry?.score1h ?? technicalScore;
       const technicalSignals = techEntry?.signals ?? [];
       const allSignals = [...fundamentalResult.signals, ...technicalSignals];
+
+      const decision = buildDecisionLayer(
+        inst.id,
+        fundamentalResult.score,
+        technical15m,
+        technical1h,
+        fundamentalResult.signals,
+        fearVal,
+        dxy.change,
+        yield10Change,
+        calendarEvents
+      );
 
       intradayResults[inst.id] = {
         ...calculateOverallBias(
@@ -92,7 +120,9 @@ export function useAllBiasScores() {
           undefined,
           allSignals
         ),
+        ...decision,
         technicalBasis: techEntry?.technicalBasis,
+        mtfAlignmentPercent: techEntry?.mtfAlignmentPercent,
       };
     }
 
@@ -112,7 +142,7 @@ export function useAllBiasScores() {
     }
 
     return { intraday: intradayResults, intraweek: {} as Record<string, ReturnType<typeof calculateOverallBias>> };
-  }, [newsData, fearGreedData, bondData, bankData, techScores]);
+  }, [newsData, fearGreedData, bondData, bankData, techScores, calendarData]);
 
   // Fetch LLM batch analysis using intraday results
   const currentTimeframeResults = ruleBasedResults.intraday;

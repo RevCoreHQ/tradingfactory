@@ -1,4 +1,11 @@
-import type { BiasResult, ADRData, TradeSetup, RiskSizing } from "@/lib/types/bias";
+import type {
+  BiasResult,
+  ADRData,
+  TradeSetup,
+  RiskSizing,
+  SetupChecklistItem,
+  ConfluenceTier,
+} from "@/lib/types/bias";
 import type { ADRStoreData } from "@/lib/store/market-store";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import { clamp } from "@/lib/utils/formatters";
@@ -103,7 +110,7 @@ export function calculateTradeSetup(
   // --- Risk Sizing ---
   const { sizing, reason } = calculateRiskSizing(biasResult, adr);
 
-  return {
+  const base: TradeSetup = {
     tradeScore: Number(tradeScore.toFixed(1)),
     projectedMove: { pips: projectedMovePips, percent: projectedMovePercent },
     stopLoss,
@@ -113,6 +120,47 @@ export function calculateTradeSetup(
     riskReason: reason,
     entryZone,
   };
+  return appendSetupIntelligence(base, biasResult);
+}
+
+function appendSetupIntelligence(setup: TradeSetup, bias: BiasResult): TradeSetup {
+  const f = bias.fundamentalScore.total;
+  const t = bias.technicalScore.total;
+  const ftCoherent =
+    (f > 52 && t > 52) ||
+    (f < 48 && t < 48) ||
+    Math.abs(f - 50) < 6 ||
+    Math.abs(t - 50) < 6;
+
+  const alignment = bias.timeframeAlignment ?? "mixed";
+  const tfPass = alignment !== "counter";
+  const agreementPass = (bias.signalAgreement ?? 0) >= 0.42;
+  const confPass = bias.confidence >= 48;
+  const biasPass = Math.abs(bias.overallBias) >= 14;
+  const eventPass = !bias.eventGate?.hasMajorEventSoon;
+  const mtfPass = (bias.mtfAlignmentPercent ?? 50) >= 45;
+
+  const checklist: SetupChecklistItem[] = [
+    { id: "tf", label: "15m & 1h bias not fighting", pass: tfPass },
+    { id: "ft", label: "Fundamentals vs technical totals coherent", pass: ftCoherent },
+    { id: "mtf", label: "MTF alignment ≥ 45%", pass: mtfPass },
+    { id: "agree", label: "Signal agreement ≥ 42%", pass: agreementPass },
+    { id: "conf", label: "Model confidence ≥ 48%", pass: confPass },
+    { id: "edge", label: "Headline bias magnitude meaningful", pass: biasPass },
+    { id: "calendar", label: "No imminent high-impact print (90m)", pass: eventPass },
+  ];
+
+  const passCount = checklist.filter((c) => c.pass).length;
+  let confluenceTier: ConfluenceTier = "C";
+  if (passCount >= 6 && alignment === "aligned") confluenceTier = "A";
+  else if (passCount >= 4) confluenceTier = "B";
+
+  const guidance = bias.tradeGuidanceSummary || "Review checklist before sizing.";
+  let tradeStance = guidance;
+  if (confluenceTier === "A") tradeStance = `A-tier — ${guidance}`;
+  else if (confluenceTier === "C") tradeStance = `C-tier — reduce size or skip. ${guidance}`;
+
+  return { ...setup, checklist, confluenceTier, tradeStance };
 }
 
 // ==================== RISK SIZING ====================

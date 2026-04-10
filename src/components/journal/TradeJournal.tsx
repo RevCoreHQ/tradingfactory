@@ -71,6 +71,29 @@ export function TradeJournal({ onClose }: { onClose: () => void }) {
               </span>
             </div>
           )}
+
+          {stats.closedTrades > 0 && Object.keys(stats.bySetupType).length > 0 && (
+            <div className="mt-3 space-y-1 border-t border-border/30 pt-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">Win rate by setup</p>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(stats.bySetupType)
+                  .filter(([, v]) => v.trades > 0)
+                  .sort((a, b) => b[1].trades - a[1].trades)
+                  .map(([key, v]) => (
+                    <span
+                      key={key}
+                      className="rounded border border-border/40 px-2 py-0.5 text-[10px] text-muted-foreground"
+                    >
+                      <span className="capitalize">{key.replace(/_/g, " ")}</span>:{" "}
+                      <span className={cn("font-mono font-semibold", v.winRate >= 50 ? "text-bullish" : "text-bearish")}>
+                        {v.winRate}%
+                      </span>
+                      <span className="opacity-60"> ({v.trades}t)</span>
+                    </span>
+                  ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Filter tabs */}
@@ -170,10 +193,18 @@ export function TradeJournal({ onClose }: { onClose: () => void }) {
                     <p className="text-[12px] text-muted-foreground/50 mt-1">{trade.notes}</p>
                   )}
 
-                  <div className="flex items-center gap-1 mt-1.5 text-[11px] text-muted-foreground/40">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1.5 text-[11px] text-muted-foreground/40">
                     <span>Bias: {trade.biasAtEntry.overallBias > 0 ? "+" : ""}{Math.round(trade.biasAtEntry.overallBias)}</span>
                     <span>({trade.biasAtEntry.direction})</span>
                     <span>Conf: {Math.round(trade.biasAtEntry.confidence)}%</span>
+                    {trade.setupType && (
+                      <span className="rounded bg-[var(--surface-2)] px-1 capitalize text-[10px] text-muted-foreground/70">
+                        {trade.setupType.replace(/_/g, " ")}
+                      </span>
+                    )}
+                    {trade.biasAtEntry.confluenceTier && (
+                      <span className="font-mono text-[10px]">{trade.biasAtEntry.confluenceTier}-tier</span>
+                    )}
                   </div>
                 </div>
               );

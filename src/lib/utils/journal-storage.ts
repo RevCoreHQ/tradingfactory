@@ -86,6 +86,18 @@ export function calculateJournalStats(entries: TradeEntry[]): JournalStats {
   const contraryClosed = closedTrades.filter((e) => !aligned.includes(e));
   const contraryWins = contraryClosed.filter((e) => e.outcome === "win");
 
+  const bySetupType: JournalStats["bySetupType"] = {};
+  for (const e of closedTrades) {
+    const key = e.setupType || "unspecified";
+    if (!bySetupType[key]) bySetupType[key] = { trades: 0, wins: 0, winRate: 0 };
+    bySetupType[key].trades += 1;
+    if (e.outcome === "win") bySetupType[key].wins += 1;
+  }
+  for (const k of Object.keys(bySetupType)) {
+    const b = bySetupType[k];
+    b.winRate = b.trades > 0 ? Math.round((b.wins / b.trades) * 100) : 0;
+  }
+
   return {
     totalTrades: entries.length,
     openTrades: openTrades.length,
@@ -95,5 +107,6 @@ export function calculateJournalStats(entries: TradeEntry[]): JournalStats {
     biasAlignmentRate: entries.length > 0 ? Math.round((aligned.length / entries.length) * 100) : 0,
     biasAlignedWinRate: alignedClosed.length > 0 ? Math.round((alignedWins.length / alignedClosed.length) * 100) : 0,
     biasContraryWinRate: contraryClosed.length > 0 ? Math.round((contraryWins.length / contraryClosed.length) * 100) : 0,
+    bySetupType,
   };
 }

@@ -33,6 +33,31 @@ export interface ADRData {
 
 export type RiskSizing = "size_up" | "normal" | "size_down";
 
+export type TimeframeAlignment = "aligned" | "mixed" | "counter";
+export type MarketRegime = "risk_on" | "risk_off" | "neutral";
+export type TradeGuidanceKind =
+  | "with_trend"
+  | "pullback"
+  | "counter_trend_scalp"
+  | "no_edge"
+  | "caution_events";
+
+export type ConfluenceTier = "A" | "B" | "C";
+
+export interface EventGateInfo {
+  hasMajorEventSoon: boolean;
+  minutesUntil?: number;
+  eventTitle?: string;
+  impact: "high" | "medium" | "low";
+  suggestion: string;
+}
+
+export interface SetupChecklistItem {
+  id: string;
+  label: string;
+  pass: boolean;
+}
+
 export interface TradeSetup {
   tradeScore: number;            // ADR-weighted conviction (ranking metric)
   projectedMove: { pips: number; percent: number };
@@ -42,6 +67,10 @@ export interface TradeSetup {
   riskSizing: RiskSizing;
   riskReason: string;
   entryZone: [number, number];   // low, high
+  /** Pass/fail gates for execution discipline */
+  checklist?: SetupChecklistItem[];
+  confluenceTier?: ConfluenceTier;
+  tradeStance?: string;
 }
 
 export interface BiasResult {
@@ -62,6 +91,17 @@ export interface BiasResult {
   signalAgreement: number;       // 0-1, how much signals agree on direction
   /** How dashboard batch technicals were computed (e.g. 15m + 1h blend). */
   technicalBasis?: string;
+  /** Intraday bias using 15m technicals only (+ fundamentals). */
+  tacticalBias?: number;
+  /** Intraday bias using 1h technicals only (+ fundamentals). */
+  structuralBias?: number;
+  timeframeAlignment?: TimeframeAlignment;
+  marketRegime?: MarketRegime;
+  tradeGuidance?: TradeGuidanceKind;
+  tradeGuidanceSummary?: string;
+  eventGate?: EventGateInfo;
+  /** 0–100 MTF directional alignment from batch (optional). */
+  mtfAlignmentPercent?: number;
 }
 
 export interface BiasOutcome {
