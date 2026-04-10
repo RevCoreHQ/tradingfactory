@@ -16,7 +16,7 @@ import { RiskCorrelation } from "@/components/bias/RiskCorrelation";
 import { COTPositioning } from "@/components/fundamentals/COTPositioning";
 import { useRealtimePrices } from "@/lib/hooks/useRealtimePrices";
 import { InstrumentBriefings } from "./InstrumentBriefings";
-import { Activity, Sparkles, AlertTriangle, BarChart3, Shield, LayoutGrid } from "lucide-react";
+import { ScanSearch, Sparkles, AlertTriangle, BarChart3, Shield, LayoutGrid } from "lucide-react";
 import { motion } from "framer-motion";
 
 const sectionVariants = {
@@ -44,17 +44,24 @@ export function MarketOverview() {
         <MarketHoursStrip />
 
         <main className="max-w-[1400px] mx-auto px-3 md:px-8 py-4 md:py-6 space-y-6 md:space-y-8">
-          {/* Section 1: Market Pulse */}
+          {/* Section 1: Snapshot — mechanical tape + movers + accuracy */}
           <motion.section custom={0} initial="hidden" animate="visible" variants={sectionVariants}>
             <SectionHeader
-              title="Market Pulse"
-              subtitle="Current market conditions at a glance"
-              icon={<Activity className="h-3.5 w-3.5" />}
-              accentColor="blue"
+              title="Snapshot"
+              subtitle="Fear & greed, USD, breadth, key quotes — forex movers and bias hit rate"
+              icon={<ScanSearch className="h-3.5 w-3.5" />}
+              accentColor="amber"
+              subtitleOnMobile
             />
-            <MarketPulse />
-            <ForexMovers />
-            <BiasAccuracySummary />
+            <div className="overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-b from-[var(--surface-1)]/95 to-[var(--surface-1)]/55 shadow-sm dark:from-white/[0.06] dark:to-transparent dark:shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset]">
+              <div className="p-3 sm:p-4 md:p-5">
+                <MarketPulse />
+              </div>
+              <div className="border-t border-border/40 bg-[var(--surface-2)]/30 px-3 py-2 sm:px-4 dark:bg-white/[0.02]">
+                <ForexMovers />
+              </div>
+              <BiasAccuracySummary variant="footer" />
+            </div>
           </motion.section>
 
           {/* Section 2: Market Intelligence */}

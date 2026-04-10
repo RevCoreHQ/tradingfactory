@@ -99,13 +99,24 @@ export function BiasAccuracyCard({ instrumentId }: { instrumentId: string }) {
 }
 
 /** Compact accuracy summary for homepage */
-export function BiasAccuracySummary() {
+export function BiasAccuracySummary({
+  variant = "default",
+}: {
+  variant?: "default" | "footer";
+}) {
   const { stats } = useBiasAccuracy();
 
   if (!stats || stats.total === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-2 sm:gap-4 px-3 py-2 rounded-lg bg-[var(--surface-2)] text-[12px]">
+    <div
+      className={cn(
+        "flex flex-wrap items-center gap-2 sm:gap-4 text-[12px]",
+        variant === "footer"
+          ? "w-full border-t border-border/40 bg-[var(--surface-2)]/40 px-3 py-2.5 sm:px-4 dark:bg-white/[0.03]"
+          : "rounded-lg bg-[var(--surface-2)] px-3 py-2"
+      )}
+    >
       <div className="flex items-center gap-1.5">
         <Target className="h-3 w-3 text-neutral-accent" />
         <span className="text-muted-foreground">Bias Accuracy</span>
