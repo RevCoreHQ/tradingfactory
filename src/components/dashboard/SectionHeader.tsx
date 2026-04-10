@@ -18,16 +18,22 @@ const accentClasses = {
 };
 
 const glowClasses = {
-  blue: "shadow-[0_0_12px_oklch(0.50_0.15_162/0.3)]",
-  green: "shadow-[0_0_12px_oklch(0.55_0.15_145/0.3)]",
-  red: "shadow-[0_0_12px_oklch(0.55_0.18_25/0.3)]",
-  amber: "shadow-[0_0_12px_oklch(0.65_0.14_85/0.3)]",
+  blue: "shadow-[0_0_16px_oklch(0.55_0.18_285/0.35)]",
+  green: "shadow-[0_0_14px_oklch(0.55_0.16_155/0.35)]",
+  red: "shadow-[0_0_12px_oklch(0.55_0.18_25/0.35)]",
+  amber: "shadow-[0_0_12px_oklch(0.65_0.14_85/0.35)]",
 };
 
 export function SectionHeader({ title, subtitle, icon, accentColor }: SectionHeaderProps) {
   return (
     <div className="flex items-center gap-3 mb-4">
-      <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center text-white", accentClasses[accentColor], glowClasses[accentColor])}>
+      <div
+        className={cn(
+          "flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 text-white shadow-inner backdrop-blur-sm dark:border-white/10",
+          accentClasses[accentColor],
+          glowClasses[accentColor]
+        )}
+      >
         {icon}
       </div>
       <div className="flex items-baseline gap-2">

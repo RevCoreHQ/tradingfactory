@@ -47,8 +47,8 @@ export function WelcomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-lg">
+    <div className="min-h-screen bg-transparent flex items-center justify-center p-4">
+      <div className="glass-card w-full max-w-lg rounded-2xl p-8 shadow-2xl md:p-10 dark:shadow-[0_24px_64px_oklch(0_0_0/0.45)]">
         {step === 0 && (
           <div className="text-center space-y-6">
             <div>
@@ -92,7 +92,7 @@ export function WelcomePage() {
               {FEATURES.map((f) => (
                 <div
                   key={f.title}
-                  className="flex gap-4 p-4 rounded-xl bg-[var(--surface-1)] border border-border/20"
+                  className="flex gap-4 rounded-xl border border-[var(--glass-border)] bg-white/30 p-4 backdrop-blur-md dark:bg-white/[0.03]"
                 >
                   <div className="shrink-0 h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
                     <f.icon className="h-5 w-5 text-primary" />

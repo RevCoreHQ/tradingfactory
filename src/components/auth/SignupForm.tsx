@@ -103,8 +103,8 @@ export function SignupForm() {
   }
 
   return (
-    <div className="w-full max-w-sm mx-auto">
-      <div className="text-center mb-8">
+    <div className="glass-card mx-auto w-full max-w-sm rounded-2xl p-8 shadow-2xl dark:shadow-[0_24px_64px_oklch(0_0_0/0.45)]">
+      <div className="mb-8 text-center">
         <h1 className="text-2xl font-bold tracking-tight">
           <span className="text-gradient-teal">Trading</span>{" "}
           <span className="text-muted-foreground/80 font-light">Factory</span>
@@ -126,7 +126,7 @@ export function SignupForm() {
               value={inviteCode}
               onChange={(e) => setInviteCode(e.target.value)}
               required
-              className="w-full px-3 py-2.5 rounded-lg bg-[var(--surface-1)] border border-border/30 text-sm font-mono text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
+              className="w-full rounded-lg border border-[var(--glass-border)] bg-white/50 px-3 py-2.5 font-mono text-sm text-foreground placeholder:text-muted-foreground/50 backdrop-blur-md transition-all focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/30 dark:bg-white/[0.05]"
               placeholder="Enter your invite code"
             />
           </div>
@@ -142,7 +142,7 @@ export function SignupForm() {
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             required
-            className="w-full px-3 py-2.5 rounded-lg bg-[var(--surface-1)] border border-border/30 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
+            className="w-full rounded-lg border border-[var(--glass-border)] bg-white/50 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 backdrop-blur-md transition-all focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/30 dark:bg-white/[0.05]"
             placeholder="Your name"
           />
         </div>
@@ -158,7 +158,7 @@ export function SignupForm() {
             onChange={(e) => setEmail(e.target.value)}
             required
             autoComplete="email"
-            className="w-full px-3 py-2.5 rounded-lg bg-[var(--surface-1)] border border-border/30 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
+            className="w-full rounded-lg border border-[var(--glass-border)] bg-white/50 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 backdrop-blur-md transition-all focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/30 dark:bg-white/[0.05]"
             placeholder="you@example.com"
           />
         </div>
@@ -175,7 +175,7 @@ export function SignupForm() {
             required
             minLength={6}
             autoComplete="new-password"
-            className="w-full px-3 py-2.5 rounded-lg bg-[var(--surface-1)] border border-border/30 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
+            className="w-full rounded-lg border border-[var(--glass-border)] bg-white/50 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 backdrop-blur-md transition-all focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/30 dark:bg-white/[0.05]"
             placeholder="Min 6 characters"
           />
         </div>
@@ -191,10 +191,10 @@ export function SignupForm() {
                 key={t}
                 type="button"
                 onClick={() => setTheme(t)}
-                className={`flex-1 py-2 rounded-lg text-xs font-medium border transition-all ${
+                className={`flex-1 rounded-lg border py-2 text-xs font-medium transition-all ${
                   theme === t
-                    ? "bg-primary/10 text-primary border-primary/30"
-                    : "bg-[var(--surface-1)] text-muted-foreground border-border/30 hover:border-border/50"
+                    ? "border-primary/30 bg-primary/15 text-primary backdrop-blur-md"
+                    : "border-[var(--glass-border)] bg-white/40 text-muted-foreground backdrop-blur-md hover:border-[var(--border-bright)] dark:bg-white/[0.04]"
                 }`}
               >
                 {t.charAt(0).toUpperCase() + t.slice(1)}

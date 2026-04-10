@@ -34,7 +34,7 @@ export function SystemPage() {
   });
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-background">
+    <div ref={containerRef} className="min-h-screen bg-transparent">
       <div>
         <Header mode="brain" />
 

@@ -9,7 +9,12 @@ export function ThemeToggle() {
 
   useEffect(() => {
     const saved = localStorage.getItem("theme");
-    const dark = saved === "dark";
+    let dark: boolean;
+    if (saved === "dark") dark = true;
+    else if (saved === "light") dark = false;
+    else if (saved === "system")
+      dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    else dark = true;
     setIsDark(dark);
     document.documentElement.classList.toggle("dark", dark);
   }, []);
@@ -25,7 +30,7 @@ export function ThemeToggle() {
     <button
       onClick={toggle}
       className={cn(
-        "p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-[var(--surface-2)] transition-colors"
+        "rounded-full border border-transparent p-2 text-muted-foreground transition-colors hover:border-[var(--glass-border)] hover:bg-white/40 hover:text-foreground dark:hover:bg-white/[0.06]"
       )}
       aria-label="Toggle theme"
     >

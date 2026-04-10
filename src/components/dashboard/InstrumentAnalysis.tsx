@@ -133,7 +133,7 @@ export function InstrumentAnalysis() {
   const dec = instrument.decimalPlaces;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-transparent">
       <Header mode="analysis" />
 
       <div className="flex">

@@ -29,7 +29,7 @@ export function MarketHoursStrip() {
   });
 
   return (
-    <div className="border-b border-border/50 bg-[var(--surface-0)] px-6 py-2">
+    <div className="border-b border-[var(--glass-border)] bg-[var(--glass-bg)] px-6 py-2 backdrop-blur-xl dark:bg-white/[0.03]">
       <div className="max-w-[1400px] mx-auto flex items-center md:justify-center gap-4 md:gap-6 overflow-x-auto scrollbar-none">
         <span className="text-[12px] font-mono text-muted-foreground/60 shrink-0">
           {now.toUTCString().slice(17, 25)} UTC

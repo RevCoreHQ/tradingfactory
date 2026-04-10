@@ -12,13 +12,13 @@ const buttonVariants = cva(
       variant: {
         default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
         premium:
-          "bg-gradient-to-r from-primary via-[oklch(0.65_0.17_162)] to-primary text-primary-foreground shadow-[0_0_12px_oklch(0.72_0.17_162/0.25)] hover:shadow-[0_0_20px_oklch(0.72_0.17_162/0.35)] hover:-translate-y-px active:translate-y-0 active:shadow-[0_0_8px_oklch(0.72_0.17_162/0.2)]",
+          "bg-gradient-to-r from-primary via-[oklch(0.62_0.18_285)] to-primary text-primary-foreground shadow-[0_0_16px_oklch(0.65_0.16_285/0.35)] hover:shadow-[0_0_24px_oklch(0.65_0.16_285/0.45)] hover:-translate-y-px active:translate-y-0 active:shadow-[0_0_10px_oklch(0.65_0.16_285/0.25)]",
         outline:
-          "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "border-border bg-background/50 backdrop-blur-md hover:bg-muted/80 hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-white/12 dark:bg-white/[0.04] dark:hover:bg-white/[0.08]",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80 aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+          "bg-secondary/90 text-secondary-foreground backdrop-blur-md hover:bg-secondary aria-expanded:bg-secondary aria-expanded:text-secondary-foreground dark:bg-white/[0.06] dark:hover:bg-white/[0.1]",
         ghost:
-          "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
+          "hover:bg-muted/80 hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-white/[0.06]",
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",

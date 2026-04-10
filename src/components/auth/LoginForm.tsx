@@ -36,8 +36,8 @@ export function LoginForm() {
   }
 
   return (
-    <div className="w-full max-w-sm mx-auto">
-      <div className="text-center mb-8">
+    <div className="glass-card mx-auto w-full max-w-sm rounded-2xl p-8 shadow-2xl dark:shadow-[0_24px_64px_oklch(0_0_0/0.45)]">
+      <div className="mb-8 text-center">
         <h1 className="text-2xl font-bold tracking-tight">
           <span className="text-gradient-teal">Trading</span>{" "}
           <span className="text-muted-foreground/80 font-light">Factory</span>
@@ -59,7 +59,7 @@ export function LoginForm() {
             onChange={(e) => setEmail(e.target.value)}
             required
             autoComplete="email"
-            className="w-full px-3 py-2.5 rounded-lg bg-[var(--surface-1)] border border-border/30 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
+            className="w-full rounded-lg border border-[var(--glass-border)] bg-white/50 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 backdrop-blur-md transition-all focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/30 dark:bg-white/[0.05]"
             placeholder="you@example.com"
           />
         </div>
@@ -75,7 +75,7 @@ export function LoginForm() {
             onChange={(e) => setPassword(e.target.value)}
             required
             autoComplete="current-password"
-            className="w-full px-3 py-2.5 rounded-lg bg-[var(--surface-1)] border border-border/30 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
+            className="w-full rounded-lg border border-[var(--glass-border)] bg-white/50 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 backdrop-blur-md transition-all focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/30 dark:bg-white/[0.05]"
             placeholder="Enter your password"
           />
         </div>

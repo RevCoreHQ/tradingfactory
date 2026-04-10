@@ -133,7 +133,7 @@ export function AdminDashboard() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
         <div className="h-5 w-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     );
@@ -141,7 +141,7 @@ export function AdminDashboard() {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
         <p className="text-muted-foreground">Access denied</p>
       </div>
     );
@@ -154,7 +154,7 @@ export function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-transparent">
       <Header mode="overview" />
       <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 space-y-6">
         <h1 className="text-xl font-bold">Admin Dashboard</h1>

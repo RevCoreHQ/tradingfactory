@@ -22,7 +22,7 @@ export function BacktestPage() {
   const { config, setConfig, progress, result, run, stop } = useBacktest();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-transparent">
       <Header mode="testing" />
 
       <div className="max-w-[1400px] mx-auto px-3 md:px-8 py-4 md:py-6 space-y-6 md:space-y-8">

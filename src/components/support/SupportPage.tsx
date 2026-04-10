@@ -58,7 +58,7 @@ export function SupportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-transparent">
       <Header mode="overview" />
       <div className="max-w-3xl mx-auto px-4 md:px-8 py-6 space-y-8">
         <h1 className="text-xl font-bold">Support</h1>

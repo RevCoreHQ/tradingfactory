@@ -38,7 +38,7 @@ export function MarketOverview() {
   useRealtimePrices();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-transparent">
       <div>
         <Header mode="overview" />
         <MarketHoursStrip />

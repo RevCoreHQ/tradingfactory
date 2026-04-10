@@ -42,7 +42,7 @@ export function Header({ mode = "analysis" }: HeaderProps) {
 
   return (
     <>
-      <header className="h-12 sticky top-0 z-50 bg-background/60 backdrop-blur-2xl backdrop-saturate-150 border-b border-border/20 shadow-[0_1px_2px_oklch(0_0_0/0.03)] dark:bg-background/50 dark:border-border/15 dark:shadow-[0_1px_4px_oklch(0_0_0/0.4),inset_0_1px_0_oklch(1_0_0/0.03)]">
+      <header className="h-12 sticky top-0 z-50 border-b border-[var(--glass-border)] bg-[var(--glass-bg)] shadow-[0_4px_24px_oklch(0_0_0/0.06)] backdrop-blur-2xl backdrop-saturate-150 dark:shadow-[0_4px_28px_oklch(0_0_0/0.35),inset_0_1px_0_oklch(1_0_0/0.06)]">
         <div className="h-full px-3 md:px-8 flex items-center justify-between gap-2">
           {/* Left: Logo */}
           <Link href="/" className="flex items-baseline gap-1.5 shrink-0">
@@ -51,7 +51,7 @@ export function Header({ mode = "analysis" }: HeaderProps) {
           </Link>
 
           {/* Center: Segmented control — desktop only */}
-          <div className="hidden md:flex items-center gap-0.5 bg-[var(--surface-1)] rounded-full p-0.5 border border-border/30 shrink min-w-0">
+          <div className="hidden md:flex items-center gap-0.5 rounded-full border border-[var(--glass-border)] bg-white/30 p-0.5 backdrop-blur-xl dark:bg-white/[0.04] shrink min-w-0">
             {navItems.map((item) => (
               <Link
                 key={item.mode}
@@ -59,8 +59,8 @@ export function Header({ mode = "analysis" }: HeaderProps) {
                 className={cn(
                   "px-4 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap",
                   mode === item.mode
-                    ? "bg-background text-foreground shadow-[0_1px_3px_oklch(0_0_0/0.08)] dark:shadow-[0_1px_5px_oklch(0_0_0/0.3),inset_0_1px_0_oklch(1_0_0/0.05)]"
-                    : "text-muted-foreground hover:text-foreground/80 transition-all duration-200"
+                    ? "bg-background/90 text-foreground shadow-sm dark:bg-white/[0.12] dark:text-foreground dark:shadow-[inset_0_1px_0_oklch(1_0_0/0.1)]"
+                    : "text-muted-foreground hover:text-foreground/90 transition-all duration-200"
                 )}
               >
                 {item.label}
@@ -101,7 +101,7 @@ export function Header({ mode = "analysis" }: HeaderProps) {
             {/* Mobile hamburger */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden flex items-center justify-center h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-[var(--surface-1)] transition-colors"
+              className="md:hidden flex items-center justify-center h-8 w-8 rounded-lg border border-transparent text-muted-foreground transition-colors hover:border-[var(--glass-border)] hover:bg-white/40 hover:text-foreground dark:hover:bg-white/[0.06]"
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -117,7 +117,7 @@ export function Header({ mode = "analysis" }: HeaderProps) {
             className="md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="md:hidden fixed top-12 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/30 shadow-[0_8px_30px_oklch(0_0_0/0.3)]">
+          <div className="md:hidden fixed top-12 left-0 right-0 z-50 border-b border-[var(--glass-border)] bg-[var(--glass-bg)] shadow-[0_8px_30px_oklch(0_0_0/0.25)] backdrop-blur-2xl dark:shadow-[0_8px_32px_oklch(0_0_0/0.45)]">
             <nav className="px-4 py-3 space-y-1">
               {navItems.map((item) => (
                 <Link
@@ -127,8 +127,8 @@ export function Header({ mode = "analysis" }: HeaderProps) {
                   className={cn(
                     "flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all",
                     mode === item.mode
-                      ? "bg-primary/10 text-primary border border-primary/20"
-                      : "text-muted-foreground hover:text-foreground hover:bg-[var(--surface-1)]"
+                      ? "border border-primary/25 bg-primary/15 text-primary backdrop-blur-md"
+                      : "text-muted-foreground hover:bg-white/50 hover:text-foreground dark:hover:bg-white/[0.06]"
                   )}
                 >
                   {item.label}
