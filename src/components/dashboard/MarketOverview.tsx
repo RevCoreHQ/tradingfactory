@@ -61,7 +61,7 @@ export function MarketOverview() {
           <motion.section custom={1} initial="hidden" animate="visible" variants={sectionVariants}>
             <SectionHeader
               title="Market Intelligence"
-              subtitle="Macro analysis and sector breakdown"
+              subtitle="Desk narrative — focus lists and sectors expand on demand"
               icon={<Sparkles className="h-3.5 w-3.5" />}
               accentColor="blue"
             />

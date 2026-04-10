@@ -4,8 +4,18 @@ import { useState, useRef, useEffect } from "react";
 
 import { useMarketSummary } from "@/lib/hooks/useMarketSummary";
 import { cn } from "@/lib/utils";
-import { Sparkles, AlertTriangle, Zap, RefreshCw } from "lucide-react";
+import {
+  Sparkles,
+  AlertTriangle,
+  Zap,
+  RefreshCw,
+  ChevronDown,
+  ListChecks,
+  Ban,
+} from "lucide-react";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
+
+const LIST_CAP = 3;
 
 function splitHeadlineBody(overview: string): { headline: string; body: string } {
   const idx = overview.search(/[.!?]\s/);
@@ -32,6 +42,7 @@ function MoodBadge({
 }) {
   return (
     <span
+      title={`Global outlook: ${outlook}`}
       className={cn(
         "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[12px] font-semibold",
         outlook === "bullish" && "bg-bullish/10 text-bullish",
@@ -64,6 +75,55 @@ function OutlookBadge({ outlook }: { outlook: "bullish" | "bearish" | "neutral" 
     >
       {outlook}
     </span>
+  );
+}
+
+function TruncatedBullets({
+  items,
+  variant,
+}: {
+  items: string[];
+  variant: "risk" | "opp";
+}) {
+  const dot =
+    variant === "risk"
+      ? "before:bg-bearish/40"
+      : "before:bg-bullish/40";
+  const shown = items.slice(0, LIST_CAP);
+  const rest = items.slice(LIST_CAP);
+
+  const row = (text: string, i: number) => (
+    <p
+      key={`${variant}-${i}`}
+      className={cn(
+        "text-[13px] text-foreground/70 leading-snug pl-3 relative before:absolute before:left-0 before:top-[6px] before:h-1 before:w-1 before:rounded-full",
+        dot
+      )}
+    >
+      {text}
+    </p>
+  );
+
+  return (
+    <>
+      {shown.map((t, i) => row(t, i))}
+      {rest.length > 0 && (
+        <details className="group/more mt-1">
+          <summary
+            className={cn(
+              "flex cursor-pointer list-none items-center gap-1 text-[11px] font-medium text-muted-foreground/80 hover:text-muted-foreground",
+              "[&::-webkit-details-marker]:hidden"
+            )}
+          >
+            <ChevronDown className="h-3 w-3 shrink-0 transition-transform group-open/more:rotate-180" />
+            {rest.length} more
+          </summary>
+          <div className="mt-1.5 space-y-1.5 border-l border-border/30 pl-2 ml-0.5">
+            {rest.map((t, i) => row(t, LIST_CAP + i))}
+          </div>
+        </details>
+      )}
+    </>
   );
 }
 
@@ -148,11 +208,8 @@ function SectorBreakdown({
   }[];
 }) {
   return (
-    <div className="mt-5 pt-4 border-t border-border/50">
-      <div className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground mb-3">
-        Sector Breakdown
-      </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="pt-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {sectors.map((sector) => (
           <SectorCard key={sector.sector} sector={sector} />
         ))}
@@ -221,6 +278,8 @@ export function AIMarketSummary() {
 
   const { headline, body } = splitHeadlineBody(summary.overview);
   const currentMood = MOOD_MAP[summary.outlook] ?? "Neutral";
+  const focusToday = summary.focusToday ?? [];
+  const sitOutToday = summary.sitOutToday ?? [];
 
   const dateStr = new Date().toLocaleDateString("en-US", {
     weekday: "short",
@@ -231,6 +290,8 @@ export function AIMarketSummary() {
   const timeSince = summary.timestamp
     ? `${Math.round((Date.now() - summary.timestamp) / 60_000)}m ago`
     : "";
+
+  const sectorCount = summary.sectorOutlook?.length ?? 0;
 
   return (
     <div className="relative section-card p-3 sm:p-5">
@@ -274,41 +335,81 @@ export function AIMarketSummary() {
         </div>
       </div>
 
-      {/* Headline */}
-      <h3 className="text-sm font-bold text-foreground leading-snug mb-2">
+      {/* Hero thesis */}
+      <h3 className="text-sm font-bold text-foreground leading-snug mb-3">
         {headline}
       </h3>
 
-      {/* Body */}
-      {body && (
-        <p className="text-xs text-foreground/75 leading-relaxed mb-4">
-          {body}
-        </p>
+      {/* Scannable focus / sit-out (model-enriched in hook) */}
+      {(focusToday.length > 0 || sitOutToday.length > 0) && (
+        <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {focusToday.length > 0 && (
+            <div className="rounded-lg border border-bullish/20 bg-bullish/5 px-3 py-2.5">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <ListChecks className="h-3 w-3 text-bullish shrink-0" />
+                <span className="text-[11px] font-bold uppercase tracking-wider text-bullish">
+                  Focus today
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {focusToday.map((f) => (
+                  <span
+                    key={f}
+                    className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-background/60 text-bullish border border-bullish/15"
+                  >
+                    {f}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {sitOutToday.length > 0 && (
+            <div className="rounded-lg border border-border/40 bg-[var(--surface-2)]/40 px-3 py-2.5">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Ban className="h-3 w-3 text-muted-foreground shrink-0" />
+                <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Sit out / caution
+                </span>
+              </div>
+              <ul className="space-y-1">
+                {sitOutToday.map((s) => (
+                  <li
+                    key={s}
+                    className="text-[12px] text-muted-foreground/85 leading-snug pl-2 border-l-2 border-muted-foreground/20"
+                  >
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       )}
 
-      {/* Outlook badge */}
-      <div className="mb-4">
-        <OutlookBadge outlook={summary.outlook} />
-      </div>
+      {/* Rest of overview behind disclosure */}
+      {body ? (
+        <details className="group/ctx mb-4 rounded-md border border-border/25 bg-[var(--surface-1)]/30 open:bg-[var(--surface-1)]/50">
+          <summary className="flex cursor-pointer list-none items-center gap-1.5 px-2.5 py-2 text-[11px] font-semibold text-muted-foreground hover:text-foreground [&::-webkit-details-marker]:hidden">
+            <ChevronDown className="h-3.5 w-3.5 shrink-0 transition-transform group-open/ctx:rotate-180" />
+            More context
+          </summary>
+          <p className="text-xs text-foreground/75 leading-relaxed px-2.5 pb-2.5 pt-0">
+            {body}
+          </p>
+        </details>
+      ) : null}
 
-      {/* Risks & Opportunities — compact inline */}
+      {/* Risks & Opportunities — capped with expand */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {summary.risks.length > 0 && (
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5">
               <AlertTriangle className="h-2.5 w-2.5 text-bearish" />
               <span className="text-[11px] font-bold uppercase tracking-wider text-bearish">
-                Key Risks
+                Key risks
               </span>
             </div>
-            {summary.risks.map((risk, i) => (
-              <p
-                key={i}
-                className="text-[13px] text-foreground/70 leading-snug pl-3 relative before:absolute before:left-0 before:top-[6px] before:h-1 before:w-1 before:rounded-full before:bg-bearish/40"
-              >
-                {risk}
-              </p>
-            ))}
+            <TruncatedBullets items={summary.risks} variant="risk" />
           </div>
         )}
 
@@ -320,21 +421,27 @@ export function AIMarketSummary() {
                 Opportunities
               </span>
             </div>
-            {summary.opportunities.map((opp, i) => (
-              <p
-                key={i}
-                className="text-[13px] text-foreground/70 leading-snug pl-3 relative before:absolute before:left-0 before:top-[6px] before:h-1 before:w-1 before:rounded-full before:bg-bullish/40"
-              >
-                {opp}
-              </p>
-            ))}
+            <TruncatedBullets items={summary.opportunities} variant="opp" />
           </div>
         )}
       </div>
 
-      {/* Sector Outlook */}
+      {/* Sectors — collapsed by default */}
       {summary.sectorOutlook && summary.sectorOutlook.length > 0 && (
-        <SectorBreakdown sectors={summary.sectorOutlook} />
+        <details className="group/sectors mt-5 rounded-md border border-border/25 bg-[var(--surface-1)]/25 open:border-border/40">
+          <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2.5 text-[12px] font-semibold text-muted-foreground hover:text-foreground [&::-webkit-details-marker]:hidden">
+            <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open/sectors:rotate-180" />
+            <span>
+              Sector breakdown
+              <span className="ml-1.5 font-mono text-[11px] font-normal text-muted-foreground/60">
+                ({sectorCount})
+              </span>
+            </span>
+          </summary>
+          <div className="px-3 pb-3">
+            <SectorBreakdown sectors={summary.sectorOutlook} />
+          </div>
+        </details>
       )}
     </div>
   );
