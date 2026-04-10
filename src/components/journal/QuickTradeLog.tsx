@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useTradeJournal } from "@/lib/hooks/useTradeJournal";
-import { useMarketStore } from "@/lib/store/market-store";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import { cn } from "@/lib/utils";
 import {
@@ -76,6 +75,10 @@ export function QuickTradeLog({
         timeframeAlignment: biasResult.timeframeAlignment,
         confluenceTier: biasResult.tradeSetup?.confluenceTier,
         tradeGuidance: biasResult.tradeGuidance,
+        eventWindowCaution: biasResult.eventGate?.hasMajorEventSoon,
+        mtfAlignmentPercent: biasResult.mtfAlignmentPercent,
+        biasTimestamp: biasResult.timestamp,
+        marketRegime: biasResult.marketRegime,
       },
       setupType,
       notes: notes || undefined,

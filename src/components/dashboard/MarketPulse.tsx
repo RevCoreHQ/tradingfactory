@@ -6,7 +6,6 @@ import { INSTRUMENTS } from "@/lib/utils/constants";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Activity, TrendingUp, TrendingDown, Minus, DollarSign, BarChart3, Star } from "lucide-react";
 import useSWR from "swr";
 import type React from "react";

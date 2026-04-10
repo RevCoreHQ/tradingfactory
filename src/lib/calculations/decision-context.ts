@@ -8,6 +8,7 @@ import type {
   TimeframeAlignment,
   MarketRegime,
   TradeGuidanceKind,
+  ConfluenceTier,
 } from "@/lib/types/bias";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import { calculateOverallBias } from "@/lib/calculations/bias-engine";
@@ -68,7 +69,7 @@ export function computeEventGate(
     impact: best.ev.impact,
     suggestion: urgent
       ? `High-impact data in ~${minutesUntil}m — reduce size or wait for post-release structure.`
-      : `Next major print in ~${Math.round(minutesUntil / 60)}h (${best.ev.event}).`,
+      : `Next major print in ~${Math.round(minutesUntil / 60)}h (${best.ev.event}). Outside the 90m execution window — calendar checklist can still pass.`,
   };
 }
 
@@ -142,7 +143,9 @@ export function buildDecisionLayer(
   fearGreedValue: number,
   dxyChange: number,
   yield10Change: number,
-  calendarEvents: EconomicEvent[]
+  calendarEvents: EconomicEvent[],
+  /** Blended headline bias (70/30 tech/fund) so desk guidance is not only mid-TF legs. */
+  headlineOverallBias: number
 ): Pick<
   BiasResult,
   | "tacticalBias"
@@ -175,10 +178,11 @@ export function buildDecisionLayer(
   const eventGate = computeEventGate(calendarEvents, instrumentId);
   const mid = (tactical.overallBias + structural.overallBias) / 2;
   const midConf = (tactical.confidence + structural.confidence) / 2;
+  const edgeAbs = Math.max(Math.abs(mid), Math.abs(headlineOverallBias));
   const { kind, summary } = computeTradeGuidance(
     timeframeAlignment,
     eventGate,
-    Math.abs(mid),
+    edgeAbs,
     midConf
   );
 
@@ -191,4 +195,86 @@ export function buildDecisionLayer(
     tradeGuidanceSummary: summary,
     eventGate,
   };
+}
+
+/** Short trust line: why the desk landed on this tier / stance (after trade setup exists). */
+export function computeDecisionRationale(bias: BiasResult): string | undefined {
+  const tier: ConfluenceTier | undefined = bias.tradeSetup?.confluenceTier;
+  const checklist = bias.tradeSetup?.checklist;
+  const failed = checklist?.filter((c) => !c.pass) ?? [];
+  if (!tier && failed.length === 0 && !bias.timeframeAlignment) return undefined;
+
+  const tierPhrase =
+    tier === "A"
+      ? "A-tier: strong checklist confluence"
+      : tier === "B"
+        ? "B-tier: partial confluence"
+        : tier === "C"
+          ? "C-tier: weak confluence"
+          : "Confluence pending";
+
+  const miss =
+    failed.length > 0
+      ? ` — ${failed.length} gate${failed.length > 1 ? "s" : ""} open (${failed
+          .slice(0, 2)
+          .map((c) => c.label.replace(/\s+/g, " ").slice(0, 42))
+          .join("; ")})`
+      : checklist?.length
+        ? " — all listed gates pass"
+        : "";
+
+  const tf =
+    bias.timeframeAlignment === "counter"
+      ? "15m vs 1h conflict."
+      : bias.timeframeAlignment === "aligned"
+        ? "15m and 1h agree."
+        : bias.timeframeAlignment === "mixed"
+          ? "Mixed TF structure."
+          : "";
+
+  const regime =
+    bias.marketRegime === "risk_off"
+      ? "Risk-off backdrop."
+      : bias.marketRegime === "risk_on"
+        ? "Risk-on backdrop."
+        : "";
+
+  const mtf =
+    bias.mtfAlignmentPercent !== undefined
+      ? `MTF model ${bias.mtfAlignmentPercent}%.`
+      : "";
+
+  const parts = [tierPhrase + miss, tf, regime, mtf].filter(Boolean);
+  const line = parts.join(" ");
+  return line.length > 0 ? line : undefined;
+}
+
+/**
+ * When headline (blended) and15m/1h+fund legs disagree materially, explain without changing scores.
+ */
+export function describeHeadlineVsDeskTension(bias: BiasResult): string | undefined {
+  const h = bias.overallBias;
+  const t = bias.tacticalBias;
+  const s = bias.structuralBias;
+  if (t === undefined || s === undefined) return undefined;
+  const mid = (t + s) / 2;
+  const hs = Math.sign(h);
+  const ms = Math.sign(mid);
+  if (
+    hs !== 0 &&
+    ms !== 0 &&
+    hs !== ms &&
+    Math.abs(h) >= 12 &&
+    Math.abs(mid) >= 10
+  ) {
+    return `Headline ${h > 0 ? "+" : ""}${Math.round(h)} blends intraday technicals with fundamentals; 15m/1h+fund legs average ${mid > 0 ? "+" : ""}${Math.round(mid)} — use the desk row for execution timing.`;
+  }
+  if (
+    bias.tradeGuidance === "no_edge" &&
+    Math.abs(h) >= 18 &&
+    Math.abs(mid) < 12
+  ) {
+    return `Headline shows directional lean, but 15m/1h+fund legs are weak — desk “no edge” refers to that tactical stack, not necessarily the blended headline alone.`;
+  }
+  return undefined;
 }

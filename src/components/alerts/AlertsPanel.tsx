@@ -4,8 +4,6 @@ import { useState } from "react";
 import { useMarketStore } from "@/lib/store/market-store";
 import { cn } from "@/lib/utils";
 import { Bell, X, AlertTriangle, Info, Flame, Trash2 } from "lucide-react";
-import { INSTRUMENTS } from "@/lib/utils/constants";
-
 const severityConfig = {
   info: { icon: Info, cls: "text-neutral-accent", bg: "bg-neutral-accent/10", border: "border-neutral-accent/20" },
   warning: { icon: AlertTriangle, cls: "text-[var(--amber)]", bg: "bg-amber-500/10", border: "border-amber-500/20" },
@@ -91,7 +89,6 @@ function AlertsDropdown({ onClose }: { onClose: () => void }) {
           active.map((alert) => {
             const cfg = severityConfig[alert.severity];
             const Icon = cfg.icon;
-            const inst = INSTRUMENTS.find((i) => i.id === alert.instrumentId);
             const age = Math.round((now - alert.createdAt) / 60000);
             const ageLabel = age < 1 ? "just now" : age < 60 ? `${age}m ago` : `${Math.round(age / 60)}h ago`;
 

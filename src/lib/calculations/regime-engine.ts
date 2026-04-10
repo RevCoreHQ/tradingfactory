@@ -6,7 +6,6 @@ import type {
   VolatilityRegime,
   StructureRegime,
   MarketPhase,
-  PhaseTransition,
 } from "@/lib/types/signals";
 import { calcEMA, calculateATRSeries, calculateBollingerBands, calculateADX } from "./technical-indicators";
 
@@ -234,7 +233,6 @@ export function detectFullRegime(
 ): FullRegime {
   const adx = summary.adx.adx;
   const atr = summary.atr.value;
-  const bbWidth = summary.bollingerBands.width;
 
   // Compute supporting metrics
   const atrSeries = calculateATRSeries(candles);

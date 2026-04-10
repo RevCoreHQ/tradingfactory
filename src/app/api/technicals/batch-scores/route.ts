@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth/require-auth";
+import { checkUserRateLimit } from "@/lib/api/rate-limit";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import { fetchCandlesForInstrument } from "@/lib/api/massive";
 import { calculateAllIndicators } from "@/lib/calculations/technical-indicators";
@@ -7,7 +9,7 @@ import {
   calculateMTFTrendSummary,
   type CandlesByTimeframe,
 } from "@/lib/calculations/mtf-trend";
-import type { MTFTimeframe } from "@/lib/types/mtf";
+import type { MTFTimeframe, MTFTrendSummary } from "@/lib/types/mtf";
 import type { BiasSignal, TechnicalScore } from "@/lib/types/bias";
 
 const LIMIT_1H = 100;
@@ -26,7 +28,7 @@ const MTF_CONFIG = {
   trigger: "15m" as MTFTimeframe,
 };
 
-// TF weights for computing MTF alignment score (0-100)
+// TF weights for MTF alignment % — same `mtfSummary.trends` as `mtfEmaSummary` (single snapshot; UI should prefer both from this response).
 const TF_WEIGHTS: Record<string, number> = {
   "15m": 0.10,
   "1h": 0.20,
@@ -73,11 +75,24 @@ export type BatchScoreEntry = {
   technicalBasis: string;
   /** 0–100 MTF trend alignment (from batch TF weights). */
   mtfAlignmentPercent: number;
+  /** Same `calculateMTFTrendSummary` output used for `mtfAlignmentPercent` (single snapshot). */
+  mtfEmaSummary: MTFTrendSummary | null;
 };
 
 export const dynamic = "force-dynamic"; // never serve stale cached route
 
 export async function GET() {
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+
+  const rl = checkUserRateLimit(`batch-scores:${auth.user.id}`, 45, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+    );
+  }
+
   try {
     const results: Record<string, BatchScoreEntry> = {};
     const errors: string[] = [];
@@ -169,6 +184,7 @@ export async function GET() {
               currentPrice,
               technicalBasis,
               mtfAlignmentPercent: Math.round(mtfPct),
+              mtfEmaSummary: mtfSummary ?? null,
             },
           };
         })
@@ -193,9 +209,6 @@ export async function GET() {
     );
   } catch (error) {
     console.error("[BatchScores] Fatal:", error);
-    return NextResponse.json(
-      { scores: {}, debug: { success: 0, total: INSTRUMENTS.length, errors: [String(error)] } },
-      { status: 200 }
-    );
+    return NextResponse.json({ error: "Request failed" }, { status: 500 });
   }
 }

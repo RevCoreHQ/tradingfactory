@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
 import { useMarketStore } from "@/lib/store/market-store";
 import { useMarketNews, useFearGreed, useBondYields, useCentralBanks } from "./useMarketData";
@@ -9,6 +9,11 @@ import { REFRESH_INTERVALS, INSTRUMENTS } from "@/lib/utils/constants";
 import type { LLMAnalysisResult, LLMAnalysisRequest, LLMBatchResult } from "@/lib/types/llm";
 import type { BiasResult } from "@/lib/types/bias";
 import { readCache } from "@/lib/supabase-cache";
+import {
+  biasDirectionToLean,
+  reasonContradictsModelBias,
+  sanitizeLLMAnalysisForModel,
+} from "@/lib/calculations/llm-sanitize";
 
 // ---------------------------------------------------------------------------
 // localStorage cache for batch results (4 hours)
@@ -152,8 +157,35 @@ export function useLLMAnalysis() {
     }
   );
 
+  const rawAnalysis = data?.analysis ?? null;
+  const biasResult = useMarketStore((s) => s.biasResults[instrument.id]);
+  const llmAnalysis = useMemo(
+    () =>
+      rawAnalysis && biasResult
+        ? sanitizeLLMAnalysisForModel(rawAnalysis, biasResult)
+        : rawAnalysis,
+    [rawAnalysis, biasResult]
+  );
+
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") return;
+    if (!llmAnalysis || !biasResult) return;
+    if (Math.abs(biasResult.overallBias) < 15) return;
+    const lean = biasDirectionToLean(biasResult.direction);
+    const badF = reasonContradictsModelBias(llmAnalysis.fundamentalReason, lean);
+    const badT = reasonContradictsModelBias(llmAnalysis.technicalReason, lean);
+    if (badF || badT) {
+      console.warn("[LLM sanitize] Post-sanitize reasons still oppose desk lean", {
+        instrument: biasResult.instrument,
+        lean,
+        fundamentalReason: badF,
+        technicalReason: badT,
+      });
+    }
+  }, [llmAnalysis, biasResult]);
+
   return {
-    llmAnalysis: data?.analysis || null,
+    llmAnalysis,
     isLoading,
     error,
   };
@@ -248,7 +280,36 @@ export function useLLMBatchAnalysis(allBiasResults: Record<string, BiasResult>) 
 
   // Return fresh → localStorage → Supabase
   const cached = typeof window !== "undefined" ? getCachedBatch() : null;
-  const batchResults = freshResults || cached || supabaseBatch;
+  const rawBatch = freshResults || cached || supabaseBatch;
+  const batchResults = useMemo(() => {
+    if (!rawBatch) return rawBatch;
+    const out: Record<string, LLMAnalysisResult> = {};
+    for (const [id, r] of Object.entries(rawBatch)) {
+      const b = allBiasResults[id];
+      out[id] = b ? sanitizeLLMAnalysisForModel(r, b) : r;
+    }
+    return out;
+  }, [rawBatch, allBiasResults]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") return;
+    if (!batchResults) return;
+    for (const [id, r] of Object.entries(batchResults)) {
+      const b = allBiasResults[id];
+      if (!b || Math.abs(b.overallBias) < 15) continue;
+      const lean = biasDirectionToLean(b.direction);
+      const badF = reasonContradictsModelBias(r.fundamentalReason, lean);
+      const badT = reasonContradictsModelBias(r.technicalReason, lean);
+      if (badF || badT) {
+        console.warn("[LLM sanitize] Batch item still opposes desk lean", {
+          instrument: id,
+          lean,
+          fundamentalReason: badF,
+          technicalReason: badT,
+        });
+      }
+    }
+  }, [batchResults, allBiasResults]);
 
   // Surface API-level error (returned as { batch: null, error: "..." })
   const apiError = data && !data.batch

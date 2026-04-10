@@ -8,7 +8,6 @@ import type {
 } from "@/lib/types/bias";
 import type { ADRStoreData } from "@/lib/store/market-store";
 import { INSTRUMENTS } from "@/lib/utils/constants";
-import { clamp } from "@/lib/utils/formatters";
 
 // ==================== ADR CALCULATION ====================
 
@@ -60,7 +59,6 @@ export function calculateTradeSetup(
   currentPrice: number,
   timeframe: "intraday" | "intraweek"
 ): TradeSetup {
-  const isBullish = biasResult.direction.includes("bullish");
   const isBearish = biasResult.direction.includes("bearish");
   const biasAbs = Math.abs(biasResult.overallBias);
   const confidenceRatio = biasResult.confidence / 100;
@@ -123,7 +121,8 @@ export function calculateTradeSetup(
   return appendSetupIntelligence(base, biasResult);
 }
 
-function appendSetupIntelligence(setup: TradeSetup, bias: BiasResult): TradeSetup {
+/** Exported for unit tests and golden regression on checklist / tier rules. */
+export function appendSetupIntelligence(setup: TradeSetup, bias: BiasResult): TradeSetup {
   const f = bias.fundamentalScore.total;
   const t = bias.technicalScore.total;
   const ftCoherent =
@@ -146,8 +145,12 @@ function appendSetupIntelligence(setup: TradeSetup, bias: BiasResult): TradeSetu
     { id: "mtf", label: "MTF alignment ≥ 45%", pass: mtfPass },
     { id: "agree", label: "Signal agreement ≥ 42%", pass: agreementPass },
     { id: "conf", label: "Model confidence ≥ 48%", pass: confPass },
-    { id: "edge", label: "Headline bias magnitude meaningful", pass: biasPass },
-    { id: "calendar", label: "No imminent high-impact print (90m)", pass: eventPass },
+    { id: "edge", label: "Headline |bias| ≥ 14 (blended model)", pass: biasPass },
+    {
+      id: "calendar",
+      label: "No high-impact print inside 90m (desk rule)",
+      pass: eventPass,
+    },
   ];
 
   const passCount = checklist.filter((c) => c.pass).length;

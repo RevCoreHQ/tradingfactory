@@ -27,8 +27,10 @@ import {
   Minus,
   Clock,
   Sparkles,
+  ChevronRight,
 } from "lucide-react";
 import { DecisionDeskPanel } from "@/components/dashboard/DecisionDeskPanel";
+import { sanitizeCatalysts } from "@/lib/calculations/llm-sanitize";
 
 const categoryIcons: Record<string, typeof DollarSign> = {
   forex: DollarSign,
@@ -295,16 +297,19 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
           >
             {changePercent > 0 ? "+" : ""}{changePercent.toFixed(2)}%
           </span>
-          <span
-            className={cn(
-              "px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wide",
-              isBullish && "bg-bullish/15 text-bullish",
-              isBearish && "bg-bearish/15 text-bearish",
-              !isBullish && !isBearish && "bg-neutral-accent/15 text-neutral-accent"
-            )}
-          >
-            {isBullish ? "Bullish" : isBearish ? "Bearish" : "Neutral"}
-          </span>
+          <div className="flex flex-col items-end gap-0">
+            <span
+              className={cn(
+                "px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wide",
+                isBullish && "bg-bullish/15 text-bullish",
+                isBearish && "bg-bearish/15 text-bearish",
+                !isBullish && !isBearish && "bg-neutral-accent/15 text-neutral-accent"
+              )}
+            >
+              {isBullish ? "Bullish" : isBearish ? "Bearish" : "Neutral"}
+            </span>
+            <span className="text-[9px] font-medium text-muted-foreground/45 uppercase tracking-wide">Blended</span>
+          </div>
         </div>
       </div>
 
@@ -481,39 +486,46 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
         <SessionBadge instrumentId={instrument.id} />
       </div>
 
-      {/* MTF EMA Trend */}
+      {/* MTF EMA Trend — prefers batch-scores snapshot so pills agree with mtfAlignmentPercent */}
       {mtfTrend && mtfTrend.trends.length > 0 && (
-        <div className="flex items-center gap-1.5 mb-3">
-          <span className="text-[10px] text-muted-foreground/40 font-medium mr-0.5">EMA</span>
-          {(["15m", "1h", "4h", "1d"] as const).map((tf) => {
-            const t = mtfTrend.trends.find((tr) => tr.timeframe === tf);
-            if (!t) return null;
-            const dir = t.direction;
-            return (
-              <Tooltip key={tf}>
-                <TooltipTrigger className={cn(
-                  "text-[10px] font-mono font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 cursor-default",
-                  dir === "bullish" && "bg-bullish/12 text-bullish",
-                  dir === "bearish" && "bg-bearish/12 text-bearish",
-                  dir === "neutral" && "bg-muted text-muted-foreground"
-                )}>
-                  {dir === "bullish" ? <TrendingUp className="h-2.5 w-2.5" /> : dir === "bearish" ? <TrendingDown className="h-2.5 w-2.5" /> : <Minus className="h-2.5 w-2.5" />}
-                  {tf === "1d" ? "D" : tf.toUpperCase()}
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs">
-                  <div className="flex flex-col gap-0.5 py-0.5 text-[11px]">
-                    <span className="font-semibold">{tf} EMA Stack: {dir}</span>
-                    <span className="opacity-70">EMA9: {t.ema9.toFixed(instrument.decimalPlaces)}</span>
-                    <span className="opacity-70">EMA21: {t.ema21.toFixed(instrument.decimalPlaces)}</span>
-                    <span className="opacity-70">EMA50: {t.ema50.toFixed(instrument.decimalPlaces)}</span>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            );
-          })}
-          {mtfTrend.alignment === "full" && (
-            <span className="text-[9px] font-bold uppercase text-muted-foreground/40 ml-1">Aligned</span>
-          )}
+        <div className="mb-3 space-y-0.5">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-muted-foreground/40 font-medium mr-0.5">EMA</span>
+            {(["15m", "1h", "4h", "1d"] as const).map((tf) => {
+              const t = mtfTrend.trends.find((tr) => tr.timeframe === tf);
+              if (!t) return null;
+              const dir = t.direction;
+              return (
+                <Tooltip key={tf}>
+                  <TooltipTrigger className={cn(
+                    "text-[10px] font-mono font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 cursor-default",
+                    dir === "bullish" && "bg-bullish/12 text-bullish",
+                    dir === "bearish" && "bg-bearish/12 text-bearish",
+                    dir === "neutral" && "bg-muted text-muted-foreground"
+                  )}>
+                    {dir === "bullish" ? <TrendingUp className="h-2.5 w-2.5" /> : dir === "bearish" ? <TrendingDown className="h-2.5 w-2.5" /> : <Minus className="h-2.5 w-2.5" />}
+                    {tf === "1d" ? "D" : tf.toUpperCase()}
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <div className="flex flex-col gap-0.5 py-0.5 text-[11px]">
+                      <span className="font-semibold">{tf} EMA Stack: {dir}</span>
+                      <span className="opacity-70">EMA9: {t.ema9.toFixed(instrument.decimalPlaces)}</span>
+                      <span className="opacity-70">EMA21: {t.ema21.toFixed(instrument.decimalPlaces)}</span>
+                      <span className="opacity-70">EMA50: {t.ema50.toFixed(instrument.decimalPlaces)}</span>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+            {mtfTrend.alignment === "full" && (
+              <span className="text-[9px] font-bold uppercase text-muted-foreground/40 ml-1">Aligned</span>
+            )}
+          </div>
+          <p className="text-[9px] text-muted-foreground/45 leading-snug">
+            {biasResult.mtfEmaSummary
+              ? "Same batch-scores snapshot as MTF % in Decision desk."
+              : "From MTF route — desk MTF % may differ slightly if batch refreshed separately."}
+          </p>
         </div>
       )}
 
@@ -601,59 +613,68 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
             {summaryText}
           </p>
 
-          {/* Details — always visible */}
-          <div className="mt-3 space-y-2.5 border-t border-border/20 pt-2.5">
-            {(() => {
-              const fundReason = llmResult?.fundamentalReason || describeFundamentals(fund);
-              return (
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <BiasDot score={fundScore} />
-                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Fundamentals</span>
+          <details className="mt-3 group rounded-md border border-border/15 open:bg-[var(--surface-2)]/20">
+            <summary className="cursor-pointer list-none px-1 py-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground">
+              <span className="inline-flex items-center gap-1">
+                <ChevronRight className="h-3.5 w-3.5 shrink-0 transition-transform group-open:rotate-90 text-muted-foreground/60" />
+                Full narrative (fund / tech / catalysts)
+              </span>
+            </summary>
+            <div className="space-y-2.5 border-t border-border/20 pt-2.5 pb-1">
+              {(() => {
+                const fundReason = llmResult?.fundamentalReason || describeFundamentals(fund);
+                return (
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <BiasDot score={fundScore} />
+                      <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Fundamentals</span>
+                    </div>
+                    <p className="text-sm text-foreground/75 leading-relaxed mt-0.5">{fundReason}</p>
                   </div>
-                  <p className="text-sm text-foreground/75 leading-relaxed mt-0.5">{fundReason}</p>
-                </div>
-              );
-            })()}
-            {(() => {
-              const techReason = llmResult?.technicalReason || describeTechnicals(tech);
-              return (
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <BiasDot score={techScore} />
-                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Technicals</span>
+                );
+              })()}
+              {(() => {
+                const techReason = llmResult?.technicalReason || describeTechnicals(tech);
+                return (
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <BiasDot score={techScore} />
+                      <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Technicals</span>
+                    </div>
+                    <p className="text-sm text-foreground/75 leading-relaxed mt-0.5">{techReason}</p>
                   </div>
-                  <p className="text-sm text-foreground/75 leading-relaxed mt-0.5">{techReason}</p>
-                </div>
-              );
-            })()}
-            {(() => {
-              const catalysts = llmResult?.catalysts?.length ? llmResult.catalysts : deriveCatalysts(biasResult.signals);
-              const outlook = llmResult?.outlook || deriveOutlook(biasResult);
-              if (catalysts.length === 0) return null;
-              return (
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className={cn(
-                        "inline-block h-1.5 w-1.5 rounded-full shrink-0",
-                        outlook === "bullish" ? "bg-bullish" : outlook === "bearish" ? "bg-bearish" : "bg-muted-foreground/40"
-                      )}
-                    />
-                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Catalysts</span>
+                );
+              })()}
+              {(() => {
+                const raw =
+                  llmResult?.catalysts?.length ? llmResult.catalysts : deriveCatalysts(biasResult.signals);
+                const catalysts = sanitizeCatalysts(raw) ?? raw;
+                const outlook = llmResult?.outlook || deriveOutlook(biasResult);
+                if (catalysts.length === 0) return null;
+                return (
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={cn(
+                          "inline-block h-1.5 w-1.5 rounded-full shrink-0",
+                          outlook === "bullish" ? "bg-bullish" : outlook === "bearish" ? "bg-bearish" : "bg-muted-foreground/40"
+                        )}
+                      />
+                      <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Catalysts</span>
+                    </div>
+                    <ul className="mt-0.5 space-y-0.5">
+                      {catalysts.map((c, i) => (
+                        <li key={i} className="text-sm text-foreground/75 leading-relaxed flex items-start gap-1.5">
+                          <span className="text-neutral-accent mt-1.5 shrink-0">&bull;</span>
+                          {c}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <ul className="mt-0.5 space-y-0.5">
-                    {catalysts.map((c, i) => (
-                      <li key={i} className="text-sm text-foreground/75 leading-relaxed flex items-start gap-1.5">
-                        <span className="text-neutral-accent mt-1.5 shrink-0">&bull;</span>
-                        {c}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              );
-            })()}
-          </div>
+                );
+              })()}
+            </div>
+          </details>
         </div>
       )}
 
@@ -710,7 +731,7 @@ export function InstrumentBriefings() {
       biasResult: bias,
       llmResult: batchLLMResults?.[inst.id] || null,
       quote: quotes[inst.id] || null,
-      mtfTrend: mtfTrends[inst.id] || null,
+      mtfTrend: currentResults[inst.id]?.mtfEmaSummary ?? mtfTrends[inst.id] ?? null,
     });
     return acc;
   }, []).sort((a, b) => {

@@ -67,10 +67,11 @@ export function TradingViewChart({ heightClass }: TradingViewChartProps) {
   const tvRange = TV_RANGE_MAP[timeframe] ?? "1M";
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    const root = containerRef.current;
+    if (!root) return;
 
     // Clear previous widget
-    containerRef.current.innerHTML = "";
+    root.innerHTML = "";
 
     const widgetContainer = document.createElement("div");
     widgetContainer.className = "tradingview-widget-container";
@@ -105,12 +106,10 @@ export function TradingViewChart({ heightClass }: TradingViewChartProps) {
     });
 
     widgetContainer.appendChild(script);
-    containerRef.current.appendChild(widgetContainer);
+    root.appendChild(widgetContainer);
 
     return () => {
-      if (containerRef.current) {
-        containerRef.current.innerHTML = "";
-      }
+      root.innerHTML = "";
     };
   }, [tvSymbol, tvInterval, tvRange, isDark]);
 

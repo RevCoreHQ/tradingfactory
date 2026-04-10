@@ -3,7 +3,7 @@
 // All reported metrics come from out-of-sample (OOS) data only.
 
 import type { OHLCV, Instrument } from "@/lib/types/market";
-import type { BacktestConfig, BacktestResult, BacktestStats } from "@/lib/types/backtest";
+import type { BacktestConfig, BacktestStats } from "@/lib/types/backtest";
 import { runBacktest } from "./backtest-engine";
 import { computeStats } from "./backtest-stats";
 import type { BacktestTrade } from "@/lib/types/backtest";

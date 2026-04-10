@@ -1,5 +1,5 @@
 import type { OHLCV } from "@/lib/types/market";
-import type { TechnicalSummary, SupportResistanceLevel, PivotPointResult, FibonacciLevel } from "@/lib/types/indicators";
+import type { TechnicalSummary } from "@/lib/types/indicators";
 import type {
   MarketRegime,
   FullRegime,
@@ -197,7 +197,7 @@ function snapLevelsToStructure(
   const isBull = direction === "bullish";
   let snappedSL = atrSL;
   let snappedEntry: [number, number] = [...atrEntry];
-  let snappedTP: [number, number, number] = [...atrTP];
+  const snappedTP: [number, number, number] = [...atrTP];
 
   // --- Snap Stop Loss ---
   // For longs: find strongest support between (atrSL - 0.5*ATR) and entry
@@ -374,7 +374,7 @@ function rsiExtremesSignal(
 
 function impulseSignal(summary: TechnicalSummary): MechanicalSignal {
   // Elder: EMA(13) slope + MACD-H slope = GREEN/RED/BLUE
-  const { color, emaSlope, macdHistogramSlope } = summary.impulse;
+  const { color } = summary.impulse;
 
   let direction: "bullish" | "bearish" | "neutral";
   let description: string;
@@ -411,7 +411,6 @@ function volumeConfirmationSignal(
   // Volume Confirmation: VWAP position + volume surge + Force Index alignment.
   // This is a genuinely independent 4th cluster — uses volume data, not just price.
   // Works across all regimes (volume confirms moves in trends, ranges, and breakouts).
-  const price = summary.currentPrice;
   const vwap = summary.vwap;
   const forceIndex = summary.forceIndex;
 
@@ -516,10 +515,7 @@ function sfpSignal(
   };
 }
 
-function idfSignal(
-  idfResult: import("./sfp-idf-detection").IDFResult | null,
-  fullRegime?: FullRegime
-): MechanicalSignal {
+function idfSignal(idfResult: import("./sfp-idf-detection").IDFResult | null): MechanicalSignal {
   if (!idfResult || !idfResult.detected) {
     return {
       system: "IDF",
@@ -882,7 +878,7 @@ export function generateTradeDeskSetup(
     impulseSignal(summary),
     volumeConfirmationSignal(summary, candles),
     sfpSignal(sfpResult, fullRegime),
-    idfSignal(idfResult, fullRegime),
+    idfSignal(idfResult),
     obRetestSignal(obRetestResult, fullRegime),
   ];
 

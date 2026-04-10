@@ -1,0 +1,32 @@
+{
+  "id": "tier-c-weak-gates-mixed-tf",
+  "bias": {
+    "instrument": "EUR_USD",
+    "overallBias": -18,
+    "direction": "bearish",
+    "confidence": 40,
+    "signalAgreement": 0.3,
+    "timeframeAlignment": "mixed",
+    "mtfAlignmentPercent": 38,
+    "tradeGuidanceSummary": "Edge is weak on several gates.",
+    "eventGate": { "hasMajorEventSoon": false, "impact": "low", "suggestion": "No urgent print." },
+    "fundamentalScore": {
+      "total": 72,
+      "newsSentiment": 50,
+      "economicData": 50,
+      "centralBankPolicy": 50,
+      "marketSentiment": 50,
+      "intermarketCorrelation": 50
+    },
+    "technicalScore": {
+      "total": 35,
+      "trendDirection": 50,
+      "momentum": 50,
+      "volatility": 50,
+      "volumeAnalysis": 50,
+      "supportResistance": 50
+    }
+  },
+  "expectedConfluenceTier": "C",
+  "expectedPassCount": 3
+}

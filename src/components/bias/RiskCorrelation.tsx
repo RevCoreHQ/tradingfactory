@@ -2,7 +2,7 @@
 
 import { useRiskCorrelation } from "@/lib/hooks/useRiskCorrelation";
 import { GlassCard } from "@/components/common/GlassCard";
-import { Shield, AlertTriangle, Info, TrendingUp, TrendingDown } from "lucide-react";
+import { Shield, AlertTriangle, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 

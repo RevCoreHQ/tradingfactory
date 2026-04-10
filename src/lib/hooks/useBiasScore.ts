@@ -14,8 +14,9 @@ import { useTechnicalData } from "./useTechnicalData";
 import { useLLMAnalysis } from "./useLLMAnalysis";
 import { calculateFundamentalScore, calculateTechnicalScore, calculateOverallBias, applyLLMAnalysis } from "@/lib/calculations/bias-engine";
 import { calculateTradeSetup } from "@/lib/calculations/trade-setup";
-import { buildDecisionLayer } from "@/lib/calculations/decision-context";
+import { buildDecisionLayer, computeDecisionRationale } from "@/lib/calculations/decision-context";
 import type { TechnicalScore } from "@/lib/types/bias";
+import type { MTFTrendSummary } from "@/lib/types/mtf";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -55,6 +56,8 @@ export function useBiasScore() {
         score15m: TechnicalScore;
         score1h: TechnicalScore;
         mtfAlignmentPercent: number;
+        technicalBasis?: string;
+        mtfEmaSummary: MTFTrendSummary | null;
       }
     >;
   }>("/api/technicals/batch-scores", fetcher, {
@@ -108,7 +111,8 @@ export function useBiasScore() {
           fearGreed.value,
           dxy.change,
           yield10Change,
-          calendarEvents
+          calendarEvents,
+          ruleBasedResult.overallBias
         )
       : {};
 
@@ -118,6 +122,8 @@ export function useBiasScore() {
         ...ruleBasedResult,
         ...decision,
         mtfAlignmentPercent: techEntry?.mtfAlignmentPercent,
+        technicalBasis: techEntry?.technicalBasis,
+        mtfEmaSummary: techEntry?.mtfEmaSummary ?? null,
       },
       llmAnalysis
     );
@@ -127,16 +133,17 @@ export function useBiasScore() {
     if (instAdr && currentPrice > 0) {
       const atr = indicators?.atr?.value || (instAdr.pips * instrument.pipSize);
       const adrWithRank = { ...instAdr, rank: 50 }; // single instrument doesn't have ranking context
+      const tradeSetup = calculateTradeSetup(
+        result,
+        atr,
+        adrWithRank,
+        currentPrice,
+        biasTimeframe
+      );
+      const withSetup = { ...result, adr: adrWithRank, tradeSetup };
       result = {
-        ...result,
-        adr: adrWithRank,
-        tradeSetup: calculateTradeSetup(
-          result,
-          atr,
-          adrWithRank,
-          currentPrice,
-          biasTimeframe
-        ),
+        ...withSetup,
+        decisionRationale: computeDecisionRationale(withSetup),
       };
     }
 

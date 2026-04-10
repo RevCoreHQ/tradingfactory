@@ -274,7 +274,7 @@ export function recordRegimeSystemOutcome(
   tracked: TrackedSetup
 ): Record<string, SystemPerformance> {
   // First, record global performance (existing behavior)
-  let updated = recordSystemOutcome(existing, tracked);
+  const updated = recordSystemOutcome(existing, tracked);
 
   // Then, record regime-specific performance
   const outcome = tracked.outcome;

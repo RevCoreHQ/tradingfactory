@@ -4,7 +4,6 @@ import { useEconomicCalendar } from "@/lib/hooks/useMarketData";
 import { GlassCard } from "@/components/common/GlassCard";
 import { TableSkeleton } from "@/components/common/Skeletons";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { getImpactColor } from "@/lib/utils/formatters";
 import { cn } from "@/lib/utils";
 
 const COUNTRY_FLAGS: Record<string, string> = {

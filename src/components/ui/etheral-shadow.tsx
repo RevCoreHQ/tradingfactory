@@ -43,12 +43,11 @@ const useInstanceId = (): string => {
 };
 
 export function EtheralShadow({
-    sizing = 'fill',
     color = 'rgba(128, 128, 128, 1)',
     animation,
     noise,
     style,
-    className
+    className,
 }: EtheralShadowProps) {
     const id = useInstanceId();
     const noiseId = `${id}-noise`;

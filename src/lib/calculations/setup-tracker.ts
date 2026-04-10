@@ -131,7 +131,6 @@ export function updateSetupStatus(
         // Log actual entry for fill tracking
         const actualEntry = currentPrice;
         const projEntry = tracked.projectedEntry ?? entryMid;
-        const pipSize = setup.executionCost?.spreadPips ? 1 : 1; // fallback
         const slippagePips = Math.abs(actualEntry - projEntry) / (setup.atr / 100 || 1);
         result = {
           ...tracked,

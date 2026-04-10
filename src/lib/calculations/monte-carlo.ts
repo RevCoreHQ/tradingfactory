@@ -3,7 +3,7 @@
 // to sequencing luck vs genuine edge. Produces confidence intervals on
 // key metrics (max drawdown, total return, recovery factor).
 
-import type { BacktestTrade, BacktestStats } from "@/lib/types/backtest";
+import type { BacktestTrade } from "@/lib/types/backtest";
 
 // ==================== TYPES ====================
 

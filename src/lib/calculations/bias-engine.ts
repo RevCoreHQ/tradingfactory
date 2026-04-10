@@ -7,7 +7,7 @@ import { INSTRUMENTS } from "@/lib/utils/constants";
 
 // ==================== FUNDAMENTAL SCORING ====================
 
-function scoreNewsSentiment(news: NewsItem[], instrument: string): { score: number; signals: BiasSignal[] } {
+function scoreNewsSentiment(news: NewsItem[]): { score: number; signals: BiasSignal[] } {
   if (news.length === 0) return { score: 50, signals: [] };
 
   // Weight more recent news higher
@@ -254,7 +254,7 @@ export function calculateFundamentalScore(
   _quotes: Record<string, unknown>,
   instrument: string
 ): { score: FundamentalScore; signals: BiasSignal[] } {
-  const ns = scoreNewsSentiment(news, instrument);
+  const ns = scoreNewsSentiment(news);
   const ed = scoreEconomicData(events, indicators, instrument);
   const cb = scoreCentralBankPolicy(banks, instrument);
   const ms = scoreMarketSentiment(fearGreed, instrument);
@@ -308,7 +308,6 @@ export function calculateFundamentalScore(
 
 function scoreTrendDirection(summary: TechnicalSummary): { score: number; signals: BiasSignal[] } {
   const mas = summary.movingAverages;
-  const currentPrice = summary.currentPrice;
   let score = 50;
   const signals: BiasSignal[] = [];
 
@@ -613,7 +612,7 @@ export function calculateOverallBias(
     fundWeight = 1 - techWeight;
   }
 
-  let overallBias = clamp(
+  const overallBias = clamp(
     fundamentalBiasVal * fundWeight +
     technicalBiasVal * techWeight,
     -100,
@@ -657,7 +656,7 @@ export function calculateOverallBias(
   };
 }
 
-function computeSignalAgreement(signals: BiasSignal[], direction: string): number {
+export function computeSignalAgreement(signals: BiasSignal[], direction: string): number {
   if (signals.length === 0) return 0.5;
   const isBullish = direction.includes("bullish");
   const isBearish = direction.includes("bearish");

@@ -10,9 +10,9 @@ interface Props {
 }
 
 export function EquityCurveChart({ equityCurve, trades }: Props) {
-  const { pathD, ddPathD, width, height, yMin, yMax, markers, xScale, yScale } = useMemo(() => {
+  const { pathD, ddPathD, width, height, yMin, yMax, markers, yScale } = useMemo(() => {
     if (equityCurve.length < 2) {
-      return { pathD: "", ddPathD: "", width: 800, height: 300, yMin: 0, yMax: 1, markers: [], xScale: () => 0, yScale: () => 0 };
+      return { pathD: "", ddPathD: "", width: 800, height: 300, yMin: 0, yMax: 1, markers: [], yScale: () => 0 };
     }
 
     const w = 800;
@@ -72,7 +72,6 @@ export function EquityCurveChart({ equityCurve, trades }: Props) {
       yMin: eMin,
       yMax: eMax,
       markers: tradeMarkers,
-      xScale: xs,
       yScale: ys,
     };
   }, [equityCurve, trades]);

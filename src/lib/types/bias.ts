@@ -1,3 +1,5 @@
+import type { MTFTrendSummary } from "@/lib/types/mtf";
+
 export type BiasDirection = "strong_bearish" | "bearish" | "neutral" | "bullish" | "strong_bullish";
 
 export interface FundamentalScore {
@@ -102,6 +104,10 @@ export interface BiasResult {
   eventGate?: EventGateInfo;
   /** 0–100 MTF directional alignment from batch (optional). */
   mtfAlignmentPercent?: number;
+  /** EMA stack summary from the same batch-scores snapshot as `mtfAlignmentPercent` (preferred over a separate MTF fetch). */
+  mtfEmaSummary?: MTFTrendSummary | null;
+  /** One-line explanation of tier / checklist / context (trust layer). */
+  decisionRationale?: string;
 }
 
 export interface BiasOutcome {

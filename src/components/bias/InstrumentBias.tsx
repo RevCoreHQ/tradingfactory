@@ -5,7 +5,7 @@ import { useMarketStore } from "@/lib/store/market-store";
 import { useRates } from "@/lib/hooks/useMarketData";
 import { BiasGauge } from "./BiasGauge";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
-import { formatPercent, getBiasDirection } from "@/lib/utils/formatters";
+import { formatPercent } from "@/lib/utils/formatters";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { ScrollArea } from "@/components/ui/scroll-area";

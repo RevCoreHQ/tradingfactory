@@ -26,7 +26,7 @@ export function detectScaleIn(
 
   // Max 2 scale-ins per core trade
   const activeScaleIns = tracked.scaleIns.filter((s) => !s.dismissed);
-  if (tracked.scaleIns.length >= MAX_SCALE_INS) return null;
+  if (activeScaleIns.length >= MAX_SCALE_INS) return null;
 
   // Cooldown check
   const lastDetected = tracked.scaleIns[tracked.scaleIns.length - 1]?.detectedAt ?? 0;

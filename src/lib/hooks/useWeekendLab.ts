@@ -44,6 +44,16 @@ export function useWeekendLab() {
   const [paramsApplied, setParamsApplied] = useState(false);
   const abortRef = useRef({ aborted: false });
 
+  const applyConfluenceFeedbackInternal = useCallback(
+    (batchResults: BatchInstrumentResult[]) => {
+      const existing = loadConfluencePatterns();
+      const updated = feedBatchToConfluence(batchResults, existing);
+      saveConfluencePatterns(updated);
+      setConfluenceFed(true);
+    },
+    []
+  );
+
   const runBatch = useCallback(async () => {
     abortRef.current = { aborted: false };
     setResults([]);
@@ -81,22 +91,12 @@ export function useWeekendLab() {
         applyConfluenceFeedbackInternal(batchResults);
       }
     }
-  }, [batchConfig]);
+  }, [batchConfig, applyConfluenceFeedbackInternal]);
 
   const stopBatch = useCallback(() => {
     abortRef.current.aborted = true;
     setProgress((prev) => ({ ...prev, status: "idle" }));
   }, []);
-
-  const applyConfluenceFeedbackInternal = useCallback(
-    (batchResults: BatchInstrumentResult[]) => {
-      const existing = loadConfluencePatterns();
-      const updated = feedBatchToConfluence(batchResults, existing);
-      saveConfluencePatterns(updated);
-      setConfluenceFed(true);
-    },
-    []
-  );
 
   const applyConfluenceFeedback = useCallback(() => {
     if (results.length > 0) {

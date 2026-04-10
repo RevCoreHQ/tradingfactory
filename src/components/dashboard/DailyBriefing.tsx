@@ -6,11 +6,9 @@ import { useBiasScore } from "@/lib/hooks/useBiasScore";
 import { GlassCard } from "@/components/common/GlassCard";
 import { getBiasLabel, getBiasTextClass, formatPrice } from "@/lib/utils/formatters";
 import { cn } from "@/lib/utils";
-import { FileText } from "lucide-react";
 
 export function DailyBriefing() {
   const instrument = useMarketStore((s) => s.selectedInstrument);
-  const biasTimeframe = "intraday" as const;
   const { biasResult } = useBiasScore();
   const { indicators } = useTechnicalData();
 

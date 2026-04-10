@@ -128,6 +128,8 @@ export function SpecialText({
       }, delay * 1000);
     }
     return () => clearStartTimeout();
+  // startAnimation is intentionally omitted: only the first mount burst should run.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
   }, [shouldAnimate, hasStarted, delay, text.length]);
 
   useEffect(() => {
@@ -152,6 +154,8 @@ export function SpecialText({
         clearInterval(intervalRef.current);
       }
     };
+    // runPhase1/runPhase2 are stable for interval ticks; adding them retriggers the interval every frame.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
   }, [currentPhase, animationStep, text, speed, hasStarted]);
 
   useEffect(() => {

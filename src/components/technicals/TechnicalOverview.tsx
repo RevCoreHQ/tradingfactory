@@ -4,7 +4,6 @@ import { useTechnicalData } from "@/lib/hooks/useTechnicalData";
 import { useMarketStore } from "@/lib/store/market-store";
 import { GlassCard } from "@/components/common/GlassCard";
 import { IndicatorCard } from "./IndicatorCard";
-import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { CardSkeleton } from "@/components/common/Skeletons";
 import { cn } from "@/lib/utils";

@@ -1,11 +1,5 @@
 import type { OHLCV } from "@/lib/types/market";
-import type {
-  SwingPoint,
-  SwingType,
-  StructureEvent,
-  StructureBreak,
-  MarketStructure,
-} from "@/lib/types/signals";
+import type { SwingPoint, StructureEvent, MarketStructure } from "@/lib/types/signals";
 
 // ==================== SWING POINT DETECTION ====================
 

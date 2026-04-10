@@ -27,10 +27,6 @@ function getForexTickers(): string[] {
   return Array.from(TICKER_TO_INSTRUMENT.keys()).filter((t) => t.startsWith("C:"));
 }
 
-function getCryptoTickers(): string[] {
-  return Array.from(TICKER_TO_INSTRUMENT.keys()).filter((t) => t.startsWith("X:"));
-}
-
 /**
  * Connect to Polygon.io WebSocket for real-time forex/crypto quotes.
  * The Currencies plan provides wss://socket.polygon.io/forex and /crypto.
@@ -47,8 +43,7 @@ export function connectPolygonWS(onPrice: PriceCallback) {
 
   // Connect to forex socket (covers forex + commodities)
   connectSocket("forex", apiKey, getForexTickers());
-  // Crypto would need a separate socket:
-  // connectSocket("crypto", apiKey, getCryptoTickers());
+  // Crypto would need a separate socket with X: tickers from TICKER_TO_INSTRUMENT.
 }
 
 function connectSocket(market: "forex" | "crypto", apiKey: string, tickers: string[]) {

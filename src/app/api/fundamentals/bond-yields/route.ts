@@ -22,22 +22,46 @@ async function computeDXY(): Promise<DXYData | null> {
 
     if (!eurusd || !usdjpy || !gbpusd || !usdcad || !usdsek || !usdchf) return null;
 
-    const dxy =
+    const dxyFormula = (
+      e: number,
+      j: number,
+      g: number,
+      c: number,
+      k: number,
+      f: number
+    ) =>
       50.14348112 *
-      Math.pow(eurusd, -0.576) *
-      Math.pow(usdjpy, 0.136) *
-      Math.pow(gbpusd, -0.119) *
-      Math.pow(usdcad, 0.091) *
-      Math.pow(usdsek, 0.042) *
-      Math.pow(usdchf, 0.036);
+      Math.pow(e, -0.576) *
+      Math.pow(j, 0.136) *
+      Math.pow(g, -0.119) *
+      Math.pow(c, 0.091) *
+      Math.pow(k, 0.042) *
+      Math.pow(f, 0.036);
+
+    const dxy = dxyFormula(eurusd, usdjpy, gbpusd, usdcad, usdsek, usdchf);
+
+    // Prior session proxy: Polygon snapshot `change` is move vs prior close per pair
+    const prev = (p: number, q: { change?: number } | undefined) => p - (q?.change ?? 0);
+    const dxyPrev = dxyFormula(
+      prev(eurusd, quotes["C:EURUSD"]),
+      prev(usdjpy, quotes["C:USDJPY"]),
+      prev(gbpusd, quotes["C:GBPUSD"]),
+      prev(usdcad, quotes["C:USDCAD"]),
+      prev(usdsek, quotes["C:USDSEK"]),
+      prev(usdchf, quotes["C:USDCHF"])
+    );
 
     // Sanity check: real DXY should be in ~80-120 range
     if (dxy < 70 || dxy > 130) return null;
 
+    const change = Math.round((dxy - dxyPrev) * 100) / 100;
+    const changePercent =
+      dxyPrev !== 0 ? Math.round((change / dxyPrev) * 10_000) / 100 : 0;
+
     return {
       value: Math.round(dxy * 100) / 100,
-      change: 0,
-      changePercent: 0,
+      change,
+      changePercent,
       history: [],
     };
   } catch {

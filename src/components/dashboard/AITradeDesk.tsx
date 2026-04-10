@@ -21,7 +21,7 @@ import type {
   ConfluencePattern,
   ScaleInOpportunity,
 } from "@/lib/types/signals";
-import type { TimeframeTrend, MTFTrendSummary } from "@/lib/types/mtf";
+import type { MTFTrendSummary } from "@/lib/types/mtf";
 import {
   TrendingUp,
   TrendingDown,
@@ -379,13 +379,6 @@ function ScaleInBanner({
 // ==================== MTF Trend Bar ====================
 
 function MTFTrendBar({ mtf }: { mtf: MTFTrendSummary }) {
-  const alignmentColors: Record<string, string> = {
-    full: "text-bullish",
-    strong: "text-bullish/70",
-    partial: "text-[var(--amber)]",
-    conflicting: "text-bearish/70",
-  };
-
   return (
     <div>
       <div className="flex items-center gap-2 mb-1.5">
@@ -596,7 +589,7 @@ function SetupCard({
           <SetupProgress tracked={tracked} />
 
           {/* Scale-in banners */}
-          {activeScaleIns.map((si, idx) => {
+          {activeScaleIns.map((si) => {
             const realIdx = (tracked.scaleIns ?? []).indexOf(si);
             return (
               <ScaleInBanner

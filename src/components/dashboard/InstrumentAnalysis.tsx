@@ -4,13 +4,13 @@ import { Header } from "./Header";
 import { Watchlist } from "./Watchlist";
 import { DailyBriefing } from "./DailyBriefing";
 import { SectionHeader } from "./SectionHeader";
-import { BiasBreakdown } from "@/components/bias/BiasBreakdown";
 import { BiasHistory } from "@/components/bias/BiasHistory";
 import { CurrencyStrength } from "@/components/fundamentals/CurrencyStrength";
 import { TechnicalOverview } from "@/components/technicals/TechnicalOverview";
 import { DeepAnalysis } from "@/components/technicals/DeepAnalysis";
 import { TradeSetupCard } from "./TradeSetupCard";
 import { DecisionDeskPanel } from "@/components/dashboard/DecisionDeskPanel";
+import { sanitizeCatalysts } from "@/lib/calculations/llm-sanitize";
 import { useMarketStore } from "@/lib/store/market-store";
 import { useBiasScore } from "@/lib/hooks/useBiasScore";
 import { useTechnicalData } from "@/lib/hooks/useTechnicalData";
@@ -22,7 +22,6 @@ import { MTFConfluence } from "@/components/technicals/MTFConfluence";
 import { useRealtimePrices } from "@/lib/hooks/useRealtimePrices";
 import { generateTradeDeskSetup, selectTradingStyle } from "@/lib/calculations/mechanical-signals";
 import { getSessionRelevance } from "@/lib/calculations/session-scoring";
-import { getBiasColor } from "@/lib/utils/formatters";
 import { useEffect, useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -76,6 +75,10 @@ export function InstrumentAnalysis() {
 
   // LLM analysis data from batch results (populated by overview page)
   const llmResult = batchLLMResults?.[instrument.id] || null;
+  const catalystList = useMemo(
+    () => sanitizeCatalysts(llmResult?.catalysts) ?? llmResult?.catalysts ?? [],
+    [llmResult?.catalysts]
+  );
 
   // Mechanical signal engine — same brain as overview page
   const mechanicalSetup = useMemo(() => {
@@ -160,14 +163,19 @@ export function InstrumentAnalysis() {
                     {bias.overallBias > 0 ? "+" : ""}{Math.round(bias.overallBias)}
                   </span>
                   <div className="space-y-1.5">
-                    <span className={cn(
-                      "inline-block px-3 py-1 rounded-lg text-xs sm:text-sm font-bold uppercase tracking-wide",
-                      biasAccent === "bullish" && "bg-bullish/15 text-bullish",
-                      biasAccent === "bearish" && "bg-bearish/15 text-bearish",
-                      biasAccent === "neutral" && "bg-neutral-accent/15 text-neutral-accent"
-                    )}>
-                      {bias.direction.replace("_", " ")}
-                    </span>
+                    <div className="flex flex-col items-start gap-0.5">
+                      <span className={cn(
+                        "inline-block px-3 py-1 rounded-lg text-xs sm:text-sm font-bold uppercase tracking-wide",
+                        biasAccent === "bullish" && "bg-bullish/15 text-bullish",
+                        biasAccent === "bearish" && "bg-bearish/15 text-bearish",
+                        biasAccent === "neutral" && "bg-neutral-accent/15 text-neutral-accent"
+                      )}>
+                        {bias.direction.replace("_", " ")}
+                      </span>
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/45">
+                        Blended model
+                      </span>
+                    </div>
                     <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground">
                       <span>{Math.round(bias.confidence)}% confidence</span>
                       <span className="text-border">|</span>
@@ -337,14 +345,14 @@ export function InstrumentAnalysis() {
             {/* Catalysts + Risk Assessment + Key Levels */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Catalysts */}
-              {llmResult?.catalysts && llmResult.catalysts.length > 0 && (
+              {catalystList.length > 0 && (
                 <div className="panel rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <Zap className="h-4 w-4 text-[var(--amber)]" />
                     <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Catalysts</h4>
                   </div>
                   <div className="space-y-2">
-                    {llmResult.catalysts.map((c, i) => (
+                    {catalystList.map((c, i) => (
                       <p key={i} className="text-[13px] text-foreground/70 leading-relaxed flex items-start gap-2">
                         <span className="text-[var(--amber)] mt-0.5 shrink-0">&bull;</span>
                         {c}

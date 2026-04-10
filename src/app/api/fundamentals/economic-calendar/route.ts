@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import type { EconomicEvent } from "@/lib/types/market";
+import { requireAuth } from "@/lib/auth/require-auth";
+import { checkUserRateLimit } from "@/lib/api/rate-limit";
 
 // Uses the Forex Factory calendar XML feed — no API key needed
 const FF_CALENDAR_URL = "https://nfs.faireconomy.media/ff_calendar_thisweek.xml";
@@ -80,6 +82,17 @@ function parseXmlEvents(xml: string): EconomicEvent[] {
 }
 
 export async function GET() {
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+
+  const rl = checkUserRateLimit(`economic-calendar:${auth.user.id}`, 60, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { events: [], error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+    );
+  }
+
   try {
     const res = await fetch(FF_CALENDAR_URL, {
       next: { revalidate: 900 },
@@ -102,6 +115,6 @@ export async function GET() {
     );
   } catch (error) {
     console.error("Economic calendar error:", error);
-    return NextResponse.json({ events: [] }, { status: 200 });
+    return NextResponse.json({ error: "Request failed", events: [] }, { status: 500 });
   }
 }

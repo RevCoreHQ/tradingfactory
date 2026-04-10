@@ -1,9 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTradeJournal } from "@/lib/hooks/useTradeJournal";
-import { GlassCard } from "@/components/common/GlassCard";
 import { INSTRUMENTS } from "@/lib/utils/constants";
+import {
+  calculateJournalStats,
+  filterTradesForAnalytics,
+  serializeJournalCsv,
+  serializeJournalJson,
+} from "@/lib/utils/journal-storage";
+import type { JournalAnalyticsFilter } from "@/lib/types/journal";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import {
@@ -14,19 +20,56 @@ import {
   BarChart3,
   X,
   Trash2,
+  Download,
 } from "lucide-react";
 
-export function TradeJournal({ onClose }: { onClose: () => void }) {
-  const { entries, stats, deleteTrade } = useTradeJournal();
-  const [filter, setFilter] = useState<"all" | "open" | "closed">("all");
+const DEFAULT_ANALYTICS: JournalAnalyticsFilter = {
+  tier: "all",
+  timeframeAlignment: "all",
+  eventWindow: "all",
+};
 
-  const filtered = entries
-    .filter((e) => {
+function downloadTextFile(filename: string, content: string, mime: string) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export function TradeJournal({ onClose }: { onClose: () => void }) {
+  const { entries, deleteTrade } = useTradeJournal();
+  const [filter, setFilter] = useState<"all" | "open" | "closed">("all");
+  const [analyticsFilter, setAnalyticsFilter] = useState<JournalAnalyticsFilter>(DEFAULT_ANALYTICS);
+
+  const fullStats = useMemo(() => calculateJournalStats(entries), [entries]);
+
+  const statusFiltered = useMemo(() => {
+    return entries.filter((e) => {
       if (filter === "open") return !e.exitPrice;
       if (filter === "closed") return !!e.exitPrice;
       return true;
-    })
-    .sort((a, b) => b.entryTime - a.entryTime);
+    });
+  }, [entries, filter]);
+
+  const scopedEntries = useMemo(
+    () => filterTradesForAnalytics(statusFiltered, analyticsFilter),
+    [statusFiltered, analyticsFilter]
+  );
+
+  const stats = useMemo(() => calculateJournalStats(scopedEntries), [scopedEntries]);
+
+  const filtered = useMemo(
+    () => [...scopedEntries].sort((a, b) => b.entryTime - a.entryTime),
+    [scopedEntries]
+  );
+
+  const analyticsActive =
+    analyticsFilter.tier !== "all" ||
+    analyticsFilter.timeframeAlignment !== "all" ||
+    analyticsFilter.eventWindow !== "all";
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -36,11 +79,41 @@ export function TradeJournal({ onClose }: { onClose: () => void }) {
       {/* Panel */}
       <div className="relative w-full max-w-md bg-[var(--surface-0)] border-l border-border overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-[var(--surface-0)] border-b border-border px-4 py-3 flex items-center justify-between">
-          <h2 className="text-sm font-bold">Trade Journal</h2>
-          <button onClick={onClose} className="p-1 rounded hover:bg-[var(--surface-2)] transition-colors">
-            <X className="h-4 w-4 text-muted-foreground" />
-          </button>
+        <div className="sticky top-0 z-10 bg-[var(--surface-0)] border-b border-border px-4 py-3 flex items-center justify-between gap-2">
+          <h2 className="text-sm font-bold shrink-0">Trade Journal</h2>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              title="Export full journal as JSON"
+              onClick={() =>
+                downloadTextFile(
+                  `trade-journal-${format(new Date(), "yyyy-MM-dd")}.json`,
+                  serializeJournalJson(entries),
+                  "application/json"
+                )
+              }
+              className="p-1.5 rounded hover:bg-[var(--surface-2)] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Download className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              title="Export full journal as CSV"
+              onClick={() =>
+                downloadTextFile(
+                  `trade-journal-${format(new Date(), "yyyy-MM-dd")}.csv`,
+                  serializeJournalCsv(entries),
+                  "text/csv;charset=utf-8"
+                )
+              }
+              className="p-1.5 rounded hover:bg-[var(--surface-2)] text-muted-foreground hover:text-foreground transition-colors text-[10px] font-bold px-2"
+            >
+              CSV
+            </button>
+            <button onClick={onClose} className="p-1 rounded hover:bg-[var(--surface-2)] transition-colors">
+              <X className="h-4 w-4 text-muted-foreground" />
+            </button>
+          </div>
         </div>
 
         {/* Stats Strip */}
@@ -72,27 +145,92 @@ export function TradeJournal({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          {stats.closedTrades > 0 && Object.keys(stats.bySetupType).length > 0 && (
-            <div className="mt-3 space-y-1 border-t border-border/30 pt-2">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">Win rate by setup</p>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(stats.bySetupType)
-                  .filter(([, v]) => v.trades > 0)
-                  .sort((a, b) => b[1].trades - a[1].trades)
-                  .map(([key, v]) => (
-                    <span
-                      key={key}
-                      className="rounded border border-border/40 px-2 py-0.5 text-[10px] text-muted-foreground"
-                    >
-                      <span className="capitalize">{key.replace(/_/g, " ")}</span>:{" "}
-                      <span className={cn("font-mono font-semibold", v.winRate >= 50 ? "text-bullish" : "text-bearish")}>
-                        {v.winRate}%
-                      </span>
-                      <span className="opacity-60"> ({v.trades}t)</span>
-                    </span>
-                  ))}
-              </div>
+          {analyticsActive && (
+            <p className="mt-2 text-[10px] text-muted-foreground/60">
+              Top row reflects status + analytics filters ({filtered.length} trades). Breakdowns below use the full journal.
+            </p>
+          )}
+
+          {fullStats.closedTrades > 0 && (
+            <div className="mt-3 space-y-3 border-t border-border/30 pt-2">
+              <BreakdownRow title="Win rate by tier" data={fullStats.byTier} />
+              <BreakdownRow title="Win rate by TF alignment" data={fullStats.byTfAlignment} />
+              <BreakdownRow title="Win rate by event window" data={fullStats.byEventWindow} />
+              {Object.keys(fullStats.bySetupType).length > 0 && (
+                <BreakdownRow title="Win rate by setup" data={fullStats.bySetupType} />
+              )}
             </div>
+          )}
+        </div>
+
+        {/* Analytics filters (subset for list + top stats) */}
+        <div className="px-4 py-2 border-b border-border/30 space-y-2">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">Filter list &amp; summary</p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <label className="flex flex-col gap-0.5 text-[10px] text-muted-foreground/70">
+              Tier
+              <select
+                value={analyticsFilter.tier}
+                onChange={(e) =>
+                  setAnalyticsFilter((f) => ({
+                    ...f,
+                    tier: e.target.value as JournalAnalyticsFilter["tier"],
+                  }))
+                }
+                className="rounded border border-border/50 bg-[var(--surface-1)] px-2 py-1 text-[12px] text-foreground"
+              >
+                <option value="all">All</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+              </select>
+            </label>
+            <label className="flex flex-col gap-0.5 text-[10px] text-muted-foreground/70">
+              TF at entry
+              <select
+                value={analyticsFilter.timeframeAlignment}
+                onChange={(e) =>
+                  setAnalyticsFilter((f) => ({
+                    ...f,
+                    timeframeAlignment: e.target.value as JournalAnalyticsFilter["timeframeAlignment"],
+                  }))
+                }
+                className="rounded border border-border/50 bg-[var(--surface-1)] px-2 py-1 text-[12px] text-foreground"
+              >
+                <option value="all">All</option>
+                <option value="aligned">Aligned</option>
+                <option value="mixed">Mixed</option>
+                <option value="counter">Counter</option>
+                <option value="unspecified">Unspecified</option>
+              </select>
+            </label>
+            <label className="flex flex-col gap-0.5 text-[10px] text-muted-foreground/70">
+              Event (~90m)
+              <select
+                value={analyticsFilter.eventWindow}
+                onChange={(e) =>
+                  setAnalyticsFilter((f) => ({
+                    ...f,
+                    eventWindow: e.target.value as JournalAnalyticsFilter["eventWindow"],
+                  }))
+                }
+                className="rounded border border-border/50 bg-[var(--surface-1)] px-2 py-1 text-[12px] text-foreground"
+              >
+                <option value="all">All</option>
+                <option value="quiet">Quiet</option>
+                <option value="caution">Caution</option>
+                <option value="unspecified">Unspecified</option>
+              </select>
+            </label>
+          </div>
+          {analyticsActive && (
+            <button
+              type="button"
+              onClick={() => setAnalyticsFilter(DEFAULT_ANALYTICS)}
+              className="text-[11px] font-semibold text-neutral-accent hover:underline"
+            >
+              Clear filters
+            </button>
           )}
         </div>
 
@@ -109,7 +247,7 @@ export function TradeJournal({ onClose }: { onClose: () => void }) {
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {f === "all" ? `All (${entries.length})` : f === "open" ? `Open (${stats.openTrades})` : `Closed (${stats.closedTrades})`}
+              {f === "all" ? `All (${entries.length})` : f === "open" ? `Open (${fullStats.openTrades})` : `Closed (${fullStats.closedTrades})`}
             </button>
           ))}
         </div>
@@ -205,6 +343,12 @@ export function TradeJournal({ onClose }: { onClose: () => void }) {
                     {trade.biasAtEntry.confluenceTier && (
                       <span className="font-mono text-[10px]">{trade.biasAtEntry.confluenceTier}-tier</span>
                     )}
+                    {trade.biasAtEntry.timeframeAlignment && (
+                      <span className="text-[10px] capitalize opacity-80">TF {trade.biasAtEntry.timeframeAlignment}</span>
+                    )}
+                    {trade.biasAtEntry.eventWindowCaution === true && (
+                      <span className="text-[10px] text-amber">Event caution</span>
+                    )}
                   </div>
                 </div>
               );
@@ -224,6 +368,35 @@ function StatPill({ label, value, icon, color }: { label: string; value: string;
         <span className="text-[10px] uppercase">{label}</span>
       </div>
       <span className={cn("text-sm font-bold tabular", color || "text-foreground")}>{value}</span>
+    </div>
+  );
+}
+
+function BreakdownRow({
+  title,
+  data,
+}: {
+  title: string;
+  data: Record<string, { trades: number; wins: number; winRate: number }>;
+}) {
+  const rows = Object.entries(data)
+    .filter(([, v]) => v.trades > 0)
+    .sort((a, b) => b[1].trades - a[1].trades);
+  if (rows.length === 0) return null;
+  return (
+    <div className="space-y-1">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">{title}</p>
+      <div className="flex flex-wrap gap-2">
+        {rows.map(([key, v]) => (
+          <span key={key} className="rounded border border-border/40 px-2 py-0.5 text-[10px] text-muted-foreground">
+            <span className="capitalize">{key.replace(/_/g, " ")}</span>:{" "}
+            <span className={cn("font-mono font-semibold", v.winRate >= 50 ? "text-bullish" : "text-bearish")}>
+              {v.winRate}%
+            </span>
+            <span className="opacity-60"> ({v.trades}t)</span>
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

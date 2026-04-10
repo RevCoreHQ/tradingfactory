@@ -1,0 +1,12 @@
+{
+  "instrumentId": "XAU_USD",
+  "overallBias": 22,
+  "direction": "bullish",
+  "tacticalBias": -8,
+  "structuralBias": -6,
+  "timeframeAlignment": "mixed",
+  "tradeGuidance": "pullback",
+  "fundamentalScore": { "total": 54 },
+  "technicalScore": { "total": 43 },
+  "note": "Example shape for future golden regression — values illustrative only."
+}

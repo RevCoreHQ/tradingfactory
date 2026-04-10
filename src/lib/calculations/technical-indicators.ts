@@ -137,7 +137,6 @@ export function calculateMACD(candles: OHLCV[]): MACDResult {
     return { macd: macdLine[macdLine.length - 1] || 0, signal: 0, histogram: 0, crossover: null };
   }
 
-  const sOffset = macdLine.length - signalLine.length;
   const macd = macdLine[macdLine.length - 1];
   const sig = signalLine[signalLine.length - 1];
   const histogram = macd - sig;
@@ -598,7 +597,6 @@ export function calculateImpulse(candles: OHLCV[]): ImpulseResult {
     }
     const signalLine = calcEMA(macdLine, 9);
     if (signalLine.length >= 2) {
-      const sOffset = macdLine.length - signalLine.length;
       const histCurr = macdLine[macdLine.length - 1] - signalLine[signalLine.length - 1];
       const histPrev = macdLine[macdLine.length - 2] - signalLine[signalLine.length - 2];
       if (histCurr > histPrev) macdHistogramSlope = "up";

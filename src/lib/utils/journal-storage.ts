@@ -1,4 +1,4 @@
-import type { TradeEntry, JournalStats } from "@/lib/types/journal";
+import type { TradeEntry, JournalStats, JournalAnalyticsFilter } from "@/lib/types/journal";
 
 const JOURNAL_KEY = "trading-factory-journal";
 const MAX_ENTRIES = 500;
@@ -68,6 +68,106 @@ export function deleteTrade(id: string): void {
   saveJournal(entries);
 }
 
+function finalizeWinRates<T extends Record<string, { trades: number; wins: number; winRate: number }>>(
+  bucket: T
+): T {
+  for (const k of Object.keys(bucket)) {
+    const b = bucket[k];
+    b.winRate = b.trades > 0 ? Math.round((b.wins / b.trades) * 100) : 0;
+  }
+  return bucket;
+}
+
+/** Subset entries for list + aggregate stats when analytics filters are active. */
+export function filterTradesForAnalytics(
+  entries: TradeEntry[],
+  f: JournalAnalyticsFilter
+): TradeEntry[] {
+  return entries.filter((e) => {
+    if (f.tier !== "all") {
+      const t = e.biasAtEntry.confluenceTier;
+      if (t !== f.tier) return false;
+    }
+    if (f.timeframeAlignment !== "all") {
+      const a = e.biasAtEntry.timeframeAlignment;
+      if (f.timeframeAlignment === "unspecified") {
+        if (a !== undefined) return false;
+      } else if (a !== f.timeframeAlignment) return false;
+    }
+    if (f.eventWindow !== "all") {
+      const c = e.biasAtEntry.eventWindowCaution;
+      if (f.eventWindow === "unspecified") {
+        if (c !== undefined) return false;
+      } else if (f.eventWindow === "caution" && c !== true) {
+        return false;
+      } else if (f.eventWindow === "quiet" && c !== false) {
+        return false;
+      }
+    }
+    return true;
+  });
+}
+
+export function serializeJournalJson(entries: TradeEntry[]): string {
+  return JSON.stringify(entries, null, 2);
+}
+
+function csvEscape(s: string): string {
+  const t = s.replace(/\r?\n/g, " ");
+  if (/[",]/.test(t)) return `"${t.replace(/"/g, '""')}"`;
+  return t;
+}
+
+export function serializeJournalCsv(entries: TradeEntry[]): string {
+  const headers = [
+    "id",
+    "instrumentId",
+    "direction",
+    "entryPrice",
+    "entryTime",
+    "exitPrice",
+    "outcome",
+    "pnlPips",
+    "setupType",
+    "overallBias",
+    "biasDirection",
+    "confidence",
+    "confluenceTier",
+    "timeframeAlignment",
+    "eventWindowCaution",
+    "mtfAlignmentPercent",
+    "marketRegime",
+    "notes",
+  ];
+  const lines = [headers.join(",")];
+  for (const e of entries) {
+    const b = e.biasAtEntry;
+    lines.push(
+      [
+        csvEscape(e.id),
+        csvEscape(e.instrumentId),
+        e.direction,
+        e.entryPrice,
+        e.entryTime,
+        e.exitPrice ?? "",
+        e.outcome ?? "",
+        e.pnlPips ?? "",
+        csvEscape(e.setupType ?? ""),
+        b.overallBias,
+        csvEscape(b.direction),
+        b.confidence,
+        csvEscape(b.confluenceTier ?? ""),
+        csvEscape(b.timeframeAlignment ?? ""),
+        b.eventWindowCaution === undefined ? "" : b.eventWindowCaution ? "1" : "0",
+        b.mtfAlignmentPercent ?? "",
+        csvEscape(b.marketRegime ?? ""),
+        csvEscape((e.notes ?? "").slice(0, 2000)),
+      ].join(",")
+    );
+  }
+  return lines.join("\n");
+}
+
 export function calculateJournalStats(entries: TradeEntry[]): JournalStats {
   const openTrades = entries.filter((e) => !e.exitPrice);
   const closedTrades = entries.filter((e) => e.outcome);
@@ -93,10 +193,35 @@ export function calculateJournalStats(entries: TradeEntry[]): JournalStats {
     bySetupType[key].trades += 1;
     if (e.outcome === "win") bySetupType[key].wins += 1;
   }
-  for (const k of Object.keys(bySetupType)) {
-    const b = bySetupType[k];
-    b.winRate = b.trades > 0 ? Math.round((b.wins / b.trades) * 100) : 0;
+  finalizeWinRates(bySetupType);
+
+  const byTier: JournalStats["byTier"] = {};
+  for (const e of closedTrades) {
+    const key = e.biasAtEntry.confluenceTier || "unspecified";
+    if (!byTier[key]) byTier[key] = { trades: 0, wins: 0, winRate: 0 };
+    byTier[key].trades += 1;
+    if (e.outcome === "win") byTier[key].wins += 1;
   }
+  finalizeWinRates(byTier);
+
+  const byTfAlignment: JournalStats["byTfAlignment"] = {};
+  for (const e of closedTrades) {
+    const key = e.biasAtEntry.timeframeAlignment || "unspecified";
+    if (!byTfAlignment[key]) byTfAlignment[key] = { trades: 0, wins: 0, winRate: 0 };
+    byTfAlignment[key].trades += 1;
+    if (e.outcome === "win") byTfAlignment[key].wins += 1;
+  }
+  finalizeWinRates(byTfAlignment);
+
+  const byEventWindow: JournalStats["byEventWindow"] = {};
+  for (const e of closedTrades) {
+    const c = e.biasAtEntry.eventWindowCaution;
+    const key = c === true ? "caution" : c === false ? "quiet" : "unspecified";
+    if (!byEventWindow[key]) byEventWindow[key] = { trades: 0, wins: 0, winRate: 0 };
+    byEventWindow[key].trades += 1;
+    if (e.outcome === "win") byEventWindow[key].wins += 1;
+  }
+  finalizeWinRates(byEventWindow);
 
   return {
     totalTrades: entries.length,
@@ -108,5 +233,8 @@ export function calculateJournalStats(entries: TradeEntry[]): JournalStats {
     biasAlignedWinRate: alignedClosed.length > 0 ? Math.round((alignedWins.length / alignedClosed.length) * 100) : 0,
     biasContraryWinRate: contraryClosed.length > 0 ? Math.round((contraryWins.length / contraryClosed.length) * 100) : 0,
     bySetupType,
+    byTier,
+    byTfAlignment,
+    byEventWindow,
   };
 }

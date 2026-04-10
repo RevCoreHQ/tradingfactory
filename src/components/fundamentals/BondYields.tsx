@@ -32,7 +32,6 @@ export function BondYields() {
 
   const yields = data?.yields || [];
   const dxy = data?.dxy || { value: 0, change: 0, changePercent: 0, history: [] };
-  const fedRate = data?.fedRate || { current: 0, previous: 0, target: 0 };
 
   const y2 = yields.find((y) => y.maturity === "2Y");
   const y10 = yields.find((y) => y.maturity === "10Y");

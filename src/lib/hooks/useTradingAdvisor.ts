@@ -84,11 +84,7 @@ async function fetchAdvisor(
  * Validate the LLM advisor response. LLM no longer picks trades or ranks setups —
  * it only provides risk commentary. Enforce deprecated fields are null/empty.
  */
-function validateAdvisorResult(
-  result: TradingAdvisorResult,
-  _setups: TradeDeskSetup[],
-  _trackedStatuses: Record<string, string>
-): TradingAdvisorResult {
+function validateAdvisorResult(result: TradingAdvisorResult): TradingAdvisorResult {
   return { ...result, topPick: null, otherSetups: [] };
 }
 
@@ -120,12 +116,12 @@ export function useTradingAdvisor(params: UseTradingAdvisorParams | null) {
 
       // Check client cache first — still validate against current setups
       const cached = getClientCache(hash!);
-      if (cached) return validateAdvisorResult(cached, params.setups, params.trackedStatuses ?? {});
+      if (cached) return validateAdvisorResult(cached);
 
       // Supabase fallback — slower than localStorage but survives across devices/sessions
       const supabaseCached = await readCache<TradingAdvisorResult>("trade_advisor");
       if (supabaseCached) {
-        const validated = validateAdvisorResult(supabaseCached, params.setups, params.trackedStatuses ?? {});
+        const validated = validateAdvisorResult(supabaseCached);
         setClientCache(validated, hash!);
         return validated;
       }
@@ -272,7 +268,7 @@ export function useTradingAdvisor(params: UseTradingAdvisorParams | null) {
       if (!raw) return null;
 
       // Validate LLM output against mechanical setups — fix hallucinated instruments/levels
-      const result = validateAdvisorResult(raw, params.setups, trackedStatuses);
+      const result = validateAdvisorResult(raw);
       setClientCache(result, hash!);
       return result;
     },

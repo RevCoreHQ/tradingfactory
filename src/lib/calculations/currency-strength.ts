@@ -1,4 +1,4 @@
-import type { CurrencyStrengthData, PriceQuote } from "@/lib/types/market";
+import type { CurrencyStrengthData } from "@/lib/types/market";
 import { MAJOR_CURRENCIES } from "@/lib/utils/constants";
 
 export function calculateCurrencyStrength(
@@ -7,7 +7,7 @@ export function calculateCurrencyStrength(
   const strengths: CurrencyStrengthData[] = [];
 
   for (const currency of MAJOR_CURRENCIES) {
-    let totalChange = 0;
+    const totalChange = 0;
     let pairCount = 0;
     const pairs: { pair: string; rate: number; change: number }[] = [];
 

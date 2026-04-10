@@ -47,6 +47,7 @@ Rules:
 - Include projectedMovePercent: your estimate of likely % move in the dominant direction (0.1 to 5.0).
 - Include riskAssessment: "low", "medium", or "high" — how risky are current conditions?
 - Include catalysts: 1-3 upcoming events or factors that could trigger a move.
+- fundamentalReason and technicalReason must NOT contradict the Rule-Based Scores direction: if the model is bearish, do not argue a bullish primary thesis (and vice versa). Mixed drivers are fine if you frame them as conflicting with the desk headline.
 - Respond with valid JSON only. Do not include any markdown formatting or explanation outside the JSON.`;
 
 const BATCH_SYSTEM_PROMPT = `You are an elite quantitative market analyst writing for professional traders. Provide detailed narrative context and actionable risk assessment for multiple instruments. You do NOT adjust scores or influence the mechanical scoring system.
@@ -63,6 +64,7 @@ Rules per instrument:
 - catalysts: 2-4 specific upcoming events or factors that could move price (be specific with dates/events when possible)
 - outlook: "bullish" | "bearish" | "neutral" — your directional lean
 - conviction: "low" | "medium" | "high" — how strongly you believe in the outlook
+- fundamentalReason and technicalReason must align with each instrument's rule-based direction (Overall Bias / Direction line). Do not state the opposite primary lean; acknowledge tension if data is mixed.
 - Respond with valid JSON only.`;
 
 // ---------------------------------------------------------------------------

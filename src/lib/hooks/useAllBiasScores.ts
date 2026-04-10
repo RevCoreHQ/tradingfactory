@@ -11,7 +11,8 @@ import { calculateFundamentalScore, calculateOverallBias, applyLLMAnalysis } fro
 import { computeADRRanks, calculateTradeSetup } from "@/lib/calculations/trade-setup";
 import { getBiasDirection } from "@/lib/utils/formatters";
 import type { BiasSignal, TechnicalScore } from "@/lib/types/bias";
-import { buildDecisionLayer } from "@/lib/calculations/decision-context";
+import { buildDecisionLayer, computeDecisionRationale } from "@/lib/calculations/decision-context";
+import type { MTFTrendSummary } from "@/lib/types/mtf";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -58,13 +59,14 @@ export function useAllBiasScores() {
         currentPrice: number;
         technicalBasis: string;
         mtfAlignmentPercent: number;
+        mtfEmaSummary: MTFTrendSummary | null;
       }
     >;
   }>("/api/technicals/batch-scores", fetcher, {
     refreshInterval: 5 * 60_000, // 5 min
     revalidateOnFocus: false,
   });
-  const techScores = batchTechData?.scores || {};
+  const techScores = useMemo(() => batchTechData?.scores ?? {}, [batchTechData]);
 
   const ruleBasedResults = useMemo(() => {
     const news = newsData?.items || [];
@@ -99,6 +101,15 @@ export function useAllBiasScores() {
       const technicalSignals = techEntry?.signals ?? [];
       const allSignals = [...fundamentalResult.signals, ...technicalSignals];
 
+      const ruleBased = calculateOverallBias(
+        fundamentalResult.score,
+        technicalScore,
+        "intraday",
+        inst.id,
+        undefined,
+        allSignals
+      );
+
       const decision = buildDecisionLayer(
         inst.id,
         fundamentalResult.score,
@@ -108,21 +119,16 @@ export function useAllBiasScores() {
         fearVal,
         dxy.change,
         yield10Change,
-        calendarEvents
+        calendarEvents,
+        ruleBased.overallBias
       );
 
       intradayResults[inst.id] = {
-        ...calculateOverallBias(
-          fundamentalResult.score,
-          technicalScore,
-          "intraday",
-          inst.id,
-          undefined,
-          allSignals
-        ),
+        ...ruleBased,
         ...decision,
         technicalBasis: techEntry?.technicalBasis,
         mtfAlignmentPercent: techEntry?.mtfAlignmentPercent,
+        mtfEmaSummary: techEntry?.mtfEmaSummary ?? null,
       };
     }
 
@@ -180,16 +186,17 @@ export function useAllBiasScores() {
           const atrEstimate = adr.pips * pipSize;
           const currentPrice = atrEstimate / (adr.percent / 100) || 1;
 
-          enhanced.intraday[instId] = {
-            ...result,
+          const tradeSetup = calculateTradeSetup(
+            result,
+            atrEstimate,
             adr,
-            tradeSetup: calculateTradeSetup(
-              result,
-              atrEstimate,
-              adr,
-              currentPrice,
-              "intraday"
-            ),
+            currentPrice,
+            "intraday"
+          );
+          const withSetup = { ...result, adr, tradeSetup };
+          enhanced.intraday[instId] = {
+            ...withSetup,
+            decisionRationale: computeDecisionRationale(withSetup),
           };
         }
       }
