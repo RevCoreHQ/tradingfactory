@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { refineMarketSummary, matchInstrumentIdFromFocusLabel } from "./market-summary-refine";
+import {
+  refineMarketSummary,
+  matchInstrumentIdFromFocusLabel,
+  refineAdvisorFocusLists,
+} from "./market-summary-refine";
 import type { BiasResult } from "@/lib/types/bias";
 import type { MarketSummaryResult } from "@/lib/types/llm";
 
@@ -96,5 +100,61 @@ describe("refineMarketSummary", () => {
     expect(out.focusTodaySecondary).toContain("XAU/USD");
     expect(out.opportunities.some((o) => o.includes("XAU"))).toBe(false);
     expect(out.opportunities).toContain("USD carry theme");
+  });
+});
+
+describe("refineAdvisorFocusLists", () => {
+  it("splits primary vs watch by trade filter and strips sit-out lines for those symbols", () => {
+    const results: Record<string, BiasResult> = {
+      XAU_USD: bias({
+        overallBias: 55,
+        tradeGuidance: "no_edge",
+        tradeSetup: {
+          tradeScore: 1,
+          projectedMove: { pips: 1, percent: 0.1 },
+          stopLoss: 1,
+          takeProfit: [2, 3, 4],
+          riskReward: [1, 2, 3],
+          riskSizing: "normal",
+          riskReason: "",
+          entryZone: [1, 2],
+          checklist: [],
+          confluenceTier: "B",
+        },
+        eventGate: { hasMajorEventSoon: false, impact: "low", suggestion: "" },
+      }),
+      EUR_USD: bias({
+        overallBias: 50,
+        tradeGuidance: "with_trend",
+        timeframeAlignment: "aligned",
+        tradeSetup: {
+          tradeScore: 1,
+          projectedMove: { pips: 1, percent: 0.1 },
+          stopLoss: 1,
+          takeProfit: [2, 3, 4],
+          riskReward: [1, 2, 3],
+          riskSizing: "normal",
+          riskReason: "",
+          entryZone: [1, 2],
+          checklist: [],
+          confluenceTier: "A",
+        },
+        eventGate: { hasMajorEventSoon: false, impact: "low", suggestion: "" },
+      }),
+    };
+
+    const out = refineAdvisorFocusLists(
+      [
+        { symbol: "EUR/USD", action: "LONG" },
+        { symbol: "XAU/USD", action: "LONG" },
+      ],
+      ["XAU/USD — choppy", "NZD — unrelated"],
+      results
+    );
+
+    expect(out.focusToday.some((c) => c.symbol.includes("EUR"))).toBe(true);
+    expect(out.focusTodaySecondary?.some((c) => c.symbol.includes("XAU"))).toBe(true);
+    expect(out.sitOutToday.some((s) => s.includes("XAU"))).toBe(false);
+    expect(out.sitOutToday.some((s) => s.includes("NZD"))).toBe(true);
   });
 });

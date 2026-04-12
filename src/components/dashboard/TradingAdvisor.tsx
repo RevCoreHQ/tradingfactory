@@ -21,10 +21,15 @@ import {
   Ban,
   Send,
   Star,
+  ListChecks,
 } from "lucide-react";
 import type { TradingAdvisorResult, TradingAdvisorRequest } from "@/lib/types/llm";
 import { useMarketStore } from "@/lib/store/market-store";
 import { INSTRUMENTS } from "@/lib/utils/constants";
+import {
+  refineAdvisorFocusLists,
+  ADVISOR_STRONG_BIAS_THRESHOLD,
+} from "@/lib/calculations/market-summary-refine";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
 import { AnalysisLoader } from "@/components/ui/analysis-loader";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -57,53 +62,26 @@ function AdvisorSkeleton() {
   );
 }
 
-const STRONG_CONVICTION_THRESHOLD = 45;
-
 function AdvisorContent({ advisor, onRefresh }: { advisor: TradingAdvisorResult; onRefresh: () => void }) {
   const timeSince = Date.now() - advisor.timestamp;
   const minutesAgo = Math.floor(timeSince / 60000);
   const timeLabel = minutesAgo < 1 ? "Just now" : `${minutesAgo}m ago`;
 
-  // Enforce focus with mechanical bias data
   const currentResults = useMarketStore((s) => s.allBiasResults.intraday);
   const hasBiasData = Object.keys(currentResults).length > 0;
 
-  // Build enforced focus/sitout lists
-  let focusToday = advisor.focusToday ?? [];
-  let sitOutToday = advisor.sitOutToday ?? [];
+  const rawFocus = advisor.focusToday ?? [];
+  const rawSitOut = advisor.sitOutToday ?? [];
 
-  if (hasBiasData) {
-    const strongInstruments: { symbol: string; id: string; direction: "LONG" | "SHORT" }[] = [];
-    for (const [id, result] of Object.entries(currentResults)) {
-      if (Math.abs(result.overallBias) >= STRONG_CONVICTION_THRESHOLD) {
-        const inst = INSTRUMENTS.find((i) => i.id === id);
-        if (inst) {
-          strongInstruments.push({
-            symbol: inst.symbol,
-            id,
-            direction: result.overallBias > 0 ? "LONG" : "SHORT",
-          });
-        }
-      }
-    }
+  const deskRefined = hasBiasData
+    ? refineAdvisorFocusLists(rawFocus, rawSitOut, currentResults, {
+        strongThreshold: ADVISOR_STRONG_BIAS_THRESHOLD,
+      })
+    : { focusToday: rawFocus, focusTodaySecondary: undefined, sitOutToday: rawSitOut };
 
-    // Inject missing strong conviction instruments into Focus Today
-    const symbolInList = (sym: string, list: { symbol: string }[]) =>
-      list.some((item) => item.symbol === sym || item.symbol.includes(sym) || sym.includes(item.symbol) || item.symbol.replace("/", "") === sym.replace("/", ""));
-
-    const enriched = [...focusToday];
-    for (const sc of strongInstruments) {
-      if (!symbolInList(sc.symbol, enriched)) {
-        enriched.push({ symbol: sc.symbol, action: sc.direction });
-      }
-    }
-    focusToday = enriched;
-
-    // Remove strong conviction instruments from Sit Out
-    sitOutToday = sitOutToday.filter(
-      (item) => !strongInstruments.some((sc) => item.includes(sc.symbol) || item.replace("/", "").includes(sc.symbol.replace("/", "")))
-    );
-  }
+  const focusToday = deskRefined.focusToday;
+  const focusTodaySecondary = deskRefined.focusTodaySecondary;
+  const sitOutToday = deskRefined.sitOutToday;
 
   return (
     <div className="relative section-card p-3 sm:p-5">
@@ -139,9 +117,9 @@ function AdvisorContent({ advisor, onRefresh }: { advisor: TradingAdvisorResult;
         </p>
       )}
 
-      {/* Focus Today / Sit Out */}
-      {(focusToday.length > 0 || sitOutToday.length > 0) && (
-        <div className="mb-4 pb-4 border-b border-border/30">
+      {/* Focus Today / Watch / Sit Out */}
+      {(focusToday.length > 0 || (focusTodaySecondary?.length ?? 0) > 0 || sitOutToday.length > 0) && (
+        <div className="mb-4 pb-4 border-b border-border/30 space-y-3">
           {focusToday.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
               <div className="text-[12px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
@@ -153,7 +131,7 @@ function AdvisorContent({ advisor, onRefresh }: { advisor: TradingAdvisorResult;
                   (instr) => instr.symbol === item.symbol || item.symbol.includes(instr.symbol) || instr.symbol.replace("/", "") === item.symbol.replace("/", "")
                 );
                 const bias = inst ? currentResults[inst.id] : null;
-                const isStrong = bias ? Math.abs(bias.overallBias) >= STRONG_CONVICTION_THRESHOLD : false;
+                const isStrong = bias ? Math.abs(bias.overallBias) >= ADVISOR_STRONG_BIAS_THRESHOLD : false;
                 const isShort = item.action === "SHORT";
 
                 return (
@@ -182,6 +160,60 @@ function AdvisorContent({ advisor, onRefresh }: { advisor: TradingAdvisorResult;
                   </span>
                 );
               })}
+            </div>
+          )}
+
+          {(focusTodaySecondary?.length ?? 0) > 0 && (
+            <div className="rounded-md border border-[var(--amber)]/25 bg-[var(--amber)]/[0.06] px-2.5 py-2">
+              <div className="flex items-center gap-1.5 mb-1">
+                <ListChecks className="h-3 w-3 text-[var(--amber)] shrink-0" />
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--amber)]">
+                  Watch — reduced size / wait
+                </span>
+              </div>
+              <p className="text-[10px] text-muted-foreground/80 mb-1.5 leading-snug">
+                Desk filter is wait or no-trade — do not size like primary focus.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {(focusTodaySecondary ?? []).map((item, i) => {
+                  const inst = INSTRUMENTS.find(
+                    (instr) =>
+                      instr.symbol === item.symbol ||
+                      item.symbol.includes(instr.symbol) ||
+                      instr.symbol.replace("/", "") === item.symbol.replace("/", "")
+                  );
+                  const bias = inst ? currentResults[inst.id] : null;
+                  const isStrong = bias ? Math.abs(bias.overallBias) >= ADVISOR_STRONG_BIAS_THRESHOLD : false;
+                  const isShort = item.action === "SHORT";
+                  return (
+                    <span
+                      key={`watch-${i}`}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 text-[13px] font-medium px-2.5 py-1 rounded-md border",
+                        isShort
+                          ? "bg-bearish/10 border-[var(--amber)]/25"
+                          : "bg-bullish/10 border-[var(--amber)]/25"
+                      )}
+                    >
+                      {isStrong && <Star className="h-3 w-3 fill-[#FFD700] text-[#FFD700]" />}
+                      {isShort ? (
+                        <TrendingDown className="h-3 w-3 text-bearish" />
+                      ) : (
+                        <TrendingUp className="h-3 w-3 text-bullish" />
+                      )}
+                      <span
+                        className={cn(
+                          "text-[11px] font-bold uppercase tracking-wider",
+                          isShort ? "text-bearish" : "text-bullish"
+                        )}
+                      >
+                        {item.action}
+                      </span>
+                      {item.symbol}
+                    </span>
+                  );
+                })}
+              </div>
             </div>
           )}
 

@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import useSWR from "swr";
+import type { BiasResult } from "@/lib/types/bias";
 import type { TradeDeskSetup } from "@/lib/types/signals";
 import type { TradingAdvisorRequest, TradingAdvisorResult } from "@/lib/types/llm";
 import type { COTPosition } from "@/lib/types/cot";
@@ -9,6 +10,9 @@ import type { EconomicEvent } from "@/lib/types/market";
 import type { PortfolioRiskAssessment } from "@/lib/types/risk";
 import { readCache } from "@/lib/supabase-cache";
 import { computeRateDifferentials } from "@/lib/calculations/rate-differentials";
+import { useMarketStore } from "@/lib/store/market-store";
+import { computeTradeFilter } from "@/lib/calculations/trade-filter";
+import { INSTRUMENTS } from "@/lib/utils/constants";
 
 const CACHE_KEY = "tradingfactory_advisor_cache";
 const CACHE_TTL = 2 * 60 * 1000; // 2 min client-side — keep desk manager near-real-time
@@ -66,6 +70,20 @@ function buildSetupHash(
   return `${setups.length}:${entryZone}ez:${pending}p:${running}r|${setupPart}|cot:${cotHash}|ev:${eventCount ?? 0}`;
 }
 
+/** Bust advisor cache when per-setup desk filter verdict changes (aligns LLM with cards). */
+function deskHintsFingerprint(
+  setups: TradeDeskSetup[],
+  intraday: Record<string, BiasResult>
+): string {
+  return setups
+    .map((s) => {
+      const r = intraday[s.instrumentId];
+      if (!r) return `${s.instrumentId}:_`;
+      return `${s.instrumentId}:${computeTradeFilter(r).verdict}`;
+    })
+    .join(";");
+}
+
 async function fetchAdvisor(
   _key: string,
   { arg }: { arg: TradingAdvisorRequest }
@@ -103,9 +121,10 @@ interface UseTradingAdvisorParams {
 }
 
 export function useTradingAdvisor(params: UseTradingAdvisorParams | null) {
+  const intradayBias = useMarketStore((s) => s.allBiasResults.intraday);
   const highImpactCount = params?.highImpactEvents?.filter((e) => e.impact === "high").length ?? 0;
   const hash = params && params.setups.length > 0
-    ? buildSetupHash(params.setups, params.trackedStatuses, params.cotPositions, highImpactCount)
+    ? `${buildSetupHash(params.setups, params.trackedStatuses, params.cotPositions, highImpactCount)}|dh:${deskHintsFingerprint(params.setups, intradayBias)}`
     : null;
   const advisorRequestRef = useRef<TradingAdvisorRequest | null>(null);
 
@@ -261,6 +280,21 @@ export function useTradingAdvisor(params: UseTradingAdvisorParams | null) {
           ? computeRateDifferentials(params.centralBanks)
           : undefined,
         centralBanks: params.centralBanks,
+        instrumentDeskHints: (() => {
+          const currentResults = useMarketStore.getState().allBiasResults.intraday;
+          if (Object.keys(currentResults).length === 0) return undefined;
+          return INSTRUMENTS.map((inst) => {
+            const r = currentResults[inst.id];
+            if (!r) return null;
+            const tf = computeTradeFilter(r);
+            return {
+              symbol: inst.symbol,
+              filter: tf.verdict,
+              tier: r.tradeSetup?.confluenceTier,
+              riskSizing: r.tradeSetup?.riskSizing,
+            };
+          }).filter((h): h is NonNullable<typeof h> => h !== null);
+        })(),
       };
 
       advisorRequestRef.current = request;

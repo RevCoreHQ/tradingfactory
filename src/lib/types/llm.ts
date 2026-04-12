@@ -198,6 +198,8 @@ export interface TradingAdvisorRequest {
     direction: string;
     stance: string;
   }[];
+  /** Per-symbol desk filter / tier — same shape as market summary; aligns narrative with instrument cards */
+  instrumentDeskHints?: MarketSummaryRequest["instrumentDeskHints"];
 }
 
 export interface TradingAdvisorResult {

@@ -909,8 +909,8 @@ Rules:
 - greeting: 1 sentence setting the tone (reference dominant macro theme or risk condition)
 - marketRegime: 2-3 sentences assessing the overall risk environment, referencing portfolio exposure, carry conditions, and event calendar
 - riskFlags: 3-5 specific risk observations. Each flag should reference specific data (e.g. "USD concentrated across 3 long positions", "NFP in 4 hours — EUR/USD event-exposed", "AUD/USD fighting negative carry in risk-off environment"). Be specific, not generic.
-- focusToday: Top 3-5 instruments with direction (LONG/SHORT) from the mechanical setups — copy these from the highest-conviction mechanical setups, do NOT rerank them.
-- sitOutToday: 1-3 instruments or conditions to sit out — reference positioning, event risk, or portfolio concentration
+- focusToday: Top 3-5 instruments with direction (LONG/SHORT) from the mechanical setups — copy from the highest-conviction mechanical setups, do NOT rerank them. When "Instrument desk hints" are provided, prioritize symbols whose filter is consider or lean for primary focus; symbols marked wait or no_trade belong in sitOut or risk commentary rather than primary focus when alternatives exist.
+- sitOutToday: 1-3 instruments or conditions to sit out — reference positioning, event risk, or portfolio concentration; align with desk hints where provided
 - avoidList: 1-2 instruments to avoid with specific data-backed reasoning
 - riskWarning: Key portfolio-level risk — reference specific exposure, correlation, or event data
 - deskNote: One specific institutional insight connecting today's conditions to risk management — not a generic truism
@@ -974,6 +974,17 @@ ${req.bondYields.map((b) => `  ${b.maturity}: ${b.yield.toFixed(3)}% (${b.change
           : "";
         return `  ${e.date} ${e.time || "TBD"} | ${e.currency} | ${e.event}${fvp}`;
       })
+      .join("\n");
+    prompt += "\n";
+  }
+
+  if (req.instrumentDeskHints && req.instrumentDeskHints.length > 0) {
+    prompt += `\n--- Instrument desk hints (trade filter + tier — align focus/sit-out) ---\n`;
+    prompt += req.instrumentDeskHints
+      .map(
+        (h) =>
+          `  ${h.symbol}: filter=${h.filter}${h.tier ? `, tier=${h.tier}` : ""}${h.riskSizing ? `, sizing=${h.riskSizing}` : ""}`
+      )
       .join("\n");
     prompt += "\n";
   }
@@ -1090,7 +1101,10 @@ function getAdvisorCacheKey(req: TradingAdvisorRequest): string {
   const cotPart = (req.cotPositioning ?? []).map((c) => `${c.currency}:${c.netSpeculative}`).join(",");
   const eventCount = req.highImpactEvents?.length ?? 0;
   const riskPart = req.portfolioRisk ? `${req.portfolioRisk.concentrationRisk}:${req.portfolioRisk.diversificationScore}` : "";
-  return `advisor:${setupPart}|m:${managedPart}|cot:${cotPart}|ev:${eventCount}|risk:${riskPart}`;
+  const hintsPart = (req.instrumentDeskHints ?? [])
+    .map((h) => `${h.symbol}:${h.filter}`)
+    .join(",");
+  return `advisor:${setupPart}|m:${managedPart}|cot:${cotPart}|ev:${eventCount}|risk:${riskPart}|hints:${hintsPart}`;
 }
 
 function parseAdvisorResult(raw: string, provider: LLMProvider): TradingAdvisorResult | null {
