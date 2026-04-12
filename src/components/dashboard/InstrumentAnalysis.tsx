@@ -10,6 +10,8 @@ import { TechnicalOverview } from "@/components/technicals/TechnicalOverview";
 import { DeepAnalysis } from "@/components/technicals/DeepAnalysis";
 import { TradeSetupCard } from "./TradeSetupCard";
 import { DecisionDeskPanel } from "@/components/dashboard/DecisionDeskPanel";
+import { TradeFilterBar } from "@/components/dashboard/TradeFilterBar";
+import { computeTradeFilter } from "@/lib/calculations/trade-filter";
 import { sanitizeCatalysts } from "@/lib/calculations/llm-sanitize";
 import { useMarketStore } from "@/lib/store/market-store";
 import { useBiasScore } from "@/lib/hooks/useBiasScore";
@@ -136,6 +138,11 @@ export function InstrumentAnalysis() {
   const tech = bias.technicalScore;
   const dec = instrument.decimalPlaces;
 
+  const tradeFilter = useMemo(
+    () => (biasResult ? computeTradeFilter(biasResult) : null),
+    [biasResult]
+  );
+
   return (
     <div className="min-h-screen bg-transparent">
       <Header mode="analysis" />
@@ -157,6 +164,8 @@ export function InstrumentAnalysis() {
 
             {/* Overview Banner */}
             <div className="panel rounded-lg p-4 sm:p-6 mb-4">
+              {biasResult && tradeFilter ? <TradeFilterBar bias={biasResult} className="mb-4" /> : null}
+
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-4">
                 <div className="flex items-center gap-3 sm:gap-5">
                   <span className="text-3xl sm:text-5xl font-mono font-black tabular" style={{ color: biasColor }}>
@@ -222,10 +231,24 @@ export function InstrumentAnalysis() {
 
               {/* LLM Summary */}
               {llmSummary && (
-                <div className="border-t border-border/20 pt-4">
+                <div
+                  className={cn(
+                    "border-t border-border/20 pt-4",
+                    tradeFilter?.verdict === "no_trade" || tradeFilter?.verdict === "wait"
+                      ? "opacity-[0.82]"
+                      : ""
+                  )}
+                >
                   <div className="flex items-center gap-1.5 mb-2">
                     <Sparkles className="h-3.5 w-3.5 text-neutral-accent" />
-                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Executive Summary</span>
+                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                      Executive summary
+                    </span>
+                    {tradeFilter?.verdict === "no_trade" || tradeFilter?.verdict === "wait" ? (
+                      <span className="text-[10px] font-medium text-muted-foreground/80 uppercase tracking-wide">
+                        — context only
+                      </span>
+                    ) : null}
                   </div>
                   <p className="text-sm text-foreground/80 leading-relaxed">{llmSummary}</p>
                 </div>

@@ -144,6 +144,40 @@ describe("appendSetupIntelligence", () => {
     );
     expect(out.checklist?.find((c) => c.id === "tf")?.pass).toBe(false);
   });
+
+  it("downgrades A-tier to B when tradeGuidance is no_edge", () => {
+    const out = appendSetupIntelligence(
+      baseSetupShell,
+      minimalBias({
+        overallBias: 22,
+        direction: "bullish",
+        confidence: 52,
+        signalAgreement: 0.55,
+        timeframeAlignment: "aligned",
+        mtfAlignmentPercent: 62,
+        tradeGuidance: "no_edge",
+        tradeGuidanceSummary: "Edge is weak — stand aside.",
+        eventGate: { hasMajorEventSoon: false, impact: "low", suggestion: "Clear calendar." },
+        fundamentalScore: {
+          total: 58,
+          newsSentiment: 50,
+          economicData: 50,
+          centralBankPolicy: 50,
+          marketSentiment: 50,
+          intermarketCorrelation: 50,
+        },
+        technicalScore: {
+          total: 56,
+          trendDirection: 50,
+          momentum: 50,
+          volatility: 50,
+          volumeAnalysis: 50,
+          supportResistance: 50,
+        },
+      })
+    );
+    expect(out.confluenceTier).toBe("B");
+  });
 });
 
 describe("calculateTradeSetup integration", () => {

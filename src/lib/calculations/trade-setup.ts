@@ -158,6 +158,11 @@ export function appendSetupIntelligence(setup: TradeSetup, bias: BiasResult): Tr
   if (passCount >= 6 && alignment === "aligned") confluenceTier = "A";
   else if (passCount >= 4) confluenceTier = "B";
 
+  /** A-tier cannot coexist with desk “no edge” — avoids green badge + weak-edge copy. */
+  if (confluenceTier === "A" && bias.tradeGuidance === "no_edge") {
+    confluenceTier = "B";
+  }
+
   const guidance = bias.tradeGuidanceSummary || "Review checklist before sizing.";
   let tradeStance = guidance;
   if (confluenceTier === "A") tradeStance = `A-tier — ${guidance}`;

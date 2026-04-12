@@ -120,7 +120,8 @@ export function useAllBiasScores() {
         dxy.change,
         yield10Change,
         calendarEvents,
-        ruleBased.overallBias
+        ruleBased.overallBias,
+        ruleBased.confidence
       );
 
       intradayResults[inst.id] = {

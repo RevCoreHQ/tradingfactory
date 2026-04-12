@@ -112,7 +112,8 @@ export function useBiasScore() {
           dxy.change,
           yield10Change,
           calendarEvents,
-          ruleBasedResult.overallBias
+          ruleBasedResult.overallBias,
+          ruleBasedResult.confidence
         )
       : {};
 

@@ -28,7 +28,7 @@ function eventRelevantToInstrument(ev: EconomicEvent, instrumentId: string): boo
 function parseEventTime(ev: EconomicEvent): number | null {
   if (!ev.date) return null;
   const time = ev.time && ev.time.length >= 4 ? ev.time : "12:00";
-  const ms = new Date(`${ev.date}T${time}:00`).getTime();
+  const ms = new Date(`${ev.date}T${time}:00Z`).getTime();
   if (Number.isNaN(ms)) return null;
   return ms;
 }
@@ -98,11 +98,17 @@ export function computeTimeframeAlignment(bias15m: number, bias1h: number): Time
   return "mixed";
 }
 
+/**
+ * @param _legAvgConfidence Average of 15m/1h leg confidence (reserved for future tension copy).
+ * @param blendedConfidence Blended headline confidence — aligns the weak-edge gate with the checklist
+ *   (`Model confidence ≥ 48%`) so tier and “edge is weak” don’t diverge from leg vs blend alone.
+ */
 export function computeTradeGuidance(
   alignment: TimeframeAlignment,
   eventGate: EventGateInfo,
   biasAbs: number,
-  confidence: number
+  _legAvgConfidence: number,
+  blendedConfidence: number
 ): { kind: TradeGuidanceKind; summary: string } {
   if (eventGate.hasMajorEventSoon) {
     return {
@@ -110,7 +116,7 @@ export function computeTradeGuidance(
       summary: "Catalyst risk — favor smaller size or wait for the print to clear.",
     };
   }
-  if (biasAbs < 12 || confidence < 38) {
+  if (biasAbs < 12 || blendedConfidence < 38) {
     return {
       kind: "no_edge",
       summary: "Edge is weak — stand aside or favor instruments with clearer alignment.",
@@ -145,7 +151,9 @@ export function buildDecisionLayer(
   yield10Change: number,
   calendarEvents: EconomicEvent[],
   /** Blended headline bias (70/30 tech/fund) so desk guidance is not only mid-TF legs. */
-  headlineOverallBias: number
+  headlineOverallBias: number,
+  /** Blended headline confidence — same basis as checklist / card “model confidence”. */
+  headlineConfidence: number
 ): Pick<
   BiasResult,
   | "tacticalBias"
@@ -183,7 +191,8 @@ export function buildDecisionLayer(
     timeframeAlignment,
     eventGate,
     edgeAbs,
-    midConf
+    midConf,
+    headlineConfidence
   );
 
   return {

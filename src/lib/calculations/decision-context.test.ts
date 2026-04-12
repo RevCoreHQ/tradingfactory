@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   computeEventGate,
   computeTimeframeAlignment,
+  computeTradeGuidance,
   describeHeadlineVsDeskTension,
 } from "@/lib/calculations/decision-context";
+import type { EventGateInfo } from "@/lib/types/bias";
 import type { BiasResult } from "@/lib/types/bias";
 import type { EconomicEvent } from "@/lib/types/market";
 
@@ -39,6 +41,27 @@ function baseBias(partial: Partial<BiasResult>): BiasResult {
     ...partial,
   };
 }
+
+const idleGate: EventGateInfo = {
+  hasMajorEventSoon: false,
+  impact: "low",
+  suggestion: "—",
+};
+
+describe("computeTradeGuidance", () => {
+  it("uses blended confidence for weak edge, not leg average alone", () => {
+    const strongBlended = computeTradeGuidance("aligned", idleGate, 22, 25, 68);
+    expect(strongBlended.kind).toBe("with_trend");
+
+    const weakBlended = computeTradeGuidance("aligned", idleGate, 22, 25, 30);
+    expect(weakBlended.kind).toBe("no_edge");
+  });
+
+  it("still flags no_edge when blended is fine but magnitude is tiny", () => {
+    const tiny = computeTradeGuidance("aligned", idleGate, 8, 60, 65);
+    expect(tiny.kind).toBe("no_edge");
+  });
+});
 
 describe("computeTimeframeAlignment", () => {
   it("returns counter when both legs strongly disagree in sign", () => {
