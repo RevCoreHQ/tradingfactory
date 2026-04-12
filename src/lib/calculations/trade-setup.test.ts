@@ -181,6 +181,30 @@ describe("appendSetupIntelligence", () => {
 });
 
 describe("calculateTradeSetup integration", () => {
+  it("anchors entry zone to the provided currentPrice (same vol, different anchor shifts zone)", () => {
+    const bias = minimalBias({
+      overallBias: -22,
+      direction: "bearish",
+      timeframeAlignment: "aligned",
+      fundamentalScore: { ...minimalBias({}).fundamentalScore, total: 55 },
+      technicalScore: { ...minimalBias({}).technicalScore, total: 55 },
+      signalAgreement: 0.5,
+      confidence: 50,
+      mtfAlignmentPercent: 50,
+      tradeGuidanceSummary: "Ok",
+      eventGate: { hasMajorEventSoon: false, impact: "low", suggestion: "" },
+    });
+    const adr = { pips: 100, percent: 1, rank: 50 };
+    const atr = 40;
+    const lowAnchor = calculateTradeSetup(bias, atr, adr, 4746, "intraday");
+    const highAnchor = calculateTradeSetup(bias, atr, adr, 4800, "intraday");
+    expect(lowAnchor.entryZone[0]).toBe(4746);
+    expect(highAnchor.entryZone[0]).toBe(4800);
+    const spreadLow = lowAnchor.entryZone[1] - lowAnchor.entryZone[0];
+    const spreadHigh = highAnchor.entryZone[1] - highAnchor.entryZone[0];
+    expect(spreadLow).toBeCloseTo(spreadHigh, 5);
+  });
+
   it("returns checklist and tier on full setup", () => {
     const bias = minimalBias({
       overallBias: 20,

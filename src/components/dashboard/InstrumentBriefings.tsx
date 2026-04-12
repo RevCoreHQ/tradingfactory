@@ -468,6 +468,9 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
                 </li>
               ))}
             </ul>
+            <p className="text-[10px] text-muted-foreground/70 mt-2 leading-snug border-t border-border/20 pt-2">
+              {deskNote.referenceHint}
+            </p>
           </div>
         );
       })()}

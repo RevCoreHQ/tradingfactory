@@ -185,7 +185,10 @@ export function useAllBiasScores() {
           const inst = INSTRUMENTS.find((i) => i.id === instId);
           const pipSize = inst?.pipSize || 0.0001;
           const atrEstimate = adr.pips * pipSize;
-          const currentPrice = atrEstimate / (adr.percent / 100) || 1;
+          const adrDerivedPrice = atrEstimate / (adr.percent / 100) || 1;
+          const techPrice = techScores[instId]?.currentPrice;
+          const currentPrice =
+            techPrice !== undefined && techPrice > 0 ? techPrice : adrDerivedPrice;
 
           const tradeSetup = calculateTradeSetup(
             result,
@@ -204,7 +207,7 @@ export function useAllBiasScores() {
     }
 
     return enhanced;
-  }, [ruleBasedResults, batchResults, adrRanks]);
+  }, [ruleBasedResults, batchResults, adrRanks, techScores]);
 
   // Store all results, using ref to prevent infinite loops
   const prevHashRef = useRef("");

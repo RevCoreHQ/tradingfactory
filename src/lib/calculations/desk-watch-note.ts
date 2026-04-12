@@ -8,7 +8,7 @@ import { formatPrice } from "@/lib/utils/formatters";
 export function buildDeskWatchNote(
   bias: BiasResult,
   decimalPlaces: number
-): { lines: string[]; footnote: string } | null {
+): { lines: string[]; footnote: string; referenceHint: string } | null {
   const ts = bias.tradeSetup;
   if (!ts) return null;
 
@@ -49,5 +49,7 @@ export function buildDeskWatchNote(
     lines,
     footnote:
       "These prices come from the desk’s ATR model, not live chart S/R. Use Deep dive for swing levels, pivots, and confluence.",
+    referenceHint:
+      "Levels use a daily-range volatility model; absolute prices anchor to the same last close as technicals (15m/1h batch). Match symbols when overlaying elsewhere (e.g. OANDA:XAUUSD for Gold).",
   };
 }
