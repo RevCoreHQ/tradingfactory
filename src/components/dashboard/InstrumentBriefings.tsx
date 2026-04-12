@@ -28,8 +28,13 @@ import {
   Clock,
   Sparkles,
   ChevronRight,
+  Info,
 } from "lucide-react";
-import { DecisionDeskPanel } from "@/components/dashboard/DecisionDeskPanel";
+import {
+  DecisionDeskPanel,
+  DecisionDeskExpandedSections,
+  hasDecisionDeskExpandedContent,
+} from "@/components/dashboard/DecisionDeskPanel";
 import { sanitizeCatalysts } from "@/lib/calculations/llm-sanitize";
 
 const categoryIcons: Record<string, typeof DollarSign> = {
@@ -45,6 +50,13 @@ interface InstrumentCardData {
   llmResult: LLMAnalysisResult | null;
   quote: PriceQuote | null;
   mtfTrend: MTFTrendSummary | null;
+}
+
+/** Short on-card thesis; full text lives under “Full context”. */
+function firstSentences(text: string, maxSentences: number): string {
+  const parts = text.split(/(?<=[.!?])\s+/).filter(Boolean);
+  if (parts.length <= maxSentences) return text.trim();
+  return parts.slice(0, maxSentences).join(" ").trim();
 }
 
 function timeAgo(timestamp: number): string {
@@ -285,7 +297,6 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
           </div>
           <div className="flex items-center gap-1.5">
             <span className="text-base font-bold text-foreground">{instrument.symbol}</span>
-            {isPinned && <Pin className="h-3 w-3 text-neutral-accent fill-neutral-accent rotate-45" />}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -308,7 +319,6 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
             >
               {isBullish ? "Bullish" : isBearish ? "Bearish" : "Neutral"}
             </span>
-            <span className="text-[9px] font-medium text-muted-foreground/45 uppercase tracking-wide">Blended</span>
           </div>
         </div>
       </div>
@@ -332,11 +342,11 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
               render={<span />}
               className="text-sm text-muted-foreground border-b border-dotted border-muted-foreground/30 cursor-help"
             >
-              Confidence
+              Model confidence
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
-              Blends fundamental vs technical score alignment with how many directional indicator
-              signals agree with the headline bias. It is not a win probability.
+              How aligned fundamentals, technicals, and directional signals are with the headline bias — not win
+              probability or position size.
             </TooltipContent>
           </Tooltip>
           <span className="text-sm font-semibold text-foreground">{Math.round(confidence)}%</span>
@@ -350,6 +360,24 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
             style={{ width: `${Math.round(confidence)}%` }}
           />
         </div>
+        <p className="mt-1.5 text-[10px] text-muted-foreground/65">
+          Trade conviction:{" "}
+          <span className="font-medium text-foreground/85 capitalize">
+            {llmResult?.conviction || (confidence > 70 ? "high" : confidence > 45 ? "medium" : "low")}
+          </span>
+          <Tooltip>
+            <TooltipTrigger
+              render={<span />}
+              className="ml-1 border-b border-dotted border-muted-foreground/25 cursor-help text-muted-foreground/55"
+            >
+              (sizing)
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
+              Suggested emphasis for new risk — from confidence, agreement, and fund/tech alignment — separate from the
+              headline direction.
+            </TooltipContent>
+          </Tooltip>
+        </p>
       </div>
 
       {/* Overall Bias Score */}
@@ -381,7 +409,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
         </p>
       ) : null}
 
-      <DecisionDeskPanel bias={biasResult} />
+      <DecisionDeskPanel bias={biasResult} mode="card" />
 
       {/* Fundamental vs Technical + Momentum/Trend */}
       <div className="grid grid-cols-2 gap-2 mb-3">
@@ -484,13 +512,38 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
           </TooltipContent>
         </Tooltip>
         <SessionBadge instrumentId={instrument.id} />
+        {biasResult.adr ? (
+          <Tooltip>
+            <TooltipTrigger
+              render={<button type="button" />}
+              className="p-1 rounded-md text-muted-foreground/40 hover:text-muted-foreground border border-transparent hover:border-border/40"
+              aria-label="Average daily range"
+            >
+              <Info className="h-3.5 w-3.5" />
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs text-xs">
+              ADR: {biasResult.adr.pips} pips (average daily range — context for stops and volatility).
+            </TooltipContent>
+          </Tooltip>
+        ) : null}
       </div>
 
       {/* MTF EMA Trend — prefers batch-scores snapshot so pills agree with mtfAlignmentPercent */}
       {mtfTrend && mtfTrend.trends.length > 0 && (
         <div className="mb-3 space-y-0.5">
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] text-muted-foreground/40 font-medium mr-0.5">EMA</span>
+            <Tooltip>
+              <TooltipTrigger
+                render={<span />}
+                className="text-[10px] text-muted-foreground/50 font-medium mr-0.5 cursor-help border-b border-dotted border-muted-foreground/20"
+              >
+                EMA
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
+                Same batch snapshot as MTF alignment in the desk when available; otherwise live MTF data may differ
+                slightly from batch totals.
+              </TooltipContent>
+            </Tooltip>
             {(["15m", "1h", "4h", "1d"] as const).map((tf) => {
               const t = mtfTrend.trends.find((tr) => tr.timeframe === tf);
               if (!t) return null;
@@ -521,24 +574,12 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
               <span className="text-[9px] font-bold uppercase text-muted-foreground/40 ml-1">Aligned</span>
             )}
           </div>
-          <p className="text-[9px] text-muted-foreground/45 leading-snug">
-            {biasResult.mtfEmaSummary
-              ? "Same batch-scores snapshot as MTF % in Decision desk."
-              : "From MTF route — desk MTF % may differ slightly if batch refreshed separately."}
-          </p>
         </div>
       )}
 
-      {/* ADR */}
-      {biasResult.adr && (
-        <div className="flex items-center gap-3 flex-wrap text-xs font-mono text-muted-foreground/50 border-t border-border/20 pt-2 mb-3">
-          <span>ADR:{biasResult.adr.pips}p</span>
-        </div>
-      )}
-
-      {/* Analysis — inset container */}
+      {/* Analysis — short thesis; full desk + narrative in one “Full context” block below */}
       {summaryText && (
-        <div className="bg-[var(--surface-2)]/40 rounded-lg p-3 mb-4 flex-1 border border-border/15">
+        <div className="bg-[var(--surface-2)]/40 rounded-lg p-3 mb-3 flex-1 border border-border/15">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 text-neutral-accent" />
@@ -592,90 +633,83 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
                   </Tooltip>
                 );
               })()}
-              {(() => {
-                const outlook = llmResult?.outlook || deriveOutlook(biasResult);
-                return (
-                  <span className={cn(
-                    "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
-                    outlook === "bullish" && "bg-bullish/15 text-bullish",
-                    outlook === "bearish" && "bg-bearish/15 text-bearish",
-                    outlook === "neutral" && "bg-neutral-accent/15 text-neutral-accent",
-                  )}>
-                    {outlook}
-                  </span>
-                );
-              })()}
             </div>
           </div>
 
-          {/* Summary */}
           <p className="text-sm text-foreground/80 leading-relaxed">
-            {summaryText}
+            {firstSentences(summaryText, 2)}
           </p>
-
-          <details className="mt-3 group rounded-md border border-border/15 open:bg-[var(--surface-2)]/20">
-            <summary className="cursor-pointer list-none px-1 py-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground">
-              <span className="inline-flex items-center gap-1">
-                <ChevronRight className="h-3.5 w-3.5 shrink-0 transition-transform group-open:rotate-90 text-muted-foreground/60" />
-                Full narrative (fund / tech / catalysts)
-              </span>
-            </summary>
-            <div className="space-y-2.5 border-t border-border/20 pt-2.5 pb-1">
-              {(() => {
-                const fundReason = llmResult?.fundamentalReason || describeFundamentals(fund);
-                return (
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <BiasDot score={fundScore} />
-                      <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Fundamentals</span>
-                    </div>
-                    <p className="text-sm text-foreground/75 leading-relaxed mt-0.5">{fundReason}</p>
-                  </div>
-                );
-              })()}
-              {(() => {
-                const techReason = llmResult?.technicalReason || describeTechnicals(tech);
-                return (
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <BiasDot score={techScore} />
-                      <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Technicals</span>
-                    </div>
-                    <p className="text-sm text-foreground/75 leading-relaxed mt-0.5">{techReason}</p>
-                  </div>
-                );
-              })()}
-              {(() => {
-                const raw =
-                  llmResult?.catalysts?.length ? llmResult.catalysts : deriveCatalysts(biasResult.signals);
-                const catalysts = sanitizeCatalysts(raw) ?? raw;
-                const outlook = llmResult?.outlook || deriveOutlook(biasResult);
-                if (catalysts.length === 0) return null;
-                return (
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className={cn(
-                          "inline-block h-1.5 w-1.5 rounded-full shrink-0",
-                          outlook === "bullish" ? "bg-bullish" : outlook === "bearish" ? "bg-bearish" : "bg-muted-foreground/40"
-                        )}
-                      />
-                      <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Catalysts</span>
-                    </div>
-                    <ul className="mt-0.5 space-y-0.5">
-                      {catalysts.map((c, i) => (
-                        <li key={i} className="text-sm text-foreground/75 leading-relaxed flex items-start gap-1.5">
-                          <span className="text-neutral-accent mt-1.5 shrink-0">&bull;</span>
-                          {c}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                );
-              })()}
-            </div>
-          </details>
         </div>
+      )}
+
+      {(hasDecisionDeskExpandedContent(biasResult) || summaryText) && (
+        <details className="group mb-4 rounded-lg border border-border/20 bg-[var(--surface-1)]/30 open:bg-[var(--surface-1)]/45">
+          <summary className="cursor-pointer list-none px-3 py-2.5 text-[11px] font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1.5">
+            <ChevronRight className="h-3.5 w-3.5 shrink-0 transition-transform group-open:rotate-90 text-muted-foreground/60" />
+            Full context — desk, fundamentals, technicals, catalysts
+          </summary>
+          <div className="space-y-3 border-t border-border/20 px-3 pb-3 pt-2 text-sm">
+            {summaryText ? (
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Full summary</p>
+                <p className="text-sm text-foreground/80 leading-relaxed">{summaryText}</p>
+              </div>
+            ) : null}
+            <DecisionDeskExpandedSections bias={biasResult} />
+            {(() => {
+              const fundReason = llmResult?.fundamentalReason || describeFundamentals(fund);
+              return (
+                <div>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <BiasDot score={fundScore} />
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Fundamentals</span>
+                  </div>
+                  <p className="text-sm text-foreground/75 leading-relaxed">{fundReason}</p>
+                </div>
+              );
+            })()}
+            {(() => {
+              const techReason = llmResult?.technicalReason || describeTechnicals(tech);
+              return (
+                <div>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <BiasDot score={techScore} />
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Technicals</span>
+                  </div>
+                  <p className="text-sm text-foreground/75 leading-relaxed">{techReason}</p>
+                </div>
+              );
+            })()}
+            {(() => {
+              const raw =
+                llmResult?.catalysts?.length ? llmResult.catalysts : deriveCatalysts(biasResult.signals);
+              const catalysts = sanitizeCatalysts(raw) ?? raw;
+              const outlook = llmResult?.outlook || deriveOutlook(biasResult);
+              if (catalysts.length === 0) return null;
+              return (
+                <div>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span
+                      className={cn(
+                        "inline-block h-1.5 w-1.5 rounded-full shrink-0",
+                        outlook === "bullish" ? "bg-bullish" : outlook === "bearish" ? "bg-bearish" : "bg-muted-foreground/40"
+                      )}
+                    />
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Catalysts</span>
+                  </div>
+                  <ul className="space-y-0.5">
+                    {catalysts.map((c, i) => (
+                      <li key={i} className="text-sm text-foreground/75 leading-relaxed flex items-start gap-1.5">
+                        <span className="text-neutral-accent mt-1.5 shrink-0">&bull;</span>
+                        {c}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })()}
+          </div>
+        </details>
       )}
 
       {/* Action Buttons */}
