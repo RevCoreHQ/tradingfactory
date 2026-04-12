@@ -7,6 +7,8 @@ import { computeRateDifferentials } from "@/lib/calculations/rate-differentials"
 import { useMarketStore } from "@/lib/store/market-store";
 import { INSTRUMENTS } from "@/lib/utils/constants";
 import type { BiasResult } from "@/lib/types/bias";
+import { computeTradeFilter } from "@/lib/calculations/trade-filter";
+import { refineMarketSummary } from "@/lib/calculations/market-summary-refine";
 import type { MarketSummaryResult, SectorOutlook } from "@/lib/types/llm";
 import { readCache } from "@/lib/supabase-cache";
 
@@ -254,6 +256,20 @@ export function useMarketSummary() {
           }))
         )
       : undefined,
+    instrumentDeskHints:
+      Object.keys(currentResults).length > 0
+        ? INSTRUMENTS.map((inst) => {
+            const r = currentResults[inst.id];
+            if (!r) return null;
+            const tf = computeTradeFilter(r);
+            return {
+              symbol: inst.symbol,
+              filter: tf.verdict,
+              tier: r.tradeSetup?.confluenceTier,
+              riskSizing: r.tradeSetup?.riskSizing,
+            };
+          }).filter((h): h is NonNullable<typeof h> => h !== null)
+        : undefined,
   };
 
   // Stable ref so SWR fetcher always uses latest data
@@ -319,7 +335,7 @@ export function useMarketSummary() {
     corrected.focusToday = focusToday;
     corrected.sitOutToday = sitOutToday;
 
-    summary = { ...baseSummary, ...corrected };
+    summary = refineMarketSummary({ ...baseSummary, ...corrected }, currentResults);
   }
 
   // Surface API-level error (returned as { summary: null, error: "..." })

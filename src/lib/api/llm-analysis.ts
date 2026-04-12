@@ -580,11 +580,11 @@ Rules:
 - Flag high-impact events in the next 24-48 hours that affect tradeable currencies.
 - Reference rate differentials and carry conditions when relevant to sector outlook.
 - List 2-3 key risks traders should watch (include event risk and positioning risk).
-- List 2-3 opportunities the data suggests (include carry-aligned opportunities).
+- "opportunities" must be MACRO-THEMATIC only (carry, USD regime, sector skew, rates path) — NOT a second trade list. Do NOT repeat instrument names or trade theses that appear in focusToday. No duplicate tickers between focusToday and opportunities.
 - Provide an overall market outlook: bullish, bearish, or neutral.
 - Provide a per-sector outlook breakdown with specific asset mentions for forex, crypto, indices, and commodities.
 - For each sector, identify 1-2 specific FOCUS instruments that have the clearest setups today, and any instruments to AVOID.
-- Provide a global "focusToday" list: the top 3-5 instruments across all sectors that deserve attention today.
+- Provide a global "focusToday" list: 3-5 instruments that deserve attention today. When "instrument desk hints" are provided, PRIORITIZE symbols whose filter is consider or lean; deprioritize or omit symbols marked wait/no_trade from focusToday when alternatives exist.
 - Provide a "sitOutToday" list: instruments or conditions where the right move is to sit on your hands. Be willing to say "no clear setups" for entire sectors if conditions are unclear or choppy.
 - CRITICAL: Align recommendations with the mechanical instrument bias scores provided. If an instrument has a clear bearish bias (bias <= -20), do NOT recommend it as a LONG opportunity. If it has a clear bullish bias (bias >= 20), do NOT recommend it as a SHORT. The mechanical signals reflect actual price action — respect them even when macro narrative suggests otherwise.
 - Be specific — reference actual data values (DXY level, fear/greed, yield curve, COT extremes, rate differentials).
@@ -619,6 +619,14 @@ ${req.newsHeadlines.map((n) => `  - [${n.sentiment}, score: ${n.score}] ${n.head
 ${req.instrumentBiases && req.instrumentBiases.length > 0 ? `
 --- Current Instrument Biases ---
 ${req.instrumentBiases.map((b) => `  ${b.symbol} (${b.category}): ${b.direction} (bias: ${b.bias})`).join("\n")}` : ""}
+${req.instrumentDeskHints && req.instrumentDeskHints.length > 0 ? `
+--- Instrument desk hints (trade filter + tier — align narrative) ---
+${req.instrumentDeskHints
+  .map(
+    (h) =>
+      `  ${h.symbol}: filter=${h.filter}${h.tier ? `, tier=${h.tier}` : ""}${h.riskSizing ? `, sizing=${h.riskSizing}` : ""}`
+  )
+  .join("\n")}` : ""}
 ${req.cotPositioning && req.cotPositioning.length > 0 ? `
 --- COT Speculative Positioning ---
 ${req.cotPositioning.map((c) => {

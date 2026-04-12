@@ -66,6 +66,13 @@ export interface MarketSummaryRequest {
   centralBanks: { bank: string; rate: number; direction: string; stance: string }[];
   newsHeadlines: { headline: string; sentiment: string; score: number }[];
   instrumentBiases?: { symbol: string; category: string; direction: string; bias: number }[];
+  /** Per-symbol desk filter / tier — aligns narrative with instrument cards */
+  instrumentDeskHints?: {
+    symbol: string;
+    filter: "no_trade" | "wait" | "lean" | "consider";
+    tier?: string;
+    riskSizing?: string;
+  }[];
   // Institutional context
   cotPositioning?: TradingAdvisorRequest["cotPositioning"];
   highImpactEvents?: TradingAdvisorRequest["highImpactEvents"];
@@ -87,6 +94,8 @@ export interface MarketSummaryResult {
   outlook: "bullish" | "bearish" | "neutral";
   sectorOutlook?: SectorOutlook[];
   focusToday?: string[];
+  /** Symbols where the desk filter is wait/no_trade — sizing down or stand aside (post-processed). */
+  focusTodaySecondary?: string[];
   sitOutToday?: string[];
   timestamp: number;
   provider: LLMProvider;
