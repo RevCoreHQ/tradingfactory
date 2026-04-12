@@ -126,7 +126,7 @@ export function refineAdvisorFocusLists(
 } {
   const strongThreshold = options?.strongThreshold ?? ADVISOR_STRONG_BIAS_THRESHOLD;
 
-  let merged: AdvisorFocusChip[] = [...focusToday];
+  const merged: AdvisorFocusChip[] = [...focusToday];
 
   for (const [id, result] of Object.entries(biasByInstrument)) {
     if (Math.abs(result.overallBias) < strongThreshold) continue;
