@@ -223,7 +223,8 @@ export function appendSetupIntelligence(setup: TradeSetup, bias: BiasResult): Tr
 
   const passCount = checklist.filter((c) => c.pass).length;
   let confluenceTier: ConfluenceTier = "C";
-  if (passCount >= 6 && alignment === "aligned") confluenceTier = "A";
+  // A-tier requires a real directional edge — avoid A + "weak bias" sizing contradictions.
+  if (passCount >= 6 && alignment === "aligned" && biasPass) confluenceTier = "A";
   else if (passCount >= 4) confluenceTier = "B";
 
   /** A-tier cannot coexist with desk “no edge” — avoids green badge + weak-edge copy. */

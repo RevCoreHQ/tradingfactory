@@ -145,6 +145,25 @@ describe("appendSetupIntelligence", () => {
     expect(out.checklist?.find((c) => c.id === "tf")?.pass).toBe(false);
   });
 
+  it("does not grant A-tier when headline |bias| is below the edge gate", () => {
+    const out = appendSetupIntelligence(
+      baseSetupShell,
+      minimalBias({
+        overallBias: -6,
+        direction: "neutral",
+        confidence: 74,
+        signalAgreement: 0.7,
+        timeframeAlignment: "aligned",
+        mtfAlignmentPercent: 60,
+        fundamentalScore: { ...minimalBias({}).fundamentalScore, total: 51 },
+        technicalScore: { ...minimalBias({}).technicalScore, total: 40 },
+        eventGate: { hasMajorEventSoon: false, impact: "low", suggestion: "" },
+      })
+    );
+    expect(out.confluenceTier).toBe("B");
+    expect(out.checklist?.find((c) => c.id === "edge")?.pass).toBe(false);
+  });
+
   it("downgrades A-tier to B when tradeGuidance is no_edge", () => {
     const out = appendSetupIntelligence(
       baseSetupShell,

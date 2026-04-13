@@ -201,8 +201,9 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
   const togglePin = useMarketStore((s) => s.togglePin);
   const { instrument, biasResult, llmResult, quote, mtfTrend } = data;
   const CategoryIcon = categoryIcons[instrument.category] || DollarSign;
-  const isBullish = biasResult.overallBias > 0;
-  const isBearish = biasResult.overallBias < 0;
+  /** Headline badge and bars must match `direction` (±10 thresholds), not raw score sign — avoids Bearish + neutral desk note. */
+  const dirIsBullish = biasResult.direction.includes("bullish");
+  const dirIsBearish = biasResult.direction.includes("bearish");
   const color = getBiasColor(biasResult.direction);
   const isFavorite = favoriteIds.includes(instrument.id);
   const isPinned = pinnedIds.includes(instrument.id);
@@ -212,8 +213,8 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
   const llmSummary = llmResult?.summary || null;
   const summaryContradictsDirection =
     llmSummary &&
-    ((isBullish && /\bbearish\b/i.test(llmSummary) && !/\bbullish\b/i.test(llmSummary)) ||
-     (isBearish && /\bbullish\b/i.test(llmSummary) && !/\bbearish\b/i.test(llmSummary)));
+    ((dirIsBullish && /\bbearish\b/i.test(llmSummary) && !/\bbullish\b/i.test(llmSummary)) ||
+     (dirIsBearish && /\bbullish\b/i.test(llmSummary) && !/\bbearish\b/i.test(llmSummary)));
 
   // Generate deterministic summary from scores when LLM hasn't returned yet
   const fundTotal = biasResult.fundamentalScore.total;
@@ -323,12 +324,20 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
             <span
               className={cn(
                 "px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wide",
-                isBullish && "bg-bullish/15 text-bullish",
-                isBearish && "bg-bearish/15 text-bearish",
-                !isBullish && !isBearish && "bg-neutral-accent/15 text-neutral-accent"
+                dirIsBullish && "bg-bullish/15 text-bullish",
+                dirIsBearish && "bg-bearish/15 text-bearish",
+                !dirIsBullish && !dirIsBearish && "bg-neutral-accent/15 text-neutral-accent"
               )}
             >
-              {isBullish ? "Bullish" : isBearish ? "Bearish" : "Neutral"}
+              {biasResult.direction === "strong_bullish"
+                ? "Strong bull"
+                : biasResult.direction === "strong_bearish"
+                  ? "Strong bear"
+                  : dirIsBullish
+                    ? "Bullish"
+                    : dirIsBearish
+                      ? "Bearish"
+                      : "Neutral"}
             </span>
           </div>
         </div>
@@ -368,7 +377,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
           <div
             className={cn(
               "h-full rounded-full transition-all",
-              isBullish ? "bg-bullish" : isBearish ? "bg-bearish" : "bg-neutral-accent"
+              dirIsBullish ? "bg-bullish" : dirIsBearish ? "bg-bearish" : "bg-neutral-accent"
             )}
             style={{ width: `${Math.round(confidence)}%` }}
           />
@@ -376,7 +385,16 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
         <p className="mt-1.5 text-[10px] text-muted-foreground/65">
           Trade conviction:{" "}
           <span className="font-medium text-foreground/85 capitalize">
-            {llmResult?.conviction || (confidence > 70 ? "high" : confidence > 45 ? "medium" : "low")}
+            {llmResult?.conviction ||
+              (!dirIsBullish && !dirIsBearish
+                ? confidence > 55
+                  ? "medium"
+                  : "low"
+                : confidence > 70
+                  ? "high"
+                  : confidence > 45
+                    ? "medium"
+                    : "low")}
           </span>
           <Tooltip>
             <TooltipTrigger
@@ -396,7 +414,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
       {/* Overall Bias Score */}
       <div className="flex items-center gap-3 mb-3">
         <span className="text-3xl font-mono font-bold tabular" style={{ color }}>
-          {isBullish ? "+" : ""}{Math.round(biasResult.overallBias)}
+          {biasResult.overallBias > 0 ? "+" : ""}{Math.round(biasResult.overallBias)}
         </span>
         <div className="flex flex-col gap-0.5">
           {biasResult.signalAgreement !== undefined && (
