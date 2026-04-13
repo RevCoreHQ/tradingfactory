@@ -103,6 +103,23 @@ function scoreToneLabel(total: number): "bullish" | "bearish" | "neutral" {
   return "neutral";
 }
 
+/** Matches sizing row: no "high" from confidence alone when direction is neutral. */
+function sizingConvictionLabel(
+  llmConv: string | undefined,
+  confidence: number,
+  dirIsBullish: boolean,
+  dirIsBearish: boolean
+): string {
+  if (llmConv) return llmConv;
+  if (!dirIsBullish && !dirIsBearish) {
+    if (confidence > 55) return "medium";
+    return "low";
+  }
+  if (confidence > 70) return "high";
+  if (confidence > 45) return "medium";
+  return "low";
+}
+
 function describeFundamentals(fund: BiasResult["fundamentalScore"]): string {
   const dir = (s: number) => s > 60 ? "supportive" : s < 40 ? "negative" : "mixed";
   const parts: string[] = [];
@@ -385,16 +402,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
         <p className="mt-1.5 text-[10px] text-muted-foreground/65">
           Trade conviction:{" "}
           <span className="font-medium text-foreground/85 capitalize">
-            {llmResult?.conviction ||
-              (!dirIsBullish && !dirIsBearish
-                ? confidence > 55
-                  ? "medium"
-                  : "low"
-                : confidence > 70
-                  ? "high"
-                  : confidence > 45
-                    ? "medium"
-                    : "low")}
+            {sizingConvictionLabel(llmResult?.conviction, confidence, dirIsBullish, dirIsBearish)}
           </span>
           <Tooltip>
             <TooltipTrigger
@@ -768,7 +776,12 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
                 );
               })()}
               {(() => {
-                const conviction = llmResult?.conviction || (confidence > 70 ? "high" : confidence > 45 ? "medium" : "low");
+                const conviction = sizingConvictionLabel(
+                  llmResult?.conviction,
+                  confidence,
+                  dirIsBullish,
+                  dirIsBearish
+                );
                 return (
                   <Tooltip>
                     <TooltipTrigger

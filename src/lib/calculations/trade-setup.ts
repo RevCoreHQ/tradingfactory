@@ -258,7 +258,8 @@ function calculateRiskSizing(
   }
 
   // Size Down: low conviction OR poor agreement OR extreme volatility
-  if (confidence < 45 || biasAbs < 15) {
+  // Use same |bias| floor as checklist "edge" gate (≥14) so A-tier cannot pair with weak-edge sizing.
+  if (confidence < 45 || biasAbs < 14) {
     return {
       sizing: "size_down",
       reason: confidence < 45
