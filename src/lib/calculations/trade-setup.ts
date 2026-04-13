@@ -5,9 +5,12 @@ import type {
   RiskSizing,
   SetupChecklistItem,
   ConfluenceTier,
+  EntryZoneBasis,
 } from "@/lib/types/bias";
 import type { ADRStoreData } from "@/lib/store/market-store";
 import { INSTRUMENTS } from "@/lib/utils/constants";
+import type { StructuralSummaryInput } from "@/lib/calculations/structural-levels";
+import { collectStructuralLevels } from "@/lib/calculations/structural-levels";
 
 // ==================== ADR CALCULATION ====================
 
@@ -117,8 +120,73 @@ export function calculateTradeSetup(
     riskSizing: sizing,
     riskReason: reason,
     entryZone,
+    entryZoneBasis: "atr",
   };
   return appendSetupIntelligence(base, biasResult);
+}
+
+export interface RefinedEntryZoneResult {
+  entryZone: [number, number];
+  basis: EntryZoneBasis;
+}
+
+/**
+ * Narrows the ATR mechanical entry band toward the strongest in-zone structural level
+ * (S/R, pivots, Fib) when one exists inside the original band.
+ */
+export function refineEntryZone(
+  setup: TradeSetup,
+  biasResult: BiasResult,
+  atr: number,
+  anchorPrice: number,
+  structural: StructuralSummaryInput | null | undefined
+): RefinedEntryZoneResult {
+  const [lo, hi] = setup.entryZone;
+  if (!structural || atr <= 0 || !Number.isFinite(anchorPrice)) {
+    return { entryZone: [lo, hi], basis: setup.entryZoneBasis ?? "atr" };
+  }
+
+  const isBearish = biasResult.direction.includes("bearish");
+  const isBullish = biasResult.direction.includes("bullish");
+  if (!isBearish && !isBullish) {
+    return { entryZone: [lo, hi], basis: setup.entryZoneBasis ?? "atr" };
+  }
+
+  const levels = collectStructuralLevels(structural, anchorPrice);
+
+  if (isBullish) {
+    const candidates = levels.filter(
+      (l) => l.type === "support" && l.price >= lo - 1e-9 && l.price <= hi + 1e-9
+    );
+    if (candidates.length === 0) {
+      return { entryZone: [lo, hi], basis: "atr" };
+    }
+    const best = candidates.sort((a, b) => b.strength - a.strength)[0];
+    if (best.price >= hi - 1e-9) {
+      return { entryZone: [lo, hi], basis: "atr" };
+    }
+    const newLo = Math.min(Math.max(best.price, lo), hi);
+    if (hi - newLo < atr * 0.05 || Math.abs(newLo - lo) < 1e-6) {
+      return { entryZone: [lo, hi], basis: "atr" };
+    }
+    return { entryZone: [newLo, hi], basis: "structure" };
+  }
+
+  const candidates = levels.filter(
+    (l) => l.type === "resistance" && l.price >= lo - 1e-9 && l.price <= hi + 1e-9
+  );
+  if (candidates.length === 0) {
+    return { entryZone: [lo, hi], basis: "atr" };
+  }
+  const best = candidates.sort((a, b) => b.strength - a.strength)[0];
+  if (best.price <= lo + 1e-9) {
+    return { entryZone: [lo, hi], basis: "atr" };
+  }
+  const newHi = Math.max(Math.min(best.price, hi), lo);
+  if (newHi - lo < atr * 0.05 || Math.abs(newHi - hi) < 1e-6) {
+    return { entryZone: [lo, hi], basis: "atr" };
+  }
+  return { entryZone: [lo, newHi], basis: "structure" };
 }
 
 /** Exported for unit tests and golden regression on checklist / tier rules. */

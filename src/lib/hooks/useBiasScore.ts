@@ -13,7 +13,13 @@ import {
 import { useTechnicalData } from "./useTechnicalData";
 import { useLLMAnalysis } from "./useLLMAnalysis";
 import { calculateFundamentalScore, calculateTechnicalScore, calculateOverallBias, applyLLMAnalysis } from "@/lib/calculations/bias-engine";
-import { calculateTradeSetup } from "@/lib/calculations/trade-setup";
+import { calculateTradeSetup, refineEntryZone } from "@/lib/calculations/trade-setup";
+import type { StructuralSummaryInput } from "@/lib/calculations/structural-levels";
+import {
+  deskMechanicalBandRetestCounts,
+  deskZoneTestCountForBias,
+  type DeskZoneRetestHint,
+} from "@/lib/calculations/desk-zone-retest";
 import { buildDecisionLayer, computeDecisionRationale } from "@/lib/calculations/decision-context";
 import type { TechnicalScore } from "@/lib/types/bias";
 import type { MTFTrendSummary } from "@/lib/types/mtf";
@@ -33,6 +39,7 @@ const DEFAULT_TECHNICAL_SCORE = {
 
 export function useBiasScore() {
   const instrument = useMarketStore((s) => s.selectedInstrument);
+  const chartTimeframe = useMarketStore((s) => s.selectedTimeframe);
   const biasTimeframe = "intraday" as const;
   const setBiasResult = useMarketStore((s) => s.setBiasResult);
   // Read storedBias non-reactively to avoid re-render cascades
@@ -58,6 +65,8 @@ export function useBiasScore() {
         mtfAlignmentPercent: number;
         technicalBasis?: string;
         mtfEmaSummary: MTFTrendSummary | null;
+        deskStructuralSummary?: StructuralSummaryInput;
+        deskZoneRetestHint?: DeskZoneRetestHint | null;
       }
     >;
   }>("/api/technicals/batch-scores", fetcher, {
@@ -134,14 +143,51 @@ export function useBiasScore() {
     if (instAdr && currentPrice > 0) {
       const atr = indicators?.atr?.value || (instAdr.pips * instrument.pipSize);
       const adrWithRank = { ...instAdr, rank: 50 }; // single instrument doesn't have ranking context
-      const tradeSetup = calculateTradeSetup(
+      const tradeSetupRaw = calculateTradeSetup(
         result,
         atr,
         adrWithRank,
         currentPrice,
         biasTimeframe
       );
-      const withSetup = { ...result, adr: adrWithRank, tradeSetup };
+      const structuralPick: StructuralSummaryInput | null = indicators
+        ? {
+            supportResistance: indicators.supportResistance,
+            pivotPoints: indicators.pivotPoints,
+            fibonacci: indicators.fibonacci,
+          }
+        : null;
+      const structural =
+        structuralPick ?? batchTechData?.scores?.[instrument.id]?.deskStructuralSummary ?? null;
+      const refined = refineEntryZone(
+        tradeSetupRaw,
+        result,
+        atr,
+        currentPrice,
+        structural
+      );
+      const tradeSetup = {
+        ...tradeSetupRaw,
+        entryZone: refined.entryZone,
+        entryZoneBasis: refined.basis,
+      };
+      let retestHint: DeskZoneRetestHint | null | undefined = batchTechData?.scores?.[instrument.id]?.deskZoneRetestHint;
+      if (retestHint == null && candles.length >= 20 && indicators) {
+        const sdTf = chartTimeframe === "1h" ? "1h" : "15m";
+        retestHint = deskMechanicalBandRetestCounts(
+          candles,
+          indicators.atr.value,
+          currentPrice,
+          sdTf
+        );
+      }
+      const deskZoneTestCount = deskZoneTestCountForBias(retestHint, result.direction);
+      const withSetup = {
+        ...result,
+        adr: adrWithRank,
+        tradeSetup,
+        ...(deskZoneTestCount !== undefined ? { deskZoneTestCount } : {}),
+      };
       result = {
         ...withSetup,
         decisionRationale: computeDecisionRationale(withSetup),
@@ -156,6 +202,7 @@ export function useBiasScore() {
     bankData,
     calendarData,
     batchTechData,
+    chartTimeframe,
     indicators,
     candles,
     instrument,

@@ -38,7 +38,11 @@ import {
   hasDecisionDeskExpandedContent,
 } from "@/components/dashboard/DecisionDeskPanel";
 import { sanitizeCatalysts } from "@/lib/calculations/llm-sanitize";
-import { buildDeskWatchNote, deskSetupReferencePrice } from "@/lib/calculations/desk-watch-note";
+import {
+  buildDeskWatchNote,
+  deskRefDivergenceNote,
+  deskSetupReferencePrice,
+} from "@/lib/calculations/desk-watch-note";
 import { formatPrice } from "@/lib/utils/formatters";
 import { InstrumentPriceDisplay } from "@/components/common/InstrumentPriceDisplay";
 import { computeTradeFilter } from "@/lib/calculations/trade-filter";
@@ -421,10 +425,29 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
       <DecisionDeskPanel bias={biasResult} mode="card" />
 
       {(() => {
-        const deskNote = buildDeskWatchNote(biasResult, instrument.decimalPlaces);
+        const livePriceForDesk =
+          quote != null && quote.mid > 0
+            ? quote.mid
+            : quote != null && quote.bid > 0 && quote.ask > 0
+              ? (quote.bid + quote.ask) / 2
+              : undefined;
+        const deskNote = buildDeskWatchNote(biasResult, instrument.decimalPlaces, {
+          livePrice: livePriceForDesk,
+        });
         if (!deskNote) return null;
         const planningOnly = !tradeFilter.emphasizeLevels;
         const deskRef = deskSetupReferencePrice(biasResult);
+        const atrEstimate =
+          biasResult.adr != null
+            ? biasResult.adr.pips * instrument.pipSize
+            : biasResult.tradeSetup
+              ? Math.abs(biasResult.tradeSetup.entryZone[1] - biasResult.tradeSetup.entryZone[0]) / 0.25
+              : undefined;
+        const divergenceNote = deskRefDivergenceNote({
+          livePrice: livePriceForDesk,
+          deskRef,
+          atrEstimate,
+        });
         const hasLiveQuote =
           quote != null && (quote.mid > 0 || (quote.bid > 0 && quote.ask > 0));
         return (
@@ -483,6 +506,11 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
                 ) : null}
               </div>
             ) : null}
+            {divergenceNote ? (
+              <p className="text-[10px] text-amber-600/90 dark:text-amber-400/90 mb-2 leading-snug">
+                {divergenceNote}
+              </p>
+            ) : null}
             <div className="flex items-center gap-1.5 mb-2">
               <StickyNote className="h-3.5 w-3.5 text-neutral-accent shrink-0" />
               <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -493,7 +521,7 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
                   render={<span />}
                   className="ml-auto text-[10px] text-muted-foreground/50 border-b border-dotted border-muted-foreground/25 cursor-help"
                 >
-                  ATR-based
+                  {deskNote.zoneBasisLabel}
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
                   {deskNote.footnote}

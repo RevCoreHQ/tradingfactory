@@ -1,69 +1,42 @@
 import { describe, expect, it } from "vitest";
-import type { BiasResult } from "@/lib/types/bias";
-import { deskSetupReferencePrice } from "@/lib/calculations/desk-watch-note";
+import {
+  computeDeskZoneState,
+  deskRefDivergenceNote,
+  DESK_REF_DIVERGENCE_ATR_MULT,
+} from "@/lib/calculations/desk-watch-note";
 
-function minimalBias(partial: Partial<BiasResult>): BiasResult {
-  return {
-    instrument: "XAU_USD",
-    overallBias: 0,
-    direction: "neutral",
-    confidence: 50,
-    fundamentalScore: {
-      total: 50,
-      newsSentiment: 50,
-      economicData: 50,
-      centralBankPolicy: 50,
-      marketSentiment: 50,
-      intermarketCorrelation: 50,
-    },
-    technicalScore: {
-      total: 50,
-      trendDirection: 50,
-      momentum: 50,
-      volatility: 50,
-      volumeAnalysis: 50,
-      supportResistance: 50,
-    },
-    aiBias: 0,
-    timeframe: "intraday",
-    timestamp: Date.now(),
-    signals: [],
-    adr: null,
-    tradeSetup: null,
-    signalAgreement: 0.5,
-    ...partial,
-  };
-}
-
-const setupShell = {
-  tradeScore: 1,
-  projectedMove: { pips: 1, percent: 0.1 },
-  stopLoss: 1,
-  takeProfit: [2, 3, 4] as [number, number, number],
-  riskReward: [1, 1, 1] as [number, number, number],
-  riskSizing: "normal" as const,
-  riskReason: "",
-  entryZone: [100.0, 110.0] as [number, number],
-};
-
-describe("deskSetupReferencePrice", () => {
-  it("uses entry zone low for bearish (anchor is current at lower bound)", () => {
-    const b = minimalBias({
-      direction: "bearish",
-      tradeSetup: { ...setupShell, entryZone: [4746.44, 4782.24] },
-    });
-    expect(deskSetupReferencePrice(b)).toBe(4746.44);
+describe("computeDeskZoneState", () => {
+  it("defaults to approaching without live price", () => {
+    expect(computeDeskZoneState(undefined, 100, 110, undefined)).toBe("approaching");
   });
 
-  it("uses entry zone high for bullish (anchor at upper bound)", () => {
-    const b = minimalBias({
-      direction: "bullish",
-      tradeSetup: { ...setupShell, entryZone: [2600.0, 2650.0] },
-    });
-    expect(deskSetupReferencePrice(b)).toBe(2650.0);
+  it("detects inside mid-band", () => {
+    expect(computeDeskZoneState(105, 100, 110, undefined)).toBe("inside");
   });
 
-  it("returns null when no trade setup", () => {
-    expect(deskSetupReferencePrice(minimalBias({ tradeSetup: null }))).toBeNull();
+  it("detects at_edge when hugging zone boundary inside", () => {
+    expect(computeDeskZoneState(100.5, 100, 110, undefined)).toBe("at_edge");
+  });
+
+  it("detects exhausted when in zone and test count high", () => {
+    expect(computeDeskZoneState(105, 100, 110, 4)).toBe("exhausted");
+  });
+
+  it("detects approaching when far above zone", () => {
+    expect(computeDeskZoneState(120, 100, 110, undefined)).toBe("approaching");
+  });
+});
+
+describe("deskRefDivergenceNote", () => {
+  it("returns null when within ATR threshold", () => {
+    expect(
+      deskRefDivergenceNote({ livePrice: 100.1, deskRef: 100, atrEstimate: 1 })
+    ).toBeNull();
+  });
+
+  it("returns a message when beyond threshold", () => {
+    const msg = deskRefDivergenceNote({ livePrice: 100.5, deskRef: 100, atrEstimate: 1 });
+    expect(msg).toContain(String(DESK_REF_DIVERGENCE_ATR_MULT));
+    expect(msg).toContain("technicals refresh");
   });
 });

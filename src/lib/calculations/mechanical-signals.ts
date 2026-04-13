@@ -31,6 +31,7 @@ import { detectSFP, detectIDF } from "./sfp-idf-detection";
 import { detectOBRetest, type OBRetestResult } from "./ob-retest-detection";
 import type { FairValueGap, SupplyDemandZone } from "@/lib/types/deep-analysis";
 import type { MarketStructure } from "@/lib/types/signals";
+import { collectStructuralLevels } from "./structural-levels";
 
 // ==================== TRADING STYLE ====================
 
@@ -110,51 +111,6 @@ export function selectTradingStyle(adx: number, sessionScore: number, fullRegime
 }
 
 // ==================== STRUCTURAL LEVELS ====================
-
-interface StructuralLevel {
-  price: number;
-  type: "support" | "resistance";
-  strength: number;
-}
-
-function collectStructuralLevels(
-  summary: TechnicalSummary,
-  currentPrice: number
-): StructuralLevel[] {
-  const levels: StructuralLevel[] = [];
-
-  // S/R levels (fractal-based)
-  for (const sr of summary.supportResistance) {
-    levels.push({ price: sr.price, type: sr.type, strength: Math.min(10, sr.strength * 2) });
-  }
-
-  // Pivot points (daily + weekly)
-  for (const pp of summary.pivotPoints) {
-    const bonus = pp.type === "weekly" ? 2 : 0;
-    levels.push({ price: pp.pivot, type: pp.pivot < currentPrice ? "support" : "resistance", strength: 5 + bonus });
-    levels.push({ price: pp.r1, type: "resistance", strength: 4 + bonus });
-    levels.push({ price: pp.r2, type: "resistance", strength: 3 + bonus });
-    levels.push({ price: pp.r3, type: "resistance", strength: 2 + bonus });
-    levels.push({ price: pp.s1, type: "support", strength: 4 + bonus });
-    levels.push({ price: pp.s2, type: "support", strength: 3 + bonus });
-    levels.push({ price: pp.s3, type: "support", strength: 2 + bonus });
-  }
-
-  // Fibonacci levels
-  for (const fib of summary.fibonacci) {
-    const fibStrength = (fib.level === 0.618 || fib.level === 0.382) ? 4 : 2;
-    levels.push({
-      price: fib.price,
-      type: fib.price < currentPrice ? "support" : "resistance",
-      strength: fibStrength,
-    });
-  }
-
-  // Filter out levels at 0 or too far (>10% from price)
-  return levels
-    .filter((l) => l.price > 0 && Math.abs(l.price - currentPrice) / currentPrice < 0.10)
-    .sort((a, b) => a.price - b.price);
-}
 
 function snapLevelsToStructure(
   summary: TechnicalSummary,

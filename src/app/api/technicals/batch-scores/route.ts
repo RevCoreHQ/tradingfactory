@@ -11,6 +11,12 @@ import {
 } from "@/lib/calculations/mtf-trend";
 import type { MTFTimeframe, MTFTrendSummary } from "@/lib/types/mtf";
 import type { BiasSignal, TechnicalScore } from "@/lib/types/bias";
+import type { StructuralSummaryInput } from "@/lib/calculations/structural-levels";
+import type { TechnicalSummary } from "@/lib/types/indicators";
+import {
+  deskMechanicalBandRetestCounts,
+  type DeskZoneRetestHint,
+} from "@/lib/calculations/desk-zone-retest";
 
 const LIMIT_1H = 100;
 const LIMIT_15M = 100;
@@ -66,6 +72,14 @@ function clampAvg(x: number, y: number): number {
   return Math.max(0, Math.min(100, Math.round(v * 10) / 10));
 }
 
+function deskStructuralFromSummary(summary: TechnicalSummary): StructuralSummaryInput {
+  return {
+    supportResistance: summary.supportResistance,
+    pivotPoints: summary.pivotPoints,
+    fibonacci: summary.fibonacci,
+  };
+}
+
 export type BatchScoreEntry = {
   score: TechnicalScore;
   score15m: TechnicalScore;
@@ -77,6 +91,10 @@ export type BatchScoreEntry = {
   mtfAlignmentPercent: number;
   /** Same `calculateMTFTrendSummary` output used for `mtfAlignmentPercent` (single snapshot). */
   mtfEmaSummary: MTFTrendSummary | null;
+  /** S/R, pivots, Fib for narrowing desk entry zones (15m snapshot when both TFs exist). */
+  deskStructuralSummary: StructuralSummaryInput;
+  /** ICT supply/demand retests overlapping mechanical ATR entry bands (15m when available). */
+  deskZoneRetestHint: DeskZoneRetestHint | null;
 };
 
 export const dynamic = "force-dynamic"; // never serve stale cached route
@@ -137,11 +155,14 @@ export async function GET() {
           let signals: BiasSignal[];
           let currentPrice: number;
           let technicalBasis: string;
+          let deskStructuralSummary: StructuralSummaryInput;
+          let deskZoneRetestHint: DeskZoneRetestHint | null = null;
           const mtfPct = mtfAlignmentScore ?? 50;
 
           if (has15m && has1h) {
             const indicators15m = calculateAllIndicators(candles15m, inst.id, "15m");
             const indicators1h = calculateAllIndicators(candles1h, inst.id, "1h");
+            deskStructuralSummary = deskStructuralFromSummary(indicators15m);
             const price15m = candles15m[candles15m.length - 1].close;
             const price1h = candles1h[candles1h.length - 1].close;
             const r15 = calculateTechnicalScore(indicators15m, price15m, mtfAlignmentScore);
@@ -152,8 +173,15 @@ export async function GET() {
             signals = [...r15.signals, ...r1h.signals];
             currentPrice = price15m;
             technicalBasis = "15m + 1h blend, MTF-aligned trend";
+            deskZoneRetestHint = deskMechanicalBandRetestCounts(
+              candles15m,
+              indicators15m.atr.value,
+              currentPrice,
+              "15m"
+            );
           } else if (has15m) {
             const indicators15m = calculateAllIndicators(candles15m, inst.id, "15m");
+            deskStructuralSummary = deskStructuralFromSummary(indicators15m);
             const price15m = candles15m[candles15m.length - 1].close;
             const r = calculateTechnicalScore(indicators15m, price15m, mtfAlignmentScore);
             score = r.score;
@@ -162,8 +190,15 @@ export async function GET() {
             signals = r.signals;
             currentPrice = price15m;
             technicalBasis = "15m, MTF-aligned trend";
+            deskZoneRetestHint = deskMechanicalBandRetestCounts(
+              candles15m,
+              indicators15m.atr.value,
+              currentPrice,
+              "15m"
+            );
           } else {
             const indicators1h = calculateAllIndicators(candles1h, inst.id, "1h");
+            deskStructuralSummary = deskStructuralFromSummary(indicators1h);
             const price1h = candles1h[candles1h.length - 1].close;
             const r = calculateTechnicalScore(indicators1h, price1h, mtfAlignmentScore);
             score = r.score;
@@ -172,6 +207,12 @@ export async function GET() {
             signals = r.signals;
             currentPrice = price1h;
             technicalBasis = "1h, MTF-aligned trend";
+            deskZoneRetestHint = deskMechanicalBandRetestCounts(
+              candles1h,
+              indicators1h.atr.value,
+              currentPrice,
+              "1h"
+            );
           }
 
           return {
@@ -185,6 +226,8 @@ export async function GET() {
               technicalBasis,
               mtfAlignmentPercent: Math.round(mtfPct),
               mtfEmaSummary: mtfSummary ?? null,
+              deskStructuralSummary,
+              deskZoneRetestHint,
             },
           };
         })

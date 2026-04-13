@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { appendSetupIntelligence, calculateTradeSetup } from "@/lib/calculations/trade-setup";
+import { appendSetupIntelligence, calculateTradeSetup, refineEntryZone } from "@/lib/calculations/trade-setup";
 import type { BiasResult, TradeSetup } from "@/lib/types/bias";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -222,5 +222,41 @@ describe("calculateTradeSetup integration", () => {
     const setup = calculateTradeSetup(bias, 0.01, adr, 2000, "intraday");
     expect(setup.confluenceTier).toBe("A");
     expect(setup.checklist?.length).toBe(7);
+  });
+});
+
+describe("refineEntryZone", () => {
+  it("narrows bullish zone to strongest in-band support", () => {
+    const bias = minimalBias({
+      direction: "bullish",
+      overallBias: 20,
+    });
+    const setup: TradeSetup = {
+      ...baseSetupShell,
+      entryZone: [970, 1000],
+      entryZoneBasis: "atr",
+    };
+    const structural = {
+      supportResistance: [{ price: 980, type: "support" as const, strength: 5, timeframe: "15m" }],
+      pivotPoints: [],
+      fibonacci: [],
+    };
+    const out = refineEntryZone(setup, bias, 120, 1000, structural);
+    expect(out.basis).toBe("structure");
+    expect(out.entryZone[0]).toBe(980);
+    expect(out.entryZone[1]).toBe(1000);
+  });
+
+  it("keeps ATR zone when no structural level in band", () => {
+    const bias = minimalBias({ direction: "bullish", overallBias: 20 });
+    const setup: TradeSetup = { ...baseSetupShell, entryZone: [970, 1000] };
+    const structural = {
+      supportResistance: [{ price: 900, type: "support" as const, strength: 9, timeframe: "15m" }],
+      pivotPoints: [],
+      fibonacci: [],
+    };
+    const out = refineEntryZone(setup, bias, 120, 1000, structural);
+    expect(out.basis).toBe("atr");
+    expect(out.entryZone).toEqual([970, 1000]);
   });
 });

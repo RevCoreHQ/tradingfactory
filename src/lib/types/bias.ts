@@ -60,6 +60,9 @@ export interface SetupChecklistItem {
   pass: boolean;
 }
 
+/** How the briefing entry band was derived after optional structural refinement. */
+export type EntryZoneBasis = "atr" | "structure";
+
 export interface TradeSetup {
   tradeScore: number;            // ADR-weighted conviction (ranking metric)
   projectedMove: { pips: number; percent: number };
@@ -69,6 +72,8 @@ export interface TradeSetup {
   riskSizing: RiskSizing;
   riskReason: string;
   entryZone: [number, number];   // low, high
+  /** Set when entry zone is tightened to a structural level; default ATR-only band if omitted. */
+  entryZoneBasis?: EntryZoneBasis;
   /** Pass/fail gates for execution discipline */
   checklist?: SetupChecklistItem[];
   confluenceTier?: ConfluenceTier;
@@ -108,6 +113,8 @@ export interface BiasResult {
   mtfEmaSummary?: MTFTrendSummary | null;
   /** One-line explanation of tier / checklist / context (trust layer). */
   decisionRationale?: string;
+  /** Supply/demand retest count in the mechanical entry band (from batch ICT zones); drives exhausted desk copy. */
+  deskZoneTestCount?: number;
 }
 
 export interface BiasOutcome {

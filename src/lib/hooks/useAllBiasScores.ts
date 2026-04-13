@@ -8,7 +8,12 @@ import { useMarketNews, useFearGreed, useBondYields, useCentralBanks, useEconomi
 import { useLLMBatchAnalysis } from "./useLLMAnalysis";
 import { useADRData } from "./useADRData";
 import { calculateFundamentalScore, calculateOverallBias, applyLLMAnalysis } from "@/lib/calculations/bias-engine";
-import { computeADRRanks, calculateTradeSetup } from "@/lib/calculations/trade-setup";
+import { computeADRRanks, calculateTradeSetup, refineEntryZone } from "@/lib/calculations/trade-setup";
+import type { StructuralSummaryInput } from "@/lib/calculations/structural-levels";
+import {
+  deskZoneTestCountForBias,
+  type DeskZoneRetestHint,
+} from "@/lib/calculations/desk-zone-retest";
 import { getBiasDirection } from "@/lib/utils/formatters";
 import type { BiasSignal, TechnicalScore } from "@/lib/types/bias";
 import { buildDecisionLayer, computeDecisionRationale } from "@/lib/calculations/decision-context";
@@ -60,6 +65,8 @@ export function useAllBiasScores() {
         technicalBasis: string;
         mtfAlignmentPercent: number;
         mtfEmaSummary: MTFTrendSummary | null;
+        deskStructuralSummary?: StructuralSummaryInput;
+        deskZoneRetestHint?: DeskZoneRetestHint | null;
       }
     >;
   }>("/api/technicals/batch-scores", fetcher, {
@@ -190,14 +197,35 @@ export function useAllBiasScores() {
           const currentPrice =
             techPrice !== undefined && techPrice > 0 ? techPrice : adrDerivedPrice;
 
-          const tradeSetup = calculateTradeSetup(
+          const tradeSetupRaw = calculateTradeSetup(
             result,
             atrEstimate,
             adr,
             currentPrice,
             "intraday"
           );
-          const withSetup = { ...result, adr, tradeSetup };
+          const refined = refineEntryZone(
+            tradeSetupRaw,
+            result,
+            atrEstimate,
+            currentPrice,
+            techScores[instId]?.deskStructuralSummary
+          );
+          const tradeSetup = {
+            ...tradeSetupRaw,
+            entryZone: refined.entryZone,
+            entryZoneBasis: refined.basis,
+          };
+          const deskZoneTestCount = deskZoneTestCountForBias(
+            techScores[instId]?.deskZoneRetestHint,
+            result.direction
+          );
+          const withSetup = {
+            ...result,
+            adr,
+            tradeSetup,
+            ...(deskZoneTestCount !== undefined ? { deskZoneTestCount } : {}),
+          };
           enhanced.intraday[instId] = {
             ...withSetup,
             decisionRationale: computeDecisionRationale(withSetup),
