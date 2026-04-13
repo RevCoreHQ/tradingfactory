@@ -16,6 +16,7 @@ import { ChevronDown, ChevronUp, TrendingUp, TrendingDown, ArrowRight, Shield, Z
 import { SessionBadge } from "@/components/common/SessionIndicator";
 import type { BiasDirection, BiasResult, RiskSizing } from "@/lib/types/bias";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
+import { InstrumentPriceDisplay } from "@/components/common/InstrumentPriceDisplay";
 
 function DirectionBadge({ direction }: { direction: BiasDirection }) {
   const label = getBiasLabel(direction);
@@ -241,6 +242,14 @@ function ConvictionCard({ item, rank, onNavigate }: {
         </span>
         <DirectionBadge direction={biasResult.direction} />
       </div>
+
+      <InstrumentPriceDisplay
+        instrument={instrument}
+        showBidAsk={false}
+        showChange
+        size="sm"
+        className="items-start mb-1.5 w-full"
+      />
 
       {/* Center: Large conviction score */}
       <div className="flex items-center justify-center my-1">

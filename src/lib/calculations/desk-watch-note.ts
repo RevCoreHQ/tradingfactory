@@ -2,6 +2,16 @@ import type { BiasResult } from "@/lib/types/bias";
 import { formatPrice } from "@/lib/utils/formatters";
 
 /**
+ * Reference price used to build mechanical entry zone / stops / TPs (batch technicals last close when available).
+ */
+export function deskSetupReferencePrice(bias: BiasResult): number | null {
+  const ts = bias.tradeSetup;
+  if (!ts) return null;
+  const [lo, hi] = ts.entryZone;
+  return bias.direction.includes("bearish") ? lo : hi;
+}
+
+/**
  * Plain-language lines for the instrument card: actionable ATR-based zones from `tradeSetup`.
  * Structural S/R and confluence live in Deep analysis — this is the desk’s mechanical frame only.
  */

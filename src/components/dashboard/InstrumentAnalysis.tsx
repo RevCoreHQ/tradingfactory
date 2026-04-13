@@ -20,6 +20,7 @@ import { saveBiasToHistory } from "@/components/bias/BiasHistory";
 import { BiasAccuracyCard } from "@/components/bias/BiasAccuracy";
 import { SessionCard } from "@/components/common/SessionIndicator";
 import { QuickTradeLog } from "@/components/journal/QuickTradeLog";
+import { InstrumentPriceDisplay } from "@/components/common/InstrumentPriceDisplay";
 import { MTFConfluence } from "@/components/technicals/MTFConfluence";
 import { useRealtimePrices } from "@/lib/hooks/useRealtimePrices";
 import { generateTradeDeskSetup, selectTradingStyle } from "@/lib/calculations/mechanical-signals";
@@ -192,7 +193,14 @@ export function InstrumentAnalysis() {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col items-stretch sm:items-end gap-2 shrink-0">
+                  <InstrumentPriceDisplay
+                    instrument={instrument}
+                    size="md"
+                    showBidAsk
+                    className="sm:items-end"
+                  />
+                  <div className="flex items-center gap-2 flex-wrap justify-end">
                   {llmResult?.riskAssessment && (
                     <span className={cn(
                       "text-xs font-bold uppercase px-2.5 py-1 rounded",
@@ -213,6 +221,7 @@ export function InstrumentAnalysis() {
                       {llmResult.outlook}
                     </span>
                   )}
+                  </div>
                 </div>
               </div>
 

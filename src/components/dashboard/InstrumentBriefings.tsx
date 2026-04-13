@@ -38,7 +38,9 @@ import {
   hasDecisionDeskExpandedContent,
 } from "@/components/dashboard/DecisionDeskPanel";
 import { sanitizeCatalysts } from "@/lib/calculations/llm-sanitize";
-import { buildDeskWatchNote } from "@/lib/calculations/desk-watch-note";
+import { buildDeskWatchNote, deskSetupReferencePrice } from "@/lib/calculations/desk-watch-note";
+import { formatPrice } from "@/lib/utils/formatters";
+import { InstrumentPriceDisplay } from "@/components/common/InstrumentPriceDisplay";
 import { computeTradeFilter } from "@/lib/calculations/trade-filter";
 import { TradeFilterBar } from "@/components/dashboard/TradeFilterBar";
 
@@ -195,7 +197,6 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
   const togglePin = useMarketStore((s) => s.togglePin);
   const { instrument, biasResult, llmResult, quote, mtfTrend } = data;
   const CategoryIcon = categoryIcons[instrument.category] || DollarSign;
-  const changePercent = quote?.changePercent || 0;
   const isBullish = biasResult.overallBias > 0;
   const isBearish = biasResult.overallBias < 0;
   const color = getBiasColor(biasResult.direction);
@@ -309,14 +310,11 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              "text-sm font-mono font-semibold",
-              changePercent > 0 ? "text-bullish" : changePercent < 0 ? "text-bearish" : "text-muted-foreground"
-            )}
-          >
-            {changePercent > 0 ? "+" : ""}{changePercent.toFixed(2)}%
-          </span>
+          <InstrumentPriceDisplay
+            instrument={instrument}
+            showBidAsk={false}
+            className="items-end"
+          />
           <div className="flex flex-col items-end gap-0">
             <span
               className={cn(
@@ -426,6 +424,9 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
         const deskNote = buildDeskWatchNote(biasResult, instrument.decimalPlaces);
         if (!deskNote) return null;
         const planningOnly = !tradeFilter.emphasizeLevels;
+        const deskRef = deskSetupReferencePrice(biasResult);
+        const hasLiveQuote =
+          quote != null && (quote.mid > 0 || (quote.bid > 0 && quote.ask > 0));
         return (
           <div
             className={cn(
@@ -440,6 +441,47 @@ function InstrumentCard({ data }: { data: InstrumentCardData }) {
                 Trade filter says stand aside or wait — ATR levels below are for planning only, not a prompt to
                 initiate.
               </p>
+            ) : null}
+            {hasLiveQuote || deskRef != null ? (
+              <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 mb-2 text-[11px] font-mono tabular-nums text-foreground/90">
+                {hasLiveQuote && quote ? (
+                  <span>
+                    <span className="text-[10px] font-sans font-medium uppercase tracking-wide text-muted-foreground/70 mr-1.5">
+                      Live
+                    </span>
+                    {quote.bid > 0 && quote.ask > 0 ? (
+                      <>
+                        <span className="text-muted-foreground/55 font-sans text-[10px] mr-0.5">Bid</span>
+                        {formatPrice(quote.bid, instrument.decimalPlaces)}
+                        <span className="text-muted-foreground/40 mx-1">·</span>
+                        <span className="text-muted-foreground/55 font-sans text-[10px] mr-0.5">Ask</span>
+                        {formatPrice(quote.ask, instrument.decimalPlaces)}
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-muted-foreground/55 font-sans text-[10px] mr-0.5">Mid</span>
+                        {formatPrice(quote.mid, instrument.decimalPlaces)}
+                      </>
+                    )}
+                  </span>
+                ) : null}
+                {deskRef != null ? (
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={<span />}
+                      className="inline-flex items-baseline gap-1 border-b border-dotted border-muted-foreground/25 cursor-help"
+                    >
+                      <span className="text-[10px] font-sans font-medium uppercase tracking-wide text-muted-foreground/70">
+                        Desk ref
+                      </span>
+                      <span>{formatPrice(deskRef, instrument.decimalPlaces)}</span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
+                      Last close from the technicals batch used to anchor mechanical levels (not the live quote).
+                    </TooltipContent>
+                  </Tooltip>
+                ) : null}
+              </div>
             ) : null}
             <div className="flex items-center gap-1.5 mb-2">
               <StickyNote className="h-3.5 w-3.5 text-neutral-accent shrink-0" />
