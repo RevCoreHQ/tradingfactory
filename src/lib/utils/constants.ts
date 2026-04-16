@@ -1,6 +1,17 @@
 import type { Instrument, SessionInfo } from "@/lib/types/market";
 
 export const INSTRUMENTS: Instrument[] = [
+  // Commodities — Gold first (primary trading instrument)
+  {
+    id: "XAU_USD",
+    symbol: "XAU/USD",
+    displayName: "Gold",
+    category: "commodity",
+    baseCurrency: "XAU",
+    quoteCurrency: "USD",
+    pipSize: 0.01,
+    decimalPlaces: 2,
+  },
   // Forex
   {
     id: "EUR_USD",
@@ -72,17 +83,7 @@ export const INSTRUMENTS: Instrument[] = [
     pipSize: 0.0001,
     decimalPlaces: 5,
   },
-  // Commodities
-  {
-    id: "XAU_USD",
-    symbol: "XAU/USD",
-    displayName: "Gold",
-    category: "commodity",
-    baseCurrency: "XAU",
-    quoteCurrency: "USD",
-    pipSize: 0.01,
-    decimalPlaces: 2,
-  },
+  // Commodities — Silver, Oil (Gold moved to top)
   {
     id: "XAG_USD",
     symbol: "XAG/USD",
