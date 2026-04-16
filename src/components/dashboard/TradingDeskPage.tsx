@@ -5,16 +5,19 @@ import { SectionHeader } from "./SectionHeader";
 import { TradingDeskIntro } from "./TradingDeskIntro";
 import { AITradeDesk } from "./AITradeDesk";
 import { TradingAdvisor } from "./TradingAdvisor";
+import { IdeaLifecyclePanel } from "./IdeaLifecyclePanel";
 import { MarketHoursStrip } from "@/components/common/MarketHours";
 
 import { useAllBiasScores } from "@/lib/hooks/useAllBiasScores";
 import { useRealtimePrices } from "@/lib/hooks/useRealtimePrices";
-import { Brain, LayoutList } from "lucide-react";
+import { useMigrateLocalStorage } from "@/lib/storage/migrate-localstorage";
+import { Brain, LayoutList, BookOpen } from "lucide-react";
 
 export function TradingDeskPage() {
   useAllBiasScores();
-  // Alerts now fire from AITradeDesk's mechanical signal engine (single brain)
   useRealtimePrices();
+  // One-time migration of tf_tracked_setups → Supabase trade_ideas
+  useMigrateLocalStorage();
 
   return (
     <div className="min-h-screen bg-transparent">
@@ -24,6 +27,18 @@ export function TradingDeskPage() {
 
         <main className="max-w-[1600px] mx-auto px-3 md:px-8 py-4 md:py-6 space-y-6 md:space-y-8">
           <TradingDeskIntro />
+
+          <section className="space-y-1">
+            <SectionHeader
+              title="Active Ideas"
+              subtitle="Stateful trade ideas with lifecycle tracking and consistency enforcement"
+              icon={<BookOpen className="h-3.5 w-3.5" />}
+              accentColor="amber"
+              subtitleOnMobile
+              learnMore="Each idea persists across refreshes with a full lifecycle: Idea → Watching → Ready → Executed → Managing → Scaled → Exited. Bias cannot flip without a structural break. Conflicting ideas are rejected or demoted automatically."
+            />
+            <IdeaLifecyclePanel />
+          </section>
 
           <section className="space-y-1">
             <SectionHeader

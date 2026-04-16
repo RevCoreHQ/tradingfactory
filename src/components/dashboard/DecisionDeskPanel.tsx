@@ -1,11 +1,12 @@
 "use client";
 
-import { ChevronDown, Layers } from "lucide-react";
+import { ChevronDown, Layers, Shield, ShieldOff } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { BiasResult } from "@/lib/types/bias";
 import { describeHeadlineVsDeskTension } from "@/lib/calculations/decision-context";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { useDecisionEngine } from "@/lib/hooks/useDecisionEngine";
 
 type DeskBias = Pick<
   BiasResult,
@@ -305,6 +306,44 @@ export function DecisionDeskPanel({ bias, mode = "full" }: { bias: DeskBias; mod
           </div>
         </details>
       ) : null}
+    </div>
+  );
+}
+
+// ── CommittedBiasIndicator ────────────────────────────────
+// Shows the *persisted* bias from decision_engine (sticky, structural)
+// alongside or below the existing DeskBias (live recompute).
+
+export function CommittedBiasIndicator({ instrument }: { instrument: string }) {
+  const { biasForInstrument, hasFlipBlocks } = useDecisionEngine({ refreshInterval: 60_000 });
+  const committed = biasForInstrument(instrument);
+
+  if (!committed) return null;
+
+  const dir = committed.direction;
+  const colorClass =
+    dir === "bullish"
+      ? "text-emerald-400"
+      : dir === "bearish"
+        ? "text-red-400"
+        : "text-muted-foreground";
+
+  return (
+    <div className="flex items-center gap-2 rounded-md border border-border/30 bg-[var(--surface-1)]/40 px-2 py-1.5 text-[11px]">
+      {hasFlipBlocks ? (
+        <ShieldOff className="h-3 w-3 text-yellow-400 shrink-0" />
+      ) : (
+        <Shield className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+      )}
+      <span className="text-muted-foreground/60">Committed bias</span>
+      <span className={cn("font-semibold capitalize", colorClass)}>{dir}</span>
+      <span className="text-muted-foreground/50">{committed.confidence.toFixed(0)}%</span>
+      <span className={cn(
+        "ml-auto text-muted-foreground/50 rounded px-1 py-0.5 bg-muted/40 text-[10px]",
+        committed.regime === "choppy" && "text-yellow-400/70 bg-yellow-500/10"
+      )}>
+        {committed.regime}
+      </span>
     </div>
   );
 }

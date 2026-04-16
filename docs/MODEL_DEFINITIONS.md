@@ -62,3 +62,43 @@ This document matches the implementation in `src/lib/calculations/bias-engine.ts
 ## LLM layer
 
 - Does **not** change scores. Sanitization aligns **outlook**, **catalysts**, and trims **fundamentalReason** / **technicalReason** sentences that lean opposite the desk direction when abs(overallBias) ≥ 15 (see `llm-sanitize.ts`).
+
+---
+
+## Decision Engine (stateful layer) — added 2026-04
+
+The decision engine adds a **persistent, stateful layer** on top of the existing bias + mechanical pipelines. The canonical reference is `docs/DECISION_ENGINE.md`.
+
+### Canonical trade object
+
+`TradeIdea` (`src/lib/types/trade-idea.ts`) is the single source of truth for all trade management. `BiasResult.tradeSetup` and `TradeDeskSetup` are now **candidate inputs**, not the final output. The lifecycle of every idea is tracked in Supabase (`trade_ideas` table).
+
+### Bias commit semantics
+
+`BiasSnapshot` (`src/lib/types/bias-snapshot.ts`) stores the last committed market context per instrument. A new bias only commits when:
+1. The `inputs_hash` changes (material change in structure/regime), **and**
+2. If the direction flips: a structural break (BOS/CHoCH on 4H) or regime shift is detected.
+
+This prevents the "flip every tick" behaviour. See `src/lib/calculations/market-context-engine.ts`.
+
+### Consistency layer
+
+`evaluateNewIdea` / `evaluateBiasFlip` in `src/lib/calculations/decision-consistency.ts`:
+- A new idea opposing an open position is **rejected** (not silently ignored).
+- A bias flip without structural justification is **blocked** and logged as `bias_flip_blocked`.
+- All blocks are surfaced in the UI via `ContradictionBanner`.
+
+### State machine
+
+All state transitions go through `transition()` in `src/lib/calculations/lifecycle-engine.ts`.
+The allowed-transition table is: `idea → watching → ready → executed → managing → scaled → exited`.
+Any state can transition to `invalidated` except `exited`.
+
+### Output envelope
+
+`GET /api/decision/snapshot` returns the strict `DecisionSnapshot` shape:
+- `market_bias` — committed per-instrument direction/regime
+- `active_ideas` — all non-terminal ideas
+- `actions_taken` — audit log since last cursor
+- `no_action_reasons` — populated when system is deliberately idle
+
